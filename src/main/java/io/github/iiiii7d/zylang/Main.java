@@ -15,7 +15,7 @@ import java.util.ArrayList;
 public class Main {
     public static final String version = "0.0.0";
 
-    public static ArrayList<Character> compile(String in) {
+    public static ArrayList<Token> compile(String in) {
         return Lexer.lex(in);
     }
 
@@ -40,18 +40,11 @@ public class Main {
 
             try {
                 switch ((String) parserArgs.get("cmd")) {
-                    case "version":
-                        System.out.println("Zy version " + Main.version);
-                        break;
-                    case "run":
-                        System.out.println(compile(Files.readString(Path.of((String) parserArgs.get("file")), StandardCharsets.UTF_8)));
-                        break;
-                    case "compile":
-                    case "interpret":
-                        System.out.println("Coming soon");
-                        break;
-                    default:
-                        break;
+                    case "version" -> System.out.println("Zy version " + Main.version);
+                    case "run" -> System.out.println(compile(Files.readString(Path.of((String) parserArgs.get("file")), StandardCharsets.UTF_8)));
+                    case "compile", "interpret" -> System.out.println("Coming soon");
+                    default -> {
+                    }
                 }
             } catch (IOException e) {
                 System.out.println(Ansi.red("Invalid file " + parserArgs.get("file")));
