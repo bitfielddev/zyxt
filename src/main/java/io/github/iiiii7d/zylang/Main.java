@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 // for my reference
 //String content = Files.readString(Path.of("test.zy"), StandardCharsets.US_ASCII);
@@ -41,7 +42,7 @@ public class Main {
             try {
                 switch ((String) parserArgs.get("cmd")) {
                     case "version" -> System.out.println("Zy version " + Main.version);
-                    case "run" -> System.out.println(compile(Files.readString(Path.of((String) parserArgs.get("file")), StandardCharsets.UTF_8)));
+                    case "run" -> System.out.println(compile(Files.readString(Path.of((String) parserArgs.get("file")), StandardCharsets.UTF_8)).stream().map(token -> token.toString()+"\n\r").collect(Collectors.joining()));
                     case "compile", "interpret" -> System.out.println("Coming soon");
                     default -> {
                     }
