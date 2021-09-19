@@ -2,6 +2,7 @@ package io.github.iiiii7d.zylang;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 public class Main {
     public static final String version = "0.0.0";
 
-    public static ArrayList<Token> compile(String in) {
+    public static @NotNull ArrayList<Token> compile(String in) {
         return Lexer.lex(in);
     }
 

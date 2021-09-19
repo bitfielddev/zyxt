@@ -1,5 +1,8 @@
 package io.github.iiiii7d.zylang;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 class Ansi {
     public static final String RESET = "\033[0m";
 
@@ -12,28 +15,36 @@ class Ansi {
     public static final String CYAN = "\033[0;36m";
     public static final String WHITE = "\033[0;37m";
 
-    public static String black(String s) {
+    @Contract(pure = true)
+    public static @NotNull String black(String s) {
         return BLACK+s+RESET;
     }
-    public static String red(String s) {
+    @Contract(pure = true)
+    public static @NotNull String red(String s) {
         return RED+s+RESET;
     }
-    public static String green(String s) {
+    @Contract(pure = true)
+    public static @NotNull String green(String s) {
         return GREEN+s+RESET;
     }
-    public static String yellow(String s) {
+    @Contract(pure = true)
+    public static @NotNull String yellow(String s) {
         return YELLOW+s+RESET;
     }
-    public static String blue(String s) {
+    @Contract(pure = true)
+    public static @NotNull String blue(String s) {
         return BLUE+s+RESET;
     }
-    public static String purple(String s) {
+    @Contract(pure = true)
+    public static @NotNull String purple(String s) {
         return PURPLE+s+RESET;
     }
-    public static String cyan(String s) {
+    @Contract(pure = true)
+    public static @NotNull String cyan(String s) {
         return CYAN+s+RESET;
     }
-    public static String white(String s) {
+    @Contract(pure = true)
+    public static @NotNull String white(String s) {
         return WHITE+s+RESET;
     }
 }
