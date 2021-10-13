@@ -1,4 +1,4 @@
-# Zy syntax
+# Zyxt syntax
 **Implementations:** Implemented ~~Not implemented~~
 
 ## Comments

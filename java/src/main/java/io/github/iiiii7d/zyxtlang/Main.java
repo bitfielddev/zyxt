@@ -1,4 +1,4 @@
-package io.github.iiiii7d.zylang;
+package io.github.iiiii7d.zyxtlang;
 
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.*;
@@ -42,7 +42,7 @@ public class Main {
 
             try {
                 switch ((String) parserArgs.get("cmd")) {
-                    case "version" -> System.out.println("Zy version " + Main.version);
+                    case "version" -> System.out.println("Zyxt version " + Main.version);
                     case "run" -> System.out.println(compile(Files.readString(Path.of((String) parserArgs.get("file")), StandardCharsets.UTF_8)).stream().map(token -> token.toString()+"\n\r").collect(Collectors.joining()));
                     case "compile", "interpret" -> System.out.println("Coming soon");
                     default -> {

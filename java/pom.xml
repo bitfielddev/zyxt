@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.github.iiiii7d</groupId>
-  <artifactId>zylang</artifactId>
+  <artifactId>zyxtlang</artifactId>
   <packaging>jar</packaging>
   <version>0.0.0</version>
 
@@ -46,7 +46,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>io.github.iiiii7d.zylang.Main</mainClass>
+              <mainClass>io.github.iiiii7d.zyxtlang.Main</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>
@@ -86,7 +86,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>io.github.iiiii7d.zylang.Main</mainClass>
+              <mainClass>io.github.iiiii7d.zyxtlang.Main</mainClass>
             </manifest>
           </archive>
         </configuration>

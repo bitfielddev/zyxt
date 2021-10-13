@@ -1,4 +1,4 @@
-package io.github.iiiii7d.zylang;
+package io.github.iiiii7d.zyxtlang;
 
 import org.jetbrains.annotations.NotNull;
 
