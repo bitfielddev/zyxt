@@ -14,7 +14,6 @@ fn main() {
 		'run' {
 			filename := os.args[2] or {error_0_1()}
 			content := os.read_file(filename) or {error_1_1(filename)}
-			println(content)
 			println(compile(content))
 		}
 		'compile' {
