@@ -31,9 +31,11 @@ fn error_0_1() {
 // File does not exist
 [noreturn]
 fn error_1_0(filename string) {
-	error("1.1", "File $filename does not exist")
+	error("1.0", "File $filename does not exist")
 }
 
 // file cannot be opened
 [noreturn]
-fn error_1_1()
+fn error_1_1(filename string) {
+	error("1.1", "File $filename cannot be opened")
+}

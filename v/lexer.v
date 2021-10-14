@@ -26,35 +26,44 @@ struct Token {
 	column int
 }
 
-fn lex(mut input string) []Token {
-    if input.trim_space().len == 0 {
+struct PositionTracker {
+    line int = 1
+    column int = 1
+    prev_column int = -1
+    char_pos int = 1
+}
+
+struct StageTracker {
+    ignore_whitespace bool = false
+}
+
+fn get_next_char(mut c &string, mut input &string, mut position ) {
+    if c == '\n' { // if newline, update line_no
+        line_no++
+        prev_column_no = column_no
+        column_no = 1
+    } else {column_no++}
+    char_pos++
+    c = input[char_pos] ?
+}
+
+fn lex(preinput string) []Token {
+    if preinput.trim_space().len == 0 {
         return []Token{}
     }
-    input += "\n"
+    input := preinput + "\n"
 	mut out := []Token{}
 	mut stack := []string{}
 
-    mut line_no := 1
-    mut column_no := 1
-    mut prev_column_no := 1
-    mut states := {
-        "ignore_whitespace": false
-    }
-    mut char_pos := 0
-    mut c := char_pos[0]
-
-    fn update_position(mut c ?&string) {
-        if c == '\n' { // if newline, update lineNo
-            line_no++
-            prev_column_no = column_no
-            column_no = 1
-        } else columnNo++
-        char_pos++
-        c = input[char_pos] ?
-    }
+    mut position := PositionTracker{}
+    mut states := StageTracker{}
+    mut c := input[0]
 
     loop: for {
-        if (c == '\r' && states['ignore_whitespace']) continue
-        update_position(&c) or {break loop}
+        if (c == '\r' && states.ignore_whitespace) {continue}
+        get_next_char(&c, &input, &line_no, &column_no, &prev_column_no) or {break loop}
+        out << c
     }
+    println(out)
+    return []
 }
