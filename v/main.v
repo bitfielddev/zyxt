@@ -12,9 +12,10 @@ fn main() {
 			println("Zyxt version" + version)
 		}
 		'run' {
-			file := os.args[2] or {error("0.1", "No file given")}
-			println(file)
-			println(compile(file))
+			filename := os.args[2] or {error_0_1()}
+			mut content := os.read_file(filename) or {error_1_1()}
+			println(content)
+			println(compile(mut content))
 		}
 		'compile' {
 			println("Coming soon!")

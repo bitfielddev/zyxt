@@ -33,3 +33,7 @@ fn error_0_1() {
 fn error_1_0(filename string) {
 	error("1.1", "File $filename does not exist")
 }
+
+// file cannot be opened
+[noreturn]
+fn error_1_1()
