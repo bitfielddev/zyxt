@@ -27,6 +27,7 @@ struct TokenEntry {
     isolated bool // whether the token is isolated (idk how explain); eg. * and ** are isolated but // isnt cos you can put anything after it
 	condition fn (&StateTracker) bool // conditions needed for the token to be valid; do not change states.prev_type that is already handled by the lexer
 	state_changes fn (&StateTracker) // the state changes that are taken place after the token is validated
+	is_literal_string_start bool // if the token marks the start of a literal string.
 	is_literal_string_end bool // if the token marks the end of a literal_string. 
 }
 
@@ -40,6 +41,7 @@ const token_catalogue = {
 			states.is_literal_string = true
 			states.literal_string_type = .comment
 		}
+		is_literal_string_start: true
 	}
 	"\n": TokenEntry{
 		type_: .comment_end
@@ -61,6 +63,7 @@ const token_catalogue = {
 			states.is_literal_string = true
 			states.literal_string_type = .comment
 		}
+		is_literal_string_start: true
 	}
 	"*/": TokenEntry{
 		type_: .multiline_comment_end

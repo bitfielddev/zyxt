@@ -18,6 +18,10 @@ mut:
     is_literal_string bool
     literal_string_type TokenType = .null
     prev_type TokenType = .null
+    literal_string_line int
+    literal_string_column int
+    token_line int = 1
+    token_column int = 1
 }
 
 fn get_next_char(mut c &string, input string, mut stack []string, mut position &PositionTracker) ?bool {
@@ -38,11 +42,11 @@ fn get_next_char_noupdate(input string, position PositionTracker) string {
     return c
 }
 
-fn get_token_entry(stack []string, states &StateTracker) (token, ?TokenEntry) {
+fn get_token_entry(stack []string, states &StateTracker) (map[string]TokenEntry) {
     for value, entry in token_catalogue {
-        if entry.condition(states) && stack.join("").ends_with(value) {return entry}
+        if entry.condition(states) && stack.join("").ends_with(value) {return {value: entry}}
     }
-    return error("")
+    return {}
 }
 
 
@@ -61,26 +65,39 @@ fn lex(preinput string) []Token {
 
     loop: for {
         if c == '\r' && !states.is_literal_string {continue}
-        if token, token_entry := get_token_entry(stack, states) {
+        for token, token_entry in get_token_entry(stack, states) {
+            if token_entry.is_literal_string_end {
+                lstring := stack.join("").substr(0, stack.len-token.len)
+                lstring_token := Token{
+                    value: lstring
+                    type_: states.literal_string_type
+                    line: states.literal_string_line
+                    column: states.literal_string_column
+                }
+                out << lstring_token
+                stack.clear()
+                stack << token.split("")
+                states.literal_string_line = 0
+                states.literal_string_column = 0
+            } else if token_entry.is_literal_string_start {
+                states.literal_string_line = position.line
+                states.literal_string_column = position.column+1
+            }
+
             token_entry.state_changes(mut states)
             states.prev_type = token_entry.type_
-
-            if states.is_literal_string_end {
-                lstring := stack.join("").substr(0, stack.len-token_entry)
-                
-            }
 
             new_token := Token{
                 value: stack.join("")
                 type_: token_entry.type_
                 line: position.line
-                column: position.column
+                column: position.column+1-token.len
             }
             out << new_token
+            stack.clear()
         }
 
         get_next_char(mut &c, input, mut &stack, mut &position) or {break loop}
     }
-    println(stack)
     return out
 }
