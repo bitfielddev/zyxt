@@ -26,7 +26,7 @@ mut:
     token_column int = 1
 }
 
-fn get_next_char(mut c &string, input string, mut stack []string, mut position &PositionTracker) ?bool {
+fn get_next_char(mut c &string, input string, mut stack []string, mut position &PositionTracker, states StateTracker) ?bool {
     if c == '\n' { // if newline, update line_no
         position.line++
         position.prev_column = position.column
@@ -35,7 +35,8 @@ fn get_next_char(mut c &string, input string, mut stack []string, mut position &
     position.char_pos++
     b := input[position.char_pos] ?
     c = b.ascii_str()
-    stack << c
+    if c == " " && states.is_literal_string {stack << c}
+    else if c != " " {stack << c}
     return true
 }
 fn get_next_char_noupdate(input string, position PositionTracker) string {
@@ -46,12 +47,18 @@ fn get_next_char_noupdate(input string, position PositionTracker) string {
 
 fn get_token_entry(stack []string, states &StateTracker, input string, position PositionTracker) (map[string]TokenEntry) {
     for value, entry in token_catalogue {
-        mut re := regex.regex_opt(entry.next_prohibited) or {panic(err)}
+        mut re1 := regex.regex_opt(entry.next_prohibited) or {panic(err)}
+        mut re2 := regex.regex_opt(entry.prohibited) or {panic(err)}
         if stack.join("").ends_with(value) // if the stack ends with the token tested
         && entry.condition(states) // and the stack satisfies the conditions
         && (entry.next_prohibited.len == 0
-            || re.matches_string(get_next_char_noupdate(input, position))) // and the next character is invalid to be part of the token
-        {return {value: entry}}
+            || re1.matches_string(get_next_char_noupdate(input, position))) // and the next character is invalid to be part of the token
+        && (entry.prohibited.len == 0 // and the stack itself is valid
+            || !re2.matches_string(stack.join("")))
+        {
+            if value.len == 0 {return {stack.join(""): entry}}
+            else {return {value: entry}}
+        }
     }
     return {}
 }
@@ -71,7 +78,10 @@ fn lex(preinput string) []Token {
     stack << c
 
     loop: for {
-        if c == '\r' && !states.is_literal_string {continue}
+        if c == '\r' && !states.is_literal_string {
+            get_next_char(mut &c, input, mut &stack, mut &position, states) or {break loop}
+            continue
+        }
         for token, token_entry in get_token_entry(stack, states, input, position) {
             if token_entry.is_literal_string_end {
                 lstring := stack.join("").substr(0, stack.len-token.len)
@@ -104,14 +114,14 @@ fn lex(preinput string) []Token {
             stack.clear()
         }
 
-        get_next_char(mut &c, input, mut &stack, mut &position) or {break loop}
+        get_next_char(mut &c, input, mut &stack, mut &position, states) or {break loop}
     }
-    if stack.len != 0 {
+    if stack.join("").trim_space().len != 0 {
         new_token := Token{
             value: stack.join("")
             type_: .variable
             line: position.line
-            column: position.column+1-stack.len
+            column: position.column+1-stack.join("").trim_space().len
         }
         out << new_token
     }

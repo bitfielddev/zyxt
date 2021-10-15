@@ -20,57 +20,58 @@ sys.out.print("hello world");
 ## Declaring variables
 ```
 === Flags ===
-: int x = 0; // global variable, all scopes
-:private int x = 0; // only exists within code block ({})
-:fileprivate int x = 0; // only exists within file
-:public int x = 0; // exists within file, available when imported by another file
-:protected int x = 0; // only exists when class is instantiated
+int x = 0; // global variable, all scopes, only exists within file
+priv int x = 0; // only exists within code block ({})
+pub int x = 0; // exists within file, available when imported by another file
+prot int x = 0; // only exists when class is instantiated
 
-:const int x = 0; // constant, cannot be changed
+const int x = 0; // constant, cannot be changed
 
-:const:private int x = 0; // merge two flags
+const priv int x = 0; // merge two flags
+
+hoi int x = 0; // hoist variable
 
 === Numbers ===
-: byte x = 1b;
-: short x = 1s;
-: int x = 1;
-: long x = 1l;
-: float x = 1.0f;
-: double x = 1.0;
-: precise x = 1.0p;
-: complex<int> x = c[1, 2];
+byte x = 1b;
+short x = 1s;
+int x = 1;
+long x = 1l;
+float x = 1.0f;
+double x = 1.0;
+precise x = 1.0p;
+complex<int> x = c[1, 2];
 
 === Booleans ===
-: bool x = true;
-: bool x = false;
+bool x = true;
+bool x = false;
 
 === Strings & Characters ===
-: str x = "foobar";
-: char x = 'a';
+str x = "foobar";
+char x = 'a';
 
 === Functions ===
-: func f = || void {...}
-: func f = |str x, int y| str {...}
-: func f = |str x, int y=2| str {...}
-: func f = |str *x| str {...}
-: func f = |str **x| str {...}
+func f = || void {...}
+func f = |str x, int y| str {...}
+func f = |str x, int y=2| str {...}
+func f = |str *x| str {...}
+func f = |str **x| str {...}
 
-: func f = |#U[str, char] x| #U[str, char] {...}
-: func f = |#any x| void {...}
-: func f = |#num x| void {...}
-: func f = |#seq x| void {...}
-: func f = |#F<[int, int], int> x| void {...}
-: func f = |#N<int> x| void {...}
+func f = |#U[str, char] x| #U[str, char] {...}
+func f = |#any x| void {...}
+func f = |#num x| void {...}
+func f = |#seq x| void {...}
+func f = |#F<[int, int], int> x| void {...}
+func f = |#N<int> x| void {...}
 
 === Classes & Enumerators ===
-: class c = () {...}
-: class c = (inheritedClass) {...}
-: enum e = e[..., ...];
+class c = () {...}
+class c = (inheritedClass) {...}
+enum e = e[..., ...];
 
 === Lists, Arrays & Dicts ===
-: list l = l[..., ...];
-: array a = a[..., ...];
-: dict d = d[a: b, c: d, ...];
+list l = l[..., ...];
+array a = a[..., ...];
+dict d = d[a: b, c: d, ...];
 
 ```
 **Implemented:** ~~Lexer Parser Instructor Interpreter~~
