@@ -1,3 +1,5 @@
+import regex
+
 struct Token {
 	value string
 	type_ TokenType
@@ -42,9 +44,14 @@ fn get_next_char_noupdate(input string, position PositionTracker) string {
     return c
 }
 
-fn get_token_entry(stack []string, states &StateTracker) (map[string]TokenEntry) {
+fn get_token_entry(stack []string, states &StateTracker, input string, position PositionTracker) (map[string]TokenEntry) {
     for value, entry in token_catalogue {
-        if entry.condition(states) && stack.join("").ends_with(value) {return {value: entry}}
+        mut re := regex.regex_opt(entry.next_prohibited) or {panic(err)}
+        if stack.join("").ends_with(value) // if the stack ends with the token tested
+        && entry.condition(states) // and the stack satisfies the conditions
+        && (entry.next_prohibited.len == 0
+            || re.matches_string(get_next_char_noupdate(input, position))) // and the next character is invalid to be part of the token
+        {return {value: entry}}
     }
     return {}
 }
@@ -65,7 +72,7 @@ fn lex(preinput string) []Token {
 
     loop: for {
         if c == '\r' && !states.is_literal_string {continue}
-        for token, token_entry in get_token_entry(stack, states) {
+        for token, token_entry in get_token_entry(stack, states, input, position) {
             if token_entry.is_literal_string_end {
                 lstring := stack.join("").substr(0, stack.len-token.len)
                 lstring_token := Token{
@@ -98,6 +105,15 @@ fn lex(preinput string) []Token {
         }
 
         get_next_char(mut &c, input, mut &stack, mut &position) or {break loop}
+    }
+    if stack.len != 0 {
+        new_token := Token{
+            value: stack.join("")
+            type_: .variable
+            line: position.line
+            column: position.column+1-stack.len
+        }
+        out << new_token
     }
     return out
 }
