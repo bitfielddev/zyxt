@@ -1,4 +1,4 @@
-enum TokenType {
+pub enum TokenType {
     comment_start // //
     comment_end // \n
     multiline_comment_start // /*
@@ -54,7 +54,7 @@ const token_catalogue = {
 	}
 	"/*": TokenEntry{
 		type_: .multiline_comment_start
-		state_changes: fn(states &StateTracker) bool {
+		condition: fn(states &StateTracker) bool {
 			return states.prev_type != .multiline_comment_start
 		}
 		state_changes: fn (mut states &StateTracker) {

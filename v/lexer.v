@@ -15,7 +15,7 @@ mut:
 
 struct StateTracker {
 mut:
-    is_literal bool = false
+    is_literal_string bool
     literal_string_type TokenType = .null
     prev_type TokenType = .null
 }
@@ -32,6 +32,19 @@ fn get_next_char(mut c &string, input string, mut stack []string, mut position &
     stack << c
     return true
 }
+fn get_next_char_noupdate(input string, position PositionTracker) string {
+    b := input[position.char_pos+1] or {byte(0)}
+    c := b.ascii_str()
+    return c
+}
+
+fn get_token_entry(stack []string, states &StateTracker) (token, ?TokenEntry) {
+    for value, entry in token_catalogue {
+        if entry.condition(states) && stack.join("").ends_with(value) {return entry}
+    }
+    return error("")
+}
+
 
 fn lex(preinput string) []Token {
     if preinput.trim_space().len == 0 {
@@ -47,9 +60,27 @@ fn lex(preinput string) []Token {
     stack << c
 
     loop: for {
-        if c == '\r' && states.ignore_whitespace {continue}
+        if c == '\r' && !states.is_literal_string {continue}
+        if token, token_entry := get_token_entry(stack, states) {
+            token_entry.state_changes(mut states)
+            states.prev_type = token_entry.type_
+
+            if states.is_literal_string_end {
+                lstring := stack.join("").substr(0, stack.len-token_entry)
+                
+            }
+
+            new_token := Token{
+                value: stack.join("")
+                type_: token_entry.type_
+                line: position.line
+                column: position.column
+            }
+            out << new_token
+        }
+
         get_next_char(mut &c, input, mut &stack, mut &position) or {break loop}
     }
     println(stack)
-    return []
+    return out
 }
