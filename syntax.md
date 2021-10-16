@@ -178,7 +178,7 @@ x ^^ y; // xor
 x ? a : b; // ternary operator
 x istype y; // x is of type y
 x isnttype y; // x is not of type y
-x >< y; // swap x and 
+x >< y; // swap x and y
 x .. y; // concatenation
 ```
 **Implemented:** ~~Lexer Parser Instructor Interpreter~~

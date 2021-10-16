@@ -35,8 +35,8 @@ fn get_next_char(mut c &string, input string, mut stack []string, mut position &
     position.char_pos++
     b := input[position.char_pos] ?
     c = b.ascii_str()
-    if c == " " && states.is_literal_string {stack << c}
-    else if c != " " {stack << c}
+    if (c == " " || c == "\n" || c == "\r") && states.is_literal_string {stack << c}
+    else if !(c == " " || c == "\n" || c == "\r") {stack << c}
     return true
 }
 fn get_next_char_noupdate(input string, position PositionTracker) string {
@@ -49,15 +49,15 @@ fn get_token_entry(stack []string, states &StateTracker, input string, position 
     for value, entry in token_catalogue {
         mut re1 := regex.regex_opt(entry.next_prohibited) or {panic(err)}
         mut re2 := regex.regex_opt(entry.prohibited) or {panic(err)}
-        if stack.join("").ends_with(value) // if the stack ends with the token tested
+        if stack.join("").ends_with(value.trim_space()) // if the stack ends with the token tested
         && entry.condition(states) // and the stack satisfies the conditions
         && (entry.next_prohibited.len == 0
             || re1.matches_string(get_next_char_noupdate(input, position))) // and the next character is invalid to be part of the token
         && (entry.prohibited.len == 0 // and the stack itself is valid
             || !re2.matches_string(stack.join("")))
         {
-            if value.len == 0 {return {stack.join(""): entry}}
-            else {return {value: entry}}
+            if value.trim_space().len == 0 {return {stack.join(""): entry}}
+            else {return {value.trim_space(): entry}}
         }
     }
     return {}

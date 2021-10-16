@@ -1,4 +1,4 @@
 /* test
 test */
 // test
-pub int x = 4
+pub_ int x = 4

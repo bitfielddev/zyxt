@@ -12,7 +12,8 @@ pub enum TokenType {
     concat_opr // ..
     swap_opr // ><
     type_opr // istype, isnttype et
-    literal // 3, true, null, etc
+    literal // true, null, etc
+	literal_number // 3, 24, -34.5 etc
 	literal_string // "abc" etc
     statement_end // ;
     comment
@@ -80,29 +81,34 @@ const token_catalogue = {
 	}
 	"=": TokenEntry{
 		type_: .assignment_opr
-		next_prohibited: r"="
+		next_prohibited: r"[^=]"
 	}
 	"hoi": TokenEntry{
 		type_: .flag
-		next_prohibited: r"\S"
+		next_prohibited: r"\s"
 	}
 	"pub": TokenEntry{
 		type_: .flag
-		next_prohibited: r"\S"
+		next_prohibited: r"\s"
 	}
 	"priv": TokenEntry{
 		type_: .flag
-		next_prohibited: r"\S"
+		next_prohibited: r"\s"
 	}
 	"prot": TokenEntry{
 		type_: .flag
-		next_prohibited: r"\S"
+		next_prohibited: r"\s"
 	}
 	"const": TokenEntry{
 		type_: .flag
-		next_prohibited: r"\S"
+		next_prohibited: r"\s"
 	}
 	"": TokenEntry{
+		type_: .literal_number
+		prohibited: r"\D"
+		next_prohibited: r"\d"
+	}
+	" ": TokenEntry{
 		type_: .variable
 		prohibited: r"\W"
 		next_prohibited: r"[\W\s]"
