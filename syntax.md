@@ -141,13 +141,13 @@ x++; // increase value of x by 1
 x--; // decrease value of x by 1
 
 === Bitwise ===
-b~ x; // complement
-x b& y; // and
-x b| y; // or
-x b^ y; // xor
-x b<< y; // leftshift
-x b>> y; // rightshift
-x b>>> y; // 0-fill rightshift
+\~ x; // complement
+x \& y; // and
+x \| y; // or
+x \^ y; // xor
+x \<< y; // leftshift
+x \>> y; // rightshift
+x \>>> y; // 0-fill rightshift
 
 === Assignment ===
 x = 1; // assignment
@@ -159,12 +159,12 @@ x /f= y; // divide x by y, and floor x
 x /c= y; // divide x by y, and ceiling x
 x /~= y; // divide x by y, and round x
 x %= y; // x modulo y, store value in x
-x b&= y; // bitwise and with y
-x b|= y; // bitwise or with y
-x b^= y; // bitwise xor with y
-x b<<= y; // bitwise leftshift by y
-x b>>= y; // bitwise rightshift by y
-x b>>>= y; // bitwise 0-fill rightshift by y
+x \&= y; // bitwise and with y
+x \|= y; // bitwise or with y
+x \^= y; // bitwise xor with y
+x \<<= y; // bitwise leftshift by y
+x \>>= y; // bitwise rightshift by y
+x \>>>= y; // bitwise 0-fill rightshift by y
 
 === Relational ===
 x == y; // equal

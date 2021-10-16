@@ -4,18 +4,20 @@ pub enum TokenType {
     multiline_comment_start // /*
     multiline_comment_end // */
     flag // hoi, pub, priv, prot, const
-    unary_opr // b~, ++, ! etc
+    unary_opr // \~, ++, ! etc
     assignment_opr // =, +=, etc
-    arithmetic_bitwise_opr // +, -, /f, rt, b& etc
+    arithmetic_bitwise_opr // +, -, /f, rt, \& etc
     relational_opr // ==, >, is etc
     logical_opr // &&, ||, ^^ etc
     concat_opr // ..
     swap_opr // ><
-    type_opr // istype, isnttype et
+    type_opr // istype, isnttype etc
     literal_misc // true, null, etc
 	literal_number // 3, 24, -34.5 etc
 	literal_string // "abc" etc
     statement_end // ;
+	bracket_open // (, [, {
+	bracket_close // ), ], }
     comment
     variable
 	null
@@ -82,11 +84,11 @@ const token_catalogue = {
 	}
 	"+": TokenEntry{
 		type_: .arithmetic_bitwise_opr
-		next_prohibited: r"[^-=]"
+		next_prohibited: r"[^+-=]"
 	}
 	"-": TokenEntry{
 		type_: .arithmetic_bitwise_opr
-		next_prohibited: r"[^+=]"
+		next_prohibited: r"[^+-=]"
 	}
 	"+-": TokenEntry{
 		type_: .arithmetic_bitwise_opr
@@ -154,33 +156,167 @@ const token_catalogue = {
 		type_: .arithmetic_bitwise_opr
 		match_whole: true
 	}
-	"b&": TokenEntry{
+	"\\&": TokenEntry{
 		type_: .arithmetic_bitwise_opr
 		next_prohibited: r"[^=]"
 	}
-	"b|": TokenEntry{
+	"\\|": TokenEntry{
 		type_: .arithmetic_bitwise_opr
 		next_prohibited: r"[^=]"
 	}
-	"b^": TokenEntry{
+	"\\^": TokenEntry{
 		type_: .arithmetic_bitwise_opr
 		next_prohibited: r"[^=]"
 	}
-	"b<<": TokenEntry{
+	"\\<<": TokenEntry{
 		type_: .arithmetic_bitwise_opr
 		next_prohibited: r"[^=]"
 	}
-	"b>>": TokenEntry{
+	"\\>>": TokenEntry{
 		type_: .arithmetic_bitwise_opr
-		next_prohibited: r"[^=]"
+		next_prohibited: r"[^=>]"
 	}
-	"b>>>": TokenEntry{
+	"\\>>>": TokenEntry{
 		type_: .arithmetic_bitwise_opr
 		next_prohibited: r"[^=]"
 	}
 	"=": TokenEntry{
 		type_: .assignment_opr
 		next_prohibited: r"[^=]"
+	}
+	"+=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"-=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"*=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"/=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"/f=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"/c=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"/~=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"%=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"\\&=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"\\|=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"\\^=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"\\<<=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"\\>>=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"\\>>>=": TokenEntry{
+		type_: .assignment_opr
+	}
+	"==": TokenEntry{
+		type_: .relational_opr
+		next_prohibited: r"[^=]"
+	}
+	">": TokenEntry{
+		type_: .relational_opr
+		next_prohibited: r"[^=<]"
+	}
+	"<": TokenEntry{
+		type_: .relational_opr
+		next_prohibited: r"[^=]"
+	}
+	">=": TokenEntry{
+		type_: .relational_opr
+	}
+	"<=": TokenEntry{
+		type_: .relational_opr
+	}
+	"!=": TokenEntry{
+		type_: .relational_opr
+		next_prohibited: r"[^=]"
+	}
+	"===": TokenEntry{
+		type_: .relational_opr
+	}
+	"!==": TokenEntry{
+		type_: .relational_opr
+	}
+	"is": TokenEntry{
+		type_: .relational_opr
+		match_whole: true
+		next_prohibited: "[^tn]"
+	}
+	"isnt": TokenEntry{
+		type_: .relational_opr
+		match_whole: true
+		next_prohibited: "[^t]"
+	}
+	"&&": TokenEntry{
+		type_: .logical_opr
+	}
+	"||": TokenEntry{
+		type_: .logical_opr
+	}
+	"^^": TokenEntry{
+		type_: .logical_opr
+	}
+	"istype": TokenEntry{
+		type_: .type_opr
+		match_whole: true
+	}
+	"isnttype": TokenEntry{
+		type_: .type_opr
+		match_whole: true
+	}
+	"><": TokenEntry{
+		type_: .swap_opr
+	}
+	"..": TokenEntry{
+		type_: .concat_opr
+	}
+	"++": TokenEntry{
+		type_: .unary_opr
+	}
+	"--": TokenEntry{
+		type_: .unary_opr
+	}
+	"\\~": TokenEntry{
+		type_: .unary_opr
+	}
+	"!": TokenEntry{
+		type_: .unary_opr
+		next_prohibited: r"[^=]"
+	}
+	"(": TokenEntry{
+		type_: .bracket_open
+	}
+	"[": TokenEntry{
+		type_: .bracket_open
+	}
+	"{": TokenEntry{
+		type_: .bracket_open
+	}
+	")": TokenEntry{
+		type_: .bracket_close
+	}
+	"]": TokenEntry{
+		type_: .bracket_close
+	}
+	"}": TokenEntry{
+		type_: .bracket_close
 	}
 	"hoi": TokenEntry{
 		type_: .flag
