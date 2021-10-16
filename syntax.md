@@ -118,11 +118,21 @@ void: void, for functions
 === Arithmetic ===
 x + y; // addition
 x - y; // subtraction
-x * y; // multiplication
-x / y; // division
-x /f y; // division & floor
-x /c y; // division & ceiling
-x /~ y; // division & round
+x +- y; // additon-subtraction
+x ± y; // addition-subtraction
+x -+ y; // subtraction-addition
+x ∓ y; // subtraction-addition
+x · y; // multiplication (1st priority) (can be dot product)
+x * y; // multiplication (2nd priority)
+x × y; // multiplication (3rd priority) (can be cross product)
+x / y; // division (1st priority)
+x ÷ y; // division (2nd priority)
+x /f y; // division (1st priority) & floor
+x /c y; // division (1st priority) & ceiling
+x /~ y; // division (1st priority) & round
+x ÷f y; // division (2nd priority) & floor
+x ÷c y; // division (2nd priority) & ceiling
+x ÷~ y; // division (2nd priority) & round
 x ^ y; // exponent
 x % y; // modulo
 x rt y; // root (y^(1/x))
@@ -154,7 +164,7 @@ x b|= y; // bitwise or with y
 x b^= y; // bitwise xor with y
 x b<<= y; // bitwise leftshift by y
 x b>>= y; // bitwise rightshift by y
-x b>>> y; // bitwise 0-fill rightshift by y
+x b>>>= y; // bitwise 0-fill rightshift by y
 
 === Relational ===
 x == y; // equal
