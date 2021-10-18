@@ -2,7 +2,14 @@ import os
 const version = "0.0.0"
 
 fn compile(input string) []Token {
-	return lex(input)
+	println("Lexing")
+	lexed := lex(input)
+	println(lexed)
+	println("Parsing")
+	parsed := parse(lexed)
+	println(parsed)
+	out := []Token{}
+	return out
 }
 
 fn main() {

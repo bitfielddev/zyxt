@@ -24,6 +24,7 @@ mut:
     literal_string_column int
     token_line int = 1
     token_column int = 1
+    brackets []string
 }
 
 fn get_next_char(mut c &string, input string, mut stack []string, mut position &PositionTracker, states StateTracker) ?bool {
@@ -47,8 +48,8 @@ fn get_next_char_noupdate(input string, position PositionTracker) string {
 
 fn get_token_entry(stack []string, states &StateTracker, input string, position PositionTracker) (map[string]TokenEntry) {
     for prevalue, entry in token_catalogue {
-        mut value := ""
-        if prevalue == " " {value = ""} else {value = prevalue}
+        mut value := prevalue
+        for value.len != 0 && value[value.len-1].ascii_str() == " " {value = value[..value.len-1]}
         mut re1 := regex.regex_opt(entry.next_prohibited) or {panic(err)}
         mut re2 := regex.regex_opt(entry.prohibited) or {panic(err)}
 

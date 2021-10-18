@@ -39,3 +39,9 @@ fn error_1_0(filename string) {
 fn error_1_1(filename string) {
 	error_main("1.1", "File $filename cannot be opened")
 }
+
+// parentheses not closed properly
+[noreturn]
+fn error_2_0(paren1 string, paren2 string) {
+	error_main("2.0", "Parentheses `$paren1` and `$paren2` not closed properly; try swapping them")
+}

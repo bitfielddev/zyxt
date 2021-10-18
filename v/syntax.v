@@ -12,6 +12,7 @@ pub enum TokenType {
     concat_opr // ..
     swap_opr // ><
     type_opr // istype, isnttype etc
+	dot_opr // .
     literal_misc // true, null, etc
 	literal_number // 3, 24, -34.5 etc
 	literal_string // "abc" etc
@@ -302,21 +303,46 @@ const token_catalogue = {
 	}
 	"(": TokenEntry{
 		type_: .bracket_open
+		state_changes: fn (mut states &StateTracker) {
+			states.brackets << "("
+		}
 	}
 	"[": TokenEntry{
 		type_: .bracket_open
+		state_changes: fn (mut states &StateTracker) {
+			states.brackets << "["
+		}
 	}
 	"{": TokenEntry{
 		type_: .bracket_open
+		state_changes: fn (mut states &StateTracker) {
+			states.brackets << "{"
+		}
 	}
 	")": TokenEntry{
 		type_: .bracket_close
+		state_changes: fn (mut states &StateTracker) {
+			if states.brackets.last() != ")" {error_2_0(")", states.brackets.last())}
+			states.brackets.delete_last()
+		}
 	}
 	"]": TokenEntry{
 		type_: .bracket_close
+		state_changes: fn (mut states &StateTracker) {
+			if states.brackets.last() != "]" {error_2_0("]", states.brackets.last())}
+			states.brackets.delete_last()
+		}
 	}
 	"}": TokenEntry{
 		type_: .bracket_close
+		state_changes: fn (mut states &StateTracker) {
+			if states.brackets.last() != "}" {error_2_0("}", states.brackets.last())}
+			states.brackets.delete_last()
+		}
+	}
+	".": TokenEntry{
+		type_: .dot_opr
+		next_prohibited: r"[^\.]"
 	}
 	"hoi": TokenEntry{
 		type_: .flag
@@ -353,6 +379,9 @@ const token_catalogue = {
 	"inf": TokenEntry{
 		type_: .literal_misc
 		next_prohibited: r"\s"
+	}
+	";": TokenEntry{
+		type_: .statement_end
 	}
 	"": TokenEntry{
 		type_: .literal_number
