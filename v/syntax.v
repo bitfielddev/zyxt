@@ -322,21 +322,30 @@ const token_catalogue = {
 	")": TokenEntry{
 		type_: .bracket_close
 		state_changes: fn (mut states &StateTracker) {
-			if states.brackets.last() != ")" {error_2_0(")", states.brackets.last())}
+			if states.brackets.last() != ")" {
+				error_pos(states.position.line, states.position.column)
+				error_2_0(")", states.brackets.last())
+			}
 			states.brackets.delete_last()
 		}
 	}
 	"]": TokenEntry{
 		type_: .bracket_close
 		state_changes: fn (mut states &StateTracker) {
-			if states.brackets.last() != "]" {error_2_0("]", states.brackets.last())}
+			if states.brackets.last() != "]" {
+				error_pos(states.position.line, states.position.column)
+				error_2_0("]", states.brackets.last())
+			}
 			states.brackets.delete_last()
 		}
 	}
 	"}": TokenEntry{
 		type_: .bracket_close
 		state_changes: fn (mut states &StateTracker) {
-			if states.brackets.last() != "}" {error_2_0("}", states.brackets.last())}
+			if states.brackets.last() != "}" {
+				error_pos(states.position.line, states.position.column)
+				error_2_0("}", states.brackets.last())
+			}
 			states.brackets.delete_last()
 		}
 	}

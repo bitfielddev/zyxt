@@ -17,6 +17,7 @@ mut:
 
 struct StateTracker {
 mut:
+    position &PositionTracker
     is_literal_string bool
     literal_string_type TokenType = .null
     prev_type TokenType = .null
@@ -78,7 +79,7 @@ fn lex(preinput string) []Token {
 	mut stack := []string{}
 
     mut position := PositionTracker{}
-    mut states := StateTracker{}
+    mut states := StateTracker{position: &position}
     mut c := input[0].ascii_str()
     stack << c
 
