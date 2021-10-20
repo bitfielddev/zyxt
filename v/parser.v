@@ -2,18 +2,39 @@ struct Element {
 	line int
 	column int
 }
-
 struct Comment {
 	Element
 	content string
+}
+struct Variable {
+	Element
+	parent Variable
+}
+struct VariableFunction {
+	Variable
+	parameters []Element
 }
 
 struct Statement {
 	content []Token
 }
 
+interface ElementGroup {}
+
 fn parse_expression(tokens []Token) {
-	// 
+	mut cursor = 0
+	mut cursor_end = -1
+	mut selected = Token{}
+	mut new_tokens = []ElementGroup{} 
+
+	// parse functions and ()s
+	for cursor < tokens.length {
+		selected = tokens[selected]
+		if selected.type_ == .dot_opr {
+			
+		}
+		cursor++
+	}
 }
 
 fn parse(preinput []Token) []string {
@@ -39,14 +60,14 @@ fn parse(preinput []Token) []string {
 	mut token_stack := []Token{}
 	for token in input {
 		if token.type_ == .statement_end {
-			out << stack
-			stack.clear()
-		} else {stack << token}
+			token_statements << token_stack
+			token_stack.clear()
+		} else {token_stack << token}
 	}
 
 	// generate an AST for each statement
-	for statement in token_statements {
-		
+	for mut statement in token_statements {
+		parse_expression(statement)
 	}
 
 	return []
