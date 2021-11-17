@@ -90,14 +90,12 @@ fn lex(preinput string) []Token {
         }
         for token, token_entry in get_token_entry(stack, states, input, position) {
             if token_entry.is_literal_string_end {
-                lstring := stack.join("").substr(0, stack.len-token.len)
-                lstring_token := Token{
-                    value: lstring
+                out << Token{
+                    value: stack.join("").substr(0, stack.len-token.len)
                     type_: states.literal_string_type
                     line: states.literal_string_line
                     column: states.literal_string_column
                 }
-                out << lstring_token
                 stack.clear()
                 stack << token.split("")
                 states.literal_string_line = 0
@@ -110,13 +108,12 @@ fn lex(preinput string) []Token {
             token_entry.state_changes(mut states)
             states.prev_type = token_entry.type_
 
-            new_token := Token{
+            out << Token{
                 value: stack.join("")
                 type_: token_entry.type_
                 line: position.line
                 column: position.column+1-token.len
             }
-            out << new_token
             stack.clear()
         }
 
