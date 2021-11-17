@@ -8,7 +8,8 @@ fn error_pos(line int, column int) {
     print(ansi['red']+"($line, $column): "+ansi['reset'])
 }
 
-// Internal error
+/* 0. Internal errors, have to do with the compiler-interpreter itself */
+// V error
 [noreturn]
 fn error_0_0(stack string) {
     error_main("0.0", "Internal error: \n$stack")
@@ -20,6 +21,7 @@ fn error_0_1() {
     error_main("0.1", "No file given")
 }
 
+/* 1. File and I/O errors */
 // File does not exist
 [noreturn]
 fn error_1_0(filename string) {
@@ -32,12 +34,15 @@ fn error_1_1(filename string) {
     error_main("1.1", "File `$filename` cannot be opened")
 }
 
+/* 2. Syntax errors */
 // parentheses not closed properly
 [noreturn]
 fn error_2_0(paren1 string, paren2 string) {
     error_main("2.0", "Parentheses `$paren1` and `$paren2` not closed properly; try swapping them")
 }
 
+/* 3. Variable & attribute errors */
+// Variable not defined
 [noreturn]
 fn error_3_0(varname string) {
     error_main("3.0", "Undefined variable `$varname`")

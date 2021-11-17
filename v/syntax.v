@@ -85,11 +85,11 @@ const token_catalogue = {
     }
     "+": TokenEntry{
         type_: .arithmetic_bitwise_opr
-        next_prohibited: r"[^+-=]"
+        next_prohibited: r"[^+\-=]"
     }
     "-": TokenEntry{
         type_: .arithmetic_bitwise_opr
-        next_prohibited: r"[^+-=]"
+        next_prohibited: r"[^+\-=]"
     }
     "+-": TokenEntry{
         type_: .arithmetic_bitwise_opr
@@ -389,13 +389,17 @@ const token_catalogue = {
         type_: .literal_misc
         next_prohibited: r"\s"
     }
+    "undef": TokenEntry{
+        type_: .literal_misc
+        next_prohibited: r"\s"
+    }
     ";": TokenEntry{
         type_: .statement_end
     }
     "": TokenEntry{
         type_: .literal_number
         prohibited: r"\D"
-        next_prohibited: r"\d"
+        next_prohibited: r"\D"
     }
     " ": TokenEntry{
         type_: .variable

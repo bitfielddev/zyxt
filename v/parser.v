@@ -21,20 +21,35 @@ struct Statement {
 
 interface ElementGroup {}
 
-fn parse_expression(tokens []Token) {
+fn parse_expression(pretokens []Token) {
     mut cursor := 0
     mut cursor_end := -1
     mut selected := Token{}
-    mut new_tokens := []ElementGroup{} 
+    mut tokens := pretokens.clone()
+    mut new_tokens := []Token{}
 
-    // parse functions and ()s
+    // find & form 
     for cursor < tokens.len {
         selected = tokens[cursor]
-        if selected.type_ == .dot_opr {
-            
-        }
+        if selected.type_ == .dot_opr
+           && (cursor != 0 && tokens[cursor-1].type_ == .literal_number)
+           && (cursor != tokens.len-1 && tokens[cursor+1].type_ == .literal_number) {
+            new_tokens.delete_last()
+            new_tokens << Token{
+                value: tokens[cursor-1].value + "." + tokens[cursor+1].value
+                type_: .literal_number
+                line: tokens[cursor-1].line
+                column: tokens[cursor-1].column
+            }
+            cursor++
+        } else {new_tokens << tokens[cursor]}
+        
         cursor++
     }
+    tokens = new_tokens.clone()
+    new_tokens.clear()
+    // parse functions and ()s
+    println(tokens)
 }
 
 fn parse(preinput []Token) []string {
@@ -60,7 +75,7 @@ fn parse(preinput []Token) []string {
     mut token_stack := []Token{}
     for token in input {
         if token.type_ == .statement_end {
-            token_statements << token_stack
+            token_statements << token_stack.clone()
             token_stack.clear()
         } else {token_stack << token}
     }
