@@ -19,6 +19,7 @@ pub enum TokenType {
     statement_end // ;
     bracket_open // (, [, {
     bracket_close // ), ], }
+    comma // ,
     comment
     variable
     null
@@ -395,6 +396,9 @@ const token_catalogue = {
     }
     ";": TokenEntry{
         type_: .statement_end
+    }
+    ",": TokenEntry{
+        type_: .comma
     }
     "": TokenEntry{
         type_: .literal_number

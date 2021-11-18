@@ -128,5 +128,29 @@ fn lex(preinput string) []Token {
         }
         out << new_token
     }
-    return out
+
+
+    mut cursor := 0
+    mut selected := Token{}
+    mut new_out := []Token{}
+    // find & form decimal literal numbers
+    for cursor < out.len {
+        selected = out[cursor]
+        if selected.type_ == .dot_opr
+           && (cursor != 0 && out[cursor-1].type_ == .literal_number)
+           && (cursor != out.len-1 && out[cursor+1].type_ == .literal_number) {
+            new_out.delete_last()
+            new_out << Token{
+                value: out[cursor-1].value + "." + out[cursor+1].value
+                type_: .literal_number
+                line: out[cursor-1].line
+                column: out[cursor-1].column
+            }
+            cursor++
+        } else {new_out << out[cursor]}
+        
+        cursor++
+    }
+    
+    return new_out
 }

@@ -6,50 +6,48 @@ struct Comment {
     Element
     content string
 }
+
 struct Variable {
     Element
-    parent &Variable
+    name string
+    datatype string
 }
 struct VariableFunction {
     Variable
     parameters []Element
+    datatype string = "func"
+}
+struct VariableAttribute {
+    Variable
+    parent &Variable
+}
+struct VariableAttributeFunction {
+    VariableAttribute
+    VariableFunction
 }
 
 struct Statement {
     content []Token
 }
 
-interface ElementGroup {}
+type ElementToken = Element
+                  | Comment
+                  | Variable | VariableFunction | VariableAttribute | VariableAttributeFunction
+                  | Token
 
-fn parse_expression(pretokens []Token) {
+fn parse_expression(pretokens []ElementToken) []ElementToken {
     mut cursor := 0
-    mut cursor_end := -1
-    mut selected := Token{}
+    mut selected := ElementToken(Token{})
     mut tokens := pretokens.clone()
-    mut new_tokens := []Token{}
+    mut new_tokens := []ElementToken{}
 
-    // find & form 
-    for cursor < tokens.len {
-        selected = tokens[cursor]
-        if selected.type_ == .dot_opr
-           && (cursor != 0 && tokens[cursor-1].type_ == .literal_number)
-           && (cursor != tokens.len-1 && tokens[cursor+1].type_ == .literal_number) {
-            new_tokens.delete_last()
-            new_tokens << Token{
-                value: tokens[cursor-1].value + "." + tokens[cursor+1].value
-                type_: .literal_number
-                line: tokens[cursor-1].line
-                column: tokens[cursor-1].column
-            }
-            cursor++
-        } else {new_tokens << tokens[cursor]}
-        
-        cursor++
-    }
+
     tokens = new_tokens.clone()
     new_tokens.clear()
-    // parse functions and ()s
-    println(tokens)
+    // parse ()s
+    println(tokens) 
+
+    return []ElementToken{}
 }
 
 fn parse(preinput []Token) []string {
@@ -71,13 +69,13 @@ fn parse(preinput []Token) []string {
     })
 
     // separate token inputs into statements
-    mut token_statements := [][]Token{}
-    mut token_stack := []Token{}
+    mut token_statements := [][]ElementToken{}
+    mut token_stack := []ElementToken{}
     for token in input {
         if token.type_ == .statement_end {
             token_statements << token_stack.clone()
             token_stack.clear()
-        } else {token_stack << token}
+        } else {token_stack << ElementToken(token)}
     }
 
     // generate an AST for each statement
