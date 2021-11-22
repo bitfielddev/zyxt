@@ -8,5 +8,14 @@ const ansi = {
     "purple": "\033[0;35m"
     "cyan": "\033[0;36m"
     "white": "\033[0;37m"
+    "bright_black": "\033[1;30m"
+    "bright_red": "\033[1;31m"
+    "bright_green": "\033[1;32m"
+    "bright_yellow": "\033[1;33m"
+    "bright_blue": "\033[1;34m"
+    "bright_purple": "\033[1;35m"
+    "bright_cyan": "\033[1;36m"
+    "bright_white": "\033[1;37m"
+    "background_bright_red": "\033[1;41m"
 }
 

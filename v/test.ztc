@@ -2,4 +2,4 @@
 test */
 // test
 pub int x = 4 + 54.3;
-std.println(x);
+std.println(x;

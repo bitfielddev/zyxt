@@ -1,11 +1,11 @@
 [noreturn]
 fn error_main(code string, msg string) {
-    println(ansi['red']+"Error $code: $msg"+ansi['reset'])
+    println(ansi['background_bright_red']+"Error $code"+ansi['reset']+ansi['bright_red']+" $msg"+ansi['reset'])
     exit(1)
 }
 
 fn error_pos(line int, column int) {
-    print(ansi['red']+"($line, $column): "+ansi['reset'])
+    print(ansi['background_bright_red']+"($line, $column) "+ansi['reset'])
 }
 
 /* 0. Internal errors, have to do with the compiler-interpreter itself */
