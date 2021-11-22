@@ -5,6 +5,7 @@ struct Token {
 	type_ TokenType
 	line int
 	column int
+    categories []TokenCategory
 }
 
 struct PositionTracker {
@@ -89,7 +90,7 @@ fn lex(preinput string) []Token {
             continue
         }
         for token, token_entry in get_token_entry(stack, states, input, position) {
-            if token_entry.is_literal_string_end {
+            if TokenCategory.literal_string_end in token_entry.categories {
                 out << Token{
                     value: stack.join("").substr(0, stack.len-token.len)
                     type_: states.literal_string_type
@@ -100,7 +101,7 @@ fn lex(preinput string) []Token {
                 stack << token.split("")
                 states.literal_string_line = 0
                 states.literal_string_column = 0
-            } else if token_entry.is_literal_string_start {
+            } else if TokenCategory.literal_string_start in token_entry.categories {
                 states.literal_string_line = position.line
                 states.literal_string_column = position.column+1
             }
@@ -113,6 +114,7 @@ fn lex(preinput string) []Token {
                 type_: token_entry.type_
                 line: position.line
                 column: position.column+1-token.len
+                categories: token_entry.categories
             }
             stack.clear()
         }
@@ -150,6 +152,12 @@ fn lex(preinput string) []Token {
         } else {new_out << out[cursor]}
         
         cursor++
+    }
+
+    // if states.brackets still has stuff, parens were not closed properly
+    if states.brackets.len != 0 {
+        error_pos(position.line, position.column)
+        error_2_0_1(states.brackets.last())
     }
     
     return new_out

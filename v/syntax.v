@@ -17,12 +17,29 @@ pub enum TokenType {
     literal_number // 3, 24, -34.5 etc
     literal_string // "abc" etc
     statement_end // ;
-    bracket_open // (, [, {
-    bracket_close // ), ], }
+    open_paren // (
+    close_paren // )
+    open_square_paren // [
+    close_square_paren // ]
+    open_curly_paren // {
+    close_curly_paren // }
+    open_angle_paren // <
+    close_angle_paren // >
     comma // ,
+    colon // :
     comment
     variable
     null
+}
+
+pub enum TokenCategory {
+    operator
+    literal
+    parenthesis
+    open_paren
+    close_paren
+    literal_string_start //  marks the start of a literal string
+    literal_string_end // marks the end of a literal string
 }
 
 // TODO make functions for literal_strings
@@ -35,8 +52,7 @@ struct TokenEntry {
     prohibited string // the values for the token to be invalid, given as a regex (if the token is a "")
     next_prohibited string // the values for the next character that are invalid, given as a regex of a single character
     match_whole bool // false: only the end of the stack needs to match; true: the entire stack needs to match
-    is_literal_string_start bool // if the token marks the start of a literal string.
-    is_literal_string_end bool // if the token marks the end of a literal_string.
+    categories []TokenCategory
 }
 
 const token_catalogue = {
@@ -49,7 +65,7 @@ const token_catalogue = {
             states.is_literal_string = true
             states.literal_string_type = .comment
         }
-        is_literal_string_start: true
+        categories: [.literal_string_start]
     }
     "\n": TokenEntry{
         type_: .comment_end
@@ -60,7 +76,7 @@ const token_catalogue = {
             states.is_literal_string = false
             states.literal_string_type = .null
         }
-        is_literal_string_end: true
+        categories: [.literal_string_end]
     }
     "/*": TokenEntry{
         type_: .multiline_comment_start
@@ -71,7 +87,7 @@ const token_catalogue = {
             states.is_literal_string = true
             states.literal_string_type = .comment
         }
-        is_literal_string_start: true
+        categories: [.literal_string_start]
     }
     "*/": TokenEntry{
         type_: .multiline_comment_end
@@ -82,7 +98,7 @@ const token_catalogue = {
             states.is_literal_string = false
             states.literal_string_type = .null
         }
-        is_literal_string_end: true
+        categories: [.literal_string_end]
     }
     "+": TokenEntry{
         type_: .arithmetic_bitwise_opr
@@ -303,49 +319,49 @@ const token_catalogue = {
         next_prohibited: r"[^=]"
     }
     "(": TokenEntry{
-        type_: .bracket_open
+        type_: .open_paren
         state_changes: fn (mut states &StateTracker) {
             states.brackets << "("
         }
     }
     "[": TokenEntry{
-        type_: .bracket_open
+        type_: .open_square_paren
         state_changes: fn (mut states &StateTracker) {
             states.brackets << "["
         }
     }
     "{": TokenEntry{
-        type_: .bracket_open
+        type_: .open_curly_paren
         state_changes: fn (mut states &StateTracker) {
             states.brackets << "{"
         }
     }
     ")": TokenEntry{
-        type_: .bracket_close
+        type_: .close_paren
         state_changes: fn (mut states &StateTracker) {
             if states.brackets.last() != "(" {
                 error_pos(states.position.line, states.position.column)
-                error_2_0(")", states.brackets.last())
+                error_2_0_0(")", states.brackets.last())
             }
             states.brackets.delete_last()
         }
     }
     "]": TokenEntry{
-        type_: .bracket_close
+        type_: .close_square_paren
         state_changes: fn (mut states &StateTracker) {
             if states.brackets.last() != "[" {
                 error_pos(states.position.line, states.position.column)
-                error_2_0("]", states.brackets.last())
+                error_2_0_0("]", states.brackets.last())
             }
             states.brackets.delete_last()
         }
     }
     "}": TokenEntry{
-        type_: .bracket_close
+        type_: .close_curly_paren
         state_changes: fn (mut states &StateTracker) {
             if states.brackets.last() != "{" {
                 error_pos(states.position.line, states.position.column)
-                error_2_0("}", states.brackets.last())
+                error_2_0_0("}", states.brackets.last())
             }
             states.brackets.delete_last()
         }
@@ -356,42 +372,52 @@ const token_catalogue = {
     }
     "hoi": TokenEntry{
         type_: .flag
+        match_whole: true
         next_prohibited: r"\s"
     }
     "pub": TokenEntry{
         type_: .flag
+        match_whole: true
         next_prohibited: r"\s"
     }
     "priv": TokenEntry{
         type_: .flag
+        match_whole: true
         next_prohibited: r"\s"
     }
     "prot": TokenEntry{
         type_: .flag
+        match_whole: true
         next_prohibited: r"\s"
     }
     "const": TokenEntry{
         type_: .flag
+        match_whole: true
         next_prohibited: r"\s"
     }
     "true": TokenEntry{
         type_: .literal_misc
+        match_whole: true
         next_prohibited: r"\s"
     }
     "false": TokenEntry{
         type_: .literal_misc
+        match_whole: true
         next_prohibited: r"\s"
     }
     "null": TokenEntry{
         type_: .literal_misc
+        match_whole: true
         next_prohibited: r"\s"
     }
     "inf": TokenEntry{
         type_: .literal_misc
+        match_whole: true
         next_prohibited: r"\s"
     }
     "undef": TokenEntry{
         type_: .literal_misc
+        match_whole: true
         next_prohibited: r"\s"
     }
     ";": TokenEntry{
@@ -399,6 +425,9 @@ const token_catalogue = {
     }
     ",": TokenEntry{
         type_: .comma
+    }
+    ":": TokenEntry{
+        type_: .colon
     }
     "": TokenEntry{
         type_: .literal_number

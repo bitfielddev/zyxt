@@ -37,8 +37,12 @@ fn error_1_1(filename string) {
 /* 2. Syntax errors */
 // parentheses not closed properly
 [noreturn]
-fn error_2_0(paren1 string, paren2 string) {
-    error_main("2.0", "Parentheses `$paren1` and `$paren2` not closed properly; try swapping them")
+fn error_2_0_0(paren1 string, paren2 string) {
+    error_main("2.0.0", "Parentheses `$paren1` and `$paren2` not closed properly; try swapping them")
+}
+[noreturn]
+fn error_2_0_1(paren string) {
+    error_main("2.0.1", "Parenthesis `$paren` not closed")
 }
 
 /* 3. Variable & attribute errors */
