@@ -103,238 +103,304 @@ const token_catalogue = {
     "+": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^+\-=]"
+        categories: [.operator]
     }
     "-": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^+\-=]"
+        categories: [.operator]
     }
     "+-": TokenEntry{
         type_: .arithmetic_bitwise_opr
+        categories: [.operator]
     }
     "-+": TokenEntry{
         type_: .arithmetic_bitwise_opr
+        categories: [.operator]
     }
     "±": TokenEntry{
         type_: .arithmetic_bitwise_opr
+        categories: [.operator]
     }
     "∓": TokenEntry{
         type_: .arithmetic_bitwise_opr
+        categories: [.operator]
     }
     "·": TokenEntry{
         type_: .arithmetic_bitwise_opr
+        categories: [.operator]
     }
     "*": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^=/]"
+        categories: [.operator]
     }
     "×": TokenEntry{
         type_: .arithmetic_bitwise_opr
+        categories: [.operator]
     }
     "/": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^fc~=*/]"
+        categories: [.operator]
     }
     "÷": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^fc~=]"
+        categories: [.operator]
     }
     "/f": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     "/c": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     "/~": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     "÷f": TokenEntry{
         type_: .arithmetic_bitwise_opr
+        categories: [.operator]
     }
     "÷c": TokenEntry{
         type_: .arithmetic_bitwise_opr
+        categories: [.operator]
     }
     "÷~": TokenEntry{
         type_: .arithmetic_bitwise_opr
+        categories: [.operator]
     }
     "^": TokenEntry{
         type_: .arithmetic_bitwise_opr
+        categories: [.operator]
     }
     "%": TokenEntry{
         type_: .arithmetic_bitwise_opr
+        categories: [.operator]
         next_prohibited: r"[^=]"
     }
     "rt": TokenEntry{
         type_: .arithmetic_bitwise_opr
         match_whole: true
+        categories: [.operator]
     }
     "lg": TokenEntry{
         type_: .arithmetic_bitwise_opr
         match_whole: true
+        categories: [.operator]
     }
     "\\&": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     "\\|": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     "\\^": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     "\\<<": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     "\\>>": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^=>]"
+        categories: [.operator]
     }
     "\\>>>": TokenEntry{
         type_: .arithmetic_bitwise_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     "=": TokenEntry{
         type_: .assignment_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     "+=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "-=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "*=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "/=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "/f=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "/c=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "/~=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "%=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "\\&=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "\\|=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "\\^=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "\\<<=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "\\>>=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "\\>>>=": TokenEntry{
         type_: .assignment_opr
+        categories: [.operator]
     }
     "==": TokenEntry{
         type_: .relational_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     ">": TokenEntry{
         type_: .relational_opr
         next_prohibited: r"[^=<]"
+        categories: [.operator]
     }
     "<": TokenEntry{
         type_: .relational_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     ">=": TokenEntry{
         type_: .relational_opr
+        categories: [.operator]
     }
     "<=": TokenEntry{
         type_: .relational_opr
+        categories: [.operator]
     }
     "!=": TokenEntry{
         type_: .relational_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     "===": TokenEntry{
         type_: .relational_opr
+        categories: [.operator]
     }
     "!==": TokenEntry{
         type_: .relational_opr
+        categories: [.operator]
     }
     "is": TokenEntry{
         type_: .relational_opr
         match_whole: true
         next_prohibited: "[^tn]"
+        categories: [.operator]
     }
     "isnt": TokenEntry{
         type_: .relational_opr
         match_whole: true
         next_prohibited: "[^t]"
+        categories: [.operator]
     }
     "&&": TokenEntry{
         type_: .logical_opr
+        categories: [.operator]
     }
     "||": TokenEntry{
         type_: .logical_opr
+        categories: [.operator]
     }
     "^^": TokenEntry{
         type_: .logical_opr
+        categories: [.operator]
     }
     "istype": TokenEntry{
         type_: .type_opr
         match_whole: true
+        categories: [.operator]
     }
     "isnttype": TokenEntry{
         type_: .type_opr
         match_whole: true
+        categories: [.operator]
     }
     "><": TokenEntry{
         type_: .swap_opr
+        categories: [.operator]
     }
     "..": TokenEntry{
         type_: .concat_opr
+        categories: [.operator]
     }
     "++": TokenEntry{
         type_: .unary_opr
+        categories: [.operator]
     }
     "--": TokenEntry{
         type_: .unary_opr
+        categories: [.operator]
     }
     "\\~": TokenEntry{
         type_: .unary_opr
+        categories: [.operator]
     }
     "!": TokenEntry{
         type_: .unary_opr
         next_prohibited: r"[^=]"
+        categories: [.operator]
     }
     "(": TokenEntry{
         type_: .open_paren
         state_changes: fn (mut states &StateTracker) {
             states.brackets << "("
         }
+        categories: [.parenthesis, .open_paren]
     }
     "[": TokenEntry{
         type_: .open_square_paren
         state_changes: fn (mut states &StateTracker) {
             states.brackets << "["
         }
+        categories: [.parenthesis, .open_paren]
     }
     "{": TokenEntry{
         type_: .open_curly_paren
         state_changes: fn (mut states &StateTracker) {
             states.brackets << "{"
         }
+        categories: [.parenthesis, .open_paren]
     }
     ")": TokenEntry{
         type_: .close_paren
@@ -348,6 +414,7 @@ const token_catalogue = {
             }
             states.brackets.delete_last()
         }
+        categories: [.parenthesis, .close_paren]
     }
     "]": TokenEntry{
         type_: .close_square_paren
@@ -361,6 +428,7 @@ const token_catalogue = {
             }
             states.brackets.delete_last()
         }
+        categories: [.parenthesis, .close_paren]
     }
     "}": TokenEntry{
         type_: .close_curly_paren
@@ -374,10 +442,12 @@ const token_catalogue = {
             }
             states.brackets.delete_last()
         }
+        categories: [.parenthesis, .close_paren]
     }
     ".": TokenEntry{
         type_: .dot_opr
         next_prohibited: r"[^\.]"
+        categories: [.operator]
     }
     "hoi": TokenEntry{
         type_: .flag
@@ -408,29 +478,40 @@ const token_catalogue = {
         type_: .literal_misc
         match_whole: true
         next_prohibited: r"\s"
+        categories: [.literal]
     }
     "false": TokenEntry{
         type_: .literal_misc
         match_whole: true
         next_prohibited: r"\s"
+        categories: [.literal]
     }
     "null": TokenEntry{
         type_: .literal_misc
         match_whole: true
         next_prohibited: r"\s"
+        categories: [.literal]
     }
     "inf": TokenEntry{
         type_: .literal_misc
         match_whole: true
         next_prohibited: r"\s"
+        categories: [.literal]
     }
     "undef": TokenEntry{
         type_: .literal_misc
         match_whole: true
         next_prohibited: r"\s"
+        categories: [.literal]
     }
     ";": TokenEntry{
         type_: .statement_end
+        state_changes: fn(states &StateTracker) {
+            if states.brackets.len != 0 && states.brackets.last() in ["(", "["] {
+                error_pos(states.position.filename, states.position.line, states.position.column)
+                error_2_0_1(states.brackets.last())
+            }
+        }
     }
     ",": TokenEntry{
         type_: .comma
@@ -442,6 +523,7 @@ const token_catalogue = {
         type_: .literal_number
         prohibited: r"\D"
         next_prohibited: r"\D"
+        categories: [.literal]
     }
     " ": TokenEntry{
         type_: .variable

@@ -1,6 +1,6 @@
 [noreturn]
 fn error_main(code string, msg string) {
-    println(ansi['background_bright_red']+"Error $code"+ansi['reset']+ansi['bright_red']+" $msg"+ansi['reset'])
+    println(ansi['background_red']+"Error $code"+ansi['reset']+ansi['bright_red']+" $msg"+ansi['reset'])
     exit(1)
 }
 

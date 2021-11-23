@@ -97,6 +97,7 @@ fn lex(preinput string, filename string) []Token {
                     type_: states.literal_string_type
                     line: states.literal_string_line
                     column: states.literal_string_column
+                    categories: [.literal]
                 }
                 stack.clear()
                 stack << token.split("")
@@ -128,6 +129,7 @@ fn lex(preinput string, filename string) []Token {
             type_: .variable
             line: position.line
             column: position.column+1-stack.join("").trim_space().len
+            categories: []
         }
         out << new_token
     }
@@ -148,6 +150,7 @@ fn lex(preinput string, filename string) []Token {
                 type_: .literal_number
                 line: out[cursor-1].line
                 column: out[cursor-1].column
+                categories: [.literal]
             }
             cursor++
         } else {new_out << out[cursor]}
