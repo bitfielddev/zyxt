@@ -2,15 +2,15 @@ import os
 import time
 const version = "0.0.0"
 
-fn compile(input string) []Token {
+fn compile(input string, filename string) []Token {
     start := time.now()
     println("Lexing")
-    lexed := lex(input)
+    lexed := lex(input, filename)
     after_lexed := time.now()
     println(lexed)
 
     println("Parsing")
-    parsed := parse(lexed)
+    parsed := parse(lexed, filename)
     after_parsed := time.now()
     println(parsed)
 
@@ -31,7 +31,7 @@ fn main() {
         'run' {
             filename := os.args[2] or {error_0_1()}
             content := os.read_file(filename) or {error_1_1(filename)}
-            println(compile(content))
+            println(compile(content, filename))
         }
         'compile' {
             println("Coming soon!")

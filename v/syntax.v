@@ -339,8 +339,11 @@ const token_catalogue = {
     ")": TokenEntry{
         type_: .close_paren
         state_changes: fn (mut states &StateTracker) {
-            if states.brackets.last() != "(" {
-                error_pos(states.position.line, states.position.column)
+            if states.brackets.len == 0 {
+                error_pos(states.position.filename, states.position.line, states.position.column)
+                error_2_0_2(")")
+            } else if states.brackets.last() != "(" {
+                error_pos(states.position.filename, states.position.line, states.position.column)
                 error_2_0_0(")", states.brackets.last())
             }
             states.brackets.delete_last()
@@ -349,8 +352,11 @@ const token_catalogue = {
     "]": TokenEntry{
         type_: .close_square_paren
         state_changes: fn (mut states &StateTracker) {
-            if states.brackets.last() != "[" {
-                error_pos(states.position.line, states.position.column)
+            if states.brackets.len == 0 {
+                error_pos(states.position.filename, states.position.line, states.position.column)
+                error_2_0_2("]")
+            } else if states.brackets.last() != "[" {
+                error_pos(states.position.filename, states.position.line, states.position.column)
                 error_2_0_0("]", states.brackets.last())
             }
             states.brackets.delete_last()
@@ -359,8 +365,11 @@ const token_catalogue = {
     "}": TokenEntry{
         type_: .close_curly_paren
         state_changes: fn (mut states &StateTracker) {
-            if states.brackets.last() != "{" {
-                error_pos(states.position.line, states.position.column)
+            if states.brackets.len == 0 {
+                error_pos(states.position.filename, states.position.line, states.position.column)
+                error_2_0_2("}")
+            } else if states.brackets.last() != "{" {
+                error_pos(states.position.filename, states.position.line, states.position.column)
                 error_2_0_0("}", states.brackets.last())
             }
             states.brackets.delete_last()

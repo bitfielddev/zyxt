@@ -4,8 +4,8 @@ fn error_main(code string, msg string) {
     exit(1)
 }
 
-fn error_pos(line int, column int) {
-    print(ansi['background_bright_red']+"($line, $column) "+ansi['reset'])
+fn error_pos(filename string, line int, column int) {
+    print(ansi['background_bright_red']+"$filename:$line:$column "+ansi['reset'])
 }
 
 /* 0. Internal errors, have to do with the compiler-interpreter itself */
@@ -43,6 +43,15 @@ fn error_2_0_0(paren1 string, paren2 string) {
 [noreturn]
 fn error_2_0_1(paren string) {
     error_main("2.0.1", "Parenthesis `$paren` not closed")
+}
+[noreturn]
+fn error_2_0_2(paren string) {
+    error_main("2.0.2", "Parenthesis `$paren` not opened")
+}
+
+// unexpected ident
+fn error_2_1(ident string) {
+    error_main("2.1", "Unexpected ident `$ident`")
 }
 
 /* 3. Variable & attribute errors */

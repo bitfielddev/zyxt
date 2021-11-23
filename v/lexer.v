@@ -10,6 +10,7 @@ struct Token {
 
 struct PositionTracker {
 mut:
+    filename string = "[unknown]"
     line int = 1
     column int = 1
     prev_column int = -1
@@ -71,7 +72,7 @@ fn get_token_entry(stack []string, states &StateTracker, input string, position 
 }
 
 
-fn lex(preinput string) []Token {
+fn lex(preinput string, filename string) []Token {
     if preinput.trim_space().len == 0 {
         return []Token{}
     }
@@ -79,7 +80,7 @@ fn lex(preinput string) []Token {
 	mut out := []Token{}
 	mut stack := []string{}
 
-    mut position := PositionTracker{}
+    mut position := PositionTracker{filename: filename}
     mut states := StateTracker{position: &position}
     mut c := input[0].ascii_str()
     stack << c
@@ -156,7 +157,7 @@ fn lex(preinput string) []Token {
 
     // if states.brackets still has stuff, parens were not closed properly
     if states.brackets.len != 0 {
-        error_pos(position.line, position.column)
+        error_pos(filename, position.line, position.column)
         error_2_0_1(states.brackets.last())
     }
     
