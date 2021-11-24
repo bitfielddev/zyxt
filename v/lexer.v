@@ -1,13 +1,5 @@
 import regex
 
-struct Token {
-	value string
-	type_ TokenType
-	line int
-	column int
-    categories []TokenCategory
-}
-
 struct PositionTracker {
 mut:
     filename string = "[unknown]"

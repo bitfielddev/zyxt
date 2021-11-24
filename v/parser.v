@@ -1,54 +1,3 @@
-struct Element {
-    line int
-    column int
-}
-struct Comment {
-    Element
-    content string
-}
-struct Call {
-    Element
-    called ElementGroup
-    args []ElementGroup
-    // kwargs map[string]ElementGroup
-}
-
-struct Literal {
-    Element
-    type_ Variable
-    content string
-}
-struct LiteralFunction {
-    Literal
-    type_ Variable = Variable{name: "func"}
-    content []ElementGroup
-}
-
-struct Variable {
-    Element
-    name string
-}
-struct VariableAttribute {
-    Element
-    name string
-    parent ElementGroup
-}
-
-struct NullElement {
-    Element
-}
-
-struct Statement {
-    content []Token
-}
-
-type ElementGroup = Element
-                  | Comment
-                  | Call
-                  | Literal | LiteralFunction
-                  | Variable | VariableAttribute
-                  | Token | NullElement
-
 fn parse_expression(pre_elements []ElementGroup, filename string) []ElementGroup {
     mut cursor := 0
     mut selected := ElementGroup(Token{})
@@ -182,7 +131,7 @@ fn parse_expression(pre_elements []ElementGroup, filename string) []ElementGroup
                             parent: catcher2
                         })
                         cursor++
-                    } else if mut prev_element is Literal && mut next_element is Token {
+                    } else if mut next_element is Token {
                         catcher2 = ElementGroup(VariableAttribute{
                             line: next_element.line
                             column: next_element.column
@@ -251,6 +200,13 @@ fn parse_expression(pre_elements []ElementGroup, filename string) []ElementGroup
     elements = new_elements.clone()
     new_elements.clear()
     cursor = 0
+
+    for cursor < elements.len {
+        selected = elements[cursor]
+        if mut selected is Token {
+
+        }
+    }
 
 
     println(elements)

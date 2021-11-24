@@ -1,3 +1,12 @@
+/* === TOKEN === */
+struct Token {
+	value string
+	type_ TokenType
+	line int
+	column int
+    categories []TokenCategory
+}
+
 pub enum TokenType {
     comment_start // //
     comment_end // \n
@@ -531,3 +540,178 @@ const token_catalogue = {
         next_prohibited: r"[\W\s]"
     }
 }
+
+/* === PARSER === */
+struct Element {
+    line int
+    column int
+}
+struct Comment {
+    Element
+    content string
+}
+struct Call {
+    Element
+    called ElementGroup
+    args []ElementGroup
+    // kwargs map[string]ElementGroup
+}
+
+enum UnaryOprType { // ++ -- + - ! \~
+    increment
+    decrement
+    plussign
+    minussign
+    not
+    bit_complement
+}
+const UnaryOprMap = {
+    "++": UnaryOprType.increment
+    "--": UnaryOprType.decrement
+    "+": UnaryOprType.plussign
+    "-": UnaryOprType.minussign
+    "!": UnaryOprType.not
+    "\~": UnaryOprType.bit_complement
+}
+enum BinaryOprType {
+    logarithm
+    root
+    dotmult
+    astmult
+    crossmult
+    div
+    floordiv
+    ceildiv
+    rounddiv
+    fractdiv
+    floorfractdiv
+    ceilfractdiv
+    roundfractdiv
+    modulo
+    plus
+    minus
+    plusminus
+    minusplus
+    bit_lshift
+    bit_rshift
+    bit_0rshift
+    and
+    or_
+    xor
+    gt
+    lt
+    gteq
+    lteq
+    eq
+    noteq
+    istype
+    isnttype
+    is_
+    isnt
+    iseq
+    isntnoteq
+    bit_and
+    bit_or
+    bit_xor
+    concat
+    swap
+}
+const BinaryOprMap = {
+    "lg": BinaryOprMap.logarithm
+    "rt": BinaryOprMap.root
+    "·": BinaryOprMap.dotmult
+    "*": BinaryOprMap.astmult
+    "×": BinaryOprMap.crossmult
+    "÷": BinaryOprMap.div
+    "÷f": BinaryOprMap.floordiv
+    "÷c": BinaryOprMap.ceildiv
+    "÷~": BinaryOprMap.rounddiv
+    "/": BinaryOprMap.fractdiv
+    "/c": BinaryOprMap.floorfractdiv
+    "/f": BinaryOprMap.ceilfractdiv
+    "/~": BinaryOprMap.roundfractdiv
+    "%": BinaryOprMap.modulo
+    "+": BinaryOprMap.plus
+    "-": BinaryOprMap.minus
+    "+-": BinaryOprMap.plusminus
+    "-+": BinaryOprMap.minusplus
+    "±": BinaryOprMap.plusminus
+    "∓": BinaryOprMap.minusplus
+    "\<<": BinaryOprMap.bit_lshift
+    "\>>": BinaryOprMap.bit_rshift
+    "\>>>": BinaryOprMap.bit_0rshift
+    "&&": BinaryOprMap.and
+    "||": BinaryOprMap.or_
+    "^^": BinaryOprMap.xor
+    ">": BinaryOprMap.gt
+    "<": BinaryOprMap.lt
+    "≥": BinaryOprMap.gteq
+    "≤": BinaryOprMap.lteq
+    "==": BinaryOprMap.eq
+    "!=": BinaryOprMap.noteq
+    "istype": BinaryOprMap.istype
+    "isnttype": BinaryOprMap.isnttype
+    "is": BinaryOprMap.is_
+    "isnt": BinaryOprMap.isnt
+    "===": BinaryOprMap.iseq
+    "!==": BinaryOprMap.isntnoteq
+    "\&": BinaryOprMap.bit_and
+    "\|": BinaryOprMap.bit_or
+    "\^": BinaryOprMap.bit_xor
+    "..": BinaryOprMap.concat
+    "><": BinaryOprMap.swap
+}
+struct UnaryOpr {
+    Element
+    type_ UnaryOprType
+    operand ElementGroup
+}
+struct BinaryOpr {
+    Element
+    type_ BinaryOprType
+    operand1 ElementGroup
+    operand2 ElementGroup
+}
+struct TernaryOpr { // ?:
+    Element
+    condition1 ElementGroup
+    branch1 ElementGroup
+    branch2 ElementGroup
+}
+
+struct Literal {
+    Element
+    type_ Variable
+    content string
+}
+struct LiteralFunction {
+    Literal
+    type_ Variable = Variable{name: "func"}
+    content []ElementGroup
+}
+
+struct Variable {
+    Element
+    name string
+}
+struct VariableAttribute {
+    Element
+    name string
+    parent ElementGroup
+}
+
+struct NullElement {
+    Element
+}
+
+struct Statement {
+    content []Token
+}
+
+type ElementGroup = Element
+                  | Comment
+                  | Call
+                  | Literal | LiteralFunction
+                  | Variable | VariableAttribute
+                  | Token | NullElement
+
