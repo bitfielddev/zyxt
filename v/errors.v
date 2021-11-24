@@ -54,6 +54,11 @@ fn error_2_1(ident string) {
     error_main("2.1", "Unexpected ident `$ident`")
 }
 
+// assignment without variable name
+fn error_2_2() {
+    error_main("2.2", "Assignment without variable name")
+}
+
 /* 3. Variable & attribute errors */
 // Variable not defined
 [noreturn]

@@ -201,10 +201,53 @@ fn parse_expression(pre_elements []ElementGroup, filename string) []ElementGroup
     new_elements.clear()
     cursor = 0
 
+    // parse operations
     for cursor < elements.len {
         selected = elements[cursor]
         if mut selected is Token {
-
+            if selected.type_ == .assignment_opr {
+                if cursor == 0 {
+                    error_pos(filename, selected.line, selected.column)
+                    error_2_2()
+                }
+                mut subcursor := cursor-1
+                prev_selected := elements[cursor-1]
+                if mut prev_selected is Variable
+                || mut prev_selected is VariableAttribute {
+                    subcursor--
+                    if subcursor<0
+                    || (elements[subcursor] !is Variable
+                    && elements[subcursor] !is VariableAttribute) {
+                        new_elements << ElementGroup(AssignmentOpr{
+                            line: selected.line
+                            column: selected.column
+                            variable: prev_selected
+                            content: parse_expression(elements[cursor+1..], filename).clone()
+                        })
+                    }
+                    type_ = elements[subcursor]
+                    mut flags := []Flag{}
+                    catch_loop3: for subcursor >= 0 {
+                        subselected = elements[subcursor]
+                        if mut subselected is Token {
+                            if subselected.type_ == .flag {
+                                flags.append(FlagMap[subselected.value])
+                            } else {break catch_loop3}
+                        } else {break catch_loop3}
+                    }
+                    new_elements << ElementGroup(AssignmentOpr{
+                        line: selected.line
+                        column: selected.column
+                        variable: prev_selected
+                        content: parse_expression(elements[cursor+1..], filename).clone()
+                        flags: flags.clone()
+                        type_: type_
+                    })
+                } else {
+                    error_pos(filename, prev_selected.line, prev_selected.column)
+                    error_2_1(typeof(prev_selected).name)
+                }
+            }
         }
     }
 

@@ -557,25 +557,16 @@ struct Call {
     // kwargs map[string]ElementGroup
 }
 
-enum UnaryOprType { // ++ -- + - ! \~
+enum OprType {
     increment
     decrement
     plussign
     minussign
     not
     bit_complement
-}
-const UnaryOprMap = {
-    "++": UnaryOprType.increment
-    "--": UnaryOprType.decrement
-    "+": UnaryOprType.plussign
-    "-": UnaryOprType.minussign
-    "!": UnaryOprType.not
-    "\~": UnaryOprType.bit_complement
-}
-enum BinaryOprType {
     logarithm
     root
+    power
     dotmult
     astmult
     crossmult
@@ -615,60 +606,120 @@ enum BinaryOprType {
     bit_xor
     concat
     swap
+    null
+}
+const UnaryOprMap = {
+    "++": OprType.increment
+    "--": OprType.decrement
+    "+": OprType.plussign
+    "-": OprType.minussign
+    "!": OprType.not
+    "\~": OprType.bit_complement
 }
 const BinaryOprMap = {
-    "lg": BinaryOprMap.logarithm
-    "rt": BinaryOprMap.root
-    "·": BinaryOprMap.dotmult
-    "*": BinaryOprMap.astmult
-    "×": BinaryOprMap.crossmult
-    "÷": BinaryOprMap.div
-    "÷f": BinaryOprMap.floordiv
-    "÷c": BinaryOprMap.ceildiv
-    "÷~": BinaryOprMap.rounddiv
-    "/": BinaryOprMap.fractdiv
-    "/c": BinaryOprMap.floorfractdiv
-    "/f": BinaryOprMap.ceilfractdiv
-    "/~": BinaryOprMap.roundfractdiv
-    "%": BinaryOprMap.modulo
-    "+": BinaryOprMap.plus
-    "-": BinaryOprMap.minus
-    "+-": BinaryOprMap.plusminus
-    "-+": BinaryOprMap.minusplus
-    "±": BinaryOprMap.plusminus
-    "∓": BinaryOprMap.minusplus
-    "\<<": BinaryOprMap.bit_lshift
-    "\>>": BinaryOprMap.bit_rshift
-    "\>>>": BinaryOprMap.bit_0rshift
-    "&&": BinaryOprMap.and
-    "||": BinaryOprMap.or_
-    "^^": BinaryOprMap.xor
-    ">": BinaryOprMap.gt
-    "<": BinaryOprMap.lt
-    "≥": BinaryOprMap.gteq
-    "≤": BinaryOprMap.lteq
-    "==": BinaryOprMap.eq
-    "!=": BinaryOprMap.noteq
-    "istype": BinaryOprMap.istype
-    "isnttype": BinaryOprMap.isnttype
-    "is": BinaryOprMap.is_
-    "isnt": BinaryOprMap.isnt
-    "===": BinaryOprMap.iseq
-    "!==": BinaryOprMap.isntnoteq
-    "\&": BinaryOprMap.bit_and
-    "\|": BinaryOprMap.bit_or
-    "\^": BinaryOprMap.bit_xor
-    "..": BinaryOprMap.concat
-    "><": BinaryOprMap.swap
+    "lg": OprType.logarithm
+    "rt": OprType.root
+    "^": OprType.power
+    "·": OprType.dotmult
+    "*": OprType.astmult
+    "×": OprType.crossmult
+    "÷": OprType.div
+    "÷f": OprType.floordiv
+    "÷c": OprType.ceildiv
+    "÷~": OprType.rounddiv
+    "/": OprType.fractdiv
+    "/c": OprType.floorfractdiv
+    "/f": OprType.ceilfractdiv
+    "/~": OprType.roundfractdiv
+    "%": OprType.modulo
+    "+": OprType.plus
+    "-": OprType.minus
+    "+-": OprType.plusminus
+    "-+": OprType.minusplus
+    "±": OprType.plusminus
+    "∓": OprType.minusplus
+    "\<<": OprType.bit_lshift
+    "\>>": OprType.bit_rshift
+    "\>>>": OprType.bit_0rshift
+    "&&": OprType.and
+    "||": OprType.or_
+    "^^": OprType.xor
+    ">": OprType.gt
+    "<": OprType.lt
+    "≥": OprType.gteq
+    "≤": OprType.lteq
+    "==": OprType.eq
+    "!=": OprType.noteq
+    "istype": OprType.istype
+    "isnttype": OprType.isnttype
+    "is": OprType.is_
+    "isnt": OprType.isnt
+    "===": OprType.iseq
+    "!==": OprType.isntnoteq
+    "\&": OprType.bit_and
+    "\|": OprType.bit_or
+    "\^": OprType.bit_xor
+    "..": OprType.concat
+    "><": OprType.swap
+}
+const OrderMap = {
+    OprType.increment: 2
+    OprType.decrement: 2
+    OprType.plussign: 2
+    OprType.minussign: 2
+    OprType.not: 2
+    OprType.bit_complement: 2
+    OprType.logarithm: 4
+    OprType.root: 4
+    OprType.power: 3
+    OprType.dotmult: 5
+    OprType.astmult: 6
+    OprType.crossmult: 7
+    OprType.div: 7
+    OprType.floordiv: 7
+    OprType.ceildiv: 7
+    OprType.rounddiv: 7
+    OprType.fractdiv: 6
+    OprType.floorfractdiv: 6
+    OprType.ceilfractdiv: 6
+    OprType.roundfractdiv: 6
+    OprType.modulo: 6
+    OprType.plus: 8
+    OprType.minus: 8
+    OprType.plusminus: 8
+    OprType.minusplus: 8
+    OprType.bit_lshift: 9
+    OprType.bit_rshift: 9
+    OprType.bit_0rshift: 9
+    OprType.and: 14
+    OprType.or_: 16
+    OprType.xor: 15
+    OprType.gt: 10
+    OprType.lt: 10
+    OprType.gteq: 10
+    OprType.lteq: 10
+    OprType.eq: 10
+    OprType.noteq: 10
+    OprType.istype: 10
+    OprType.isnttype: 10
+    OprType.is_: 10
+    OprType.isnt: 10
+    OprType.iseq: 10
+    OprType.isntnoteq: 10
+    OprType.bit_and: 11
+    OprType.bit_or: 13
+    OprType.bit_xor: 12
+    OprType.concat: 17
+    OprType.swap: 19
 }
 struct UnaryOpr {
     Element
-    type_ UnaryOprType
+    type_ OprType
     operand ElementGroup
 }
 struct BinaryOpr {
     Element
-    type_ BinaryOprType
+    type_ OprType
     operand1 ElementGroup
     operand2 ElementGroup
 }
@@ -677,6 +728,28 @@ struct TernaryOpr { // ?:
     condition1 ElementGroup
     branch1 ElementGroup
     branch2 ElementGroup
+}
+struct AssignmentOpr {
+    Element
+    variable Variable
+    content ElementGroup
+    flags []Flag
+    type_ Variable
+    operation OprType = .null
+}
+const FlagMap = {
+    "hoi": Flag.hoi
+    "pub": Flag.pub_
+    "priv": Flag.priv
+    "prot": Flag.prot
+    "const": Flag.const_
+}
+enum Flag {
+    hoi
+    pub_
+    priv
+    prot
+    const_
 }
 
 struct Literal {

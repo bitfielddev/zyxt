@@ -194,24 +194,24 @@ x .. y; // concatenation
 === Order ===
 1. foobar() foo.bar() foobar[] foo.bar ()
 2. ++ -- + - ! \~
-3a. ^
-3b. lg rt
-4a. ·
-4b. * / /f /c /~ %
-4c. × ÷ ÷f ÷c ÷~
-5. + - +- -+ ± ∓
-6. \<< \>> \>>>
-7. < > <= => == != === !== is isnt istype isnttype
-8a. \&
-8b. \|
-8c. \^
-9a. &&
-9b. ^^
-9c. ||
-10. ..
-11. ?:
-12a. ><
-12b. all assignment operators
+3. ^
+4. lg rt
+5. ·
+6. * / /f /c /~ %
+7. × ÷ ÷f ÷c ÷~
+8. + - +- -+ ± ∓
+9. \<< \>> \>>>
+10. < > <= => == != === !== is isnt istype isnttype
+11. \&
+12. \^
+13. \|
+14. &&
+15. ^^
+16. ||
+17. ..
+18. ?:
+19. ><
+20. all assignment operators
 
 ```
 **Implemented:** ~~Lexer Parser Instructor Interpreter~~
