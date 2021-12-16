@@ -1,13 +1,14 @@
+// fancy glyphs: 
+
 [noreturn]
 fn error_main(code string, msg string) {
-    println(ansi['background_red']+"Error $code"+ansi['reset']+ansi['bright_red']+" $msg"+ansi['reset'])
+    println(ansi['background_yellow']+"Error $code"+ansi['yellow']+""+ansi['reset']+ansi['bright_red']+" $msg"+ansi['reset'])
     exit(1)
 }
 
 fn error_pos(filename string, line int, column int) {
-    print(ansi['background_bright_red']+"$filename:$line:$column "+ansi['reset'])
+    print(ansi['background_bright_red']+"$filename:$line:$column"+ansi['bright_red']+ansi['background_yellow']+""+ansi['reset'])
 }
-
 /* 0. Internal errors, have to do with the compiler-interpreter itself */
 // V error
 [noreturn]
