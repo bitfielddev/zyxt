@@ -135,7 +135,7 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
                 type_: token_entry.type_,
                 line: states.position.line,
                 column: states.position.column + 1 - token.len() as i32,
-                categories: token_entry.categories
+                categories: token_entry.categories.clone()
             });
             stack.clear();
         }
