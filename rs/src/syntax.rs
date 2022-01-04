@@ -1,11 +1,13 @@
 use std::collections::HashMap;
+use derivative::Derivative;
+use crate::lexer::StateTracker;
 
 pub struct Token {
-    value: string,
-    type_: TokenType,
-    line: i32,
-    column: i32,
-    categories: [TokenCategory]
+    pub(crate) value: String,
+    pub(crate) type_: TokenType,
+    pub(crate) line: i32,
+    pub(crate) column: i32,
+    pub(crate) categories: Vec<TokenCategory>
 }
 
 pub enum TokenType {
@@ -42,6 +44,12 @@ pub enum TokenType {
     Null
 }
 
+impl PartialEq for TokenType {
+    fn eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
 pub enum TokenCategory {
     Operator,
     Literal,
@@ -52,26 +60,38 @@ pub enum TokenCategory {
     LiteralStringEnd // marks the end of a literal string
 }
 
+impl PartialEq for TokenCategory {
+    fn eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
 #[derive(Derivative)]
-pub struct TokenEntry {
+pub struct TokenEntry<'a> {
     pub(crate) type_: TokenType,
-    #[derivative(Default(value = |states: &StateTracker| { !states.is_literal_string }))]
-    condition: dyn Fn(StateTracker) -> bool,
-    #[derivative(Default(value = |states: &StateTracker| {}))]
-    state_changes: dyn Fn(StateTracker),
+    #[derivative(Default(value = "|states: &StateTracker| -> bool { !states.is_literal_string }"))]
+    pub(crate) condition: &'a dyn Fn(&StateTracker) -> bool,
+    #[derivative(Default(value = "|states: &mut StateTracker| {}"))]
+    pub(crate) state_changes: &'a dyn FnMut(&mut StateTracker),
+    #[derivative(Default(value = ""))]
     pub(crate) prohibited: String,
+    #[derivative(Default(value = ""))]
     pub(crate) next_prohibited: String,
     pub(crate) match_whole: bool,
-    pub(crate) categories: [TokenCategory]
+    pub(crate) categories: Vec<TokenCategory>
 }
 
 pub(crate) const TOKEN_CATALOGUE: HashMap<&str, TokenEntry> = HashMap::from([
-    ("//", TokenEntry(
-        type_ = TokenType::CommentStart,
-        condition = |states| {states.prev_type != TokenType::CommentStart},
-        state_changes = |states| {
+    ("//", TokenEntry{
+        type_: TokenType::CommentStart,
+        condition: &|states: &StateTracker| -> bool {states.prev_type != TokenType::CommentStart},
+        state_changes: &|states: &mut StateTracker| {
             states.is_literal_string = true;
             states.literal_string_type = TokenType::Comment;
         },
-        categories: [TokenCategory::LiteralStringStart]))
+        prohibited: "".to_string(),
+        next_prohibited: "".to_string(),
+        match_whole: false,
+        categories: vec![TokenCategory::LiteralStringStart]
+    })
 ]);
