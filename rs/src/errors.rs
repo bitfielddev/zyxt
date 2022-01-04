@@ -1,9 +1,9 @@
 use std::process::exit;
-use ansi_term::Color::{Red, Yellow};
+use ansi_term::Color::{Black, Red, Yellow};
 use ansi_term::Style;
 
 fn error_main(code: &str, message: String) {
-    println!("{}", Style::new().on(Yellow).paint(format!("Error {}", code)).to_string()
+    println!("{}", Black.on(Yellow).paint(format!("Error {}", code)).to_string()
     + &*Yellow.paint("").to_string()
     + &*Red.bold().paint(format!(" {}", message)).to_string());
     exit(1)

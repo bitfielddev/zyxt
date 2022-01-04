@@ -36,13 +36,14 @@ fn compile(input: String, filename: &String) -> Vec<Token> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let cmd = if args.len() <= 0 {"help"} else {&args[1]};
+    let default = String::new();
+    let cmd = &**args.get(1).unwrap_or(&default);
     match cmd {
         "version" => {
             println!("Zyxt version {}", VERSION);
         }
         "run" => {
-            if args.len() <= 1 {errors::error_0_1()};
+            if args.len() <= 2 {errors::error_0_1()};
             let filename = &args[2];
             let mut content = String::new();
             match File::open(filename) {
@@ -62,6 +63,7 @@ fn main() {
         }
         _ => {
             // print help page
+            println!("Coming soon!")
         }
     };
 }

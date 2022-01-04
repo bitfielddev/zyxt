@@ -126,7 +126,7 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
                 states.literal_string_column = states.position.column + 1;
             }
 
-            (token_entry.state_changes)(&mut states);
+            states = (token_entry.state_changes)(&mut states);
             states.prev_type = token_entry.type_;
 
             out.push(Token{

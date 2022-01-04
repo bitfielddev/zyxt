@@ -18,7 +18,7 @@ impl Display for Token {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TokenType {
     CommentStart, // //
     CommentEnd, // \n
@@ -53,13 +53,7 @@ pub enum TokenType {
     Null
 }
 
-impl PartialEq for TokenType {
-    fn eq(&self, other: &Self) -> bool {
-        self == other
-    }
-}
-
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TokenCategory {
     Operator,
     Literal,
@@ -70,12 +64,6 @@ pub enum TokenCategory {
     LiteralStringEnd // marks the end of a literal string
 }
 
-impl PartialEq for TokenCategory {
-    fn eq(&self, other: &Self) -> bool {
-        self == other
-    }
-}
-
 #[derive(Derivative)]
 pub struct TokenEntry<'a> {
     pub(crate) value: &'a str,
@@ -83,7 +71,7 @@ pub struct TokenEntry<'a> {
     #[derivative(Default(value = "|states| { !states.is_literal_string }"))]
     pub(crate) condition: &'a dyn Fn(&StateTracker) -> bool,
     #[derivative(Default(value = "|states| {}"))]
-    pub(crate) state_changes: &'a mut dyn FnMut(&mut StateTracker),
+    pub(crate) state_changes: &'a dyn Fn(&StateTracker) -> StateTracker,
     #[derivative(Default(value = ""))]
     pub(crate) prohibited: String,
     #[derivative(Default(value = ""))]
@@ -97,9 +85,11 @@ pub(crate) fn token_catalogue() -> Vec<TokenEntry<'static>> {vec![
         value: "//",
         type_: TokenType::CommentStart,
         condition: &|states| {states.prev_type != TokenType::CommentStart},
-        state_changes: &mut|states| {
-            states.is_literal_string = true;
-            states.literal_string_type = TokenType::Comment;
+        state_changes: &|states| {
+            let mut new_states = states.clone();
+            new_states.is_literal_string = true;
+            new_states.literal_string_type = TokenType::Comment;
+            new_states
         },
         prohibited: String::new(),
         next_prohibited: String::new(),
