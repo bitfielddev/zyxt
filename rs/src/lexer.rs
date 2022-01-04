@@ -1,36 +1,53 @@
 use regex::Regex;
-use derivative::Derivative;
 use crate::syntax::{TokenEntry, TokenType, TokenCategory, token_catalogue};
 use crate::{errors, Token};
 
-#[derive(Derivative, Clone)]
+#[derive(Clone)]
 pub(crate) struct PositionTracker {
-    #[derivative(Default(value = "[unknown]"))]
     pub(crate) filename: String,
-    #[derivative(Default(value = "1"))]
-    pub(crate) line: i32,
-    #[derivative(Default(value = "1"))]
-    pub(crate) column: i32,
-    #[derivative(Default(value = "-1"))]
-    prev_column: i32,
-    char_pos: i32
+    pub(crate) line: u32,
+    pub(crate) column: u32,
+    prev_column: u32,
+    char_pos: u32
+}
+impl Default for PositionTracker {
+    fn default() -> Self {
+        PositionTracker {
+            filename: String::from("[unknown]"),
+            line: 1,
+            column: 1,
+            prev_column: 0,
+            char_pos: 0
+        }
+    }
 }
 
-#[derive(Derivative, Clone)]
+#[derive(Clone)]
 pub(crate) struct StateTracker {
     pub(crate) position: PositionTracker,
     pub(crate) is_literal_string: bool,
-    #[derivative(Default(value = "TokenType::Null"))]
     pub(crate) literal_string_type: TokenType,
-    #[derivative(Default(value = "TokenType::Null"))]
     pub(crate) prev_type: TokenType,
-    literal_string_line: i32,
-    literal_string_column: i32,
-    #[derivative(Default(value = "1"))]
-    token_line: i32,
-    #[derivative(Default(value = "1"))]
-    token_column: i32,
+    literal_string_line: u32,
+    literal_string_column: u32,
+    token_line: u32,
+    token_column: u32,
     pub(crate) brackets: Vec<char>
+}
+impl Default for StateTracker {
+    fn default() -> Self {
+        StateTracker {
+            position: PositionTracker::default(),
+            is_literal_string: false,
+            literal_string_type: TokenType::Null,
+            prev_type: TokenType::Null,
+            literal_string_line: 0,
+            literal_string_column: 0,
+            token_line: 1,
+            token_column: 1,
+            brackets: vec![]
+        }
+    }
 }
 
 fn get_next_char(c: char, input: &String, stack: &mut Vec<String>, states: &mut StateTracker) -> Result<char, bool> {
@@ -58,8 +75,8 @@ fn get_next_char_noupdate(input: &String, states: &StateTracker) -> char {
 
 fn get_token_entry<'a>(stack: &Vec<String>, states: &'a StateTracker, input: &String) -> Option<(String, TokenEntry<'static>)> {
     for entry in token_catalogue().into_iter() {
-        let mut value = entry.value;
-        while value.len() != 0 && value.chars().nth(value.len()-1).unwrap() == ' ' {value = &value[..value.len() - 1]};
+        let value = entry.value;
+        //while value.len() != 0 && value.chars().nth(value.len()-1).unwrap() == ' ' {value = &value[..value.len() - 1]};
         let re1 = Regex::new(&*entry.next_prohibited).unwrap();
         let re2 = Regex::new(&*entry.prohibited).unwrap();
 
@@ -84,7 +101,7 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
 
     let mut states = StateTracker{
         position: PositionTracker {
-            filename: "".to_string(),
+            filename: filename.clone(),
             line: 0,
             column: 0,
             prev_column: 0,
@@ -133,7 +150,7 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
                 value: stack.join(""),
                 type_: token_entry.type_,
                 line: states.position.line,
-                column: states.position.column + 1 - token.len() as i32,
+                column: states.position.column + 1 - token.len() as u32,
                 categories: token_entry.categories
             });
             stack.clear();
@@ -148,7 +165,7 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
             value: stack.join(""),
             type_: TokenType::Variable,
             line: states.position.line,
-            column: states.position.column + 1 - stack.join("").trim().len() as i32,
+            column: states.position.column + 1 - stack.join("").trim().len() as u32,
             categories: &[]
         })
     }

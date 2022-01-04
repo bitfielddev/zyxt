@@ -9,7 +9,7 @@ fn error_main(code: &str, message: String) {
     exit(1)
 }
 
-pub fn error_pos(filename: &String, line: i32, column: i32) {
+pub fn error_pos(filename: &String, line: u32, column: u32) {
     print!("{}", Style::new().on(Red).bold().paint(format!("{} {} {}", filename, line, column)).to_string()
     + &*Red.bold().on(Yellow).paint("").to_string())
 }

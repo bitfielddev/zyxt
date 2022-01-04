@@ -600,7 +600,7 @@ enum OprType {
     is_
     isnt
     iseq
-    isntnoteq
+    isnteq
     bit_and
     bit_or
     bit_xor
@@ -614,7 +614,7 @@ const UnaryOprMap = {
     "+": OprType.plussign
     "-": OprType.minussign
     "!": OprType.not
-    "\~": OprType.bit_complement
+    "\\~": OprType.bit_complement
 }
 const BinaryOprMap = {
     "lg": OprType.logarithm
@@ -638,9 +638,9 @@ const BinaryOprMap = {
     "-+": OprType.minusplus
     "±": OprType.plusminus
     "∓": OprType.minusplus
-    "\<<": OprType.bit_lshift
-    "\>>": OprType.bit_rshift
-    "\>>>": OprType.bit_0rshift
+    "\\<<": OprType.bit_lshift
+    "\\>>": OprType.bit_rshift
+    "\\>>>": OprType.bit_0rshift
     "&&": OprType.and
     "||": OprType.or_
     "^^": OprType.xor
@@ -655,10 +655,10 @@ const BinaryOprMap = {
     "is": OprType.is_
     "isnt": OprType.isnt
     "===": OprType.iseq
-    "!==": OprType.isntnoteq
-    "\&": OprType.bit_and
-    "\|": OprType.bit_or
-    "\^": OprType.bit_xor
+    "!==": OprType.isnteq
+    "\\&": OprType.bit_and
+    "\\|": OprType.bit_or
+    "\\^": OprType.bit_xor
     "..": OprType.concat
     "><": OprType.swap
 }

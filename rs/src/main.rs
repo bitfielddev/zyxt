@@ -1,6 +1,7 @@
 mod errors;
 mod syntax;
 mod lexer;
+mod parser;
 
 use std::env;
 use std::fs::File;
@@ -9,7 +10,7 @@ use std::time::Instant;
 use crate::lexer::lex;
 use crate::syntax::Token;
 
-const VERSION: &str = "0.0.0";
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 fn compile(input: String, filename: &String) -> Vec<Token> {
     println!("Lexing");

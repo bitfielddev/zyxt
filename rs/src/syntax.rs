@@ -1,21 +1,22 @@
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result};
-use derivative::Derivative;
 use crate::errors;
 use crate::lexer::StateTracker;
-use crate::syntax::TokenType::ArithmeticBitwiseOpr;
+
+/* === TOKEN === */
 
 #[derive(Clone)]
 pub struct Token {
     pub(crate) value: String,
     pub(crate) type_: TokenType,
-    pub(crate) line: i32,
-    pub(crate) column: i32,
+    pub(crate) line: u32,
+    pub(crate) column: u32,
     pub(crate) categories: &'static [TokenCategory]
 }
 
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "Token[value={}, type={:?}, line={}, column={}, categories={:?}]",
+        write!(f, "Token[value=\"{}\", type={:?}, line={}, column={}, categories={:?}]",
                self.value, self.type_, self.line, self.column, self.categories)
     }
 }
@@ -66,17 +67,12 @@ pub enum TokenCategory {
     LiteralStringEnd // marks the end of a literal string
 }
 
-#[derive(Derivative)]
 pub struct TokenEntry<'a> {
     pub(crate) value: &'a str,
     pub(crate) type_: TokenType,
-    #[derivative(Default(value = "|states| { !states.is_literal_string }"))]
     pub(crate) condition: &'a dyn Fn(&StateTracker) -> bool,
-    #[derivative(Default(value = "|states| {}"))]
     pub(crate) state_changes: &'a dyn Fn(&StateTracker) -> StateTracker,
-    #[derivative(Default(value = ""))]
     pub(crate) prohibited: &'a str,
-    #[derivative(Default(value = ""))]
     pub(crate) next_prohibited: &'a str,
     pub(crate) match_whole: bool,
     pub(crate) categories: &'a [TokenCategory]
@@ -725,8 +721,7 @@ pub(crate) fn token_catalogue() -> Vec<TokenEntry<'static>> {vec![
                 errors::error_pos(&states.position.filename, states.position.line, states.position.column);
                 errors::error_2_0_1(*states.brackets.last().unwrap());
             }
-            let mut new_states = states.clone();
-            new_states
+            states.clone()
         },
         ..Default::default()
     },
@@ -753,3 +748,232 @@ pub(crate) fn token_catalogue() -> Vec<TokenEntry<'static>> {vec![
         ..Default::default()
     }
 ]}
+
+/* === PARSER === */
+pub(crate) enum OprType {
+    Increment,
+    Decrement,
+    PlusSign,
+    MinusSign,
+    Not,
+    BitComplement,
+    Logarithm,
+    Root,
+    Power,
+    DotMult,
+    AstMult,
+    CrossMult,
+    Div,
+    FloorDiv,
+    CeilDiv,
+    RoundDiv,
+    FractDiv,
+    FloorfractDiv,
+    CeilfractDiv,
+    RoundfractDiv,
+    Modulo,
+    Plus,
+    Minus,
+    PlusMinus,
+    MinusPlus,
+    BitLshift,
+    BitRshift,
+    Bit0Rshift,
+    And,
+    Or,
+    Xor,
+    Gt,
+    Lt,
+    Gteq,
+    Lteq,
+    Eq,
+    Noteq,
+    Istype,
+    Isnttype,
+    Is,
+    Isnt,
+    Iseq,
+    Isnteq,
+    BitAnd,
+    BitOr,
+    BitXor,
+    Concat,
+    Swap,
+    Null
+}
+pub(crate) const UNARYOPRMAP: HashMap<&str, OprType> = HashMap::from([
+    ("++", OprType::Increment),
+    ("--", OprType::Decrement),
+    ("+", OprType::PlusSign),
+    ("-", OprType::MinusSign),
+    ("!", OprType::Not),
+    ("\\~", OprType::BitComplement)
+]);
+pub(crate) const BINARYOPRMAP: HashMap<&str, OprType> = HashMap::from([
+    ("lg": OprType::Logarithm),
+    ("rt", OprType::Root),
+    ("^", OprType::Power),
+    ("·", OprType::DotMult),
+    ("*", OprType::AstMult),
+    ("×", OprType::CrossMult),
+    ("÷", OprType::Div),
+    ("÷f", OprType::FloorDiv),
+    ("÷c", OprType::CeilDiv),
+    ("÷~", OprType::RoundDiv),
+    ("/", OprType::FractDiv),
+    ("/c", OprType::FloorfractDiv),
+    ("/f", OprType::CeilfractDiv),
+    ("/~", OprType::RoundfractDiv),
+    ("%", OprType::Modulo),
+    ("+", OprType::Plus),
+    ("-", OprType::Minus),
+    ("+-", OprType::PlusMinus),
+    ("-+", OprType::MinusPlus),
+    ("±", OprType::PlusMinus),
+    ("∓", OprType::MinusPlus),
+    ("\\<<", OprType::BitLshift),
+    ("\\>>", OprType::BitRshift),
+    ("\\>>>", OprType::Bit0Rshift),
+    ("&&", OprType::And),
+    ("||", OprType::Or),
+    ("^^", OprType::Xor),
+    (">", OprType::Gt),
+    ("<", OprType::Lt),
+    ("≥", OprType::Gteq),
+    ("≤", OprType::Lteq),
+    ("==", OprType::Eq),
+    ("!=", OprType::Noteq),
+    ("istype", OprType::Istype),
+    ("isnttype", OprType::Isnttype),
+    ("is", OprType::Is),
+    ("isnt", OprType::Isnt),
+    ("===", OprType::Iseq),
+    ("!==", OprType::Isnteq),
+    ("\\&", OprType::BitAnd),
+    ("\\|", OprType::BitOr),
+    ("\\^", OprType::BitXor),
+    ("..", OprType::Concat),
+    ("><", OprType::Swap)
+]);
+pub(crate) const ORDERMAP: HashMap<OprType, i32> = HashMap::from([
+    (OprType::Increment, 2),
+    (OprType::Decrement, 2),
+    (OprType::PlusSign, 2),
+    (OprType::MinusSign, 2),
+    (OprType::Not, 2),
+    (OprType::BitComplement, 2),
+    (OprType::Logarithm, 4),
+    (OprType::Root, 4),
+    (OprType::Power, 3),
+    (OprType::DotMult, 5),
+    (OprType::AstMult, 6),
+    (OprType::CrossMult, 7),
+    (OprType::Div, 7),
+    (OprType::FloorDiv, 7),
+    (OprType::CeilDiv, 7),
+    (OprType::RoundDiv, 7),
+    (OprType::FractDiv, 6),
+    (OprType::FloorfractDiv, 6),
+    (OprType::CeilfractDiv, 6),
+    (OprType::RoundfractDiv, 6),
+    (OprType::Modulo, 6),
+    (OprType::Plus, 8),
+    (OprType::Minus, 8),
+    (OprType::PlusMinus, 8),
+    (OprType::MinusPlus, 8),
+    (OprType::BitLshift, 9),
+    (OprType::BitRshift, 9),
+    (OprType::Bit0Rshift, 9),
+    (OprType::And, 14),
+    (OprType::Or, 16),
+    (OprType::Xor, 15),
+    (OprType::Gt, 10),
+    (OprType::Lt, 10),
+    (OprType::Gteq, 10),
+    (OprType::Lteq, 10),
+    (OprType::Eq, 10),
+    (OprType::Noteq, 10),
+    (OprType::Istype, 10),
+    (OprType::Isnttype, 10),
+    (OprType::Is, 10),
+    (OprType::Isnt, 10),
+    (OprType::Iseq, 10),
+    (OprType::Isnteq, 10),
+    (OprType::BitAnd, 11),
+    (OprType::BitOr, 13),
+    (OprType::BitXor, 12),
+    (OprType::Concat, 17),
+    (OprType::Swap, 19),
+]);
+
+pub(crate) enum Flag {Hoi, Pub, Priv, Prot, Const}
+pub(crate) const FLAGMAP: HashMap<&str, Flag> = HashMap::from([
+    ("hoi", Flag::Hoi),
+    ("pub", Flag::Pub),
+    ("priv", Flag::Priv),
+    ("prot", Flag::Prot),
+    ("const", Flag::Const)
+]);
+
+pub(crate) struct Statement {
+    content: Vec<Token>
+}
+
+pub(crate) enum Element {
+    BaseElement {
+        line: u32,
+        column: u32
+    },
+    Comment {
+        line: u32,
+        column: u32,
+        content: String,
+    },
+    Call {
+        line: u32,
+        column: u32,
+        content: String,
+        called: Element,
+        args: Vec<Element>,
+        //kwargs
+    },
+    UnaryOpr {
+        line: u32,
+        column: u32,
+        type_: OprType,
+        operand: Element
+    },
+    BinaryOpr {
+        line: u32,
+        column: u32,
+        type_: OprType,
+        operand1: Element,
+        operand2: Element
+    },
+    AssignmentOpr {
+        line: u32,
+        column: u32,
+        variable: Element::Variable,
+        content: Element,
+        flags: Vec<Flag>,
+        type_: Element::Variable,
+        operation: OprType
+    },
+    Literal {
+        line: u32,
+        column: u32,
+        type_: Element::Variable,
+        content: String
+    },
+    Variable {
+        line: u32,
+        column: u32,
+        name: String,
+        parent: Element
+    },
+    NullElement {
+        line: u32,
+        column: u32
+    },
+    Token(Token)
+}
