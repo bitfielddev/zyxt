@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result};
 use derivative::Derivative;
 use crate::lexer::StateTracker;
@@ -9,7 +8,7 @@ pub struct Token {
     pub(crate) type_: TokenType,
     pub(crate) line: i32,
     pub(crate) column: i32,
-    pub(crate) categories: Vec<TokenCategory>
+    pub(crate) categories: &'static [TokenCategory]
 }
 
 impl Display for Token {
@@ -79,30 +78,32 @@ impl PartialEq for TokenCategory {
 
 #[derive(Derivative)]
 pub struct TokenEntry<'a> {
+    pub(crate) value: &'a str,
     pub(crate) type_: TokenType,
-    #[derivative(Default(value = "|states: &StateTracker| -> bool { !states.is_literal_string }"))]
+    #[derivative(Default(value = "|states| { !states.is_literal_string }"))]
     pub(crate) condition: &'a dyn Fn(&StateTracker) -> bool,
-    #[derivative(Default(value = "|states: &mut StateTracker| {}"))]
-    pub(crate) state_changes: &'a dyn FnMut(&mut StateTracker),
+    #[derivative(Default(value = "|states| {}"))]
+    pub(crate) state_changes: &'a mut dyn FnMut(&mut StateTracker),
     #[derivative(Default(value = ""))]
     pub(crate) prohibited: String,
     #[derivative(Default(value = ""))]
     pub(crate) next_prohibited: String,
     pub(crate) match_whole: bool,
-    pub(crate) categories: Vec<TokenCategory>
+    pub(crate) categories: &'a [TokenCategory]
 }
 
-pub(crate) const TOKEN_CATALOGUE: HashMap<&str, TokenEntry> = HashMap::from([
-    ("//", TokenEntry{
+pub(crate) fn token_catalogue() -> Vec<TokenEntry<'static>> {vec![
+    TokenEntry{
+        value: "//",
         type_: TokenType::CommentStart,
-        condition: &|states: &StateTracker| -> bool {states.prev_type != TokenType::CommentStart},
-        state_changes: &|states: &mut StateTracker| {
+        condition: &|states| {states.prev_type != TokenType::CommentStart},
+        state_changes: &mut|states| {
             states.is_literal_string = true;
             states.literal_string_type = TokenType::Comment;
         },
         prohibited: String::new(),
         next_prohibited: String::new(),
         match_whole: false,
-        categories: vec![TokenCategory::LiteralStringStart]
-    })
-]);
+        categories: &[TokenCategory::LiteralStringStart]
+    }
+]}

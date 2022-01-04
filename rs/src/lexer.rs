@@ -1,10 +1,9 @@
-use std::borrow::{Borrow, BorrowMut};
 use regex::Regex;
 use derivative::Derivative;
-use crate::syntax::{TokenEntry, TokenType, TOKEN_CATALOGUE, TokenCategory};
+use crate::syntax::{TokenEntry, TokenType, TokenCategory, token_catalogue};
 use crate::{errors, Token};
 
-#[derive(Derivative)]
+#[derive(Derivative, Clone)]
 struct PositionTracker {
     #[derivative(Default(value = "[unknown]"))]
     filename: String,
@@ -17,7 +16,7 @@ struct PositionTracker {
     char_pos: i32
 }
 
-#[derive(Derivative)]
+#[derive(Derivative, Clone)]
 pub(crate) struct StateTracker {
     position: PositionTracker,
     pub(crate) is_literal_string: bool,
@@ -57,12 +56,12 @@ fn get_next_char_noupdate(input: &String, states: &StateTracker) -> char {
     }
 }
 
-fn get_token_entry<'a>(stack: &Vec<String>, states: &StateTracker, input: &String) -> Option<(String, &'a TokenEntry<'a>)> {
-    for (&prevalue, entry) in TOKEN_CATALOGUE.iter() {
-        let mut value = prevalue;
+fn get_token_entry<'a>(stack: &Vec<String>, states: &'a StateTracker, input: &String) -> Option<(String, TokenEntry<'static>)> {
+    for entry in token_catalogue().into_iter() {
+        let mut value = entry.value;
         while value.len() != 0 && value.chars().nth(value.len()-1).unwrap() == ' ' {value = &value[..value.len() - 1]};
-        let mut re1 = Regex::new(&*entry.next_prohibited).unwrap();
-        let mut re2 = Regex::new(&*entry.prohibited).unwrap();
+        let re1 = Regex::new(&*entry.next_prohibited).unwrap();
+        let re2 = Regex::new(&*entry.prohibited).unwrap();
 
         if ((!entry.match_whole && stack.join("").ends_with(value))
             || (entry.match_whole && stack.join("") == value))
@@ -116,7 +115,7 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
                     type_: states.literal_string_type,
                     line: states.literal_string_line,
                     column: states.literal_string_column,
-                    categories: vec![TokenCategory::Literal]
+                    categories: &[TokenCategory::Literal]
                 });
                 stack.clear();
                 stack.append(&mut Vec::from_iter(token.split("").map(|s| s.to_string())));
@@ -135,7 +134,7 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
                 type_: token_entry.type_,
                 line: states.position.line,
                 column: states.position.column + 1 - token.len() as i32,
-                categories: token_entry.categories.clone()
+                categories: token_entry.categories
             });
             stack.clear();
         }
@@ -150,18 +149,12 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
             type_: TokenType::Variable,
             line: states.position.line,
             column: states.position.column + 1 - stack.join("").trim().len() as i32,
-            categories: vec![]
+            categories: &[]
         })
     }
 
     let mut cursor = 0;
-    let mut selected: &Token = &Token{
-        value: String::from(""),
-        type_: TokenType::CommentStart,
-        line: 0,
-        column: 0,
-        categories: vec![]
-    };
+    let mut selected: &Token;
     let mut new_out = vec![];
     while cursor < out.len() {
         selected = &out[cursor];
@@ -174,7 +167,7 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
                 type_: TokenType::LiteralNumber,
                 line: out.get(cursor - 1).unwrap().line,
                 column: out.get(cursor - 1).unwrap().column,
-                categories: vec![TokenCategory::Literal]
+                categories: &[TokenCategory::Literal]
             });
             cursor += 1;
         } else {new_out.push(out[cursor].clone())}
