@@ -38,13 +38,13 @@ pub fn error_1_1(filename: String) {
 
 /* 2. Syntax errors */
 // parentheses not closed properly
-pub fn error_2_0_0(paren1: String, paren2: String) {
+pub fn error_2_0_0(paren1: char, paren2: char) {
     error_main("2.0.0", format!("Parentheses `{}` and `{}` not closed properly; try swapping them", paren1, paren2))
 }
-pub fn error_2_0_1(paren: String) {
+pub fn error_2_0_1(paren: char) {
     error_main("2.0.1", format!("Parenthesis `{}` not closed", paren))
 }
-pub fn error_2_0_2(paren: String) {
+pub fn error_2_0_2(paren: char) {
     error_main("2.0.2", format!("Parenthesis `{}` not opened", paren))
 }
 

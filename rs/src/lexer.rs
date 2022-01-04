@@ -4,13 +4,13 @@ use crate::syntax::{TokenEntry, TokenType, TokenCategory, token_catalogue};
 use crate::{errors, Token};
 
 #[derive(Derivative, Clone)]
-struct PositionTracker {
+pub(crate) struct PositionTracker {
     #[derivative(Default(value = "[unknown]"))]
-    filename: String,
+    pub(crate) filename: String,
     #[derivative(Default(value = "1"))]
-    line: i32,
+    pub(crate) line: i32,
     #[derivative(Default(value = "1"))]
-    column: i32,
+    pub(crate) column: i32,
     #[derivative(Default(value = "-1"))]
     prev_column: i32,
     char_pos: i32
@@ -18,7 +18,7 @@ struct PositionTracker {
 
 #[derive(Derivative, Clone)]
 pub(crate) struct StateTracker {
-    position: PositionTracker,
+    pub(crate) position: PositionTracker,
     pub(crate) is_literal_string: bool,
     #[derivative(Default(value = "TokenType::Null"))]
     pub(crate) literal_string_type: TokenType,
@@ -30,7 +30,7 @@ pub(crate) struct StateTracker {
     token_line: i32,
     #[derivative(Default(value = "1"))]
     token_column: i32,
-    brackets: Vec<char>
+    pub(crate) brackets: Vec<char>
 }
 
 fn get_next_char(c: char, input: &String, stack: &mut Vec<String>, states: &mut StateTracker) -> Result<char, bool> {
@@ -176,7 +176,7 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
 
     if states.brackets.len() != 0 {
         errors::error_pos(filename, states.position.line, states.position.column);
-        errors::error_2_0_1(states.brackets.last().unwrap().to_string())
+        errors::error_2_0_1(*states.brackets.last().unwrap())
     }
 
     new_out
