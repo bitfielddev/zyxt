@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 pub struct Token {
     value: string,
-    r#type: TokenType,
+    type_: TokenType,
     line: i32,
     column: i32,
     categories: [TokenCategory]
