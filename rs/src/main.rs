@@ -1,5 +1,6 @@
 mod errors;
 mod syntax;
+mod lexer;
 
 use std::env;
 use std::fs::File;
@@ -29,7 +30,7 @@ fn compile(input: string, filename: string) -> Vec<Token> {
     println_f!("Parsing time: {parse_time}µs");
     println_f!("Total time: {total_time}µs");
 
-    let out = Vec<Token>;
+    let out: Vec<Token> = vec![];
     out
 }
 

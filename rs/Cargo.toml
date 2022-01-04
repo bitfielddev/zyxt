@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 ansi_term = "0.12.1"
 fstrings = "0.2.3"
+regex = "1.5.4"
