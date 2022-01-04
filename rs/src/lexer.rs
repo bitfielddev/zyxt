@@ -1,3 +1,4 @@
+use std::borrow::{Borrow, BorrowMut};
 use regex::Regex;
 use derivative::Derivative;
 use crate::syntax::{TokenEntry, TokenType, TOKEN_CATALOGUE, TokenCategory};
@@ -112,7 +113,7 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
             if token_entry.categories.contains(&TokenCategory::LiteralStringEnd) {
                 out.push(Token {
                     value: String::from(&stack.join("")[0..stack.len() - token.len()]),
-                    type_: *states.literal_string_type,
+                    type_: states.literal_string_type,
                     line: states.literal_string_line,
                     column: states.literal_string_column,
                     categories: vec![TokenCategory::Literal]
@@ -127,14 +128,14 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
             }
 
             (token_entry.state_changes)(&mut states);
-            states.prev_type = *token_entry.type_;
+            states.prev_type = token_entry.type_;
 
             out.push(Token{
                 value: stack.join(""),
-                type_: *token_entry.type_,
+                type_: token_entry.type_,
                 line: states.position.line,
                 column: states.position.column + 1 - token.len() as i32,
-                categories: token_entry.categories.to_vec()
+                categories: token_entry.categories
             });
             stack.clear();
         }
@@ -153,8 +154,8 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
         })
     }
 
-    let mut cursor: i32 = 0;
-    let mut selected: Token = Token{
+    let mut cursor = 0;
+    let mut selected: &Token = &Token{
         value: String::from(""),
         type_: TokenType::CommentStart,
         line: 0,
@@ -162,11 +163,11 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
         categories: vec![]
     };
     let mut new_out = vec![];
-    while cursor < out.len() as i32 {
-        selected = *out.get(cursor).unwrap();
+    while cursor < out.len() {
+        selected = &out[cursor];
         if selected.type_ == TokenType::DotOpr
             && (cursor != 0 && out.get(cursor-1).unwrap().type_ == TokenType::LiteralNumber)
-            && (cursor != (out.len() - 1) as i32 && out.get(cursor+1).unwrap().type_ == TokenType::LiteralNumber) {
+            && (cursor != out.len() - 1 && out.get(cursor+1).unwrap().type_ == TokenType::LiteralNumber) {
             new_out.pop();
             new_out.push(Token {
                 value: format!("{}.{}", &*out.get(cursor - 1).unwrap().value, &*out.get(cursor + 1).unwrap().value),
@@ -176,7 +177,7 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
                 categories: vec![TokenCategory::Literal]
             });
             cursor += 1;
-        } else {new_out.push(*out.get(&cursor).unwrap())}
+        } else {new_out.push(out[cursor].clone())}
         cursor += 1
     }
 

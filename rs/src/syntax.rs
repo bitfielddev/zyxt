@@ -1,7 +1,9 @@
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter, Result};
 use derivative::Derivative;
 use crate::lexer::StateTracker;
 
+#[derive(Clone)]
 pub struct Token {
     pub(crate) value: String,
     pub(crate) type_: TokenType,
@@ -10,6 +12,14 @@ pub struct Token {
     pub(crate) categories: Vec<TokenCategory>
 }
 
+impl Display for Token {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "Token[value={}, type={:?}, line={}, column={}, categories={:?}]",
+               self.value, self.type_, self.line, self.column, self.categories)
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
 pub enum TokenType {
     CommentStart, // //
     CommentEnd, // \n
@@ -50,6 +60,7 @@ impl PartialEq for TokenType {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum TokenCategory {
     Operator,
     Literal,
@@ -89,8 +100,8 @@ pub(crate) const TOKEN_CATALOGUE: HashMap<&str, TokenEntry> = HashMap::from([
             states.is_literal_string = true;
             states.literal_string_type = TokenType::Comment;
         },
-        prohibited: "".to_string(),
-        next_prohibited: "".to_string(),
+        prohibited: String::new(),
+        next_prohibited: String::new(),
         match_whole: false,
         categories: vec![TokenCategory::LiteralStringStart]
     })

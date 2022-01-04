@@ -17,7 +17,7 @@ fn compile(input: String, filename: &String) -> Vec<Token> {
     let lex_start = Instant::now();
     let lexed = lex(input, filename);
     let lex_time = lex_start.elapsed().as_micros();
-    println!("{}", String::from(lexed));
+    for token in lexed {println!("{}", token);}
 
     //println!("Parsing");
     //let parse_start = Instant::now();
@@ -49,9 +49,9 @@ fn main() {
                 Ok(mut file) => {
                     file.read_to_string(&mut content).unwrap();
                 },
-                Err(_) => {errors::error_1_1(filename)}
+                Err(_) => {errors::error_1_1(filename.clone())}
             };
-            println!("{}", String::from(compile(content, filename)));
+            for thing in compile(content, filename) {println!("{}", thing);}
 
         }
         "compile" => {
