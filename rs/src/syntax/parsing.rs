@@ -191,7 +191,7 @@ impl Display for Element {
             Element::BinaryOpr {line, column, type_, operand1, operand2} =>
                 format!("BinaryOpr[line={}, column={}, type={:?}, operand1={}, operand2={}]", line, column, type_, **operand1, **operand2),
             Element::DeclarationStmt {line, column, variable, content, flags, type_} => {
-                format!("DeclarationStmt[line={}, column{}, variable={}, content={}, flags={}, type={}]", line, column, **variable, **content, flags.iter().map(|arg| format!("{:?}", arg)).collect::<Vec<String>>().join(","), **type_)
+                format!("DeclarationStmt[line={}, column={}, variable={}, content={}, flags={}, type={}]", line, column, **variable, **content, flags.iter().map(|arg| format!("{:?}", arg)).collect::<Vec<String>>().join(","), **type_)
             }
         })
     }
