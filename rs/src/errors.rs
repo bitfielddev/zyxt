@@ -58,6 +58,11 @@ pub fn error_2_2() {
     error_main("2.2", format!("Assignment without variable name"))
 }
 
+// unfilled argument
+pub fn error_2_3(func: String, index: usize) {
+    error_main("2.3", format!("Unfilled argument #{} of {}", index, func))
+}
+
 /* 3. Variable & attribute errors */
 // Variable not defined
 pub fn error_3_0(varname: String) {

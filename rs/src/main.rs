@@ -1,14 +1,15 @@
 mod errors;
-mod syntax;
 mod lexer;
 mod parser;
+mod syntax;
 
 use std::env;
 use std::fs::File;
 use std::io::Read;
 use std::time::Instant;
 use crate::lexer::lex;
-use crate::syntax::Token;
+use crate::syntax::lexing::Token;
+use crate::parser::parse;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
@@ -18,18 +19,18 @@ fn compile(input: String, filename: &String) -> Vec<Token> {
     let lex_start = Instant::now();
     let lexed = lex(input, filename);
     let lex_time = lex_start.elapsed().as_micros();
-    for token in lexed {println!("{}", token);}
+    for token in lexed.iter() {println!("{}", token);}
 
-    //println!("Parsing");
-    //let parse_start = Instant::now();
-    //let parsed = parse(lexed, filename);
-    //let parse_time = parse_start.elapsed().as_micros();
-    //let total_time = lex_start.elapsed().as_micros();
-    //println!(parsed);
+    println!("Parsing");
+    let parse_start = Instant::now();
+    let parsed = parse(lexed, filename);
+    let parse_time = parse_start.elapsed().as_micros();
+    let total_time = lex_start.elapsed().as_micros();
+    for ele in parsed {println!("{}", ele);}
 
     println!("Lexing time: {}µs", lex_time);
-    //println!("Parsing time: {parse_time}µs");
-    //println!("Total time: {total_time}µs");
+    println!("Parsing time: {}µs", parse_time);
+    println!("Total time: {}µs", total_time);
 
     let out: Vec<Token> = vec![];
     out

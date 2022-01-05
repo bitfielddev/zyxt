@@ -1,5 +1,5 @@
 use regex::Regex;
-use crate::syntax::{TokenEntry, TokenType, TokenCategory, token_catalogue};
+use crate::syntax::lexing::{TokenEntry, TokenType, TokenCategory, token_catalogue};
 use crate::{errors, Token};
 
 #[derive(Clone)]
@@ -23,7 +23,7 @@ impl Default for PositionTracker {
 }
 
 #[derive(Clone)]
-pub(crate) struct StateTracker {
+pub struct StateTracker {
     pub(crate) position: PositionTracker,
     pub(crate) is_literal_string: bool,
     pub(crate) literal_string_type: TokenType,
@@ -79,14 +79,17 @@ fn get_token_entry<'a>(stack: &Vec<String>, states: &'a StateTracker, input: &St
         //while value.len() != 0 && value.chars().nth(value.len()-1).unwrap() == ' ' {value = &value[..value.len() - 1]};
         let re1 = Regex::new(&*entry.next_prohibited).unwrap();
         let re2 = Regex::new(&*entry.prohibited).unwrap();
+        let joined_stack = stack.join("");
+        let next_char = get_next_char_noupdate(input, states).to_string();
 
-        if ((!entry.match_whole && stack.join("").ends_with(value))
-            || (entry.match_whole && stack.join("") == value))
-            && (entry.condition)(states)
-            && (entry.next_prohibited.len() == 0
-        || re1.is_match(&*get_next_char_noupdate(input, states).to_string()))
-            && (entry.prohibited.len() == 0 || !re2.is_match(&*stack.join(""))) {
-            return if value.len() == 0 {Some((stack.join(""), entry))}
+        if ((!entry.match_whole && joined_stack.ends_with(value))
+            || (entry.match_whole && joined_stack == value)) // if the stack ends with the token tested
+           && (entry.condition)(states) // and the stack satsified the conditions
+           && (entry.next_prohibited.len() == 0
+            || re1.is_match(&*next_char)) // and the next character is invalid to be part of the token
+           && ((entry.prohibited.len() == 0 // and the stack itself is valid
+            || !re2.is_match(&*joined_stack)) && joined_stack.len() != 0) {
+            return if value.len() == 0 {Some((joined_stack, entry))}
                 else {Some((String::from(value), entry))}
         }
     }
