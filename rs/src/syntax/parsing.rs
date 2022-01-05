@@ -58,6 +58,7 @@ pub enum OprType {
 
 pub fn get_order(opr: &OprType) -> u8 {
     let map = HashMap::from([
+        (OprType::Null, 0u8),
         (OprType::Increment, 2u8),
         (OprType::Decrement, 2u8),
         (OprType::PlusSign, 2u8),
@@ -189,7 +190,7 @@ impl Display for Element {
             Element::UnaryOpr {line, column, type_, operand} =>
                 format!("UnaryOpr[line={}, column={}, type={:?}, operand={}]", line, column, type_, **operand),
             Element::BinaryOpr {line, column, type_, operand1, operand2} =>
-                format!("UnaryOpr[line={}, column={}, type={:?}, operand1={}, operand2={}]", line, column, type_, **operand1, **operand2),
+                format!("BinaryOpr[line={}, column={}, type={:?}, operand1={}, operand2={}]", line, column, type_, **operand1, **operand2),
             Element::AssignmentOpr {line, column, variable, content, flags, type_, operation} => {
                 format!("AssignmentOpr[line={}, column{}, variable={}, content={}, flags={}, type={}, operation={:?}]", line, column, **variable, **content, flags.iter().map(|arg| format!("{:?}", arg)).collect::<Vec<String>>().join(","), **type_, operation)
             }

@@ -30,8 +30,6 @@ pub struct StateTracker {
     pub(crate) prev_type: TokenType,
     literal_string_line: u32,
     literal_string_column: u32,
-    token_line: u32,
-    token_column: u32,
     pub(crate) brackets: Vec<char>
 }
 impl Default for StateTracker {
@@ -43,8 +41,6 @@ impl Default for StateTracker {
             prev_type: TokenType::Null,
             literal_string_line: 0,
             literal_string_column: 0,
-            token_line: 1,
-            token_column: 1,
             brackets: vec![]
         }
     }
@@ -54,7 +50,7 @@ fn get_next_char(c: char, input: &String, stack: &mut Vec<String>, states: &mut 
     if c == '\n' {
         states.position.line += 1;
         states.position.prev_column = states.position.column;
-       states. position.column = 1;
+        states.position.column = 1;
     } else {states.position.column += 1;}
     states.position.char_pos += 1;
     match input.chars().nth(states.position.char_pos as usize) {
@@ -84,7 +80,7 @@ fn get_token_entry<'a>(stack: &Vec<String>, states: &'a StateTracker, input: &St
 
         if ((!entry.match_whole && joined_stack.ends_with(value))
             || (entry.match_whole && joined_stack == value)) // if the stack ends with the token tested
-           && (entry.condition)(states) // and the stack satsified the conditions
+           && (entry.condition)(states) // and the stack satisfies the conditions
            && (entry.next_prohibited.len() == 0
             || re1.is_match(&*next_char)) // and the next character is invalid to be part of the token
            && ((entry.prohibited.len() == 0 // and the stack itself is valid
@@ -105,19 +101,9 @@ pub fn lex(preinput: String, filename: &String) -> Vec<Token> {
     let mut states = StateTracker{
         position: PositionTracker {
             filename: filename.clone(),
-            line: 0,
-            column: 0,
-            prev_column: 0,
-            char_pos: 0
+            ..Default::default()
         },
-        is_literal_string: false,
-        literal_string_type: TokenType::Null,
-        prev_type: TokenType::Null,
-        literal_string_line: 0,
-        literal_string_column: 0,
-        token_line: 0,
-        token_column: 0,
-        brackets: vec![]
+        ..Default::default()
     };
     let mut c = input.chars().nth(0).unwrap();
     stack.push(String::from(c));

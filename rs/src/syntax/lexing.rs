@@ -48,6 +48,7 @@ pub enum TokenType {
     SwapOpr, // ><
     TypeOpr, // istype, isnttype etc
     DotOpr, // .
+    DeclarationStmt, // :=
     LiteralMisc, // true, null, etc
     LiteralNumber, // 3, 24, -34.5 etc
     LiteralString, // "abc" etc
@@ -154,6 +155,11 @@ pub fn token_catalogue() -> Vec<TokenEntry<'static>> {vec![
             new_states
         },
         categories: &[TokenCategory::LiteralStringEnd],
+        ..Default::default()
+    },
+    TokenEntry{
+        value: ":=",
+        type_: TokenType::DeclarationStmt,
         ..Default::default()
     },
     TokenEntry{
@@ -756,6 +762,7 @@ pub fn token_catalogue() -> Vec<TokenEntry<'static>> {vec![
     TokenEntry {
         value: ":",
         type_: TokenType::Colon,
+        next_prohibited: r"[^=]",
         ..Default::default()
     },
     TokenEntry {

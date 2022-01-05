@@ -1,5 +1,5 @@
-use crate::syntax::lexing::{TokenCategory, TokenType};
-use crate::syntax::parsing::Element;
+use crate::syntax::lexing::{TokenCategory, TokenType, UnarySide};
+use crate::syntax::parsing::{Element, get_order, OprType};
 use crate::{errors, Token};
 
 fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Vec<Element> {
@@ -44,6 +44,7 @@ fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Vec<Elemen
     elements = new_elements.clone();
     new_elements.clear();
     cursor = 0;
+
     // parse literals
     while cursor < elements.len() {
         selected = &elements[cursor];
@@ -201,6 +202,127 @@ fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Vec<Elemen
     elements = new_elements.clone();
     new_elements.clear();
     cursor = 0;
+
+    // parse unary operators
+    while cursor < elements.len() {
+        selected = &elements[cursor];
+        if let Element::Token(Token{type_: TokenType::UnaryOpr(_, side), value, line, column, ..}) = selected {
+            if (*side == UnarySide::Left && cursor == elements.len() - 1)
+            || (*side == UnarySide::Right && cursor == 0){
+                errors::error_pos(filename, *line, *column);
+                errors::error_2_1(value.clone());
+            }
+            let mut unary_opr_queue = vec![selected.clone()];
+            let mut catcher_unary;
+            let operand;
+            if *side == UnarySide::Left { 'catch_loop3: loop {
+                cursor += 1;
+                if cursor == elements.len() {
+                    errors::error_pos(filename, 0, 0); // TODO
+                    errors::error_2_1(String::from("")); //TODO
+                }
+                catcher_unary = &elements[cursor];
+                if let Element::Token(Token{type_: TokenType::UnaryOpr(_, UnarySide::Left), .. }) = catcher_unary {
+                    unary_opr_queue.push(catcher_unary.clone());
+                } else if let Element::Literal{..} = catcher_unary {
+                    operand = catcher_unary.clone();
+                    break 'catch_loop3;
+                } else {
+                    errors::error_pos(filename, 0, 0); // TODO
+                    errors::error_2_1(String::from("")); //TODO
+                }
+            } unary_opr_queue = unary_opr_queue.into_iter().rev().collect();
+            } else {
+                operand = new_elements.last().unwrap().clone();
+            }
+
+            let mut new = operand;
+            for ele in unary_opr_queue.into_iter() {
+            if let Element::Token(Token{line, column, type_: TokenType::UnaryOpr(opr_type, _), ..}) = ele {
+                new = Element::UnaryOpr {
+                    line, column,
+                    type_: opr_type,
+                    operand: Box::new(new)
+                }
+            }}
+            if *side == UnarySide::Right {new_elements.pop();}
+            new_elements.push(new);
+        } else {new_elements.push(selected.clone())}
+        cursor += 1;
+    }
+    elements = new_elements.clone();
+    new_elements.clear();
+    cursor = 0;
+
+    // parse binary operators
+    /*while cursor < elements.len() {
+        selected = &elements[cursor];
+        if let Element::Token(Token{type_: TokenType::ArithmeticBitwiseOpr(_), line, column, value, .. }) = selected {
+            if cursor == elements.len() - 1 || cursor == 0 {
+                errors::error_pos(filename, *line, *column);
+                errors::error_2_1(value.clone());
+            }
+            let first_operand;
+            if let Element::Literal {..} | Element::Variable {..} | Element::Call{..} = &elements[cursor-1] {
+                first_operand = elements[cursor-1].clone();
+            } else {
+                errors::error_pos(filename, *line, *column);
+                errors::error_2_1(value.clone());
+            }
+            let mut new = Element::BinaryOpr {
+                line: *line,
+                column: *column,
+                type_: OprType::Null,
+                operand1: Box::new(first_operand),
+                operand2: Box::new(Element::NullElement)
+            };
+            let mut catcher_selected = selected;
+            'catch_loop4: loop {
+                if let Element::Token(Token{type_: TokenType::ArithmeticBitwiseOpr(opr_type), line, column, value, .. }) = catcher_selected {
+                    if let Element::Literal {line, column, .. }
+                    | Element::Variable {line, column, .. }
+                    | Element::Call{line, column, .. } = &elements[cursor+1] {
+                        let mut target = &mut new;
+                        'binary_loop: loop {
+                            let target_copy = target.clone();
+                            if let Element::BinaryOpr {operand2, type_, ..} = target_copy {
+                                if get_order(opr_type) >= get_order(&type_) {
+                                    target = &mut Element::BinaryOpr {
+                                        line: *line, column: *column,
+                                        type_: *opr_type,
+                                        operand1: Box::new(target.clone()),
+                                        operand2: Box::new(elements[cursor+1].clone())
+                                    };
+                                    println!("aa {}", new);
+                                    println!("aa {}", target);
+                                    println!("aa {}", elements[cursor+1].clone());
+                                    break 'binary_loop;
+                                } else {
+                                    *target = *operand2;
+                                }
+                            }
+                        }
+                    } else {
+                        errors::error_pos(filename, *line, *column);
+                        errors::error_2_1(value.clone());
+                    }
+                } else {break 'catch_loop4}
+                cursor += 2;
+                if cursor >= elements.len() {break 'catch_loop4}
+                catcher_selected = &elements[cursor];
+            }
+            new_elements.push(new);
+            if cursor < elements.len() {new_elements.push(elements[cursor].clone())}
+        } else {new_elements.push(selected.clone())}
+        cursor += 1
+    }
+    elements = new_elements.clone();
+    new_elements.clear();
+    cursor = 0;*/
+
+    // parse assignment operators
+
+    // parse declaration statement
 
     for ele in elements.iter() {println!("{}", ele)}
     elements
