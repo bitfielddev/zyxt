@@ -148,14 +148,13 @@ pub enum Element {
         operand1: Box<Element>,
         operand2: Box<Element>
     },
-    AssignmentOpr {
+    DeclarationStmt {
         line: u32,
         column: u32,
         variable: Box<Element>, // variable
         content: Box<Element>,
         flags: Vec<Flag>,
         type_: Box<Element>, // variable
-        operation: OprType
     },
     Literal {
         line: u32,
@@ -191,8 +190,8 @@ impl Display for Element {
                 format!("UnaryOpr[line={}, column={}, type={:?}, operand={}]", line, column, type_, **operand),
             Element::BinaryOpr {line, column, type_, operand1, operand2} =>
                 format!("BinaryOpr[line={}, column={}, type={:?}, operand1={}, operand2={}]", line, column, type_, **operand1, **operand2),
-            Element::AssignmentOpr {line, column, variable, content, flags, type_, operation} => {
-                format!("AssignmentOpr[line={}, column{}, variable={}, content={}, flags={}, type={}, operation={:?}]", line, column, **variable, **content, flags.iter().map(|arg| format!("{:?}", arg)).collect::<Vec<String>>().join(","), **type_, operation)
+            Element::DeclarationStmt {line, column, variable, content, flags, type_} => {
+                format!("DeclarationStmt[line={}, column{}, variable={}, content={}, flags={}, type={}]", line, column, **variable, **content, flags.iter().map(|arg| format!("{:?}", arg)).collect::<Vec<String>>().join(","), **type_)
             }
         })
     }

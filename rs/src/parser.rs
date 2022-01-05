@@ -255,74 +255,111 @@ fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Vec<Elemen
     cursor = 0;
 
     // parse binary operators
-    /*while cursor < elements.len() {
+    fn binary(elements: Vec<Element>) -> Element {
+        if elements.len() == 1 {return elements[0].clone();}
+        let mut highest_order_index: usize = 0;
+        let mut highest_order = 0;
+        for (i, ele) in elements.iter().enumerate() {
+        if let Element::Token(Token{type_: TokenType::NormalOpr(opr_type), .. }) = ele {
+            if i >= highest_order {
+                highest_order_index = i;
+                highest_order = get_order(&opr_type) as usize;
+            }}
+        }
+        if let Element::Token(Token{type_: TokenType::NormalOpr(opr_type), line, column, ..}) = &elements[highest_order_index] {
+            return Element::BinaryOpr {
+                line: *line, column: *column,
+                type_: *opr_type,
+                operand1: Box::new(binary(elements[..highest_order_index].to_vec())),
+                operand2: Box::new(binary(elements[highest_order_index+1..].to_vec()))
+            }
+        } else {panic!("{}", elements[highest_order_index])}
+    }
+    catcher.clear();
+    while cursor < elements.len() {
         selected = &elements[cursor];
-        if let Element::Token(Token{type_: TokenType::ArithmeticBitwiseOpr(_), line, column, value, .. }) = selected {
+        if let Element::Token(Token{type_: TokenType::NormalOpr(_), line, column, value, .. }) = selected {
             if cursor == elements.len() - 1 || cursor == 0 {
                 errors::error_pos(filename, *line, *column);
                 errors::error_2_1(value.clone());
             }
-            let first_operand;
-            if let Element::Literal {..} | Element::Variable {..} | Element::Call{..} = &elements[cursor-1] {
-                first_operand = elements[cursor-1].clone();
-            } else {
+            if let Element::Literal {..} | Element::Variable {..} | Element::Call{..} | Element::UnaryOpr{..} = &elements[cursor-1] {} else {
                 errors::error_pos(filename, *line, *column);
                 errors::error_2_1(value.clone());
             }
-            let mut new = Element::BinaryOpr {
-                line: *line,
-                column: *column,
-                type_: OprType::Null,
-                operand1: Box::new(first_operand),
-                operand2: Box::new(Element::NullElement)
-            };
-            let mut catcher_selected = selected;
+            catcher = vec![elements[cursor-1].clone(), selected.clone()];
             'catch_loop4: loop {
-                if let Element::Token(Token{type_: TokenType::ArithmeticBitwiseOpr(opr_type), line, column, value, .. }) = catcher_selected {
-                    if let Element::Literal {line, column, .. }
-                    | Element::Variable {line, column, .. }
-                    | Element::Call{line, column, .. } = &elements[cursor+1] {
-                        let mut target = &mut new;
-                        'binary_loop: loop {
-                            let target_copy = target.clone();
-                            if let Element::BinaryOpr {operand2, type_, ..} = target_copy {
-                                if get_order(opr_type) >= get_order(&type_) {
-                                    target = &mut Element::BinaryOpr {
-                                        line: *line, column: *column,
-                                        type_: *opr_type,
-                                        operand1: Box::new(target.clone()),
-                                        operand2: Box::new(elements[cursor+1].clone())
-                                    };
-                                    println!("aa {}", new);
-                                    println!("aa {}", target);
-                                    println!("aa {}", elements[cursor+1].clone());
-                                    break 'binary_loop;
-                                } else {
-                                    *target = *operand2;
-                                }
-                            }
-                        }
-                    } else {
-                        errors::error_pos(filename, *line, *column);
-                        errors::error_2_1(value.clone());
-                    }
-                } else {break 'catch_loop4}
-                cursor += 2;
-                if cursor >= elements.len() {break 'catch_loop4}
-                catcher_selected = &elements[cursor];
+                cursor += 1;
+                if cursor == elements.len() {break 'catch_loop4;}
+                let catcher_selected = &elements[cursor];
+                if let Element::Literal {line, column, ..}
+                     | Element::Variable {line, column, ..}
+                     | Element::Call{line, column, ..}
+                     | Element::UnaryOpr{line, column, ..} = catcher_selected {
+                if let Element::Literal {..} | Element::Variable {..} | Element::Call{..} | Element::UnaryOpr{..} = catcher.last().unwrap() {
+                    errors::error_pos(filename, *line, *column);
+                    errors::error_2_1(String::from("")); // TODO
+                }}
+                if let Element::Token(Token{type_: TokenType::NormalOpr(_), .. }) = catcher_selected {
+                if let Element::Token(Token{type_: TokenType::NormalOpr(_), line, column, value, .. }) = catcher.last().unwrap() {
+                    errors::error_pos(filename, *line, *column);
+                    errors::error_2_1(value.clone());
+                }}
+                if let Element::Literal {..} | Element::Variable {..} | Element::Call{..} | Element::UnaryOpr{..}
+                | Element::Token(Token{type_: TokenType::NormalOpr(_), .. }) = catcher_selected {
+                    catcher.push(catcher_selected.clone());
+                } else {break 'catch_loop4;}
             }
-            new_elements.push(new);
-            if cursor < elements.len() {new_elements.push(elements[cursor].clone())}
-        } else {new_elements.push(selected.clone())}
-        cursor += 1
+            new_elements.pop();
+            new_elements.push(binary(catcher));
+        } else {new_elements.push(selected.clone());}
+        cursor += 1;
     }
     elements = new_elements.clone();
     new_elements.clear();
-    cursor = 0;*/
+    cursor = 0;
 
-    // parse assignment operators
+    // TODO assignment operators above
 
     // parse declaration statement
+    let mut flag_pos = None;
+    while cursor < elements.len() {
+        selected = &elements[cursor];
+        if let Element::Token(Token{type_: TokenType::Flag(_), ..}) = selected {flag_pos = Some(cursor);}
+        if let Element::Token(Token{type_: TokenType::DeclarationStmt, line, column, ..}) = selected {
+            if cursor == elements.len() - 1 || cursor == 0 {
+                errors::error_pos(filename, *line, *column);
+                errors::error_2_1(String::from(":="));
+            }
+            let declared_var = &elements[cursor-1];
+            let flags = if flag_pos == None {vec![]} else {
+                let mut f = vec![];
+                for i in flag_pos.unwrap()..cursor-1 {
+                    if let Element::Token(Token{type_: TokenType::Flag(flag), ..}) = &elements[i] {
+                        f.push(*flag);
+                    } else {
+                        errors::error_pos(filename, 0, 0);
+                        errors::error_2_1(String::from("")); // TODO
+                    }
+                }
+                f
+            };
+            for _ in 0..flags.len()+1 {new_elements.pop();}
+            new_elements.push(Element::DeclarationStmt {
+                line: *line,
+                column: *column,
+                variable: Box::new(declared_var.clone()),
+                content: Box::new(elements[cursor+1].clone()),
+                flags,
+                type_: Box::new(Element::NullElement) // TODO type later
+            });
+            cursor += 1;
+        } else {new_elements.push(selected.clone())}
+        cursor += 1;
+    }
+    elements = new_elements.clone();
+    new_elements.clear();
+    cursor = 0;
 
     for ele in elements.iter() {println!("{}", ele)}
     elements

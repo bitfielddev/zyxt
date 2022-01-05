@@ -40,13 +40,8 @@ pub enum TokenType {
     MultilineCommentEnd, // */
     Flag(Flag), // hoi, pub, priv, prot, const
     UnaryOpr(OprType, UnarySide), // \~, ++, ! etc
-    AssignmentOpr(OprType), // =, +=, etc
-    ArithmeticBitwiseOpr(OprType), // +, -, /f, rt, \& etc
-    RelationalOpr(OprType), // ==, >, is etc
-    LogicalOpr(OprType), // &&, ||, ^^ etc
-    ConcatOpr, // ..
-    SwapOpr, // ><
-    TypeOpr, // istype, isnttype etc
+    AssignmentOpr(OprType), // =, += etc
+    NormalOpr(OprType), // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
     DotOpr, // .
     DeclarationStmt, // :=
     LiteralMisc, // true, null, etc
@@ -164,183 +159,183 @@ pub fn token_catalogue() -> Vec<TokenEntry<'static>> {vec![
     },
     TokenEntry{
         value: "+",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::Plus),
+        type_: TokenType::NormalOpr(OprType::Plus),
         next_prohibited: r"[^+\-=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "-",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::Minus),
+        type_: TokenType::NormalOpr(OprType::Minus),
         next_prohibited: r"[^+\-=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "+-",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::PlusMinus),
+        type_: TokenType::NormalOpr(OprType::PlusMinus),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "-+",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::MinusPlus),
+        type_: TokenType::NormalOpr(OprType::MinusPlus),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "±",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::PlusMinus),
+        type_: TokenType::NormalOpr(OprType::PlusMinus),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "∓",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::MinusPlus),
+        type_: TokenType::NormalOpr(OprType::MinusPlus),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "·",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::DotMult),
+        type_: TokenType::NormalOpr(OprType::DotMult),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "*",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::AstMult),
+        type_: TokenType::NormalOpr(OprType::AstMult),
         next_prohibited: r"[^=/]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "×",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::CrossMult),
+        type_: TokenType::NormalOpr(OprType::CrossMult),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "/",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::FractDiv),
+        type_: TokenType::NormalOpr(OprType::FractDiv),
         next_prohibited: r"[^fc~=*/]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "÷",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::Div),
+        type_: TokenType::NormalOpr(OprType::Div),
         next_prohibited: r"[^fc~=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "/f",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::FloorfractDiv),
+        type_: TokenType::NormalOpr(OprType::FloorfractDiv),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "/c",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::CeilfractDiv),
+        type_: TokenType::NormalOpr(OprType::CeilfractDiv),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "/~",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::RoundfractDiv),
+        type_: TokenType::NormalOpr(OprType::RoundfractDiv),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "÷f",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::FloorDiv),
+        type_: TokenType::NormalOpr(OprType::FloorDiv),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "÷c",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::CeilDiv),
+        type_: TokenType::NormalOpr(OprType::CeilDiv),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "÷~",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::RoundDiv),
+        type_: TokenType::NormalOpr(OprType::RoundDiv),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "^",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::Power),
+        type_: TokenType::NormalOpr(OprType::Power),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "%",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::Modulo),
+        type_: TokenType::NormalOpr(OprType::Modulo),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "rt",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::Root),
+        type_: TokenType::NormalOpr(OprType::Root),
         match_whole: true,
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "lg",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::Logarithm),
+        type_: TokenType::NormalOpr(OprType::Logarithm),
         match_whole: true,
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "\\&",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::BitAnd),
+        type_: TokenType::NormalOpr(OprType::BitAnd),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "\\|",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::BitOr),
+        type_: TokenType::NormalOpr(OprType::BitOr),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "\\^",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::BitXor),
+        type_: TokenType::NormalOpr(OprType::BitXor),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "\\<<",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::BitLshift),
+        type_: TokenType::NormalOpr(OprType::BitLshift),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "\\>>",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::BitRshift),
+        type_: TokenType::NormalOpr(OprType::BitRshift),
         next_prohibited: r"[^=>]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "\\>>>",
-        type_: TokenType::ArithmeticBitwiseOpr(OprType::Bit0Rshift),
+        type_: TokenType::NormalOpr(OprType::Bit0Rshift),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
@@ -438,59 +433,59 @@ pub fn token_catalogue() -> Vec<TokenEntry<'static>> {vec![
     },
     TokenEntry{
         value: "==",
-        type_: TokenType::RelationalOpr(OprType::Eq),
+        type_: TokenType::NormalOpr(OprType::Eq),
         next_prohibited: r"[^=<]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: ">",
-        type_: TokenType::RelationalOpr(OprType::Gt),
+        type_: TokenType::NormalOpr(OprType::Gt),
         next_prohibited: r"[^=<]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "<",
-        type_: TokenType::RelationalOpr(OprType::Lt),
+        type_: TokenType::NormalOpr(OprType::Lt),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: ">=",
-        type_: TokenType::RelationalOpr(OprType::Gteq),
+        type_: TokenType::NormalOpr(OprType::Gteq),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "<=",
-        type_: TokenType::RelationalOpr(OprType::Lteq),
+        type_: TokenType::NormalOpr(OprType::Lteq),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "!=",
-        type_: TokenType::RelationalOpr(OprType::Noteq),
+        type_: TokenType::NormalOpr(OprType::Noteq),
         next_prohibited: r"[^=]",
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "===",
-        type_: TokenType::RelationalOpr(OprType::Iseq),
+        type_: TokenType::NormalOpr(OprType::Iseq),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "!==",
-        type_: TokenType::RelationalOpr(OprType::Isnteq),
+        type_: TokenType::NormalOpr(OprType::Isnteq),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "is",
-        type_: TokenType::RelationalOpr(OprType::Is),
+        type_: TokenType::NormalOpr(OprType::Is),
         next_prohibited: r"[^tn]",
         match_whole: true,
         categories: &[TokenCategory::Operator],
@@ -498,7 +493,7 @@ pub fn token_catalogue() -> Vec<TokenEntry<'static>> {vec![
     },
     TokenEntry{
         value: "isnt",
-        type_: TokenType::RelationalOpr(OprType::Isnt),
+        type_: TokenType::NormalOpr(OprType::Isnt),
         next_prohibited: r"[^t]",
         match_whole: true,
         categories: &[TokenCategory::Operator],
@@ -506,45 +501,45 @@ pub fn token_catalogue() -> Vec<TokenEntry<'static>> {vec![
     },
     TokenEntry{
         value: "&&",
-        type_: TokenType::LogicalOpr(OprType::And),
+        type_: TokenType::NormalOpr(OprType::And),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "||",
-        type_: TokenType::LogicalOpr(OprType::Or),
+        type_: TokenType::NormalOpr(OprType::Or),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "^^",
-        type_: TokenType::LogicalOpr(OprType::Xor),
+        type_: TokenType::NormalOpr(OprType::Xor),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "istype",
-        type_: TokenType::RelationalOpr(OprType::Istype),
+        type_: TokenType::NormalOpr(OprType::Istype),
         match_whole: true,
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "isnttype",
-        type_: TokenType::RelationalOpr(OprType::Isnttype),
+        type_: TokenType::NormalOpr(OprType::Isnttype),
         match_whole: true,
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "><",
-        type_: TokenType::SwapOpr,
+        type_: TokenType::NormalOpr(OprType::Swap),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
     TokenEntry{
         value: "..",
-        type_: TokenType::ConcatOpr,
+        type_: TokenType::NormalOpr(OprType::Concat),
         categories: &[TokenCategory::Operator],
         ..Default::default()
     },
