@@ -52,7 +52,6 @@ pub enum OprType {
     BitXor,
     Concat,
     Swap,
-    Assignment,
     Null
 }
 
@@ -113,16 +112,8 @@ pub fn get_order(opr: &OprType) -> u8 {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Flag {Hoi, Pub, Priv, Prot, Const}
 
-pub struct Statement {
-    content: Vec<Token>
-}
-
 #[derive(Clone, PartialEq)]
 pub enum Element {
-    BaseElement {
-        line: u32,
-        column: u32
-    },
     Comment {
         line: u32,
         column: u32,
@@ -180,8 +171,6 @@ impl Display for Element {
                 format!("Variable[line={}, column={}, name={}, parent={}]", line, column, name, **parent),
             Element::Literal {line, column, type_, content} =>
                 format!("Literal[line={}, column={}, type={}, content={}]", line, column, **type_, content),
-            Element::BaseElement {line, column} =>
-                format!("BaseElement[line={}, column={}]", line, column),
             Element::Comment {line, column, content} =>
                 format!("Comment[line={}, column={}, content={}]", line, column, content),
             Element::Call {line, column, called, args} =>

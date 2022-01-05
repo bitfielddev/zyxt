@@ -1,5 +1,5 @@
 use crate::syntax::lexing::{TokenCategory, TokenType, UnarySide};
-use crate::syntax::parsing::{Element, get_order, OprType};
+use crate::syntax::parsing::{Element, get_order};
 use crate::{errors, Token};
 
 fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Vec<Element> {
@@ -198,7 +198,7 @@ fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Vec<Elemen
         cursor += 1;
     }
     if catcher2 != Element::NullElement {new_elements.push(catcher2);}
-    catcher2 = Element::NullElement;
+    //catcher2 = Element::NullElement;
     elements = new_elements.clone();
     new_elements.clear();
     cursor = 0;
@@ -359,7 +359,7 @@ fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Vec<Elemen
     }
     elements = new_elements.clone();
     new_elements.clear();
-    cursor = 0;
+    //cursor = 0;
 
     for ele in elements.iter() {println!("{}", ele)}
     elements

@@ -25,12 +25,11 @@ fn compile(input: String, filename: &String) -> Vec<Token> {
     let parse_start = Instant::now();
     let parsed = parse(lexed, filename);
     let parse_time = parse_start.elapsed().as_micros();
-    let total_time = lex_start.elapsed().as_micros();
     for ele in parsed {println!("{}", ele);}
 
     println!("Lexing time: {}µs", lex_time);
     println!("Parsing time: {}µs", parse_time);
-    println!("Total time: {}µs", total_time);
+    println!("Total time: {}µs", lex_time+parse_time);
 
     let out: Vec<Token> = vec![];
     out
