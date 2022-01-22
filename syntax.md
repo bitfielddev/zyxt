@@ -12,104 +12,117 @@ comment */
 
 ## Printing to console
 ```
-#import sys
-sys.out.print("hello world");
+#import std;
+std.println("hello world");
+// in the future it will be:
+std.out.println("hello world");
 ```
 **Implemented:** ~~Lexer Parser Instructor Interpreter~~
 
 ## Declaring variables
 ```
+int x := 0; // declares it
+x = 1; // modifies it
+x := 0 // type inference
 === Flags ===
-int x = 0; // global variable, all scopes, only exists within file
-priv int x = 0; // only exists within code block ({})
-pub int x = 0; // exists within file, available when imported by another file
-prot int x = 0; // only exists when class is instantiated
+x := 0; // exists within file/class and within package
+priv x := 0; // only exists within class (in a class), within file (in a file)
+pub x := 0; // exists within file/class, within package, and when imported by another package
 
-const int x = 0; // constant, cannot be changed
+const x := 0; // constant, cannot be changed
 
-const priv int x = 0; // merge two flags
+const priv x := 0; // merge two flags
 
-hoi int x = 0; // hoist variable
+hoi x := 0; // hoist variable to top of scope
 
-=== Numbers ===
-byte x = 1b;
-short x = 1s;
-int x = 1;
-long x = 1l;
-float x = 1.0f;
-double x = 1.0;
-precise x = 1.0p;
-complex<int> x = c[1, 2];
-
-=== Booleans ===
-bool x = true;
-bool x = false;
-
-=== Strings & Characters ===
-str x = "foobar";
-char x = 'a';
-
-=== Functions ===
-func f = || void {...}
-func f = |str x, int y| str {...}
-func f = |str x, int y=2| str {...}
-func f = |str *x| str {...}
-func f = |str **x| str {...}
-
-func f = |#U[str, char] x| #U[str, char] {...}
-func f = |#any x| void {...}
-func f = |#num x| void {...}
-func f = |#seq x| void {...}
-func f = |#F<[int, int], int> x| void {...}
-func f = |#N<int> x| void {...}
-
-=== Classes & Enumerators ===
-class c = () {...}
-class c = (inheritedClass) {...}
-enum e = e[..., ...];
-
-=== Lists, Arrays & Dicts ===
-list l = l[..., ...];
-array a = a[..., ...];
-dict d = d[a: b, c: d, ...];
 
 ```
 **Implemented:** ~~Lexer Parser Instructor Interpreter~~
 
 ## Data types
 ```
-byte: 1 byte integer (-128 to 127)
-short: 2 byte integer (-32,768 to 32,767)
-int: 4 byte integer (-2,147,483,648 to 2,147,483,647)
-long: 8 byte integer (-9,223,372,036,854,775,808 to 9,223,372,036,854,775,807)
-float: 4 byte floating-point number (6-7dp)
-double: 8 byte floating-point number (15dp)
-precise: precise number (-inf to inf)
-complex<T>: a complex number of T
-bool: boolean
-str: string
-char: character
-list: a mutable array
+=== Numbers ===
+Signed int: i8, i16, i32, i64, i128, isize (default i32)
+Unsigned int: u8, u16, u32, u64, i128, usize
+Floats: f32, f64 (default f64)
+Other:
+- cpx<T> Complex number of type T
+- frac<T> Fraction of type T
+
+Examples:
+4 // default i32
+-6i8
+3u64
+3.5 // default f64
+cpx(5, 7) // cpx<i32>
+frac(2, 5) // frac<i32>
+
+=== Booleans & special constants ===
+booleans: true, false
+infinity: inf (any numerical type, default f64)
+null type: null
+- append ? at end of type to make nullable, eg i32?
+
+=== Strings & Characters ===
+str
+- "normal string"
+- f"formatted string"
+- r"raw string"
+char
+- c"a"
+- c"8ac3" // unicode representation
+
+=== Sequences ===
 list<T>: a mutable array of only T
-array: an immutable array
+- [item, ...]
 array<T>: an immutable array of only T
-dict: a dictionary
-dict<T, T>: a dictionary with T keys and T values
+- array[item, ...]
+tuple<T, ...>: a tuple of T, ...
+- tuple[item, ...]
+set<T>: a set of only T
+- set[item, ...]
+fset<T>: an immutable set of only T
+- fset[item, ...]
+dict<K, V>: a dictionary with K keys and V values
+- {key: value, ...}
 
-func: a function
-class: a class
-enum: an enumerator
+=== Functions ===
+func<tuple<T, ...>, R>: a function that accepts args of T and returns R
 
-null: null
-void: void, for functions
+Declaring a function:
+fn {...} // function that takes in nothing and returns nothing
+fn: #A {...} // function that takes in nothing and returns a value
+fn|arg: #A, ...| {...} // function that takes in args and returns nothing
+fn|arg: #A, ...|: #A {...} // function that takes in args and returns a value
+fn|kwarg: #A: 0| {...} // keyword arg
+fn|args: #varg(#A)| {...} // variable arguments
+fn|kwargs: #vkwarg(#A)| {...} // variable keyword arguments
+ifx|arg1: #A, arg2: #A| {...} // makes function infixable, must be ≥2 args
+csr {...} // closure
+csrifx|arg1: #A, arg2: #A| {...} // closure infix
+
+Calling a function:
+f(); // call function
+f(arg) // call function with one argument
+f arg // same as above
+f(arg: val) // keyword argument
+f(arg1, arg2) // call function with two arguments
+arg1 f arg2 // if infix
+
+=== Classes ===
+cls {...} // normal class
+cls|Class| {...} // inherited
+
+=== Enums ===
+enum{A, B} // enum
 
 === Typing ===
-#U<T, ...>: Union
-#any: Any
-#num: Number (#U<byte, short, int, long, float, double, precise, complex>)
-#seq: Sequence (#U<list, array>)
-#F<[T, ...], T>: callable (eg functions, objects)
-#N<T>: nullable
+T1 | T2: Union
+#A: Any
+#num: Number
+#seq: Sequence
+#C<tuple<T, ...>, T>: callable (eg functions, objects)
+T?: nullable
 ```
 **Implemented:** ~~Lexer Parser Instructor Interpreter~~
 
