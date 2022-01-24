@@ -95,8 +95,10 @@ fn: #A {...} // function that takes in nothing and returns a value
 fn|arg: #A, ...| {...} // function that takes in args and returns nothing
 fn|arg: #A, ...|: #A {...} // function that takes in args and returns a value
 fn|kwarg: #A: 0| {...} // keyword arg
-fn|args: #varg(#A)| {...} // variable arguments
-fn|kwargs: #vkwarg(#A)| {...} // variable keyword arguments
+fn|args: #varg<#A>| {...} // variable arguments
+fn|kwargs: #vkwarg<#A>| {...} // variable keyword arguments
+fn<T>|num: T|: T {...} // generics
+fn|num: i32| {...} |string: str| {...} // overloading
 ifx|arg1: #A, arg2: #A| {...} // makes function infixable, must be ≥2 args
 csr {...} // closure
 csrifx|arg1: #A, arg2: #A| {...} // closure infix
@@ -148,19 +150,21 @@ x ÷c y; // division (2nd priority) & ceiling
 x ÷~ y; // division (2nd priority) & round
 x ^ y; // exponent
 x % y; // modulo
-x rt y; // root (y^(1/x))
-x lg y; // logarithm (log y base x)
+x rt y; // root (y^(1/x)) [std.math.rt]
+x log y; // logarithm (log y base x) [std.math.log]
+x divmod y // divmod  [std.math.divmod]
 x++; // increase value of x by 1
 x--; // decrease value of x by 1
 
 === Bitwise ===
-\~ x; // complement
-x \& y; // and
-x \| y; // or
-x \^ y; // xor
-x \<< y; // leftshift
-x \>> y; // rightshift
-x \>>> y; // 0-fill rightshift
+compl x; // complement [std.math.bit.compl]
+x.compl(); // also complement [ditto]
+x and y; // and [std.math.bit.and]
+x or y; // or [std.math.bit.or]
+x xor y; // xor [std.math.bit.xor]
+x lsh y; // leftshift [std.math.bit.lsh]
+x rsh y; // rightshift [std.math.bit.rsh]
+x zrsh y; // 0-fill rightshift [std.math.bit.zrsh]
 
 === Assignment ===
 x = 1; // assignment
@@ -172,12 +176,6 @@ x /f= y; // divide x by y, and floor x
 x /c= y; // divide x by y, and ceiling x
 x /~= y; // divide x by y, and round x
 x %= y; // x modulo y, store value in x
-x \&= y; // bitwise and with y
-x \|= y; // bitwise or with y
-x \^= y; // bitwise xor with y
-x \<<= y; // bitwise leftshift by y
-x \>>= y; // bitwise rightshift by y
-x \>>>= y; // bitwise 0-fill rightshift by y
 
 === Relational ===
 x == y; // equal
@@ -189,7 +187,7 @@ x != y; // not equal
 x === y; // equal value and type
 x !== y; // not equal value or type
 x is y; // same reference
-x isnt y; // different reference
+x !is y; // different reference
 
 === Logical ===
 x && y; // and
@@ -198,11 +196,12 @@ x ^^ y; // xor
 !x; // not
 
 === Misc ===
-x ? a : b; // ternary operator
 x istype y; // x is of type y
-x isnttype y; // x is not of type y
+x !istype y; // x is not of type y
 x >< y; // swap x and y
-x .. y; // concatenation
+x ~ y; // concatenation
+&x; // get reference of x
+\x; // dereference x
 
 === Order ===
 1. foobar() foo.bar() foobar[] foo.bar ()
@@ -228,3 +227,40 @@ x .. y; // concatenation
 
 ```
 **Implemented:** ~~Lexer Parser Instructor Interpreter~~
+
+## Statements
+```
+=== Conditional ===
+if <cond> {...} elif <cond> {...} else {...}
+// returns a value
+
+match <var>
+case <val> {...}
+case <val> {...}
+else {...}
+
+while <cond> {...}
+do {...} while <cond>;
+
+=== Looping ===
+for x in list {...}
+for x: int in list {...}
+
+loop {...}
+
+=== Break, Continue & Labels ===
+'label loop {
+    ...
+    break'label;
+    continue'label;
+    ...
+}
+
+=== Return ===
+fn'outer {
+    fn'inner<T>|num: T|: T {
+        return'outer num;
+    }
+    return;
+}
+```
