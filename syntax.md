@@ -15,7 +15,7 @@ comment */
 #import std;
 std.println("hello world");
 // in the future it will be:
-std.out.println("hello world");
+std.ter.println("hello world");
 ```
 **Implemented:** ~~Lexer Parser Instructor Interpreter~~
 
