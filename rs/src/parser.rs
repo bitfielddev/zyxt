@@ -1,4 +1,4 @@
-use crate::syntax::lexing::{TokenCategory, TokenType, UnarySide};
+use crate::syntax::lexing_old::{TokenCategory, TokenType, UnarySide};
 use crate::syntax::parsing::{Element, get_order};
 use crate::{errors, Token};
 

@@ -158,7 +158,7 @@ x--; // decrease value of x by 1
 
 === Bitwise ===
 compl x; // complement [std.math.bit.compl]
-x.compl(); // also complement [ditto]
+x.compl; // also complement [ditto]
 x and y; // and [std.math.bit.and]
 x or y; // or [std.math.bit.or]
 x xor y; // xor [std.math.bit.xor]

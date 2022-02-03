@@ -8,7 +8,7 @@ use std::fs::File;
 use std::io::Read;
 use std::time::Instant;
 use crate::lexer::lex;
-use crate::syntax::lexing::Token;
+use crate::syntax::lexing_old::Token;
 use crate::parser::parse;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
