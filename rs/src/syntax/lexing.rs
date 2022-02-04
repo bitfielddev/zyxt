@@ -70,29 +70,60 @@ pub enum TokenCategory {
     LiteralStringEnd // marks the end of a literal string
 }
 
-pub struct TokenEntry<'a> {
-    pub value: &'a str,
-    pub type_: TokenType,
-    pub condition: &'a dyn Fn(&StateTracker) -> bool,
-    pub state_changes: &'a dyn Fn(&StateTracker) -> StateTracker,
-    pub prohibited: &'a str,
-    pub next_prohibited: &'a str,
-    pub match_whole: bool,
-    pub categories: &'a [TokenCategory]
+pub enum TokenEntry<'a> {
+    Singular {
+        value: &'a str,
+        type_: TokenType,
+        re: &'a str,
+        categories: &'a [TokenCategory]
+    },
+    Compound {
+        value: &'a str,
+        type_: TokenType,
+        combination: [TokenType],
+        categories: &'a [TokenCategory]
+    }
 }
-impl Default for TokenEntry<'static> {
+impl Default for TokenEntry {
     fn default() -> Self {
         TokenEntry {
             value: "",
             type_: TokenType::Null,
-            condition: &|states| { !states.is_literal_string },
-            state_changes: &|states| { states.clone() },
-            prohibited: "",
-            next_prohibited: "",
-            match_whole: false,
+            re: "",
             categories: &[]
         }
     }
 }
 
-fn get_token_entry<'a>(stack: &Vec<String>, states: &'a StateTracker, input: &String) -> Option<(String, TokenEntry<'static>)>
+fn get_possible_tokens<'a>(stack: &Vec<String>, states: &'a StateTracker, input: &String) -> Vec<TokenEntry> {
+    if states.is_literal_string {
+        return vec![
+            TokenEntry::Singular{
+                value: "\n",
+                type_: TokenType::CommentEnd,
+                condition: &|states| {states.prev_type == TokenType::CommentStart},
+                state_changes: &|states| {
+                    let mut new_states = states.clone();
+                    new_states.is_literal_string = false;
+                    new_states.literal_string_type = TokenType::Null;
+                    new_states
+                },
+                categories: &[TokenCategory::LiteralStringEnd],
+                ..Default::default()
+            }, TokenEntry::Singlular{
+                value: "*/",
+                type_: TokenType::MultilineCommentEnd,
+                condition: &|states| {states.prev_type == TokenType::MultilineCommentStart},
+                state_changes: &|states| {
+                    let mut new_states = states.clone();
+                    new_states.is_literal_string = false;
+                    new_states.literal_string_type = TokenType::Null;
+                    new_states
+                },
+                categories: &[TokenCategory::LiteralStringEnd],
+                ..Default::default()
+            }
+        ]
+    }
+    vec![]
+}
