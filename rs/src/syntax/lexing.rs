@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter, Result};
+use either::Either;
 use crate::lexer::StateTracker;
 use crate::syntax::lexing::TokenType::LiteralNumber;
 use crate::syntax::parsing::{Flag, OprType};
@@ -59,6 +60,7 @@ pub enum TokenType {
     Colon, // :
     Comment,
     Variable,
+    Whitespace,
     Null
 }
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -72,7 +74,11 @@ pub enum TokenCategory {
     LiteralStringEnd // marks the end of a literal string
 }
 
-pub struct Greedy(TokenType);
+pub enum Pattern<'a> {
+    Vartokens(Pattern<'a>),
+    Value(Pattern<'a>, &'a str),
+    Token(TokenType)
+}
 pub struct SingularTokenEntry<'a> {
         value: &'a str,
         type_: TokenType,
@@ -81,7 +87,7 @@ pub struct SingularTokenEntry<'a> {
 pub struct CompoundTokenEntry<'a> {
         value: &'a str,
         type_: TokenType,
-        combination: &'a [TokenType],
+        combination: &'a [Pattern<'a>],
         categories: &'a [TokenCategory]
 }
 impl Default for SingularTokenEntry<'static> {
@@ -93,18 +99,33 @@ impl Default for SingularTokenEntry<'static> {
         }
     }
 }
+impl Default for CompoundTokenEntry<'static> {
+    fn default() -> CompoundTokenEntry<'static> {
+        CompoundTokenEntry {
+            value: "",
+            type_: TokenType::Null,
+            combination: &[],
+            categories: &[]
+        }
+    }
+}
 
 
 const SINGULAR_TOKEN_ENTRIES: Vec<SingularTokenEntry<'static>> = vec![
     SingularTokenEntry{
         value: r"\w",
         type_: TokenType::Variable,
-        categories: &[]
+        ..Default::default()
     },
     SingularTokenEntry{
         value: r"\d",
         type_: TokenType::LiteralNumber,
-        categories: &[]
+        ..Default::default()
+    },
+    SingularTokenEntry{
+        value: r"\s",
+        type_: TokenType::Whitespace,
+        ..Default::default()
     },
     SingularTokenEntry{
         value: r"\(",
@@ -144,7 +165,7 @@ const SINGULAR_TOKEN_ENTRIES: Vec<SingularTokenEntry<'static>> = vec![
     SingularTokenEntry{
         value: r";",
         type_: TokenType::StatementEnd,
-        categories: &[]
+        ..Default::default()
     },
     SingularTokenEntry{
         value: r",",
@@ -160,6 +181,11 @@ const SINGULAR_TOKEN_ENTRIES: Vec<SingularTokenEntry<'static>> = vec![
         value: r"!",
         type_: TokenType::UnaryOpr(OprType::Not, UnarySide::Left),
         categories: &[TokenCategory::Operator],
+    },
+    SingularTokenEntry{
+        value: r"~",
+        type_: TokenType::NormalOpr(OprType::Concat),
+        categories: &[TokenCategory::Operator]
     },
     SingularTokenEntry{
         value: r"\+",
@@ -234,5 +260,113 @@ const SINGULAR_TOKEN_ENTRIES: Vec<SingularTokenEntry<'static>> = vec![
 ];
 
 const COMPOUND_TOKEN_ENTRIES: Vec<CompoundTokenEntry<'static>> = vec![
-
+    CompoundTokenEntry{
+        type_: TokenType::Variable,
+        combination: &[
+            Pattern::Greedy(Pattern::Token(TokenType::Variable))
+        ],
+        ..Default::default()
+    }
+    CompoundTokenEntry{
+        type_: TokenType::Comment,
+        combination: &[
+            Pattern::Token(TokenType::NormalOpr(OprType::FractDiv)),
+            Pattern::Token(TokenType::NormalOpr(OprType::FractDiv)),
+            Pattern::Greedy(Pattern::Token(TokenType::Null)),
+            Pattern::Value(Pattern::Token(TokenType::Whitespace), "\n")
+        ],
+        ..Default::default()
+    },
+    CompoundTokenEntry{
+        type_: TokenType::Comment,
+        combination: &[
+            Pattern::Token(TokenType::NormalOpr(OprType::FractDiv)),
+            Pattern::Token(TokenType::NormalOpr(OprType::AstMult)),
+            Pattern::Greedy(Pattern::Token(TokenType::Null)),
+            Pattern::Token(TokenType::NormalOpr(OprType::AstMult)),
+            Pattern::Token(TokenType::NormalOpr(OprType::FractDiv)),
+        ],
+        ..Default::default()
+    },
+    CompoundTokenEntry{
+        value: ":=",
+        type_: TokenType::DeclarationStmt,
+        combination: &[
+            Pattern::Token(TokenType::Colon),
+            Pattern::Token(TokenType::AssignmentOpr(OprType::Null))
+        ],
+        ..Default::default()
+    },
+    CompoundTokenEntry{
+        value: "+-",
+        type_: TokenType::NormalOpr(OprType::PlusMinus),
+        combination: &[
+            Pattern::Token(TokenType::NormalOpr(OprType::Plus)),
+            Pattern::Token(TokenType::NormalOpr(OprType::Minus)),
+        ],
+        ..Default::default()
+    },
+    CompoundTokenEntry{
+        value: "-+",
+        type_: TokenType::NormalOpr(OprType::PlusMinus),
+        combination: &[
+            Pattern::Token(TokenType::NormalOpr(OprType::Minus)),
+            Pattern::Token(TokenType::NormalOpr(OprType::Plus)),
+        ],
+        ..Default::default()
+    },
+    CompoundTokenEntry{
+        value: "/f",
+        type_: TokenType::NormalOpr(OprType::FloorfractDiv),
+        combination: &[
+            Pattern::Token(TokenType::NormalOpr(OprType::FractDiv)),
+            Pattern::Value(Pattern::Token(TokenType::Variable), "f")
+        ],
+        ..Default::default()
+    },
+    CompoundTokenEntry{
+        value: "/c",
+        type_: TokenType::NormalOpr(OprType::CeilfractDiv),
+        combination: &[
+            Pattern::Token(TokenType::NormalOpr(OprType::FractDiv)),
+            Pattern::Value(Pattern::Token(TokenType::Variable), "c")
+        ],
+        ..Default::default()
+    },
+    CompoundTokenEntry{
+        value: "/~",
+        type_: TokenType::NormalOpr(OprType::RoundfractDiv),
+        combination: &[
+            Pattern::Token(TokenType::NormalOpr(OprType::FractDiv)),
+            Pattern::Token(TokenType::NormalOpr(OprType::Concat)),
+        ],
+        ..Default::default()
+    },
+    CompoundTokenEntry{
+        value: "÷f",
+        type_: TokenType::NormalOpr(OprType::FloorDiv),
+        combination: &[
+            Pattern::Token(TokenType::NormalOpr(OprType::Div)),
+            Pattern::Value(Pattern::Token(TokenType::Variable), "f")
+        ],
+        ..Default::default()
+    },
+    CompoundTokenEntry{
+        value: "÷c",
+        type_: TokenType::NormalOpr(OprType::CeilDiv),
+        combination: &[
+            Pattern::Token(TokenType::NormalOpr(OprType::Div)),
+            Pattern::Value(Pattern::Token(TokenType::Variable), "c")
+        ],
+        ..Default::default()
+    },
+    CompoundTokenEntry{
+        value: "÷~",
+        type_: TokenType::NormalOpr(OprType::RoundDiv),
+        combination: &[
+            Pattern::Token(TokenType::NormalOpr(OprType::Div)),
+            Pattern::Token(TokenType::NormalOpr(OprType::Concat)),
+        ],
+        ..Default::default()
+    }
 ];
