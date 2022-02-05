@@ -92,7 +92,7 @@ pub struct CompoundTokenEntry<'a> {
     pub combination: &'a [Pattern<'a>],
     pub categories: &'a [TokenCategory],
     pub pair: Option<TokenType>,
-    pub literal_type: Option<TokenType>
+    pub literal: bool
 }
 impl Default for SingularTokenEntry<'static> {
     fn default() -> SingularTokenEntry<'static> {
@@ -113,7 +113,7 @@ impl Default for CompoundTokenEntry<'static> {
             combination: &[],
             categories: &[],
             pair: None,
-            literal_type: None
+            literal: false
         }
     }
 }
@@ -319,6 +319,14 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
             ..Default::default()
         },
         CompoundTokenEntry{
+            type_: TokenType::Variable,
+            combination: &[
+                Pattern::Vartokens(TokenType::Variable),
+                Pattern::Token(TokenType::Variable)
+            ],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
             value: "//",
             type_: TokenType::CommentStart,
             combination: &[
@@ -327,17 +335,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
             ],
             categories: &[TokenCategory::LiteralStringStart],
             pair: Some(TokenType::CommentEnd),
-            literal_type: Some(TokenType::Comment)
-        },
-        CompoundTokenEntry{
-            value: "\n",
-            type_: TokenType::CommentEnd,
-            combination: &[
-                Pattern::Value(TokenType::Whitespace, "\n")
-            ],
-            categories: &[TokenCategory::LiteralStringEnd],
-            pair: Some(TokenType::CommentStart),
-            literal_type: Some(TokenType::Comment)
+            ..Default::default()
         },
         CompoundTokenEntry{
             value: "/*",
@@ -348,7 +346,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
             ],
             categories: &[TokenCategory::LiteralStringStart],
             pair: Some(TokenType::MultilineCommentEnd),
-            literal_type: Some(TokenType::Comment)
+            ..Default::default()
         },
         CompoundTokenEntry{
             value: "*/",
@@ -359,7 +357,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
             ],
             categories: &[TokenCategory::LiteralStringEnd],
             pair: Some(TokenType::MultilineCommentStart),
-            literal_type: Some(TokenType::Comment)
+            ..Default::default()
         },
         CompoundTokenEntry{
             value: ":=",
@@ -591,25 +589,6 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
             ..Default::default()
         },
         CompoundTokenEntry{
-            value: "!is",
-            type_: TokenType::AssignmentOpr(OprType::Isnteq),
-            combination: &[
-                Pattern::Token(TokenType::UnaryOpr(OprType::Not, UnarySide::Left)),
-                Pattern::Value(TokenType::Variable, "is"),
-            ],
-            categories: &[TokenCategory::Operator],
-            ..Default::default()
-        },
-        CompoundTokenEntry{
-            value: "is",
-            type_: TokenType::AssignmentOpr(OprType::Isnteq),
-            combination: &[
-                Pattern::Value(TokenType::Variable, "is"),
-            ],
-            categories: &[TokenCategory::Operator],
-            ..Default::default()
-        },
-        CompoundTokenEntry{
             value: "&&",
             type_: TokenType::NormalOpr(OprType::And),
             combination: &[
@@ -635,25 +614,6 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
             combination: &[
                 Pattern::Token(TokenType::NormalOpr(OprType::Power)),
                 Pattern::Token(TokenType::NormalOpr(OprType::Power))
-            ],
-            categories: &[TokenCategory::Operator],
-            ..Default::default()
-        },
-        CompoundTokenEntry{
-            value: "!istype",
-            type_: TokenType::AssignmentOpr(OprType::Isnttype),
-            combination: &[
-                Pattern::Token(TokenType::UnaryOpr(OprType::Not, UnarySide::Left)),
-                Pattern::Value(TokenType::Variable, "istype"),
-            ],
-            categories: &[TokenCategory::Operator],
-            ..Default::default()
-        },
-        CompoundTokenEntry{
-            value: "istype",
-            type_: TokenType::AssignmentOpr(OprType::Istype),
-            combination: &[
-                Pattern::Value(TokenType::Variable, "istype"),
             ],
             categories: &[TokenCategory::Operator],
             ..Default::default()
@@ -688,6 +648,43 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
             categories: &[TokenCategory::Operator],
             ..Default::default()
         },
+    ]
+}
+
+pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
+    vec![
+        CompoundTokenEntry{
+            type_: TokenType::Comment,
+            combination: &[
+                Pattern::Token(TokenType::CommentStart),
+                Pattern::Vartokens(TokenType::Null),
+                Pattern::Value(TokenType::Whitespace, "\n")
+            ],
+            pair: Some(TokenType::CommentStart),
+            literal: true,
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            type_: TokenType::Comment,
+            combination: &[
+                Pattern::Token(TokenType::MultilineCommentStart),
+                Pattern::Vartokens(TokenType::Null),
+                Pattern::Token(TokenType::MultilineCommentEnd)
+            ],
+            pair: Some(TokenType::MultilineCommentStart),
+            literal: true,
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            value: "!is",
+            type_: TokenType::AssignmentOpr(OprType::Isnteq),
+            combination: &[
+                Pattern::Token(TokenType::UnaryOpr(OprType::Not, UnarySide::Left)),
+                Pattern::Value(TokenType::Variable, "is"),
+            ],
+            categories: &[TokenCategory::Operator],
+            ..Default::default()
+        },
         CompoundTokenEntry{
             value: "is",
             type_: TokenType::AssignmentOpr(OprType::Isnteq),
@@ -708,7 +705,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: "pub",
-            type_: TokenType::Flag(Flag::Hoi),
+            type_: TokenType::Flag(Flag::Pub),
             combination: &[
                 Pattern::Value(TokenType::Variable, "pub"),
             ],
@@ -717,7 +714,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: "priv",
-            type_: TokenType::Flag(Flag::Hoi),
+            type_: TokenType::Flag(Flag::Priv),
             combination: &[
                 Pattern::Value(TokenType::Variable, "priv"),
             ],
@@ -726,7 +723,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: "const",
-            type_: TokenType::Flag(Flag::Hoi),
+            type_: TokenType::Flag(Flag::Const),
             combination: &[
                 Pattern::Value(TokenType::Variable, "const"),
             ],
@@ -774,6 +771,27 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
             type_: TokenType::LiteralMisc,
             combination: &[
                 Pattern::Value(TokenType::Variable, "undef"),
+            ],
+            categories: &[TokenCategory::Operator],
+            ..Default::default()
+        },
+
+        CompoundTokenEntry{
+            value: "!istype",
+            type_: TokenType::AssignmentOpr(OprType::Isnttype),
+            combination: &[
+                Pattern::Token(TokenType::AssignmentOpr(OprType::Is)),
+                Pattern::Value(TokenType::Variable, "type"),
+            ],
+            categories: &[TokenCategory::Operator],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            value: "istype",
+            type_: TokenType::AssignmentOpr(OprType::Istype),
+            combination: &[
+                Pattern::Token(TokenType::AssignmentOpr(OprType::Iseq)),
+                Pattern::Value(TokenType::Variable, "type"),
             ],
             categories: &[TokenCategory::Operator],
             ..Default::default()
