@@ -107,57 +107,57 @@ const SINGULAR_TOKEN_ENTRIES: Vec<SingularTokenEntry<'static>> = vec![
         categories: &[]
     },
     SingularTokenEntry{
-        value: "(",
+        value: r"\(",
         type_: TokenType::OpenParen,
         categories: &[TokenCategory::Parenthesis, TokenCategory::OpenParen],
     },
     SingularTokenEntry{
-        value: "[",
+        value: r"\[",
         type_: TokenType::OpenParen,
         categories: &[TokenCategory::Parenthesis, TokenCategory::OpenParen],
     },
     SingularTokenEntry{
-        value: "{",
+        value: r"{",
         type_: TokenType::OpenParen,
         categories: &[TokenCategory::Parenthesis, TokenCategory::OpenParen],
     },
     SingularTokenEntry{
-        value: ")",
+        value: r"\)",
         type_: TokenType::CloseParen,
         categories: &[TokenCategory::Parenthesis, TokenCategory::CloseParen]
     },
     SingularTokenEntry{
-        value: "]",
+        value: r"\]",
         type_: TokenType::CloseParen,
         categories: &[TokenCategory::Parenthesis, TokenCategory::CloseParen]
     },
     SingularTokenEntry{
-        value: "}",
+        value: r"}",
         type_: TokenType::CloseParen,
         categories: &[TokenCategory::Parenthesis, TokenCategory::CloseParen]
     },
     SingularTokenEntry{
-        value: ".",
+        value: r"\.",
         type_: TokenType::DotOpr,
         categories: &[TokenCategory::Operator],
     },
     SingularTokenEntry{
-        value: ";",
+        value: r";",
         type_: TokenType::StatementEnd,
         categories: &[]
     },
     SingularTokenEntry{
-        value: ",",
+        value: r",",
         type_: TokenType::Comma,
         ..Default::default()
     },
     SingularTokenEntry{
-        value: ":",
+        value: r":",
         type_: TokenType::Colon,
         ..Default::default()
     },
     SingularTokenEntry{
-        value: "!",
+        value: r"!",
         type_: TokenType::UnaryOpr(OprType::Not, UnarySide::Left),
         categories: &[TokenCategory::Operator],
     },
