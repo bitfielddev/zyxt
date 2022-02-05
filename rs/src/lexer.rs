@@ -1,5 +1,5 @@
 use regex::Regex;
-use crate::syntax::lexing_old::{TokenEntry, TokenType, TokenCategory, token_catalogue};
+use crate::syntax::lexing::{TokenEntry, TokenType, TokenCategory, token_catalogue, Token};
 use crate::{errors, Token};
 
 #[derive(Clone)]

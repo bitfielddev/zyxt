@@ -1,7 +1,9 @@
 use std::fmt::{Display, Formatter, Result};
 use crate::lexer::StateTracker;
+use crate::syntax::lexing::TokenType::LiteralNumber;
 use crate::syntax::parsing::{Flag, OprType};
 
+#[derive(Clone, PartialEq)]
 pub struct Token {
     pub value: String,
     pub type_: TokenType,
@@ -70,60 +72,167 @@ pub enum TokenCategory {
     LiteralStringEnd // marks the end of a literal string
 }
 
-pub enum TokenEntry<'a> {
-    Singular {
+pub struct Greedy(TokenType);
+pub struct SingularTokenEntry<'a> {
         value: &'a str,
         type_: TokenType,
-        re: &'a str,
         categories: &'a [TokenCategory]
-    },
-    Compound {
-        value: &'a str,
-        type_: TokenType,
-        combination: [TokenType],
-        categories: &'a [TokenCategory]
-    }
 }
-impl Default for TokenEntry {
-    fn default() -> Self {
-        TokenEntry {
+pub struct CompoundTokenEntry<'a> {
+        value: &'a str,
+        type_: TokenType,
+        combination: &'a [TokenType],
+        categories: &'a [TokenCategory]
+}
+impl Default for SingularTokenEntry<'static> {
+    fn default() -> SingularTokenEntry<'static> {
+        SingularTokenEntry {
             value: "",
             type_: TokenType::Null,
-            re: "",
             categories: &[]
         }
     }
 }
 
-fn get_possible_tokens<'a>(stack: &Vec<String>, states: &'a StateTracker, input: &String) -> Vec<TokenEntry> {
-    if states.is_literal_string {
-        return vec![
-            TokenEntry::Singular{
-                value: "\n",
-                type_: TokenType::CommentEnd,
-                condition: &|states| {states.prev_type == TokenType::CommentStart},
-                state_changes: &|states| {
-                    let mut new_states = states.clone();
-                    new_states.is_literal_string = false;
-                    new_states.literal_string_type = TokenType::Null;
-                    new_states
-                },
-                categories: &[TokenCategory::LiteralStringEnd],
-                ..Default::default()
-            }, TokenEntry::Singlular{
-                value: "*/",
-                type_: TokenType::MultilineCommentEnd,
-                condition: &|states| {states.prev_type == TokenType::MultilineCommentStart},
-                state_changes: &|states| {
-                    let mut new_states = states.clone();
-                    new_states.is_literal_string = false;
-                    new_states.literal_string_type = TokenType::Null;
-                    new_states
-                },
-                categories: &[TokenCategory::LiteralStringEnd],
-                ..Default::default()
-            }
-        ]
-    }
-    vec![]
-}
+
+const SINGULAR_TOKEN_ENTRIES: Vec<SingularTokenEntry<'static>> = vec![
+    SingularTokenEntry{
+        value: r"\w",
+        type_: TokenType::Variable,
+        categories: &[]
+    },
+    SingularTokenEntry{
+        value: r"\d",
+        type_: TokenType::LiteralNumber,
+        categories: &[]
+    },
+    SingularTokenEntry{
+        value: "(",
+        type_: TokenType::OpenParen,
+        categories: &[TokenCategory::Parenthesis, TokenCategory::OpenParen],
+    },
+    SingularTokenEntry{
+        value: "[",
+        type_: TokenType::OpenParen,
+        categories: &[TokenCategory::Parenthesis, TokenCategory::OpenParen],
+    },
+    SingularTokenEntry{
+        value: "{",
+        type_: TokenType::OpenParen,
+        categories: &[TokenCategory::Parenthesis, TokenCategory::OpenParen],
+    },
+    SingularTokenEntry{
+        value: ")",
+        type_: TokenType::CloseParen,
+        categories: &[TokenCategory::Parenthesis, TokenCategory::CloseParen]
+    },
+    SingularTokenEntry{
+        value: "]",
+        type_: TokenType::CloseParen,
+        categories: &[TokenCategory::Parenthesis, TokenCategory::CloseParen]
+    },
+    SingularTokenEntry{
+        value: "}",
+        type_: TokenType::CloseParen,
+        categories: &[TokenCategory::Parenthesis, TokenCategory::CloseParen]
+    },
+    SingularTokenEntry{
+        value: ".",
+        type_: TokenType::DotOpr,
+        categories: &[TokenCategory::Operator],
+    },
+    SingularTokenEntry{
+        value: ";",
+        type_: TokenType::StatementEnd,
+        categories: &[]
+    },
+    SingularTokenEntry{
+        value: ",",
+        type_: TokenType::Comma,
+        ..Default::default()
+    },
+    SingularTokenEntry{
+        value: ":",
+        type_: TokenType::Colon,
+        ..Default::default()
+    },
+    SingularTokenEntry{
+        value: "!",
+        type_: TokenType::UnaryOpr(OprType::Not, UnarySide::Left),
+        categories: &[TokenCategory::Operator],
+    },
+    SingularTokenEntry{
+        value: r"\+",
+        type_: TokenType::NormalOpr(OprType::Plus),
+        categories: &[TokenCategory::Operator]
+    },
+    SingularTokenEntry{
+        value: r"-",
+        type_: TokenType::NormalOpr(OprType::Minus),
+        categories: &[TokenCategory::Operator]
+    },
+    SingularTokenEntry{
+        value: r"±",
+        type_: TokenType::NormalOpr(OprType::PlusMinus),
+        categories: &[TokenCategory::Operator]
+    },
+    SingularTokenEntry{
+        value: r"∓",
+        type_: TokenType::NormalOpr(OprType::MinusPlus),
+        categories: &[TokenCategory::Operator]
+    },
+    SingularTokenEntry{
+        value: r"·",
+        type_: TokenType::NormalOpr(OprType::DotMult),
+        categories: &[TokenCategory::Operator]
+    },
+    SingularTokenEntry{
+        value: r"\*",
+        type_: TokenType::NormalOpr(OprType::AstMult),
+        categories: &[TokenCategory::Operator]
+    },
+    SingularTokenEntry{
+        value: r"×",
+        type_: TokenType::NormalOpr(OprType::CrossMult),
+        categories: &[TokenCategory::Operator]
+    },
+    SingularTokenEntry{
+        value: r"/",
+        type_: TokenType::NormalOpr(OprType::FractDiv),
+        categories: &[TokenCategory::Operator],
+    },
+    SingularTokenEntry{
+        value: r"÷",
+        type_: TokenType::NormalOpr(OprType::Div),
+        categories: &[TokenCategory::Operator],
+    },
+    SingularTokenEntry{
+        value: r"^",
+        type_: TokenType::NormalOpr(OprType::Power),
+        categories: &[TokenCategory::Operator]
+    },
+    SingularTokenEntry{
+        value: r"%",
+        type_: TokenType::NormalOpr(OprType::Modulo),
+        categories: &[TokenCategory::Operator],
+    },
+    SingularTokenEntry{
+        value: r"=",
+        type_: TokenType::AssignmentOpr(OprType::Null),
+        categories: &[TokenCategory::Operator]
+    },
+    SingularTokenEntry{
+        value: r">",
+        type_: TokenType::NormalOpr(OprType::Gt),
+        categories: &[TokenCategory::Operator]
+    },
+    SingularTokenEntry{
+        value: r"<",
+        type_: TokenType::NormalOpr(OprType::Lt),
+        categories: &[TokenCategory::Operator]
+    },
+];
+
+const COMPOUND_TOKEN_ENTRIES: Vec<CompoundTokenEntry<'static>> = vec![
+
+];
