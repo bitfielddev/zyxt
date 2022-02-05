@@ -1,6 +1,7 @@
 use std::process::exit;
 use ansi_term::Color::{Black, Red, Yellow};
 use ansi_term::Style;
+use crate::lexer::Position;
 
 fn error_main(code: &str, message: String) -> ! {
     println!("{}", Black.on(Yellow).paint(format!("Error {}", code)).to_string()
@@ -9,8 +10,8 @@ fn error_main(code: &str, message: String) -> ! {
     exit(0)
 }
 
-pub fn error_pos(filename: &String, line: u32, column: u32) {
-    print!("{}", Style::new().on(Red).bold().paint(format!("{} {} {}", filename, line, column)).to_string()
+pub fn error_pos(pos: &Position) {
+    print!("{}", Style::new().on(Red).bold().paint(format!("{} {} {}", pos.filename, pos.line, pos.column)).to_string()
     + &*Red.bold().on(Yellow).paint("").to_string())
 }
 

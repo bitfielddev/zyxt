@@ -7,17 +7,18 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 use std::time::Instant;
+use regex::Error;
 use crate::lexer::lex;
-use crate::syntax::lexing_old::Token;
+use crate::syntax::lexing::Token;
 use crate::parser::parse;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-fn compile(input: String, filename: &String) -> Vec<Token> {
+fn compile(input: String, filename: &String) -> Result<Vec<Token>, Error> {
     println!("Lexing");
 
     let lex_start = Instant::now();
-    let lexed = lex(input, filename);
+    let lexed = lex(input, filename)?;
     let lex_time = lex_start.elapsed().as_micros();
     for token in lexed.iter() {println!("{}", token);}
 
@@ -32,7 +33,7 @@ fn compile(input: String, filename: &String) -> Vec<Token> {
     println!("Total time: {}µs", lex_time+parse_time);
 
     let out: Vec<Token> = vec![];
-    out
+    Ok(out)
 }
 
 fn main() {
@@ -53,7 +54,7 @@ fn main() {
                 },
                 Err(_) => {errors::error_1_1(filename.clone())}
             };
-            for thing in compile(content, filename) {println!("{}", thing);}
+            for thing in compile(content, filename).unwrap() {println!("{}", thing);}
 
         }
         "compile" => {

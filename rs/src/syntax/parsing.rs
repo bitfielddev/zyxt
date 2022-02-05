@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result};
+use crate::lexer::Position;
 use crate::Token;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -52,6 +53,8 @@ pub enum OprType {
     BitXor,
     Concat,
     Swap,
+    Ref,
+    Deref,
     Null
 }
 
@@ -115,47 +118,40 @@ pub enum Flag {Hoi, Pub, Priv, Prot, Const}
 #[derive(Clone, PartialEq)]
 pub enum Element {
     Comment {
-        line: u32,
-        column: u32,
+        position: Position,
         content: String,
     },
     Call {
-        line: u32,
-        column: u32,
+        position: Position,
         called: Box<Element>,
         args: Vec<Element>,
         //kwargs
     },
     UnaryOpr {
-        line: u32,
-        column: u32,
+        position: Position,
         type_: OprType,
         operand: Box<Element>
     },
     BinaryOpr {
-        line: u32,
-        column: u32,
+        position: Position,
         type_: OprType,
         operand1: Box<Element>,
         operand2: Box<Element>
     },
     DeclarationStmt {
-        line: u32,
-        column: u32,
+        position: Position,
         variable: Box<Element>, // variable
         content: Box<Element>,
         flags: Vec<Flag>,
         type_: Box<Element>, // variable
     },
     Literal {
-        line: u32,
-        column: u32,
+        position: Position,
         type_: Box<Element>, // variable
         content: String
     },
     Variable {
-        line: u32,
-        column: u32,
+        position: Position,
         name: String,
         parent: Box<Element>
     },
@@ -167,20 +163,20 @@ impl Display for Element {
         write!(f, "{}", match self {
             Element::NullElement => "NullElement".to_string(),
             Element::Token(token) => format!("Element::{}", token),
-            Element::Variable {line, column, name, parent} =>
-                format!("Variable[line={}, column={}, name={}, parent={}]", line, column, name, **parent),
-            Element::Literal {line, column, type_, content} =>
-                format!("Literal[line={}, column={}, type={}, content={}]", line, column, **type_, content),
-            Element::Comment {line, column, content} =>
-                format!("Comment[line={}, column={}, content={}]", line, column, content),
-            Element::Call {line, column, called, args} =>
-                format!("Call[line={}, column={}, called={}, args=[{}]]", line, column, **called, args.iter().map(|arg| format!("{}", arg)).collect::<Vec<String>>().join(",")),
-            Element::UnaryOpr {line, column, type_, operand} =>
-                format!("UnaryOpr[line={}, column={}, type={:?}, operand={}]", line, column, type_, **operand),
-            Element::BinaryOpr {line, column, type_, operand1, operand2} =>
-                format!("BinaryOpr[line={}, column={}, type={:?}, operand1={}, operand2={}]", line, column, type_, **operand1, **operand2),
-            Element::DeclarationStmt {line, column, variable, content, flags, type_} => {
-                format!("DeclarationStmt[line={}, column={}, variable={}, content={}, flags={}, type={}]", line, column, **variable, **content, flags.iter().map(|arg| format!("{:?}", arg)).collect::<Vec<String>>().join(","), **type_)
+            Element::Variable {position, name, parent} =>
+                format!("Variable[position={}, name={}, parent={}]", position, name, **parent),
+            Element::Literal {position, type_, content} =>
+                format!("Literal[position={}, type={}, content={}]", position, **type_, content),
+            Element::Comment {position, content} =>
+                format!("Comment[position={}, content={}]", position, content),
+            Element::Call {position, called, args} =>
+                format!("Call[position={}, called={}, args=[{}]]", position, **called, args.iter().map(|arg| format!("{}", arg)).collect::<Vec<String>>().join(",")),
+            Element::UnaryOpr {position, type_, operand} =>
+                format!("UnaryOpr[position={}, type={:?}, operand={}]", position, type_, **operand),
+            Element::BinaryOpr {position, type_, operand1, operand2} =>
+                format!("BinaryOpr[position={}, type={:?}, operand1={}, operand2={}]", position, type_, **operand1, **operand2),
+            Element::DeclarationStmt {position, variable, content, flags, type_} => {
+                format!("DeclarationStmt[position={}, variable={}, content={}, flags={}, type={}]", position, **variable, **content, flags.iter().map(|arg| format!("{:?}", arg)).collect::<Vec<String>>().join(","), **type_)
             }
         })
     }
