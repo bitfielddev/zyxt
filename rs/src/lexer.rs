@@ -69,7 +69,8 @@ fn lex_stage1(input: String, filename: &String) -> Result<Vec<Token>, Error> {
                     value: c.to_string(),
                     type_: entry.type_,
                     position: pos.clone(),
-                    categories: entry.categories
+                    categories: entry.categories,
+                    ..Default::default()
                 });
                 pos.next(&c);
                 found = true;
@@ -103,17 +104,17 @@ fn is_literal_match(out: &Vec<Token>, entry: &CompoundTokenEntry) -> Option<usiz
 
 
 fn is_match(combination: &[Pattern<'_>], out: &Vec<Token>) -> Option<usize> {
-    let mut cursor = out.len()-1;
+    let mut _cursor = out.len()-1;
     let mut selected = out.last().unwrap();
     let mut match_count = 0usize;
     for (i, p) in combination.iter().rev().enumerate() {
         macro_rules! update_cursor {
             () => {
                 match_count += 1;
-                if cursor == 0 && combination.len() != i+1 {return None}
-                else if cursor == 0 {return Some(match_count)}
-                cursor -= 1;
-                selected = &out.get(cursor).unwrap();
+                if _cursor == 0 && combination.len() != i+1 {return None}
+                else if _cursor == 0 {return Some(match_count)}
+                _cursor -= 1;
+                selected = &out.get(_cursor).unwrap();
             };
         }
         match p {
@@ -140,7 +141,7 @@ fn is_match(combination: &[Pattern<'_>], out: &Vec<Token>) -> Option<usize> {
     if match_count == 0 {None} else {Some(match_count)}
 }
 
-fn lex_stage2(input: Vec<Token>, filename: &String) -> Result<Vec<Token>, Error>{
+fn lex_stage2(input: Vec<Token>) -> Result<Vec<Token>, Error>{
     let mut out: Vec<Token> = vec![];
 
     let token_entries = compound_token_entries_1();
@@ -163,7 +164,8 @@ fn lex_stage2(input: Vec<Token>, filename: &String) -> Result<Vec<Token>, Error>
                         value,
                         type_: entry.type_,
                         position: pos,
-                        categories: entry.categories
+                        categories: entry.categories,
+                        ..Default::default()
                     });
                 }
 
@@ -173,7 +175,7 @@ fn lex_stage2(input: Vec<Token>, filename: &String) -> Result<Vec<Token>, Error>
     Ok(out)
 }
 
-fn lex_stage3(input: Vec<Token>, filename: &String) -> Result<Vec<Token>, Error>{
+fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, Error>{
     let mut out: Vec<Token> = vec![];
 
     let token_entries = compound_token_entries_2();
@@ -197,7 +199,8 @@ fn lex_stage3(input: Vec<Token>, filename: &String) -> Result<Vec<Token>, Error>
                         value,
                         type_: entry.type_,
                         position: pos,
-                        categories: entry.categories
+                        categories: entry.categories,
+                        ..Default::default()
                     });
                 }} else if let Some(count) = is_match(entry.combination, &out) {
                     let pos = out.get(out.len() - count).unwrap().position.clone();
@@ -207,7 +210,8 @@ fn lex_stage3(input: Vec<Token>, filename: &String) -> Result<Vec<Token>, Error>
                         value,
                         type_: entry.type_,
                         position: pos,
-                        categories: entry.categories
+                        categories: entry.categories,
+                        ..Default::default()
                     });
                 }
             }
@@ -216,13 +220,31 @@ fn lex_stage3(input: Vec<Token>, filename: &String) -> Result<Vec<Token>, Error>
     Ok(out)
 }
 
+fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
+    let mut out: Vec<Token> = vec![];
+    let mut whitespace_stack = "".to_string();
+
+    for mut t in input {
+        if t.type_ != TokenType::Whitespace {
+            t.whitespace = whitespace_stack.clone();
+            whitespace_stack = "".to_string();
+            out.push(t);
+        }
+        else {
+            whitespace_stack.push_str(&*t.value);
+        }
+    }
+    out
+}
+
 pub fn lex(preinput: String, filename: &String) -> Result<Vec<Token>, Error> {
     if preinput.trim().len() == 0 {return Ok(vec![])};
     let input = preinput + "\n";
 
     let out1 = lex_stage1(input, filename)?;
-    let out2 = lex_stage2(out1, filename)?;
-    let out3 = lex_stage3(out2, filename)?;
-    for token in out3.iter() {println!("{}", token);}
-    Ok(vec![])
+    let out2 = lex_stage2(out1)?;
+    let out3 = lex_stage3(out2)?;
+    let out4 = clean_whitespaces(out3);
+    for token in out4.iter() {println!("{}", token);}
+    Ok(out4)
 }

@@ -8,7 +8,8 @@ pub struct Token {
     pub value: String,
     pub type_: TokenType,
     pub position: Position,
-    pub categories: &'static [TokenCategory]
+    pub categories: &'static [TokenCategory],
+    pub whitespace: String
 }
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
@@ -22,7 +23,8 @@ impl Default for Token {
             value: "".to_string(),
             type_: TokenType::Null,
             position: Position{..Default::default()},
-            categories: &[]
+            categories: &[],
+            whitespace: "".to_string()
         }
     }
 }
