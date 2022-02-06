@@ -2,6 +2,7 @@ mod errors;
 mod lexer;
 mod parser;
 mod syntax;
+mod typechecker;
 
 use std::env;
 use std::fs::File;

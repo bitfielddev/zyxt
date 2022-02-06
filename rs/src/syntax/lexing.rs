@@ -79,7 +79,8 @@ pub enum TokenCategory {
 pub enum Pattern<'a> {
     Vartokens(TokenType),
     Value(TokenType, &'a str),
-    Token(TokenType)
+    Token(TokenType),
+    Re(TokenType, &'a str)
 }
 pub struct SingularTokenEntry<'a> {
     pub value: char,
@@ -123,13 +124,13 @@ impl Default for CompoundTokenEntry<'static> {
 pub fn singular_token_entries() -> Vec<SingularTokenEntry<'static>> {
     vec![
         SingularTokenEntry {
-            re: Some(Regex::new(r"\w").unwrap()),
-            type_: TokenType::Variable,
+            re: Some(Regex::new(r"\d").unwrap()),
+            type_: TokenType::LiteralNumber,
             ..Default::default()
         },
         SingularTokenEntry {
-            re: Some(Regex::new(r"\d").unwrap()),
-            type_: TokenType::LiteralNumber,
+            re: Some(Regex::new(r"\w").unwrap()),
+            type_: TokenType::Variable,
             ..Default::default()
         },
         SingularTokenEntry {
@@ -313,17 +314,36 @@ pub fn singular_token_entries() -> Vec<SingularTokenEntry<'static>> {
 pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
     vec![
         CompoundTokenEntry{
+            type_: TokenType::LiteralNumber,
+            combination: &[
+                Pattern::Token(TokenType::LiteralNumber),
+                Pattern::Token(TokenType::LiteralNumber)
+            ],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            type_: TokenType::LiteralNumber,
+            combination: &[
+                Pattern::Re(TokenType::LiteralNumber, r"^[^\.]*$"),
+                Pattern::Token(TokenType::DotOpr),
+                Pattern::Token(TokenType::LiteralNumber)
+            ],
+            pair: Some(TokenType::MultilineCommentStart),
+            literal: true,
+            ..Default::default()
+        },
+        CompoundTokenEntry{
             type_: TokenType::Variable,
             combination: &[
-                Pattern::Vartokens(TokenType::Variable),
-                Pattern::Vartokens(TokenType::LiteralNumber)
+                Pattern::Token(TokenType::Variable),
+                Pattern::Token(TokenType::LiteralNumber)
             ],
             ..Default::default()
         },
         CompoundTokenEntry{
             type_: TokenType::Variable,
             combination: &[
-                Pattern::Vartokens(TokenType::Variable),
+                Pattern::Token(TokenType::Variable),
                 Pattern::Token(TokenType::Variable)
             ],
             ..Default::default()

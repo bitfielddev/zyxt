@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use regex::Error;
+use regex::{Error, Regex};
 use crate::syntax::lexing::{compound_token_entries_1, compound_token_entries_2, CompoundTokenEntry, Pattern, singular_token_entries, TokenType};
 use crate::{errors, Token};
 
@@ -136,6 +136,13 @@ fn is_match(combination: &[Pattern<'_>], out: &Vec<Token>) -> Option<usize> {
                     update_cursor!();
                 }
             }
+            Pattern::Re(token_type, re) => {
+                if i == 0 {update_cursor!(); continue;}
+                if token_type != &TokenType::Null
+                    && token_type != &selected.type_ {return None}
+                if !Regex::new(re).unwrap().is_match(&selected.value) {return None}
+                update_cursor!();
+            }
         }
     }
     if match_count == 0 {None} else {Some(match_count)}
@@ -150,7 +157,8 @@ fn lex_stage2(input: Vec<Token>) -> Result<Vec<Token>, Error>{
         for entry in token_entries.iter() {
             let (Pattern::Value(token_type, ..)
             | Pattern::Token(token_type)
-            | Pattern::Vartokens(token_type)) = entry.combination.last().unwrap();
+            | Pattern::Vartokens(token_type)
+            | Pattern::Re(token_type, ..)) = entry.combination.last().unwrap();
             if token_type == &TokenType::Null
                 || token_type == &t.type_ && {
                 if let Pattern::Value(_, value) = entry.combination.last().unwrap() {
@@ -184,7 +192,8 @@ fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, Error>{
         for entry in token_entries.iter() {
             let (Pattern::Value(token_type, ..)
             | Pattern::Token(token_type)
-            | Pattern::Vartokens(token_type)) = entry.combination.last().unwrap();
+            | Pattern::Vartokens(token_type)
+            | Pattern::Re(token_type, ..)) = entry.combination.last().unwrap();
             if token_type == &TokenType::Null
                 || token_type == &t.type_ && {
                 if let Pattern::Value(_, value) = entry.combination.last().unwrap() {
@@ -245,6 +254,5 @@ pub fn lex(preinput: String, filename: &String) -> Result<Vec<Token>, Error> {
     let out2 = lex_stage2(out1)?;
     let out3 = lex_stage3(out2)?;
     let out4 = clean_whitespaces(out3);
-    for token in out4.iter() {println!("{}", token);}
     Ok(out4)
 }
