@@ -10,7 +10,7 @@ use std::time::Instant;
 use regex::Error;
 use crate::lexer::lex;
 use crate::syntax::lexing::Token;
-use crate::parser::parse;
+use crate::parser::parse_statements;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
@@ -24,7 +24,7 @@ fn compile(input: String, filename: &String) -> Result<Vec<Token>, Error> {
 
     println!("Parsing");
     let parse_start = Instant::now();
-    let parsed = parse(lexed, filename);
+    let parsed = parse_statements(lexed, filename);
     let parse_time = parse_start.elapsed().as_micros();
     for ele in parsed {println!("{}", ele);}
 
