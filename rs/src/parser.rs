@@ -1,7 +1,6 @@
 use crate::syntax::lexing::{TokenCategory, TokenType, UnarySide};
 use crate::syntax::parsing::{Element, get_order};
 use crate::{errors, Token};
-use crate::errors::error_2_1;
 use crate::lexer::Position;
 
 

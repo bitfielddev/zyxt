@@ -126,11 +126,13 @@ pub fn singular_token_entries() -> Vec<SingularTokenEntry<'static>> {
         SingularTokenEntry {
             re: Some(Regex::new(r"\d").unwrap()),
             type_: TokenType::LiteralNumber,
+            categories: &[TokenCategory::Literal],
             ..Default::default()
         },
         SingularTokenEntry {
             re: Some(Regex::new(r"\w").unwrap()),
             type_: TokenType::Variable,
+            categories: &[TokenCategory::Literal],
             ..Default::default()
         },
         SingularTokenEntry {
@@ -319,6 +321,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
                 Pattern::Token(TokenType::LiteralNumber),
                 Pattern::Token(TokenType::LiteralNumber)
             ],
+            categories: &[TokenCategory::Literal],
             ..Default::default()
         },
         CompoundTokenEntry{
@@ -328,8 +331,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
                 Pattern::Token(TokenType::DotOpr),
                 Pattern::Token(TokenType::LiteralNumber)
             ],
-            pair: Some(TokenType::MultilineCommentStart),
-            literal: true,
+            categories: &[TokenCategory::Literal],
             ..Default::default()
         },
         CompoundTokenEntry{
@@ -758,7 +760,7 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             combination: &[
                 Pattern::Value(TokenType::Variable, "true"),
             ],
-            categories: &[TokenCategory::Operator],
+            categories: &[TokenCategory::Literal],
             ..Default::default()
         },
         CompoundTokenEntry{
@@ -767,7 +769,7 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             combination: &[
                 Pattern::Value(TokenType::Variable, "false"),
             ],
-            categories: &[TokenCategory::Operator],
+            categories: &[TokenCategory::Literal],
             ..Default::default()
         },
         CompoundTokenEntry{
@@ -776,7 +778,7 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             combination: &[
                 Pattern::Value(TokenType::Variable, "null"),
             ],
-            categories: &[TokenCategory::Operator],
+            categories: &[TokenCategory::Literal],
             ..Default::default()
         },
         CompoundTokenEntry{
@@ -785,7 +787,7 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             combination: &[
                 Pattern::Value(TokenType::Variable, "inf"),
             ],
-            categories: &[TokenCategory::Operator],
+            categories: &[TokenCategory::Literal],
             ..Default::default()
         },
         CompoundTokenEntry{
@@ -794,7 +796,7 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             combination: &[
                 Pattern::Value(TokenType::Variable, "undef"),
             ],
-            categories: &[TokenCategory::Operator],
+            categories: &[TokenCategory::Literal],
             ..Default::default()
         },
 
