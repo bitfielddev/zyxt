@@ -148,13 +148,13 @@ pub fn singular_token_entries() -> Vec<SingularTokenEntry<'static>> {
         },
         SingularTokenEntry {
             value: '[',
-            type_: TokenType::OpenParen,
+            type_: TokenType::OpenSquareParen,
             categories: &[TokenCategory::Parenthesis, TokenCategory::OpenParen],
             ..Default::default()
         },
         SingularTokenEntry {
             value: '{',
-            type_: TokenType::OpenParen,
+            type_: TokenType::OpenCurlyParen,
             categories: &[TokenCategory::Parenthesis, TokenCategory::OpenParen],
             ..Default::default()
         },
@@ -166,13 +166,13 @@ pub fn singular_token_entries() -> Vec<SingularTokenEntry<'static>> {
         },
         SingularTokenEntry {
             value: ']',
-            type_: TokenType::CloseParen,
+            type_: TokenType::CloseSquareParen,
             categories: &[TokenCategory::Parenthesis, TokenCategory::CloseParen],
             ..Default::default()
         },
         SingularTokenEntry {
             value: '}',
-            type_: TokenType::CloseParen,
+            type_: TokenType::CloseCurlyParen,
             categories: &[TokenCategory::Parenthesis, TokenCategory::CloseParen],
             ..Default::default()
         },

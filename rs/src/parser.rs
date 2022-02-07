@@ -297,19 +297,22 @@ pub fn parse_statements(mut input: Vec<Token>, filename: &String) -> Vec<Element
     let mut comments: Vec<Element> = vec![];
 
     // detect & remove comments
-    for token in input.iter() { if token.type_ == TokenType::Comment {
-        comments.push(Element::Comment {
-            position: token.position.clone(),
-            content: token.value.clone()
-        })
-    }}
+    for token in input.iter() {
+        if token.type_ == TokenType::Comment {
+            comments.push(Element::Comment {
+                position: token.position.clone(),
+                content: token.value.clone()
+            })
+        } else if [TokenType::CommentStart,
+            TokenType::CommentEnd,
+            TokenType::MultilineCommentStart,
+            TokenType::MultilineCommentEnd].contains(&token.type_) {
+            errors::error_pos(&token.position);
+            errors::error_2_1(token.value.clone());
+        }
+    }
 
-    input = input.into_iter().filter(|token| ![
-        TokenType::CommentStart,
-        TokenType::CommentEnd,
-        TokenType::MultilineCommentStart,
-        TokenType::MultilineCommentEnd,
-        TokenType::Comment].contains(&token.type_)).collect();
+    input = input.into_iter().filter(|token| token.type_ != TokenType::Comment).collect();
     // separate token inputs into statements
     let mut token_statements: Vec<Vec<Element>> = vec![];
     let mut token_stack: Vec<Element> = vec![];
