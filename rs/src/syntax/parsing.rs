@@ -181,3 +181,18 @@ impl Display for Element {
         })
     }
 }
+impl Element {
+    pub fn get_pos(&self) -> &Position {
+        match self {
+            Element::NullElement => panic!("null element"),
+            Element::Token(..) => panic!("token"),
+            Element::Variable { position, .. } => position,
+            Element::Literal { position, .. } => position,
+            Element::Comment { position, .. } => position,
+            Element::Call { position, .. } => position,
+            Element::UnaryOpr { position, .. } => position,
+            Element::BinaryOpr { position, .. } => position,
+            Element::DeclarationStmt { position, .. } => position
+        }
+    }
+}
