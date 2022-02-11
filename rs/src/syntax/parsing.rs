@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result};
+use enum_as_inner::EnumAsInner;
 use crate::lexer::Position;
 use crate::Token;
 
@@ -115,7 +116,7 @@ pub fn get_order(opr: &OprType) -> u8 {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Flag {Hoi, Pub, Priv, Prot, Const}
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, EnumAsInner)]
 pub enum Element {
     Comment {
         position: Position,

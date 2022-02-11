@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 ansi_term = "0.12.1"
 regex = "1.5.4"
+enum-as-inner = "0.3.3"
 
 [profile.dev]
 opt-level = 0
