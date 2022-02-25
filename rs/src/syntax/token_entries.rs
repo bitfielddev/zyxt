@@ -140,6 +140,12 @@ pub fn singular_token_entries() -> Vec<SingularTokenEntry<'static>> {
             ..Default::default()
         },
         SingularTokenEntry {
+            value: '@',
+            type_: TokenType::NormalOpr(OprType::TypeCast),
+            categories: &[TokenCategory::Operator],
+            ..Default::default()
+        },
+        SingularTokenEntry {
             value: '+',
             type_: TokenType::NormalOpr(OprType::Plus),
             categories: &[TokenCategory::Operator],

@@ -43,10 +43,10 @@ impl Variable {
     }
     pub fn bin_opr(&self, type_: &OprType, other: Variable) -> Variable {
         match type_ { // will prob clean this up with macros
-            OprType::Plus => match *self {
+            OprType::Plus => match self {
                 Variable::I32(v1) => match other {
                     Variable::I32(v2) => Variable::I32(v1+v2),
-                    Variable::F64(v2) => Variable::F64(v1 as f64+v2),
+                    Variable::F64(v2) => Variable::F64(*v1 as f64+v2),
                     _ => panic!()
                 },
                 Variable::F64(v1) => match other {
@@ -56,15 +56,35 @@ impl Variable {
                 },
                 _ => panic!()
             },
-            OprType::Minus => match *self {
+            OprType::Minus => match self {
                 Variable::I32(v1) => match other {
                     Variable::I32(v2) => Variable::I32(v1-v2),
-                    Variable::F64(v2) => Variable::F64(v1 as f64-v2),
+                    Variable::F64(v2) => Variable::F64(*v1 as f64-v2),
                     _ => panic!()
                 },
                 Variable::F64(v1) => match other {
                     Variable::I32(v2) => Variable::F64(v1-v2 as f64),
                     Variable::F64(v2) => Variable::F64(v1-v2),
+                    _ => panic!()
+                },
+                _ => panic!()
+            },
+            OprType::Concat => match self {
+                Variable::I32(v1) => match other {
+                    Variable::I32(v2) => Variable::I32((v1.to_string()+&*v2.to_string()).parse::<i32>().unwrap()),
+                    Variable::F64(v2) => Variable::F64((v1.to_string()+&*v2.to_string()).parse::<f64>().unwrap()),
+                    Variable::Str(v2) => Variable::Str(v1.to_string()+&*v2),
+                    _ => panic!()
+                },
+                Variable::F64(v1) => match other {
+                    Variable::I32(v2) => Variable::F64((v1.to_string()+&*v2.to_string()).parse::<f64>().unwrap()),
+                    Variable::Str(v2) => Variable::Str(v1.to_string()+&*v2),
+                    _ => panic!()
+                },
+                Variable::Str(v1) => match other {
+                    Variable::I32(v2) => Variable::Str(v1.to_string()+&*v2.to_string()),
+                    Variable::F64(v2) => Variable::Str(v1.to_string()+&*v2.to_string()),
+                    Variable::Str(v2) => Variable::Str(v1.to_string()+&*v2),
                     _ => panic!()
                 },
                 _ => panic!()

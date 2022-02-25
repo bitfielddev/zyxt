@@ -61,7 +61,7 @@ impl Display for Element {
             Element::Comment {position, content} =>
                 format!("Comment[position={}, content={}]", position, content),
             Element::Call {position, called, args, kwargs} =>
-                format!("Call[position={}, called={}, args=[{}], kwargs={{{}}}", position, **called,
+                format!("Call[position={}, called={}, args=[{}], kwargs={{{}}}]", position, **called,
                         args.iter().map(|arg| format!("{}", arg)).collect::<Vec<String>>().join(","),
                         kwargs.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<String>>().join(",")),
             Element::UnaryOpr {position, type_, operand} =>
@@ -101,7 +101,7 @@ impl Element {
                         let type1 = operand1.get_type().get_name();
                         let type2 = operand2.get_type().get_name();
                         bin_op_return_type(type_, type1, type2, position)
-                    }, // TODO Element::UnaryOpr, Element::Call etc etc etc
+                    },
                     Element::UnaryOpr {type_, operand, position} => {
                         let opnd_type = operand.get_type().get_name();
                         un_op_return_type(type_, opnd_type, position)

@@ -134,6 +134,7 @@ pub enum OprType {
     Swap,
     Ref,
     Deref,
+    Typecast,
     Null
 }
 #[derive(Clone, Copy, Debug, PartialEq)]

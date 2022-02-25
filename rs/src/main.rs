@@ -1,3 +1,5 @@
+extern crate core;
+
 mod errors;
 mod lexer;
 mod parser;

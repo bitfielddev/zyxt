@@ -13,7 +13,15 @@ pub fn bin_op_return_type(type_: &OprType, type1: String, type2: String, positio
         (OprType::Plus, "f64", "f64") |
         (OprType::Minus, "i32", "f64") |
         (OprType::Minus, "f64", "i32") |
-        (OprType::Minus, "f64", "f64") => "f64",
+        (OprType::Minus, "f64", "f64") |
+        (OprType::Concat, "i32", "i32") |
+        (OprType::Concat, "i32", "f64") |
+        (OprType::Concat, "f64", "i32") => "f64",
+        (OprType::Concat, "str", "str") |
+        (OprType::Concat, "str", "i32") |
+        (OprType::Concat, "i32", "str") |
+        (OprType::Concat, "str", "f64") |
+        (OprType::Concat, "f64", "str") => "str",
         _ => { // TODO more operators
             errors::error_pos(position);
             errors::error_4_0_0("TODO".to_string(), type1, type2)
@@ -33,8 +41,6 @@ pub fn un_op_return_type(type_: &OprType, opnd_type: String, position: &Position
         }
     }.to_string()
 }
-
-
 
 pub fn typecheck(mut input: Vec<Element>) -> Vec<Element> {
     for ele in input.iter_mut() {

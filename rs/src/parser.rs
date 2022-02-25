@@ -150,6 +150,7 @@ fn parse_attrs_and_calls(elements: Vec<Element>, filename: &String) -> Vec<Eleme
                 catcher.clear();
                 'catch_loop2: loop {
                     cursor += 1;
+                    let mut push = true;
                     let catcher_selected = &elements[cursor];
                     if let Element::Token(catcher_selected) = catcher_selected {
                         if catcher_selected.type_ == TokenType::CloseParen && paren_level == 0 {break 'catch_loop2;}
@@ -161,11 +162,12 @@ fn parse_attrs_and_calls(elements: Vec<Element>, filename: &String) -> Vec<Eleme
                             //}
                             args.push(result);
                             catcher.clear();
+                            push = false;
                         }
                         else if catcher_selected.type_ == TokenType::CloseParen {paren_level -= 1;}
                         else if catcher_selected.type_ == TokenType::OpenParen {paren_level += 1;}
                     }
-                    catcher.push(catcher_selected.clone());
+                    if push {catcher.push(catcher_selected.clone());}
                 }
                 if catcher.len() != 0 {
                     let result = parse_expression(catcher.clone(), filename);
