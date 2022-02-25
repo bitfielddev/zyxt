@@ -132,7 +132,6 @@ pub fn singular_token_entries() -> Vec<SingularTokenEntry<'static>> {
         SingularTokenEntry {
             re: Some(Regex::new(r"\w").unwrap()),
             type_: TokenType::Variable,
-            categories: &[TokenCategory::Literal],
             ..Default::default()
         },
         SingularTokenEntry {

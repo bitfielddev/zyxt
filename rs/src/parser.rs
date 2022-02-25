@@ -35,7 +35,7 @@ fn parse_parens(elements: Vec<Element>, filename: &String) -> Vec<Element> {
                             }
                             catcher.push(catcher_selected.clone())
                         }
-                        new_elements.append(&mut parse_expression(catcher.clone(), &filename));
+                        new_elements.push(parse_expression(catcher.clone(), &filename));
                     } else {new_elements.push(Element::Token(selected.clone()))} // or else it's function args
                 } else {new_elements.push(Element::Token(selected.clone()))}
             } else {new_elements.push(Element::Token(selected.clone()))}
@@ -67,7 +67,7 @@ fn parse_literals(elements: Vec<Element>) -> Vec<Element> {
                                 _ => panic!("{}", selected.value)
                             }
                         } else if selected.type_ == TokenType::LiteralNumber{
-                            if selected.value.contains(".") {"double"} else {"int"}
+                            if selected.value.contains(".") {"f64"} else {"i32"}
                         } else {"str"}.to_string(),
                         parent: Box::new(Element::NullElement)
                     }),
@@ -154,11 +154,11 @@ fn parse_attrs_and_calls(elements: Vec<Element>, filename: &String) -> Vec<Eleme
                         if catcher_selected.type_ == TokenType::CloseParen && paren_level == 0 {break 'catch_loop2;}
                         else if catcher_selected.type_ == TokenType::Comma && paren_level == 0 {
                             let result = parse_expression(catcher.clone(), filename);
-                            if result.len() == 0 {
-                                errors::error_pos(&Position{filename: filename.clone(), line: 0, column: 0});
-                                errors::error_2_3("???".to_string(), args.len()); // TODO
-                            }
-                            args.push(result[0].clone());
+                            //if result.len() == 0 {
+                            //    errors::error_pos(&Position{filename: filename.clone(), line: 0, column: 0});
+                            //    errors::error_2_3("???".to_string(), args.len()); // TODO
+                            //}
+                            args.push(result);
                             catcher.clear();
                         }
                         else if catcher_selected.type_ == TokenType::CloseParen {paren_level -= 1;}
@@ -168,11 +168,11 @@ fn parse_attrs_and_calls(elements: Vec<Element>, filename: &String) -> Vec<Eleme
                 }
                 if catcher.len() != 0 {
                     let result = parse_expression(catcher.clone(), filename);
-                    if result.len() == 0 {
-                        errors::error_pos(&Position{filename: filename.clone(), line: 0, column: 0});
-                        errors::error_2_3("???".to_string(), args.len()); // TODO
-                    }
-                    args.push(result[0].clone());
+                    //if result.len() == 0 {
+                    //    errors::error_pos(&Position{filename: filename.clone(), line: 0, column: 0});
+                    //    errors::error_2_3("???".to_string(), args.len()); // TODO
+                    //}
+                    args.push(result);
                 }
                 catcher.clear();
                 catcher2 = Element::Call {
@@ -224,14 +224,14 @@ fn parse_operators(elements: Vec<Element>, filename: &String) -> Vec<Element> {
         return vec![Element::BinaryOpr {
             position: position.clone(),
             type_: *opr_type,
-            operand1: Box::new(parse_expression(elements[..highest_order_index].to_vec(), filename)[0].clone()),
-            operand2: Box::new(parse_expression(elements[highest_order_index+1..].to_vec(), filename)[0].clone())
+            operand1: Box::new(parse_expression(elements[..highest_order_index].to_vec(), filename)),
+            operand2: Box::new(parse_expression(elements[highest_order_index+1..].to_vec(), filename))
         }]
     } else {elements}
     // TODO unary operators
 }
 
-fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Vec<Element> {
+fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Element {
     elements = parse_parens(elements, filename);
     elements = parse_operators(elements, filename);
     elements = parse_literals(elements);
@@ -239,10 +239,10 @@ fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Vec<Elemen
 
     // TODO assignment operators above
 
-    elements
+    elements[0].clone()
 }
 
-fn parse_statement(mut elements: Vec<Element>, filename: &String) -> Vec<Element> {
+fn parse_statement(mut elements: Vec<Element>, filename: &String) -> Element {
     let mut cursor = 0;
     let mut selected;
     let mut new_elements: Vec<Element> = vec![];
@@ -274,8 +274,8 @@ fn parse_statement(mut elements: Vec<Element>, filename: &String) -> Vec<Element
             for _ in 0..flags.len()+1 {new_elements.pop();}
             new_elements.push(Element::DeclarationStmt {
                 position: position.clone(),
-                variable: Box::new(declared_var.clone()),
-                content: Box::new(parse_expression(elements[cursor+1..].to_vec(), filename).get(0).unwrap().clone()),
+                variable: Box::new(parse_expression(vec![declared_var.clone()], filename)),
+                content: Box::new(parse_expression(elements[cursor+1..].to_vec(), filename)),
                 flags,
                 type_: Box::new(Element::NullElement) // TODO type later
             });
@@ -287,11 +287,9 @@ fn parse_statement(mut elements: Vec<Element>, filename: &String) -> Vec<Element
     elements = new_elements.clone();
     new_elements.clear();
 
-    if !statement_detected {elements = parse_expression(elements, filename)}
-
-    for ele in elements.iter() {println!("{}", ele)}
+    if !statement_detected {return parse_expression(elements, filename)}
     //cursor = 0;
-    elements
+    elements[0].clone()
 }
 
 pub fn parse_statements(mut input: Vec<Token>, filename: &String) -> Vec<Element> {
@@ -321,8 +319,6 @@ pub fn parse_statements(mut input: Vec<Token>, filename: &String) -> Vec<Element
         token_statements.push(token_stack.clone());
         token_stack.clear()
     } else {token_stack.push(Element::Token(token));}}
-    // generate an AST for each statement
-    for statement in token_statements {parse_statement(statement, filename);}
-
-    vec![]
+    // generate and return an AST for each statement
+    token_statements.into_iter().map(|stmt| parse_statement(stmt, filename)).collect()
 }

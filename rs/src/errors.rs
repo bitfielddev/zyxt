@@ -77,3 +77,7 @@ pub fn error_3_0(varname: String) -> ! {
 pub fn error_4_0_0(operator: String, type1: String, type2: String) -> ! {
     error_main("4.0.0", format!("Operator {} not implemented for types `{}`, `{}`", operator, type1, type2))
 }
+/// Unary operator not implemented for type
+pub fn error_4_0_1(operator: String, type_: String) -> ! {
+    error_main("4.0.0", format!("Operator {} not implemented for type `{}`", operator, type_))
+}

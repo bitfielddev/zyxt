@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter, Result};
 use enum_as_inner::EnumAsInner;
 use crate::lexer::Position;
 use crate::Token;
+use crate::typechecker::{bin_op_return_type, un_op_return_type};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum OprType {
@@ -170,8 +171,10 @@ impl Display for Element {
                 format!("Literal[position={}, type={}, content={}]", position, **type_, content),
             Element::Comment {position, content} =>
                 format!("Comment[position={}, content={}]", position, content),
-            Element::Call {position, called, args} =>
-                format!("Call[position={}, called={}, args=[{}]]", position, **called, args.iter().map(|arg| format!("{}", arg)).collect::<Vec<String>>().join(",")),
+            Element::Call {position, called, args, kwargs} =>
+                format!("Call[position={}, called={}, args=[{}], kwargs={{{}}}", position, **called,
+                        args.iter().map(|arg| format!("{}", arg)).collect::<Vec<String>>().join(","),
+                        kwargs.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<String>>().join(",")),
             Element::UnaryOpr {position, type_, operand} =>
                 format!("UnaryOpr[position={}, type={:?}, operand={}]", position, type_, **operand),
             Element::BinaryOpr {position, type_, operand1, operand2} =>
@@ -187,13 +190,38 @@ impl Element {
         match self {
             Element::NullElement => panic!("null element"),
             Element::Token(..) => panic!("token"),
-            Element::Variable { position, .. } => position,
-            Element::Literal { position, .. } => position,
-            Element::Comment { position, .. } => position,
-            Element::Call { position, .. } => position,
-            Element::UnaryOpr { position, .. } => position,
-            Element::BinaryOpr { position, .. } => position,
+            Element::Variable { position, .. } |
+            Element::Literal { position, .. } |
+            Element::Comment { position, .. } |
+            Element::Call { position, .. } |
+            Element::UnaryOpr { position, .. } |
+            Element::BinaryOpr { position, .. } |
             Element::DeclarationStmt { position, .. } => position
         }
     }
-}
+    pub fn get_name(&self) -> String {
+        if let Element::Variable {name: type1, ..} = self {return type1.clone()} else {panic!("not variable")}
+    }
+    pub fn get_type(&self) -> Element {
+        match self {
+            Element::Literal {type_, ..} => (**type_).clone(),
+            _ => Element::Variable {
+                position: self.get_pos().clone(),
+                name: match self {
+                    Element::BinaryOpr {type_, operand1, operand2, position} => {
+                        let type1 = operand1.get_type().get_name();
+                        let type2 = operand2.get_type().get_name();
+                        bin_op_return_type(type_, type1, type2, position)
+                    }, // TODO Element::UnaryOpr, Element::Call etc etc etc
+                    Element::UnaryOpr {type_, operand, position} => {
+                        let opnd_type = operand.get_type().get_name();
+                        un_op_return_type(type_, opnd_type, position)
+                    },
+                    Element::Call {..} => "#null".to_string(),
+                    _ => "".to_string()
+                },
+                parent: Box::new(Element::NullElement)
+            }
+        }
+    }
+ }
