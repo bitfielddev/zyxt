@@ -57,15 +57,11 @@ pub fn typecheck(mut input: Vec<Element>) -> Vec<Element> {
                 if content.get_type() != *type_ {
                     *ele = Element::DeclarationStmt {
                         type_: type_.clone(),
-                        content: Box::new(Element::Call {
+                        content: Box::new(Element::BinaryOpr {
                             position: position.clone(),
-                            called: Box::new(Element::Variable {
-                                position: position.clone(),
-                                name: "to".to_string(),
-                                parent: content,
-                            }),
-                            args: vec![*type_],
-                            kwargs: Box::new(HashMap::new())
+                            type_: OprType::TypeCast,
+                            operand1: content,
+                            operand2: Box::new(*type_)
                         }),
                         variable,
                         position,
