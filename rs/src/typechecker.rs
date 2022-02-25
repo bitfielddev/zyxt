@@ -2,10 +2,18 @@ use crate::syntax::parsing::Element;
 
 
 fn typeof_(expr: &Element) -> Element {
-    Element::Variable {
-        position: expr.get_pos().clone(),
-        name: "".to_string(),
-        parent: Box::new(Element::NullElement)
+    match expr {
+        Element::Literal {type_, ..} => **type_,
+        _ => Element::Variable {
+            position: expr.get_pos().clone(),
+            name: match expr {
+                Element::BinaryOpr {type_, operand1, operand2} => {
+                    match (type-)
+                }
+                _ => "".to_string()
+            },
+            parent: Box::new(Element::NullElement)
+        }
     }
 }
 
@@ -41,5 +49,5 @@ fn typecheck(mut input: Vec<Element>) -> Vec<Element> {
             }
         }
     }
-    vec![]
+    input
 }
