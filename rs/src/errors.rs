@@ -71,3 +71,9 @@ pub fn error_2_3(func: String, index: usize) -> ! {
 pub fn error_3_0(varname: String) -> ! {
     error_main("3.0", format!("Undefined variable `{}`", varname))
 }
+
+/* 4. Type errors */
+/// Binary operator not implemented for type
+pub fn error_4_0_0(operator: String, type1: String, type2: String) -> ! {
+    error_main("4.0.0", format!("Operator {} not implemented for types `{}`, `{}`", operator, type1, type2))
+}

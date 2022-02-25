@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::syntax::lexing::{TokenCategory, TokenType, UnarySide};
 use crate::syntax::parsing::{Element, get_order};
 use crate::{errors, Token};
@@ -177,7 +178,7 @@ fn parse_attrs_and_calls(elements: Vec<Element>, filename: &String) -> Vec<Eleme
                 catcher2 = Element::Call {
                     position: selected.position.clone(),
                     called: Box::new(catcher2),
-                    args
+                    args, kwargs: Box::new(HashMap::new())
                 }
             }
             _ => {
