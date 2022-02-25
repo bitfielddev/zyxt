@@ -1,6 +1,8 @@
 use std::fmt::{Display, Formatter};
-use regex::{Error, Regex};
-use crate::syntax::lexing::{compound_token_entries_1, compound_token_entries_2, CompoundTokenEntry, Pattern, singular_token_entries, TokenType};
+use std::io::Error;
+use regex::Regex;
+use crate::syntax::token::{TokenType};
+use crate::syntax::token_entries::{Pattern, CompoundTokenEntry, compound_token_entries_1, compound_token_entries_2, singular_token_entries};
 use crate::{errors, Token};
 
 #[derive(Clone, PartialEq)]
@@ -90,14 +92,14 @@ fn is_literal_match(out: &Vec<Token>, entry: &CompoundTokenEntry) -> Option<usiz
     let mut selected = out.last().unwrap();
     let mut match_count = 1usize;
     let mut indent = 0u8;
-    while selected.type_ != entry.pair.unwrap() || indent != 0 {
+    while selected.type_ != entry.pair? || cursor == out.len() - 1 || indent != 0 {
         if selected.type_ == entry.type_ && selected != out.last().unwrap() {indent += 1;}
-        if selected.type_ == entry.pair.unwrap() && indent != 0 {indent -= 1;}
+        if selected.type_ == entry.pair? && indent != 0 {indent -= 1;}
 
         match_count += 1;
         if cursor == 0 {return None} // raise error
         cursor -= 1;
-        selected = &out.get(cursor).unwrap();
+        selected = out.get(cursor)?;
     }
     Some(match_count)
 }
@@ -114,7 +116,7 @@ fn is_match(combination: &[Pattern<'_>], out: &Vec<Token>) -> Option<usize> {
                 if _cursor == 0 && combination.len() != i+1 {return None}
                 else if _cursor == 0 {return Some(match_count)}
                 _cursor -= 1;
-                selected = &out.get(_cursor).unwrap();
+                selected = out.get(_cursor).unwrap();
             };
         }
         match p {

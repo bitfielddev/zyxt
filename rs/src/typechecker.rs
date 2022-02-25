@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use crate::errors;
 use crate::lexer::Position;
-use crate::syntax::parsing::{Element, OprType};
+use crate::syntax::element::Element;
+use crate::syntax::token::OprType;
 
 pub fn bin_op_return_type(type_: &OprType, type1: String, type2: String, position: &Position) -> String {
     match (type_, &*type1, &*type2) { // This is a temporary setup for primitives before they become non-hardcoded

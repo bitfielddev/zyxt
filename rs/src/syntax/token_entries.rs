@@ -1,80 +1,5 @@
-use std::fmt::{Display, Formatter, Result};
 use regex::Regex;
-use crate::lexer::Position;
-use crate::syntax::parsing::{Flag, OprType};
-
-#[derive(Clone, PartialEq)]
-pub struct Token {
-    pub value: String,
-    pub type_: TokenType,
-    pub position: Position,
-    pub categories: &'static [TokenCategory],
-    pub whitespace: String
-}
-impl Display for Token {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "Token[value=\"{}\", type={:?}, position={}, categories={:?}]",
-               self.value, self.type_, self.position, self.categories)
-    }
-}
-impl Default for Token {
-    fn default() -> Self {
-        Token {
-            value: "".to_string(),
-            type_: TokenType::Null,
-            position: Position{..Default::default()},
-            categories: &[],
-            whitespace: "".to_string()
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum UnarySide { Left, Right }
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum TokenType {
-    CommentStart, // //
-    CommentEnd, // \n
-    MultilineCommentStart, // /*
-    MultilineCommentEnd, // */
-    Flag(Flag), // hoi, pub, priv, prot, const
-    UnaryOpr(OprType, UnarySide), // \~, ++, ! etc
-    AssignmentOpr(OprType), // =, += etc
-    NormalOpr(OprType), // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
-    DotOpr, // .
-    DeclarationStmt, // :=
-    LiteralMisc, // true, null, etc
-    LiteralNumber, // 3, 24, -34.5 etc
-    LiteralString, // "abc" etc
-    StatementEnd, // ;
-    OpenParen, // (
-    CloseParen, // )
-    OpenSquareParen, // [
-    CloseSquareParen, // ]
-    OpenCurlyParen, // {
-    CloseCurlyParen, // }
-    OpenAngleBracket, // <
-    CloseAngleBracket, // >
-    Comma, // ,
-    Colon, // :
-    Apostrophe, // '
-    Quote, // "
-    Bar, // |
-    Comment,
-    Variable,
-    Whitespace,
-    Null
-}
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum TokenCategory {
-    Operator,
-    Literal,
-    Parenthesis,
-    OpenParen,
-    CloseParen,
-    LiteralStringStart, //  marks the start of a literal string
-    LiteralStringEnd // marks the end of a literal string
-}
+use crate::syntax::token::{Flag, OprType, TokenCategory, TokenType, UnarySide};
 
 pub enum Pattern<'a> {
     Vartokens(TokenType),
@@ -194,6 +119,12 @@ pub fn singular_token_entries() -> Vec<SingularTokenEntry<'static>> {
         SingularTokenEntry {
             value: ':',
             type_: TokenType::Colon,
+            ..Default::default()
+        },
+        SingularTokenEntry {
+            value: '\"',
+            type_: TokenType::Quote,
+            categories: &[TokenCategory::LiteralStringStart, TokenCategory::LiteralStringEnd],
             ..Default::default()
         },
         SingularTokenEntry {
@@ -696,6 +627,18 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             ],
             pair: Some(TokenType::MultilineCommentStart),
             literal: true,
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            type_: TokenType::LiteralString,
+            combination: &[
+                Pattern::Token(TokenType::Quote),
+                Pattern::Vartokens(TokenType::Null),
+                Pattern::Token(TokenType::Quote)
+            ],
+            pair: Some(TokenType::Quote),
+            literal: true,
+            categories: &[TokenCategory::Literal],
             ..Default::default()
         },
         CompoundTokenEntry{

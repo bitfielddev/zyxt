@@ -1,5 +1,3 @@
-extern crate core;
-
 mod errors;
 mod lexer;
 mod parser;
@@ -9,49 +7,56 @@ mod interpret;
 
 use std::env;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Error, Read};
 use std::time::Instant;
-use regex::Error;
+use ansi_term::Color::{White, Yellow};
 use crate::lexer::lex;
-use crate::syntax::lexing::Token;
+use crate::syntax::token::Token;
 use crate::parser::parse_statements;
 use crate::typechecker::typecheck;
 use crate::interpret::interpret_asts;
+use crate::syntax::element::Element;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-fn compile(input: String, filename: &String) -> Result<Vec<Token>, Error> {
-    println!("Lexing");
+fn compile(input: String, filename: &String, debug_info: bool) -> Result<Vec<Element>, Error> {
+    if !debug_info {return Ok(typecheck(parse_statements(lex(input, filename)?, filename)))}
+
+    println!("{}", Yellow.bold().paint("Lexing"));
     let lex_start = Instant::now();
     let lexed = lex(input, filename)?;
     let lex_time = lex_start.elapsed().as_micros();
-    for token in lexed.iter() {println!("{}", token);}
+    for token in lexed.iter() {println!("{}", White.dimmed().paint(token.to_string()));}
 
-    println!("\nParsing");
+    println!("{}", Yellow.bold().paint("\nParsing"));
     let parse_start = Instant::now();
     let parsed = parse_statements(lexed, filename);
     let parse_time = parse_start.elapsed().as_micros();
-    for ele in parsed.iter() {println!("{}", ele);}
+    for ele in parsed.iter() {println!("{}", White.dimmed().paint(ele.to_string()));}
 
-    println!("\nTypechecking");
+    println!("{}", Yellow.bold().paint("\nTypechecking"));
     let typecheck_start = Instant::now();
-    let typechecked = typecheck(parsed);
+    let out = typecheck(parsed);
     let typecheck_time = typecheck_start.elapsed().as_micros();
-    for ele in typechecked.iter() {println!("{}", ele);}
+    for ele in out.iter() {println!("{}", White.dimmed().paint(ele.to_string()));}
 
-    println!("\nInterpreting"); // temporarily here
-    let interpret_start = Instant::now();
-    interpret_asts(typechecked);
-    let interpret_time = interpret_start.elapsed().as_micros();
-
+    println!("{}", Yellow.bold().paint("\nStats"));
     println!("Lexing time: {}µs", lex_time);
     println!("Parsing time: {}µs", parse_time);
     println!("Typechecking time: {}µs", typecheck_time);
-    println!("Interpreting time: {}µs", interpret_time);
-    println!("Total time: {}µs", lex_time+parse_time+typecheck_time+interpret_time);
+    println!("Total time: {}µs", lex_time+parse_time+typecheck_time);
 
-    let out: Vec<Token> = vec![];
     Ok(out)
+}
+
+fn interpret(input: Vec<Element>, debug_info: bool) {
+    if !debug_info {interpret_asts(input); return}
+    println!("{}", Yellow.bold().paint("\nInterpreting"));
+    let interpret_start = Instant::now();
+    interpret_asts(input);
+    let interpret_time = interpret_start.elapsed().as_micros();
+    println!("{}", Yellow.bold().paint("\nStats"));
+    println!("Interpreting time: {}µs", interpret_time);
 }
 
 fn main() {
@@ -72,7 +77,8 @@ fn main() {
                 },
                 Err(_) => {errors::error_1_1(filename.clone())}
             };
-            for thing in compile(content, filename).unwrap() {println!("{}", thing);}
+            let debug_info = true;
+            interpret(compile(content, filename, debug_info).unwrap(), debug_info)
 
         }
         "compile" => {

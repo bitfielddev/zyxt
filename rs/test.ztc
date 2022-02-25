@@ -3,3 +3,4 @@ test */
 // test
 pub x := 4 + 54.3;
 std.println(x);
+std.println("hello world");

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
-use crate::syntax::lexing::{TokenCategory, TokenType, UnarySide};
-use crate::syntax::parsing::{Element, get_order};
+use crate::syntax::token::{TokenCategory, TokenType};
+use crate::syntax::element::Element;
+use crate::syntax::token::get_order;
 use crate::{errors, Token};
 use crate::lexer::Position;
 
@@ -308,6 +309,12 @@ pub fn parse_statements(mut input: Vec<Token>, filename: &String) -> Vec<Element
             TokenType::MultilineCommentEnd].contains(&token.type_) {
             errors::error_pos(&token.position);
             errors::error_2_1(token.value.clone());
+        }
+    }
+    // remove quotes around LiteralStrings
+    for token in input.iter_mut() {
+        if token.type_ == TokenType::LiteralString {
+            token.value = token.value[1..token.value.len()-1].to_string()
         }
     }
 
