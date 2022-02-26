@@ -31,12 +31,13 @@ impl Default for Token {
 pub fn get_order(opr: &OprType) -> u8 {
     let map = HashMap::from([
         (OprType::Null, 0u8),
-        (OprType::Increment, 2u8),
-        (OprType::Decrement, 2u8),
-        (OprType::PlusSign, 2u8),
-        (OprType::MinusSign, 2u8),
-        (OprType::Not, 2u8),
-        (OprType::BitComplement, 2u8),
+        (OprType::Increment, 1u8),
+        (OprType::Decrement, 1u8),
+        (OprType::PlusSign, 1u8),
+        (OprType::MinusSign, 1u8),
+        (OprType::Not, 1u8),
+        (OprType::BitComplement, 1u8),
+        (OprType::TypeCast, 2u8),
         (OprType::Logarithm, 4u8),
         (OprType::Root, 4u8),
         (OprType::Power, 3u8),
@@ -137,6 +138,12 @@ pub enum OprType {
     TypeCast,
     Null
 }
+impl Display for OprType {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Flag {Hoi, Pub, Priv, Prot, Const}
 #[derive(Copy, Clone, Debug, PartialEq)]

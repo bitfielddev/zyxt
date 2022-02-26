@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result};
-use enum_as_inner::EnumAsInner;
 use crate::lexer::Position;
 use crate::syntax::token::{Flag, OprType};
 use crate::Token;
 use crate::typechecker::{bin_op_return_type, un_op_return_type};
 
-#[derive(Clone, PartialEq, EnumAsInner)]
+#[derive(Clone, PartialEq)]
 pub enum Element {
     Comment {
         position: Position,
@@ -91,19 +90,20 @@ impl Element {
     pub fn get_name(&self) -> String {
         if let Element::Variable {name: type1, ..} = self {return type1.clone()} else {panic!("not variable")}
     }
-    pub fn get_type(&self) -> Element {
+    pub fn get_type(&self, typelist: &HashMap<String, Element>) -> Element {
         match self {
             Element::Literal {type_, ..} => (**type_).clone(),
+            Element::Variable {name, ..} => typelist.get(name).unwrap().clone(),
             _ => Element::Variable {
                 position: self.get_pos().clone(),
                 name: match self {
                     Element::BinaryOpr {type_, operand1, operand2, position} => {
-                        let type1 = operand1.get_type().get_name();
-                        let type2 = operand2.get_type().get_name();
+                        let type1 = operand1.get_type(typelist).get_name();
+                        let type2 = operand2.get_type(typelist).get_name();
                         bin_op_return_type(type_, type1, type2, position)
                     },
                     Element::UnaryOpr {type_, operand, position} => {
-                        let opnd_type = operand.get_type().get_name();
+                        let opnd_type = operand.get_type(typelist).get_name();
                         un_op_return_type(type_, opnd_type, position)
                     },
                     Element::Call {..} => "#null".to_string(),

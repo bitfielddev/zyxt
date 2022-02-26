@@ -236,9 +236,9 @@ fn parse_operators(elements: Vec<Element>, filename: &String) -> Vec<Element> {
 
 fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Element {
     elements = parse_parens(elements, filename);
+    elements = parse_attrs_and_calls(elements, filename);
     elements = parse_operators(elements, filename);
     elements = parse_literals(elements);
-    elements = parse_attrs_and_calls(elements, filename);
 
     // TODO assignment operators above
 

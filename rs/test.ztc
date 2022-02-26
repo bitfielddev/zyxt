@@ -5,3 +5,7 @@ pub x := 4 + 54.3;
 std.println(x);
 pub y := 1 ~ 2 ~ 3;
 std.println("Concatenating numbers", y);
+pub z := 3@str;
+std.println("Var z is", z, "and of type", z@type);
+pub a := true;
+std.println(a);

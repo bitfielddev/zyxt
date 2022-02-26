@@ -5,7 +5,7 @@ mod lexer;
 mod parser;
 mod syntax;
 mod typechecker;
-mod interpret;
+mod interpreter;
 
 use std::env;
 use std::fs::File;
@@ -16,7 +16,7 @@ use crate::lexer::lex;
 use crate::syntax::token::Token;
 use crate::parser::parse_statements;
 use crate::typechecker::typecheck;
-use crate::interpret::interpret_asts;
+use crate::interpreter::interpret_asts;
 use crate::syntax::element::Element;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -70,18 +70,17 @@ fn main() {
             println!("Zyxt version {}", VERSION);
         }
         "run" => {
-            if args.len() <= 2 {errors::error_0_1()};
+            if args.len() <= 2 { errors::error_0_1() };
             let filename = &args[2];
             let mut content = String::new();
             match File::open(filename) {
                 Ok(mut file) => {
                     file.read_to_string(&mut content).unwrap();
                 },
-                Err(_) => {errors::error_1_1(filename.clone())}
+                Err(_) => { errors::error_1_1(filename.clone()) }
             };
             let debug_info = true;
-            interpret(compile(content, filename, debug_info).unwrap(), debug_info)
-
+            interpret(compile(content, filename, debug_info).unwrap(), debug_info);
         }
         "compile" => {
             println!("Coming soon!");
@@ -93,5 +92,5 @@ fn main() {
             // print help page
             println!("Coming soon!")
         }
-    };
+    }
 }

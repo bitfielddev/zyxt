@@ -1,6 +1,7 @@
 use std::process::exit;
 use ansi_term::Color::{Black, Red, Yellow};
 use ansi_term::Style;
+use crate::interpreter::Variable;
 use crate::lexer::Position;
 
 fn error_main(code: &str, message: String) -> ! {
@@ -80,4 +81,15 @@ pub fn error_4_0_0(operator: String, type1: String, type2: String) -> ! {
 /// Unary operator not implemented for type
 pub fn error_4_0_1(operator: String, type_: String) -> ! {
     error_main("4.0.0", format!("Operator {} not implemented for type `{}`", operator, type_))
+}
+
+/// Binary operation unsuccessful
+pub fn error_4_1_0(operator: String, value1: Variable, value2: Variable) -> ! {
+    error_main("4.1", format!("Operator {} unsuccessful on `{}` (type `{}`), `{}` (type `{}`)",
+                              operator, value1, value1.get_type_name(), value2, value2.get_type_name()))
+}
+/// Unary operation unsuccessful
+pub fn error_4_1_1(operator: String, value: Variable) -> ! {
+    error_main("4.1", format!("Operator {} unsuccessful on `{}` (type `{}`)",
+                              operator, value, value.get_type_name()))
 }
