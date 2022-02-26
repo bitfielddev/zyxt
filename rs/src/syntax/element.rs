@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter, Result};
 use crate::lexer::Position;
 use crate::syntax::token::{Flag, OprType};
 use crate::{errors, Token};
-use crate::checker::{bin_op_return_type, un_op_return_type};
+use crate::interpreter::Variable;
 
 #[derive(Clone, PartialEq)]
 pub enum Element {
@@ -90,6 +90,26 @@ impl Element {
     pub fn get_name(&self) -> String {
         if let Element::Variable {name: type1, ..} = self {return type1.clone()} else {panic!("not variable")}
     }
+    pub fn bin_op_return_type(type_: &OprType, type1: String, type2: String, position: &Position) -> String {
+        if type_ == &OprType::TypeCast {
+            return type2
+        }
+        if let Some(v) = Variable::default(type1.clone())
+            .bin_opr(type_, Variable::default(type2.clone())) {
+            return v.get_type_name()
+        } else {
+            errors::error_pos(position);
+            errors::error_4_0_0(type_.to_string(), type1, type2)
+        }
+    }
+    pub fn un_op_return_type(type_: &OprType, opnd_type: String, position: &Position) -> String {
+        if let Some(v) = Variable::default(opnd_type.clone()).un_opr(type_) {
+            return v.get_type_name()
+        } else{
+            errors::error_pos(position);
+            errors::error_4_0_1(type_.to_string(), opnd_type)
+        }
+    }
     pub fn get_type(&self, typelist: &HashMap<String, Element>) -> Element {
         match self {
             Element::Literal {type_, ..} => (**type_).clone(),
@@ -103,11 +123,11 @@ impl Element {
                     Element::BinaryOpr {type_, operand1, operand2, position} => {
                         let type1 = operand1.get_type(typelist).get_name();
                         let type2 = operand2.get_type(typelist).get_name();
-                        bin_op_return_type(type_, type1, type2, position)
+                        Element::bin_op_return_type(type_, type1, type2, position)
                     },
                     Element::UnaryOpr {type_, operand, position} => {
                         let opnd_type = operand.get_type(typelist).get_name();
-                        un_op_return_type(type_, opnd_type, position)
+                        Element::un_op_return_type(type_, opnd_type, position)
                     },
                     Element::Call {..} => "#null".to_string(),
                     _ => "".to_string()

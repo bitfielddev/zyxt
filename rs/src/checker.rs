@@ -1,31 +1,6 @@
 use std::collections::HashMap;
-use crate::errors;
-use crate::interpreter::Variable;
-use crate::lexer::Position;
 use crate::syntax::element::Element;
 use crate::syntax::token::OprType;
-
-pub fn bin_op_return_type(type_: &OprType, type1: String, type2: String, position: &Position) -> String {
-    if type_ == &OprType::TypeCast {
-        return type2
-    }
-    if let Some(v) = Variable::default(type1.clone())
-        .bin_opr(type_, Variable::default(type2.clone())) {
-        return v.get_type_name()
-    } else {
-        errors::error_pos(position);
-        errors::error_4_0_0(type_.to_string(), type1, type2)
-    }
-}
-
-pub fn un_op_return_type(type_: &OprType, opnd_type: String, position: &Position) -> String {
-    if let Some(v) = Variable::default(opnd_type.clone()).un_opr(type_) {
-        return v.get_type_name()
-    } else{
-        errors::error_pos(position);
-        errors::error_4_0_1(type_.to_string(), opnd_type)
-    }
-}
 
 pub fn check(mut input: Vec<Element>) -> Vec<Element> {
     let mut typelist: HashMap<String, Element> = HashMap::new();

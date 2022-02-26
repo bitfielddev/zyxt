@@ -61,15 +61,18 @@ fn interpret(input: Vec<Element>, debug_info: bool) {
 }
 
 #[derive(Parser)]
-#[clap(author, version, about, long_about = None)]
+#[clap(version, about, long_about = None)]
 struct Args {
     #[clap(subcommand)]
-    subcmd: Subcmd
+    subcmd: Subcmd,
+    /// Enables debugging info
+    #[clap(short, long)]
+    verbose: bool,
 }
 #[derive(Parser)]
 enum Subcmd {
-    Run(Run),
-    Version
+    /// Runs Zyxt source code
+    Run(Run)
 }
 #[derive(Parser)]
 struct Run {
@@ -78,10 +81,8 @@ struct Run {
 
 fn main() {
     let args = Args::parse();
+    let verbose = args.verbose;
     match args.subcmd {
-        Subcmd::Version => {
-            println!("Zyxt version {}", VERSION);
-        },
         Subcmd::Run(sargs) => {
             let filename = &sargs.filename;
             let mut content = String::new();
@@ -91,8 +92,7 @@ fn main() {
                 },
                 Err(_) => { errors::error_1_1(filename.clone()) }
             };
-            let debug_info = true;
-            interpret(compile(content, filename, debug_info).unwrap(), debug_info);
+            interpret(compile(content, filename, verbose).unwrap(), verbose);
         },
         // TODO Compile, Interpret
     }

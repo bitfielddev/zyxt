@@ -159,7 +159,7 @@ pub enum TokenType {
     AssignmentOpr(OprType), // =, += etc
     NormalOpr(OprType), // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
     DotOpr, // .
-    DeclarationStmt, // :=
+    DeclarationOpr, // :=
     LiteralMisc, // true, null, etc
     LiteralNumber, // 3, 24, -34.5 etc
     LiteralString, // "abc" etc

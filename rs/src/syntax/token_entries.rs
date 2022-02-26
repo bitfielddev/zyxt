@@ -321,7 +321,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: ":=",
-            type_: TokenType::DeclarationStmt,
+            type_: TokenType::DeclarationOpr,
             combination: &[
                 Pattern::Token(TokenType::Colon),
                 Pattern::Token(TokenType::AssignmentOpr(OprType::Null))
