@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result};
 use crate::lexer::Position;
 use crate::syntax::token::{Flag, OprType};
-use crate::Token;
-use crate::typechecker::{bin_op_return_type, un_op_return_type};
+use crate::{errors, Token};
+use crate::checker::{bin_op_return_type, un_op_return_type};
 
 #[derive(Clone, PartialEq)]
 pub enum Element {
@@ -77,7 +77,7 @@ impl Element {
     pub fn get_pos(&self) -> &Position {
         match self {
             Element::NullElement => panic!("null element"),
-            Element::Token(..) => panic!("token"),
+            Element::Token(Token{position, .. }) |
             Element::Variable { position, .. } |
             Element::Literal { position, .. } |
             Element::Comment { position, .. } |
@@ -93,7 +93,10 @@ impl Element {
     pub fn get_type(&self, typelist: &HashMap<String, Element>) -> Element {
         match self {
             Element::Literal {type_, ..} => (**type_).clone(),
-            Element::Variable {name, ..} => typelist.get(name).unwrap().clone(),
+            Element::Variable {name, position, ..} => typelist.get(name).unwrap_or_else(|| {
+                errors::error_pos(position);
+                errors::error_3_0(name.clone())
+            }).clone(),
             _ => Element::Variable {
                 position: self.get_pos().clone(),
                 name: match self {

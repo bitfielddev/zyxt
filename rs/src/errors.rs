@@ -5,15 +5,13 @@ use crate::interpreter::Variable;
 use crate::lexer::Position;
 
 fn error_main(code: &str, message: String) -> ! {
-    println!("{}", Black.on(Yellow).paint(format!("Error {}", code)).to_string()
-    + &*Yellow.paint("").to_string()
+    println!("{}", Black.on(Yellow).paint(format!(" Error {} ", code)).to_string()
     + &*Red.bold().paint(format!(" {}", message)).to_string());
     exit(0)
 }
 
 pub fn error_pos(pos: &Position) {
-    print!("{}", Style::new().on(Red).bold().paint(format!("{} {} {}", pos.filename, pos.line, pos.column)).to_string()
-    + &*Red.bold().on(Yellow).paint("").to_string())
+    print!("{}", Style::new().on(Red).bold().paint(format!(" {} ", pos)).to_string())
 }
 
 /* 0. Internal errors, have to do with the compiler-interpreter itself */

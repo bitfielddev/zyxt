@@ -76,13 +76,16 @@ impl Variable {
             },
             OprType::Concat => match self {
                 Variable::I32(v1) => match other {
-                    Variable::I32(v2) => Some(Variable::I32((v1.to_string()+&*v2.to_string()).parse::<i32>().unwrap())),
-                    Variable::F64(v2) => Some(Variable::F64((v1.to_string()+&*v2.to_string()).parse::<f64>().unwrap())),
+                    Variable::I32(v2) => if let Ok(r2) = (v1.to_string()+&*v2.to_string()).parse::<i32>()
+                        {Some(Variable::I32(r2))} else {None},
+                    Variable::F64(v2) => if let Ok(r2) = (v1.to_string()+&*v2.to_string()).parse::<f64>()
+                        {Some(Variable::F64(r2))} else {None},
                     Variable::Str(v2) => Some(Variable::Str(v1.to_string()+&*v2)),
                     _ => None
                 },
                 Variable::F64(v1) => match other {
-                    Variable::I32(v2) => Some(Variable::F64((v1.to_string()+&*v2.to_string()).parse::<f64>().unwrap())),
+                    Variable::I32(v2) => if let Ok(r2) = (v1.to_string()+&*v2.to_string()).parse::<f64>()
+                        {Some(Variable::F64(r2))} else {None},
                     Variable::Str(v2) => Some(Variable::Str(v1.to_string()+&*v2)),
                     _ => None
                 },
@@ -104,7 +107,8 @@ impl Variable {
                     "i32" => match self {
                         Variable::I32(..) => Some(self.clone()),
                         Variable::F64(v) => Some(Variable::I32(*v as i32)),
-                        Variable::Str(v) => Some(Variable::I32(v.parse::<i32>().unwrap())), // TODO error if cannot
+                        Variable::Str(v) => if let Ok(r) = v.parse::<i32>()
+                            {Some(Variable::I32(r))} else {None},
                         Variable::Bool(v) => Some(Variable::I32(if *v {1} else {0})),
                         Variable::Null => Some(Variable::I32(0)),
                         _ => None
@@ -112,7 +116,8 @@ impl Variable {
                     "f64" => match self {
                         Variable::I32(v) => Some(Variable::F64(*v as f64)),
                         Variable::F64(..) => Some(self.clone()),
-                        Variable::Str(v) => Some(Variable::F64(v.parse::<f64>().unwrap())), // TODO error if cannot
+                        Variable::Str(v) => if let Ok(r) = v.parse::<f64>()
+                            {Some(Variable::F64(r))} else {None},
                         Variable::Bool(v) => Some(Variable::F64(if *v {1.0} else {0.0})),
                         Variable::Null => Some(Variable::F64(0.0)),
                         _ => None
@@ -124,8 +129,7 @@ impl Variable {
                         Variable::Str(v) => Some(Variable::Bool(v.len() != 0)),
                         Variable::Bool(..) => Some(self.clone()),
                         Variable::Type(..) => Some(Variable::Bool(true)),
-                        Variable::Null => Some(Variable::Bool(false)),
-                        _ => None
+                        Variable::Null => Some(Variable::Bool(false))
                     }
                     "type" => Some(self.get_type()),
                     _ => None

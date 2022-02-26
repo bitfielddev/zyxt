@@ -140,16 +140,25 @@ fn parse_attrs_and_calls(elements: Vec<Element>, filename: &String) -> Vec<Eleme
                     parent: Box::new(Element::NullElement)
                 }
             }
+            TokenType::CloseParen => {
+                errors::error_pos(&selected.position);
+                errors::error_2_0_2(')')
+            }
             TokenType::OpenParen => {
                 if cursor == 0 {
                     errors::error_pos(&selected.position);
                     errors::error_2_1(String::from("(")); // parens should have been settled in the first part
                 }
+                let paren_pos = selected.position.clone();
                 let mut paren_level = 0;
                 let mut args: Vec<Element> = vec![];
                 catcher.clear();
                 'catch_loop2: loop {
                     cursor += 1;
+                    if cursor >= elements.len() {
+                        errors::error_pos(&paren_pos);
+                        errors::error_2_0_1('(')
+                    }
                     let mut push = true;
                     let catcher_selected = &elements[cursor];
                     if let Element::Token(catcher_selected) = catcher_selected {
@@ -242,6 +251,10 @@ fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Element {
 
     // TODO assignment operators above
 
+    if elements.len() > 1 {
+        errors::error_pos(&elements[1].get_pos());
+        errors::error_2_1("TODO".to_string());
+    }
     elements[0].clone()
 }
 
@@ -292,6 +305,10 @@ fn parse_statement(mut elements: Vec<Element>, filename: &String) -> Element {
 
     if !statement_detected {return parse_expression(elements, filename)}
     //cursor = 0;
+    if elements.len() > 1 {
+        errors::error_pos(&elements[1].get_pos());
+        errors::error_2_1("TODO".to_string());
+    }
     elements[0].clone()
 }
 

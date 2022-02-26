@@ -27,7 +27,7 @@ pub fn un_op_return_type(type_: &OprType, opnd_type: String, position: &Position
     }
 }
 
-pub fn typecheck(mut input: Vec<Element>) -> Vec<Element> {
+pub fn check(mut input: Vec<Element>) -> Vec<Element> {
     let mut typelist: HashMap<String, Element> = HashMap::new();
     for t in ["str", "i32", "f64", "#null", "type"] {
         typelist.insert(t.to_string(), Element::Variable {
