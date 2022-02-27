@@ -5,7 +5,6 @@ mod syntax;
 mod checker;
 mod interpreter;
 
-use std::env;
 use std::fs::File;
 use std::io::{Error, Read};
 use std::time::Instant;
@@ -13,15 +12,13 @@ use ansi_term::Color::{White, Yellow};
 use clap::Parser;
 use crate::lexer::lex;
 use crate::syntax::token::Token;
-use crate::parser::parse_statements;
+use crate::parser::parse_block;
 use crate::checker::check;
 use crate::interpreter::interpret_asts;
 use crate::syntax::element::Element;
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-
 fn compile(input: String, filename: &String, debug_info: bool) -> Result<Vec<Element>, Error> {
-    if !debug_info {return Ok(check(parse_statements(lex(input, filename)?, filename)))}
+    if !debug_info {return Ok(check(parse_block(lex(input, filename)?, filename)))}
 
     println!("{}", Yellow.bold().paint("Lexing"));
     let lex_start = Instant::now();
@@ -31,7 +28,7 @@ fn compile(input: String, filename: &String, debug_info: bool) -> Result<Vec<Ele
 
     println!("{}", Yellow.bold().paint("\nParsing"));
     let parse_start = Instant::now();
-    let parsed = parse_statements(lexed, filename);
+    let parsed = parse_block(lexed, filename);
     let parse_time = parse_start.elapsed().as_micros();
     for ele in parsed.iter() {println!("{}", White.dimmed().paint(ele.to_string()));}
 
@@ -81,7 +78,7 @@ struct Run {
 
 fn main() {
     let args = Args::parse();
-    let verbose = args.verbose;
+    let verbose = if cfg!(debug_assertions) {true} else {args.verbose};
     match args.subcmd {
         Subcmd::Run(sargs) => {
             let filename = &sargs.filename;

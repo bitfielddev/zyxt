@@ -203,27 +203,27 @@ x ~ y; // concatenation
 &x; // get reference of x
 \x; // dereference x
 
-=== Order ===
-1. foobar() foo.bar() foobar[] foo.bar ()
-2. ++ -- + - ! \~
+=== Parsing order ===
+-1. ()
+0. foobar() foo.bar() foobar[] foo.bar ()
+1. ++ -- + - ! & \
+2. @
 3. ^
 4. lg rt
 5. ·
 6. * / /f /c /~ %
 7. × ÷ ÷f ÷c ÷~
 8. + - +- -+ ± ∓
-9. \<< \>> \>>>
 10. < > <= => == != === !== is isnt istype isnttype
-11. \&
-12. \^
-13. \|
 14. &&
 15. ^^
 16. ||
-17. ..
-18. ?:
+17. ~
 19. ><
 20. all assignment operators
+21. :=
+22. if {}
+99. literals
 
 ```
 **Implemented:** ~~Lexer Parser Instructor Interpreter~~

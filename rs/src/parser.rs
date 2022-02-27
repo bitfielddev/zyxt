@@ -1,11 +1,11 @@
 use std::collections::HashMap;
-use crate::syntax::token::{TokenCategory, TokenType};
+use crate::syntax::token::{TokenCategory, TokenType, get_order};
 use crate::syntax::element::Element;
-use crate::syntax::token::get_order;
 use crate::{errors, Token};
 use crate::lexer::Position;
 
-fn catch_between(opening: TokenType, closing: TokenType, elements: &Vec<Element>, cursor: &mut usize) -> Vec<Element> {
+fn catch_between(opening: TokenType, closing: TokenType,
+                 elements: &Vec<Element>, cursor: &mut usize) -> Vec<Element> {
     let mut paren_level = 0;
     let mut catcher: Vec<Element> = vec![];
     let opening_char = match opening {
@@ -33,7 +33,8 @@ fn catch_between(opening: TokenType, closing: TokenType, elements: &Vec<Element>
     catcher
 }
 
-fn split_between(divider: TokenType, opening: TokenType, closing: TokenType, elements: Vec<Element>, filename: &String) -> Vec<Element> {
+fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
+                 elements: Vec<Element>, filename: &String) -> Vec<Element> {
     let mut out: Vec<Element> = vec![];
     let mut catcher: Vec<Element> = vec![];
     let mut paren_level = 0;
@@ -89,40 +90,6 @@ fn parse_parens(elements: Vec<Element>, filename: &String) -> Vec<Element> {
         cursor += 1;
     }
 
-    new_elements
-}
-
-fn parse_literals(elements: Vec<Element>) -> Vec<Element> {
-    let mut cursor = 0;
-    let mut selected;
-    let mut new_elements: Vec<Element> = vec![];
-
-    while cursor < elements.len() {
-        selected = &elements[cursor];
-        if let Element::Token(selected) = selected {
-            if selected.categories.contains(&TokenCategory::Literal) {
-                new_elements.push(Element::Literal {
-                    position: selected.position.clone(),
-                    type_: Box::from(Element::Variable {
-                        position: selected.position.clone(),
-                        name: if selected.type_ == TokenType::LiteralMisc {
-                            match &*selected.value {
-                                "true" | "false" => "bool",
-                                "null" => "#null",
-                                "inf" | "undef" => "#num",
-                                _ => panic!("{}", selected.value)
-                            }
-                        } else if selected.type_ == TokenType::LiteralNumber{
-                            if selected.value.contains(".") {"f64"} else {"i32"}
-                        } else {"str"}.to_string(),
-                        parent: Box::new(Element::NullElement)
-                    }),
-                    content: selected.value.clone()
-                });
-            } else {new_elements.push(Element::Token(selected.clone()))}
-        } else {new_elements.push(selected.clone())}
-        cursor += 1;
-    }
     new_elements
 }
 
@@ -229,7 +196,7 @@ fn parse_attrs_and_calls(elements: Vec<Element>, filename: &String) -> Vec<Eleme
     new_elements
 }
 
-fn parse_operators(elements: Vec<Element>, filename: &String) -> Vec<Element> {
+fn parse_normal_operators(elements: Vec<Element>, filename: &String) -> Vec<Element> {
     if elements.len() == 0 {return vec![]}
     let mut highest_order_index: usize = 0;
     let mut highest_order = 0;
@@ -255,13 +222,49 @@ fn parse_operators(elements: Vec<Element>, filename: &String) -> Vec<Element> {
     // TODO unary operators
 }
 
+fn parse_literals(elements: Vec<Element>) -> Vec<Element> {
+    let mut cursor = 0;
+    let mut selected;
+    let mut new_elements: Vec<Element> = vec![];
+
+    while cursor < elements.len() {
+        selected = &elements[cursor];
+        if let Element::Token(selected) = selected {
+            if selected.categories.contains(&TokenCategory::Literal) {
+                new_elements.push(Element::Literal {
+                    position: selected.position.clone(),
+                    type_: Box::from(Element::Variable {
+                        position: selected.position.clone(),
+                        name: if selected.type_ == TokenType::LiteralMisc {
+                            match &*selected.value {
+                                "true" | "false" => "bool",
+                                "null" => "#null",
+                                "inf" | "undef" => "#num",
+                                _ => panic!("{}", selected.value)
+                            }
+                        } else if selected.type_ == TokenType::LiteralNumber{
+                            if selected.value.contains(".") {"f64"} else {"i32"}
+                        } else {"str"}.to_string(),
+                        parent: Box::new(Element::NullElement)
+                    }),
+                    content: selected.value.clone()
+                });
+            } else {new_elements.push(Element::Token(selected.clone()))}
+        } else {new_elements.push(selected.clone())}
+        cursor += 1;
+    }
+    new_elements
+}
+
 fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Element {
     elements = parse_parens(elements, filename);
     elements = parse_attrs_and_calls(elements, filename);
-    elements = parse_operators(elements, filename);
+    //elements = parse_unary_operators(elements, filename);
+    elements = parse_normal_operators(elements, filename);
+    // elements = parse_assignment_operators(elements, filename);
+    // elements = parse_declaration_expr(elements, filename);
+    // elements = parse_if_expr(elements, filename);
     elements = parse_literals(elements);
-
-    // TODO assignment operators above
 
     if elements.len() > 1 {
         errors::error_pos(&elements[1].get_pos());
@@ -324,7 +327,7 @@ fn parse_statement(mut elements: Vec<Element>, filename: &String) -> Element {
     elements[0].clone()
 }
 
-pub fn parse_statements(mut input: Vec<Token>, filename: &String) -> Vec<Element> {
+pub fn parse_block(mut input: Vec<Token>, filename: &String) -> Vec<Element> {
     let mut comments: Vec<Element> = vec![];
 
     // detect & remove comments
@@ -350,13 +353,10 @@ pub fn parse_statements(mut input: Vec<Token>, filename: &String) -> Vec<Element
     }
 
     input = input.into_iter().filter(|token| token.type_ != TokenType::Comment).collect();
-    // separate token inputs into statements
-    let mut token_statements: Vec<Vec<Element>> = vec![];
-    let mut token_stack: Vec<Element> = vec![];
-    for token in input { if token.type_ == TokenType::StatementEnd {
-        token_statements.push(token_stack.clone());
-        token_stack.clear()
-    } else {token_stack.push(Element::Token(token));}}
-    // generate and return an AST for each statement
-    token_statements.into_iter().map(|stmt| parse_statement(stmt, filename)).collect()
+
+    // generate and return an AST for each expression
+    split_between(TokenType::StatementEnd,
+        TokenType::OpenCurlyParen,
+        TokenType::CloseCurlyParen,
+        input.into_iter().map(|t| Element::Token(t)).collect::<Vec<Element>>(), filename)
 }

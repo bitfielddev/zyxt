@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result};
 use crate::lexer::Position;
 
@@ -27,61 +26,54 @@ impl Default for Token {
         }
     }
 }
-
 pub fn get_order(opr: &OprType) -> u8 {
-    let map = HashMap::from([
-        (OprType::Null, 0u8),
-        (OprType::Increment, 1u8),
-        (OprType::Decrement, 1u8),
-        (OprType::PlusSign, 1u8),
-        (OprType::MinusSign, 1u8),
-        (OprType::Not, 1u8),
-        (OprType::BitComplement, 1u8),
-        (OprType::TypeCast, 2u8),
-        (OprType::Logarithm, 4u8),
-        (OprType::Root, 4u8),
-        (OprType::Power, 3u8),
-        (OprType::DotMult, 5u8),
-        (OprType::AstMult, 6u8),
-        (OprType::CrossMult, 7u8),
-        (OprType::Div, 7u8),
-        (OprType::FloorDiv, 7u8),
-        (OprType::CeilDiv, 7u8),
-        (OprType::RoundDiv, 7u8),
-        (OprType::FractDiv, 6u8),
-        (OprType::FloorfractDiv, 6u8),
-        (OprType::CeilfractDiv, 6u8),
-        (OprType::RoundfractDiv, 6u8),
-        (OprType::Modulo, 6u8),
-        (OprType::Plus, 8u8),
-        (OprType::Minus, 8u8),
-        (OprType::PlusMinus, 8u8),
-        (OprType::MinusPlus, 8u8),
-        (OprType::BitLshift, 9u8),
-        (OprType::BitRshift, 9u8),
-        (OprType::Bit0Rshift, 9u8),
-        (OprType::And, 14u8),
-        (OprType::Or, 16u8),
-        (OprType::Xor, 15u8),
-        (OprType::Gt, 10u8),
-        (OprType::Lt, 10u8),
-        (OprType::Gteq, 10u8),
-        (OprType::Lteq, 10u8),
-        (OprType::Eq, 10u8),
-        (OprType::Noteq, 10u8),
-        (OprType::Istype, 10u8),
-        (OprType::Isnttype, 10u8),
-        (OprType::Is, 10u8),
-        (OprType::Isnt, 10u8),
-        (OprType::Iseq, 10u8),
-        (OprType::Isnteq, 10u8),
-        (OprType::BitAnd, 11u8),
-        (OprType::BitOr, 13u8),
-        (OprType::BitXor, 12u8),
-        (OprType::Concat, 17u8),
-        (OprType::Swap, 19u8),
-    ]);
-    *map.get(opr).unwrap()
+    match *opr {
+        OprType::Null => 0,
+        OprType::Increment |
+        OprType::Decrement |
+        OprType::PlusSign |
+        OprType::MinusSign |
+        OprType::Not |
+        OprType::Ref |
+        OprType::Deref => 1,
+        OprType::TypeCast => 2,
+        OprType::Power => 3,
+        OprType::Root |
+        OprType::Logarithm => 4,
+        OprType::DotMult => 5,
+        OprType::AstMult |
+        OprType::FractDiv |
+        OprType::FloorfractDiv |
+        OprType::CeilfractDiv |
+        OprType::RoundfractDiv |
+        OprType::Modulo => 6,
+        OprType::CrossMult |
+        OprType::Div |
+        OprType::FloorDiv |
+        OprType::CeilDiv |
+        OprType::RoundDiv => 7,
+        OprType::Plus |
+        OprType::Minus |
+        OprType::PlusMinus |
+        OprType::MinusPlus => 8,
+        OprType::Gt |
+        OprType::Lt |
+        OprType::Gteq |
+        OprType::Lteq |
+        OprType::Eq |
+        OprType::Noteq |
+        OprType::Istype |
+        OprType::Isnttype |
+        OprType::Is |
+        OprType::Isnt |
+        OprType::Iseq |
+        OprType::Isnteq => 10,
+        OprType::And => 14,
+        OprType::Xor => 15,
+        OprType::Or => 16,
+        OprType::Concat => 18,
+        OprType::Swap => 19
+    }
 }
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum OprType {
@@ -90,7 +82,6 @@ pub enum OprType {
     PlusSign,
     MinusSign,
     Not,
-    BitComplement,
     Logarithm,
     Root,
     Power,
@@ -110,9 +101,6 @@ pub enum OprType {
     Minus,
     PlusMinus,
     MinusPlus,
-    BitLshift,
-    BitRshift,
-    Bit0Rshift,
     And,
     Or,
     Xor,
@@ -128,9 +116,6 @@ pub enum OprType {
     Isnt,
     Iseq,
     Isnteq,
-    BitAnd,
-    BitOr,
-    BitXor,
     Concat,
     Swap,
     Ref,
@@ -147,7 +132,7 @@ impl Display for OprType {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Flag {Hoi, Pub, Priv, Prot, Const}
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum UnarySide { Left, Right }
+pub enum Side { Left, Right }
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TokenType {
     CommentStart, // //
@@ -155,7 +140,7 @@ pub enum TokenType {
     MultilineCommentStart, // /*
     MultilineCommentEnd, // */
     Flag(Flag), // hoi, pub, priv, prot, const
-    UnaryOpr(OprType, UnarySide), // \~, ++, ! etc
+    UnaryOpr(OprType, Side), // \~, ++, ! etc
     AssignmentOpr(OprType), // =, += etc
     NormalOpr(OprType), // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
     DotOpr, // .
@@ -190,5 +175,7 @@ pub enum TokenCategory {
     OpenParen,
     CloseParen,
     LiteralStringStart, //  marks the start of a literal string
-    LiteralStringEnd // marks the end of a literal string
+    LiteralStringEnd, // marks the end of a literal string,
+    ValueStart,
+    ValueEnd
 }

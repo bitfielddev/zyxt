@@ -1,8 +1,8 @@
 use std::fmt::{Display, Formatter};
 use std::io::Error;
 use regex::Regex;
-use crate::syntax::token::{TokenType};
-use crate::syntax::token_entries::{Pattern, CompoundTokenEntry, compound_token_entries_1, compound_token_entries_2, singular_token_entries};
+use crate::syntax::token::{Side, TokenCategory, TokenType};
+use crate::syntax::token_entries::{Pattern, CompoundTokenEntry, compound_token_entries_1, compound_token_entries_2, singular_token_entries, side_dependent_token_entries};
 use crate::{errors, Token};
 
 #[derive(Clone, PartialEq)]
@@ -231,6 +231,42 @@ fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, Error>{
     Ok(out)
 }
 
+fn lex_stage4(input: Vec<Token>) -> Vec<Token> {
+    let mut out: Vec<Token> = vec![];
+
+    let token_entries = side_dependent_token_entries();
+    let type_list = token_entries.iter().map(|e| e.from).collect::<Vec<TokenType>>();
+    for (i, t) in input.iter().enumerate() {
+        if !type_list.contains(&t.type_) {
+            out.push(t.clone());
+            continue;
+        }
+        let token_entry = token_entries.iter().find(|e| e.from == t.type_).unwrap();
+        let prev_token = if i != 0 {Some(&out[i-1])} else {None};
+        let next_token = if i != input.len()-1 {Some(&input[i+1])} else {None};
+        if (token_entry.side == Side::Left &&
+            (/*next_token != None
+                && next_token.unwrap().categories.contains(&TokenCategory::ValueStart)
+            && (*/prev_token == None
+                || !prev_token.unwrap().categories.contains(&TokenCategory::ValueEnd)/*)*/))
+        || (token_entry.side == Side::Right &&
+            (/*prev_token != None
+                && prev_token.unwrap().categories.contains(&TokenCategory::ValueStart)
+            && (*/next_token == None
+                || !next_token.unwrap().categories.contains(&TokenCategory::ValueStart)/*)*/)) {
+            out.push(Token{
+                type_: token_entry.type_,
+                ..t.clone()
+            })
+        } else {
+            out.push(t.clone())
+        }
+
+    }
+    out
+}
+
+
 fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
     let mut out: Vec<Token> = vec![];
     let mut whitespace_stack = "".to_string();
@@ -256,5 +292,6 @@ pub fn lex(preinput: String, filename: &String) -> Result<Vec<Token>, Error> {
     let out2 = lex_stage2(out1)?;
     let out3 = lex_stage3(out2)?;
     let out4 = clean_whitespaces(out3);
-    Ok(out4)
+    let out5 = lex_stage4(out4);
+    Ok(out5)
 }
