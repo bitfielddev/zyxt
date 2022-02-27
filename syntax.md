@@ -73,10 +73,10 @@ char
 - c"8ac3" // unicode representation
 
 === Sequences ===
-list<T>: a mutable array of only T
-- [item, ...]
 array<T>: an immutable array of only T
-- array[item, ...]
+- [item, ...]
+vec<T>: an mutable array of only T
+- vec[item, ...]
 tuple<T, ...>: a tuple of T, ...
 - tuple[item, ...]
 set<T>: a set of only T
@@ -87,28 +87,27 @@ dict<K, V>: a dictionary with K keys and V values
 - {key: value, ...}
 
 === Functions ===
-func<tuple<T, ...>, R>: a function that accepts args of T and returns R
+func<[T], R>: a function that accepts args of T and returns R
 
 Declaring a function:
-fn {...} // function that takes in nothing and returns nothing
-fn: #A {...} // function that takes in nothing and returns a value
-fn|arg: #A, ...| {...} // function that takes in args and returns nothing
-fn|arg: #A, ...|: #A {...} // function that takes in args and returns a value
-fn|kwarg: #A: 0| {...} // keyword arg
-fn|args: #varg<#A>| {...} // variable arguments
-fn|kwargs: #vkwarg<#A>| {...} // variable keyword arguments
-fn<T>|num: T|: T {...} // generics
-fn|num: i32| {...} |string: str| {...} // overloading
-ifx|arg1: #A, arg2: #A| {...} // makes function infixable, must be ≥2 args
-csr {...} // closure
-csrifx|arg1: #A, arg2: #A| {...} // closure infix
+proc {...} // function that takes in nothing and returns nothing
+proc: #A {...} // function that takes in nothing and returns a value
+proc|arg: #A, ...| {...} // function that takes in args and returns nothing
+proc|arg: #A, ...|: #A {...} // function that takes in args and returns a value
+proc|kwarg: #A: 0| {...} // keyword arg
+proc|args: #varg<#A>| {...} // variable arguments
+proc|kwargs: #vkwarg<#A>| {...} // variable keyword arguments
+proc<T>|num: T|: T {...} // generics
+proc|num: i32| {...} |string: str| {...} // overloading
+infix proc|arg1: #A, arg2: #A| {...} // makes function infixable, must be ≥2 args
+fn {...} // function without side effects
+infix fn|arg1: #A, arg2: #A| {...} // closure infix
 
 Calling a function:
 f(); // call function
-f(arg) // call function with one argument
-f arg // same as above
-f(arg: val) // keyword argument
-f(arg1, arg2) // call function with two arguments
+f(arg) or f arg// call function with one argument
+f(arg: val) or f arg: val // keyword argument
+f(arg1, arg2) or f arg1, arg2 // call function with two arguments
 arg1 f arg2 // if infix
 
 === Classes ===
@@ -119,7 +118,7 @@ cls|Class| {...} // inherited
 enum{A, B} // enum
 
 === Typing ===
-T1 | T2: Union
+T1 / T2: Union
 #A: Any
 #num: Number
 #seq: Sequence
@@ -249,7 +248,7 @@ for x: int in list {...}
 loop {...}
 
 === Break, Continue & Labels ===
-'label loop {
+loop'label {
     ...
     break'label;
     continue'label;
