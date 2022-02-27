@@ -194,7 +194,8 @@ fn interpret_expr(input: Element, varlist: &mut HashMap<String, Variable>) -> Va
                                     interpret_expr(*operand2, varlist));
             }),
         Element::Variable {name, ..} => (*varlist.get(&*name).unwrap()).clone(),
-        Element::DeclarationStmt {variable, content, ..} => {
+        Element::Declare {variable, content, ..} |
+        Element::Set {variable, content, ..} => {
             let var = interpret_expr(*content, varlist);
             varlist.insert(variable.get_name(), var);
             (*varlist.get(&*variable.get_name()).unwrap()).clone()

@@ -1,5 +1,5 @@
 use regex::Regex;
-use crate::syntax::token::{Flag, OprType, TokenCategory, TokenType, Side};
+use crate::syntax::token::{Flag, OprType, TokenCategory, TokenType, Side, Keyword};
 
 pub enum Pattern<'a> {
     Vartokens(TokenType),
@@ -498,6 +498,16 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
             ..Default::default()
         },
         CompoundTokenEntry{
+            value: "~=",
+            type_: TokenType::AssignmentOpr(OprType::Concat),
+            combination: &[
+                Pattern::Token(TokenType::NormalOpr(OprType::Concat)),
+                Pattern::Token(TokenType::AssignmentOpr(OprType::Null))
+            ],
+            categories: &[TokenCategory::Operator],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
             value: "==",
             type_: TokenType::AssignmentOpr(OprType::Eq),
             combination: &[
@@ -654,6 +664,58 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             pair: Some(TokenType::Quote),
             literal: true,
             categories: &[TokenCategory::Literal, TokenCategory::ValueStart, TokenCategory::ValueEnd],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            value: "if",
+            type_: TokenType::Keyword(Keyword::If),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "if"),
+            ],
+            categories: &[TokenCategory::ValueStart],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            value: "else",
+            type_: TokenType::Keyword(Keyword::Else),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "else"),
+            ],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            value: "elif",
+            type_: TokenType::Keyword(Keyword::Elif),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "elif"),
+            ],
+            ..Default::default()
+        },
+
+        CompoundTokenEntry{
+            value: "do",
+            type_: TokenType::Keyword(Keyword::Do),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "do"),
+            ],
+            ..Default::default()
+        },
+
+        CompoundTokenEntry{
+            value: "while",
+            type_: TokenType::Keyword(Keyword::While),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "while"),
+            ],
+            ..Default::default()
+        },
+
+        CompoundTokenEntry{
+            value: "for",
+            type_: TokenType::Keyword(Keyword::For),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "for"),
+            ],
             ..Default::default()
         },
         CompoundTokenEntry{

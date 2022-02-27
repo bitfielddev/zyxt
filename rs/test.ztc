@@ -1,10 +1,12 @@
 /* test
 test */
 // test
-pub x := 4 + -(54.3);
+pub x := 4 + 54.3;
 std.println(x);
 pub y := 1 ~ 2 ~ 3;
 std.println("Concatenating numbers", y);
+y += 234;
+std.println("Adding 234 to y, it is now", y);
 pub z := 3@str;
 std.println("Var z is", z, "and of type", z@type);
 pub a := true;

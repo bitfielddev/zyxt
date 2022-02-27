@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::syntax::token::{TokenCategory, TokenType, get_order};
+use crate::syntax::token::{TokenCategory, TokenType, get_order, Side, OprType};
 use crate::syntax::element::Element;
 use crate::{errors, Token};
 use crate::lexer::Position;
@@ -34,14 +34,18 @@ fn catch_between(opening: TokenType, closing: TokenType,
 }
 
 fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
-                 elements: Vec<Element>, filename: &String) -> Vec<Element> {
+                 elements: Vec<Element>, filename: &String, ignore_empty: bool) -> Vec<Element> {
     let mut out: Vec<Element> = vec![];
     let mut catcher: Vec<Element> = vec![];
     let mut paren_level = 0;
     for element in elements {
         if let Element::Token(Token{type_, ..}) = element {
             if type_ == divider && paren_level == 0 {
-                out.push(parse_expression(catcher.clone(), filename));
+                if !ignore_empty && catcher.len() == 0 {
+                    todo!()
+                } else if catcher.len() != 0 {
+                    out.push(parse_expr(catcher.clone(), filename));
+                }
                 catcher.clear();
             } else if type_ == opening {paren_level += 1;}
             else if type_ == closing {paren_level -= 1;}
@@ -58,7 +62,11 @@ fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
             _ => '?'
         })
     }
-    out.push(parse_expression(catcher.clone(), filename));
+    if !ignore_empty && catcher.len() == 0 {
+        todo!()
+    } else if catcher.len() != 0 {
+        out.push(parse_expr(catcher.clone(), filename));
+    }
     out
 }
 
@@ -66,7 +74,6 @@ fn parse_parens(elements: Vec<Element>, filename: &String) -> Vec<Element> {
     let mut cursor = 0;
     let mut selected;
     let mut new_elements: Vec<Element> = vec![];
-    // parse ()s
     while cursor < elements.len() {
         selected = &elements[cursor];
         if let Element::Token(selected) = selected {
@@ -82,7 +89,7 @@ fn parse_parens(elements: Vec<Element>, filename: &String) -> Vec<Element> {
                         let paren_contents = catch_between(TokenType::OpenParen,
                             TokenType::CloseParen,
                             &elements, &mut cursor);
-                        new_elements.push(parse_expression(paren_contents, &filename));
+                        new_elements.push(parse_expr(paren_contents, &filename));
                     } else {new_elements.push(Element::Token(selected.clone()))} // or else it's function args
                 } else {new_elements.push(Element::Token(selected.clone()))}
             } else {new_elements.push(Element::Token(selected.clone()))}
@@ -93,7 +100,7 @@ fn parse_parens(elements: Vec<Element>, filename: &String) -> Vec<Element> {
     new_elements
 }
 
-fn parse_attrs_and_calls(elements: Vec<Element>, filename: &String) -> Vec<Element> {
+fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> Vec<Element> {
     let mut cursor = 0;
     let mut selected;
     let mut new_elements: Vec<Element> = vec![];
@@ -102,7 +109,7 @@ fn parse_attrs_and_calls(elements: Vec<Element>, filename: &String) -> Vec<Eleme
     while cursor < elements.len() {
         selected = &elements[cursor];
         if let Element::Token(selected) = selected { match selected.type_ {
-            TokenType::DotOpr => {
+            TokenType::DotOpr => { // TODO rewrite this
                 if cursor == 0 {
                     errors::error_pos(&selected.position);
                     errors::error_2_1(String::from(".")); // could be enum but thats for later
@@ -151,87 +158,11 @@ fn parse_attrs_and_calls(elements: Vec<Element>, filename: &String) -> Vec<Eleme
                     parent: Box::new(Element::NullElement)
                 }
             }
-            TokenType::CloseParen => {
-                errors::error_pos(&selected.position);
-                errors::error_2_0_2(')')
-            }
-            TokenType::OpenParen => {
-                if cursor == 0 {
-                    errors::error_pos(&selected.position);
-                    errors::error_2_1(String::from("(")); // parens should have been settled in the first part
-                }
-                let args: Vec<Element> = split_between(TokenType::Comma,
-                    TokenType::OpenParen, TokenType::CloseParen,
-                    catch_between(TokenType::OpenParen,
-                                  TokenType::CloseParen,
-                                  &elements, &mut cursor),
-                    filename);
-                catcher = Element::Call {
-                    position: selected.position.clone(),
-                    called: Box::new(catcher),
-                    args, kwargs: Box::new(HashMap::new())
-                }
-            }
-            _ => {
+            TokenType::LiteralNumber |
+            TokenType::LiteralMisc |
+            TokenType::LiteralString => {
                 if catcher != Element::NullElement {new_elements.push(catcher.clone());}
-                catcher = Element::NullElement;
-                new_elements.push(Element::Token(selected.clone()));
-            }
-        }} else if let Element::Literal {..} = selected {
-            if catcher != Element::NullElement {new_elements.push(catcher.clone());}
-            catcher = selected.clone();
-        } else if let Element::Call {called, ..} = selected {
-            if let Element::Literal {..} = **called {
-                if catcher != Element::NullElement {new_elements.push(catcher.clone());}
-                catcher = selected.clone();
-            }} else {
-            if catcher != Element::NullElement {new_elements.push(catcher.clone());}
-            catcher = Element::NullElement;
-            new_elements.push(selected.clone());
-        }
-        cursor += 1;
-    }
-    if catcher != Element::NullElement {new_elements.push(catcher);}
-    //catcher2 = Element::NullElement;
-    new_elements
-}
-
-fn parse_normal_operators(elements: Vec<Element>, filename: &String) -> Vec<Element> {
-    if elements.len() == 0 {return vec![]}
-    let mut highest_order_index: usize = 0;
-    let mut highest_order = 0;
-    for (i, ele) in elements.iter().enumerate() {
-        if let Element::Token(Token{type_: TokenType::NormalOpr(opr_type), position, value, .. }) = ele {
-            if i == 0 || i == elements.len()-1 {
-                errors::error_pos(position);
-                errors::error_2_1(value.clone());
-            }
-            if get_order(&opr_type) >= highest_order {
-                highest_order_index = i;
-                highest_order = get_order(&opr_type);
-            }}
-    }
-    if let Element::Token(Token{type_: TokenType::NormalOpr(opr_type), position, ..}) = &elements[highest_order_index] {
-        return vec![Element::BinaryOpr {
-            position: position.clone(),
-            type_: *opr_type,
-            operand1: Box::new(parse_expression(elements[..highest_order_index].to_vec(), filename)),
-            operand2: Box::new(parse_expression(elements[highest_order_index+1..].to_vec(), filename))
-        }]
-    } else {elements}
-    // TODO unary operators
-}
-
-fn parse_literals(elements: Vec<Element>) -> Vec<Element> {
-    let mut cursor = 0;
-    let mut selected;
-    let mut new_elements: Vec<Element> = vec![];
-
-    while cursor < elements.len() {
-        selected = &elements[cursor];
-        if let Element::Token(selected) = selected {
-            if selected.categories.contains(&TokenCategory::Literal) {
-                new_elements.push(Element::Literal {
+                catcher = Element::Literal {
                     position: selected.position.clone(),
                     type_: Box::from(Element::Variable {
                         position: selected.position.clone(),
@@ -248,38 +179,143 @@ fn parse_literals(elements: Vec<Element>) -> Vec<Element> {
                         parent: Box::new(Element::NullElement)
                     }),
                     content: selected.value.clone()
-                });
-            } else {new_elements.push(Element::Token(selected.clone()))}
-        } else {new_elements.push(selected.clone())}
+                }
+            }
+            TokenType::CloseParen => {
+                errors::error_pos(&selected.position);
+                errors::error_2_0_2(')')
+            }
+            TokenType::OpenParen => {
+                if cursor == 0 {
+                    errors::error_pos(&selected.position);
+                    errors::error_2_1(String::from("(")); // parens should have been settled in the first part
+                }
+                let args: Vec<Element> = split_between(TokenType::Comma,
+                    TokenType::OpenParen, TokenType::CloseParen,
+                    catch_between(TokenType::OpenParen,
+                                  TokenType::CloseParen,
+                                  &elements, &mut cursor),
+                    filename, false);
+                catcher = Element::Call {
+                    position: selected.position.clone(),
+                    called: Box::new(catcher),
+                    args, kwargs: Box::new(HashMap::new())
+                }
+            }
+            _ => {
+                if catcher != Element::NullElement {new_elements.push(catcher.clone());}
+                catcher = Element::NullElement;
+                new_elements.push(Element::Token(selected.clone()));
+            }
+        }} else {
+            if catcher != Element::NullElement {new_elements.push(catcher.clone());}
+            catcher = Element::NullElement;
+            new_elements.push(selected.clone());
+        }
         cursor += 1;
     }
+    if catcher != Element::NullElement {new_elements.push(catcher);}
+    //catcher2 = Element::NullElement;
     new_elements
 }
 
-fn parse_expression(mut elements: Vec<Element>, filename: &String) -> Element {
-    elements = parse_parens(elements, filename);
-    elements = parse_attrs_and_calls(elements, filename);
-    //elements = parse_unary_operators(elements, filename);
-    elements = parse_normal_operators(elements, filename);
-    // elements = parse_assignment_operators(elements, filename);
-    // elements = parse_declaration_expr(elements, filename);
-    // elements = parse_if_expr(elements, filename);
-    elements = parse_literals(elements);
+fn parse_assignment_oprs(elements: Vec<Element>, filename: &String) -> Vec<Element> {
+    if elements.len() == 0 {return vec![]}
+    for (i, ele) in elements.iter().enumerate() {
+        if let Element::Token(Token{type_: TokenType::AssignmentOpr(opr_type), position, ..}) = ele {
+            if i == 0 || i == elements.len()-1 {
+                errors::error_pos(position);
+                errors::error_2_1("TODO".to_string());
+            }
+            let variable = parse_expr(vec![elements[i-1].clone()], filename);
+            let content = if opr_type == &OprType::Null {
+                parse_expr(elements[i+1..].to_vec(), filename)
+            } else {
+                Element::BinaryOpr {
+                    position: position.clone(),
+                    type_: opr_type.clone(),
+                    operand1: Box::new(variable.clone()),
+                    operand2: Box::new(parse_expr(elements[i+1..].to_vec(), filename))
+                }
+            };
 
-    if elements.len() > 1 {
-        errors::error_pos(&elements[1].get_pos());
-        errors::error_2_1("TODO".to_string());
+            return elements[..i-1].to_vec().into_iter()
+                .chain(vec![Element::Set {
+                    position: position.clone(),
+                    variable: Box::new(variable),
+                    content: Box::new(content)
+                }]).collect::<Vec<Element>>()
+        }
     }
-    elements[0].clone()
+    elements
 }
 
-fn parse_statement(mut elements: Vec<Element>, filename: &String) -> Element {
+fn parse_un_oprs(elements: Vec<Element>, filename: &String) -> Vec<Element> {
+    if elements.len() == 0 {return vec![]}
+    for (i, ele) in elements.iter().enumerate().rev() {
+        if let Element::Token(Token{type_: TokenType::UnaryOpr(opr_type, opr_side), position, ..}) = ele {
+            if opr_side == &Side::Left {
+                if i == elements.len()-1 {
+                    errors::error_pos(position);
+                    errors::error_2_1("TODO".to_string())
+                }
+                return elements[..i].to_vec().into_iter()
+                    .chain(vec![Element::UnaryOpr {
+                        position: position.clone(),
+                        type_: *opr_type,
+                        operand: Box::new(parse_expr(elements[i+1..].to_vec(), filename))
+                    }]).collect::<Vec<Element>>()
+            } else if opr_side == &Side::Right {
+                if i == 0 {
+                    errors::error_pos(position);
+                    errors::error_2_1("TODO".to_string())
+                }
+                return vec![Element::UnaryOpr {
+                    position: position.clone(),
+                    type_: *opr_type,
+                    operand: Box::new(parse_expr(elements[..i].to_vec(), filename))
+                }].into_iter()
+                    .chain(elements[i+1..].to_vec())
+                    .collect::<Vec<Element>>();
+            }
+        }
+    }
+    elements
+}
+
+fn parse_normal_oprs(elements: Vec<Element>, filename: &String) -> Vec<Element> {
+    if elements.len() == 0 {return vec![]}
+    let mut highest_order_index: usize = 0;
+    let mut highest_order = 0;
+    let mut opr_detected = false;
+    for (i, ele) in elements.iter().enumerate() {
+        if let Element::Token(Token{type_: TokenType::NormalOpr(opr_type), position, value, .. }) = ele {
+            if i == 0 || i == elements.len()-1 {
+                errors::error_pos(position);
+                errors::error_2_1(value.clone());
+            }
+            if get_order(&opr_type) >= highest_order {
+                highest_order_index = i;
+                highest_order = get_order(&opr_type);
+                opr_detected = true
+            }}
+    }
+    if !opr_detected {elements}
+    else if let Element::Token(Token{type_: TokenType::NormalOpr(opr_type), position, ..}) = &elements[highest_order_index] {
+        vec![Element::BinaryOpr {
+            position: position.clone(),
+            type_: *opr_type,
+            operand1: Box::new(parse_expr(elements[..highest_order_index].to_vec(), filename)),
+            operand2: Box::new(parse_expr(elements[highest_order_index+1..].to_vec(), filename))
+        }]
+    } else {elements}
+}
+
+fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> {
     let mut cursor = 0;
     let mut selected;
     let mut new_elements: Vec<Element> = vec![];
-    let mut statement_detected = false;
 
-    // parse declaration statement
     let mut flag_pos = None;
     while cursor < elements.len() {
         selected = &elements[cursor];
@@ -303,23 +339,34 @@ fn parse_statement(mut elements: Vec<Element>, filename: &String) -> Element {
                 f
             };
             for _ in 0..flags.len()+1 {new_elements.pop();}
-            new_elements.push(Element::DeclarationStmt {
+            new_elements.push(Element::Declare {
                 position: position.clone(),
-                variable: Box::new(parse_expression(vec![declared_var.clone()], filename)),
-                content: Box::new(parse_expression(elements[cursor+1..].to_vec(), filename)),
+                variable: Box::new(parse_expr(vec![declared_var.clone()], filename)),
+                content: Box::new(parse_expr(elements[cursor+1..].to_vec(), filename)),
                 flags,
                 type_: Box::new(Element::NullElement) // TODO type later
             });
-            statement_detected = true;
             break;
         } else {new_elements.push(selected.clone())}
         cursor += 1;
     }
-    elements = new_elements.clone();
-    new_elements.clear();
+    new_elements
+}
 
-    if !statement_detected {return parse_expression(elements, filename)}
-    //cursor = 0;
+fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Element {
+    if elements.len() > 1 {
+        // elements = parse_blocks(elements, filename);
+        elements = parse_parens(elements, filename);
+    }
+    elements = parse_vars_literals_and_calls(elements, filename);
+    if elements.len() > 1 {
+        elements = parse_declaration_expr(elements, filename);
+        // elements = parse_if_expr(elements, filename);
+        elements = parse_assignment_oprs(elements, filename);
+        elements = parse_un_oprs(elements, filename);
+        elements = parse_normal_oprs(elements, filename);
+    }
+
     if elements.len() > 1 {
         errors::error_pos(&elements[1].get_pos());
         errors::error_2_1("TODO".to_string());
@@ -358,5 +405,6 @@ pub fn parse_block(mut input: Vec<Token>, filename: &String) -> Vec<Element> {
     split_between(TokenType::StatementEnd,
         TokenType::OpenCurlyParen,
         TokenType::CloseCurlyParen,
-        input.into_iter().map(|t| Element::Token(t)).collect::<Vec<Element>>(), filename)
+        input.into_iter().map(|t| Element::Token(t))
+                      .collect::<Vec<Element>>(), filename, true)
 }

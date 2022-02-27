@@ -12,11 +12,11 @@ pub fn check(mut input: Vec<Element>) -> Vec<Element> {
         });
     }
     for ele in input.iter_mut() {
-        if let Element::DeclarationStmt {position, variable, content, flags, type_} = ele.clone() {
+        if let Element::Declare {position, variable, content, flags, type_} = ele.clone() {
             let content_type = content.get_type(&typelist);
             if type_ == Box::new(Element::NullElement) {
                 typelist.insert(variable.get_name(), content_type.clone());
-                *ele = Element::DeclarationStmt {
+                *ele = Element::Declare {
                     type_: Box::new(content_type),
                     content,
                     variable,
@@ -26,7 +26,7 @@ pub fn check(mut input: Vec<Element>) -> Vec<Element> {
             } else {
                 typelist.insert(variable.get_name(), *type_.clone());
                 if content.get_type(&typelist) != *type_ {
-                    *ele = Element::DeclarationStmt {
+                    *ele = Element::Declare {
                         type_: type_.clone(),
                         content: Box::new(Element::BinaryOpr {
                             position: position.clone(),

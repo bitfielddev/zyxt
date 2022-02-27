@@ -1,9 +1,15 @@
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Display, Formatter, Result, write};
 use crate::lexer::Position;
 use crate::syntax::token::{Flag, OprType};
 use crate::{errors, Token};
 use crate::interpreter::Variable;
+
+#[derive(Clone, PartialEq)]
+pub struct Condition {
+    condition: Element,
+    if_true: Vec<Element>
+}
 
 #[derive(Clone, PartialEq)]
 pub enum Element {
@@ -28,12 +34,17 @@ pub enum Element {
         operand1: Box<Element>,
         operand2: Box<Element>
     },
-    DeclarationStmt {
+    Declare {
         position: Position,
         variable: Box<Element>, // variable
         content: Box<Element>,
         flags: Vec<Flag>,
         type_: Box<Element>, // variable
+    },
+    Set {
+        position: Position,
+        variable: Box<Element>, // variable
+        content: Box<Element>
     },
     Literal {
         position: Position,
@@ -45,8 +56,22 @@ pub enum Element {
         name: String,
         parent: Box<Element>
     },
+    If {
+        position: Position,
+        conditions: Vec<Condition>
+    },
+    Block {
+        position: Position,
+        content: Vec<Element>
+    },
     NullElement,
     Token(Token)
+}
+impl Display for Condition {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "Condition[condition={}, if_true=[{}]]", self.condition,
+               self.if_true.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
+    }
 }
 impl Display for Element {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
@@ -67,8 +92,20 @@ impl Display for Element {
                 format!("UnaryOpr[position={}, type={:?}, operand={}]", position, type_, **operand),
             Element::BinaryOpr {position, type_, operand1, operand2} =>
                 format!("BinaryOpr[position={}, type={:?}, operand1={}, operand2={}]", position, type_, **operand1, **operand2),
-            Element::DeclarationStmt {position, variable, content, flags, type_} => {
-                format!("DeclarationStmt[position={}, variable={}, content={}, flags={}, type={}]", position, **variable, **content, flags.iter().map(|arg| format!("{:?}", arg)).collect::<Vec<String>>().join(","), **type_)
+            Element::Declare {position, variable, content, flags, type_} => {
+                format!("Declare[position={}, variable={}, content={}, flags={}, type={}]", position, **variable, **content,
+                        flags.iter().map(|arg| format!("{:?}", arg)).collect::<Vec<String>>().join(","), **type_)
+            },
+            Element::Set {position, variable, content} => {
+                format!("Set[position={}, variable={}, content={}]", position, **variable, **content)
+            },
+            Element::If {position, conditions} => {
+                format!("If[position={}, conditions=[{}]]", position,
+                        conditions.iter().map(|cond| cond.to_string()).collect::<Vec<String>>().join(","))
+            },
+            Element::Block {position, content} => {
+                format!("If[position={}, conditions=[{}]]", position,
+                        content.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
             }
         })
     }
@@ -77,14 +114,17 @@ impl Element {
     pub fn get_pos(&self) -> &Position {
         match self {
             Element::NullElement => panic!("null element"),
-            Element::Token(Token{position, .. }) |
+            Element::Token(Token{ position, .. }) |
             Element::Variable { position, .. } |
             Element::Literal { position, .. } |
             Element::Comment { position, .. } |
             Element::Call { position, .. } |
             Element::UnaryOpr { position, .. } |
             Element::BinaryOpr { position, .. } |
-            Element::DeclarationStmt { position, .. } => position
+            Element::Declare { position, .. } |
+            Element::Set { position, .. } |
+            Element::If { position, .. } |
+            Element::Block { position, .. } => position
         }
     }
     pub fn get_name(&self) -> String {
