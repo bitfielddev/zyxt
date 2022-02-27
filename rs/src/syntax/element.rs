@@ -104,7 +104,7 @@ impl Display for Element {
                         conditions.iter().map(|cond| cond.to_string()).collect::<Vec<String>>().join(","))
             },
             Element::Block {position, content} => {
-                format!("If[position={}, conditions=[{}]]", position,
+                format!("Block[position={}, content=[{}]]", position,
                         content.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
             }
         })

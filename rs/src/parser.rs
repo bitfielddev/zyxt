@@ -52,9 +52,11 @@ fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
                     out.push(parse_expr(catcher.clone(), filename));
                 }
                 catcher.clear();
-            } else if type_ == opening {paren_level += 1;}
-            else if type_ == closing {paren_level -= 1;}
-            else {catcher.push(element.clone());}
+            } else {
+                if type_ == opening {paren_level += 1;}
+                else if type_ == closing {paren_level -= 1;}
+                catcher.push(element.clone());
+            }
         } else {catcher.push(element.clone());}
     }
     if paren_level != 0 {
@@ -373,20 +375,22 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
             Keyword::If => {
                 let start_pos = position.clone();
                 let mut conditions: Vec<Condition> = vec![];
-                let mut catcher_selected = &elements[cursor];
-                loop {
+                let mut prev_catcher_kwd = "";
+                    loop {
                     let catcher_kwd;
+                    let mut catcher_selected = &elements[cursor];
                     if let Element::Token(Token{type_: TokenType::Keyword(prekwd), position, ..}) = catcher_selected {
                         catcher_kwd = match prekwd {
                             Keyword::If if position == &start_pos => "if",
                             Keyword::Elif => "elif",
-                            Keyword::Else if conditions[conditions.len()-1].condition != Element::NullElement => "else",
+                            Keyword::Else if prev_catcher_kwd != "else" => "else",
                             _ => {
                                 errors::error_pos(position);
                                 errors::error_2_1("TODO".to_string())
                             },
                         };
                     } else {break}
+                    prev_catcher_kwd = catcher_kwd;
                     cursor += 1;
                     catcher_selected = &elements[cursor];
                     let condition= if catcher_kwd == "else" {
@@ -395,13 +399,13 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
                         cursor += 1;
                         catcher_selected.clone()
                     } else {
-                        let mut catcher = vec![];
+                        let mut catcher = vec![elements[cursor].clone()];
                         loop {
                             cursor += 1;
                             let catcher_selected = &elements[cursor];
                             if let Element::Block {..} = catcher_selected {break}
                             else {catcher.push(catcher_selected.clone());}
-                        }
+                        };
                         parse_expr(catcher, filename)
                     };
                     catcher_selected = &elements[cursor];
@@ -415,12 +419,13 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
                         errors::error_2_1("TODO".to_string())
                     }
                     cursor += 1;
-                    catcher_selected = &elements[cursor];
+                    if cursor == elements.len() {break;}
                 }
                 new_elements.push(Element::If {
                     position: start_pos,
                     conditions
-                })
+                });
+                cursor -= 1;
             },
             Keyword::Elif | Keyword::Else => {
                 errors::error_pos(position);
@@ -445,12 +450,11 @@ fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Element {
         elements = parse_normal_oprs(elements, filename);
         elements = parse_un_oprs(elements, filename);
     }
-
     if elements.len() > 1 {
         errors::error_pos(&elements[1].get_pos());
         errors::error_2_1("TODO".to_string());
     }
-    elements[0].clone()
+    elements.get(0).unwrap_or(&Element::NullElement).clone()
 }
 
 fn parse_block(input: Vec<Element>, filename: &String) -> Vec<Element> {
