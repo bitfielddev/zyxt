@@ -12,13 +12,13 @@ use ansi_term::Color::{White, Yellow};
 use clap::Parser;
 use crate::lexer::lex;
 use crate::syntax::token::Token;
-use crate::parser::parse_block;
+use crate::parser::parse_token_list;
 use crate::checker::check;
 use crate::interpreter::interpret_asts;
 use crate::syntax::element::Element;
 
 fn compile(input: String, filename: &String, debug_info: bool) -> Result<Vec<Element>, Error> {
-    if !debug_info {return Ok(check(parse_block(lex(input, filename)?, filename)))}
+    if !debug_info {return Ok(check(parse_token_list(lex(input, filename)?, filename)))}
 
     println!("{}", Yellow.bold().paint("Lexing"));
     let lex_start = Instant::now();
@@ -28,7 +28,7 @@ fn compile(input: String, filename: &String, debug_info: bool) -> Result<Vec<Ele
 
     println!("{}", Yellow.bold().paint("\nParsing"));
     let parse_start = Instant::now();
-    let parsed = parse_block(lexed, filename);
+    let parsed = parse_token_list(lexed, filename);
     let parse_time = parse_start.elapsed().as_micros();
     for ele in parsed.iter() {println!("{}", White.dimmed().paint(ele.to_string()));}
 

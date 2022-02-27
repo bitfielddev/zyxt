@@ -7,8 +7,8 @@ use crate::interpreter::Variable;
 
 #[derive(Clone, PartialEq)]
 pub struct Condition {
-    condition: Element,
-    if_true: Vec<Element>
+    pub condition: Element,
+    pub if_true: Vec<Element>
 }
 
 #[derive(Clone, PartialEq)]

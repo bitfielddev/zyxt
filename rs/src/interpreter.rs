@@ -212,8 +212,25 @@ fn interpret_expr(input: Element, varlist: &mut HashMap<String, Variable>) -> Va
                     Variable::Null
                 } else {panic!()}
             } else {panic!()}
-        }
+        },
+        Element::If {conditions, ..} => {
+            for cond in conditions {
+                if cond.condition == Element::NullElement {
+                    return interpret_block(cond.if_true, varlist)
+                } else if let Variable::Bool(true) = interpret_expr(cond.condition, varlist) {
+                    return interpret_block(cond.if_true, varlist)
+                }
+            }
+            Variable::Null
+        },
+        Element::Block {content, ..} => interpret_block(content, varlist)
     }
+}
+
+pub fn interpret_block(input: Vec<Element>, varlist: &mut HashMap<String, Variable>) -> Variable {
+    let mut last = Variable::Null;
+    for ele in input {last = interpret_expr(ele, varlist);}
+    last
 }
 
 pub fn interpret_asts(input: Vec<Element>) {

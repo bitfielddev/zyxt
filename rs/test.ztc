@@ -11,3 +11,4 @@ pub z := 3@str;
 std.println("Var z is", z, "and of type", z@type);
 pub a := true;
 std.println(a);
+if a {} else {}
