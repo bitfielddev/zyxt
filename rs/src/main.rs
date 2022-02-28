@@ -2,7 +2,7 @@ mod errors;
 mod lexer;
 mod parser;
 mod syntax;
-mod checker;
+mod instructor;
 mod interpreter;
 
 use std::fs::File;
@@ -13,12 +13,12 @@ use clap::Parser;
 use crate::lexer::lex;
 use crate::syntax::token::Token;
 use crate::parser::parse_token_list;
-use crate::checker::check;
+use crate::instructor::gen_instructions;
 use crate::interpreter::interpret_asts;
 use crate::syntax::element::Element;
 
 fn compile(input: String, filename: &String, debug_info: bool) -> Result<Vec<Element>, Error> {
-    if !debug_info {return Ok(check(parse_token_list(lex(input, filename)?, filename)))}
+    if !debug_info {return Ok(gen_instructions(parse_token_list(lex(input, filename)?, filename)))}
 
     println!("{}", Yellow.bold().paint("Lexing"));
     let lex_start = Instant::now();
@@ -32,16 +32,16 @@ fn compile(input: String, filename: &String, debug_info: bool) -> Result<Vec<Ele
     let parse_time = parse_start.elapsed().as_micros();
     for ele in parsed.iter() {println!("{}", White.dimmed().paint(ele.to_string()));}
 
-    println!("{}", Yellow.bold().paint("\nChecking"));
+    println!("{}", Yellow.bold().paint("\nGenerating instructions"));
     let check_start = Instant::now();
-    let out = check(parsed);
+    let out = gen_instructions(parsed);
     let check_time = check_start.elapsed().as_micros();
     for ele in out.iter() {println!("{}", White.dimmed().paint(ele.to_string()));}
 
     println!("{}", Yellow.bold().paint("\nStats"));
     println!("Lexing time: {}µs", lex_time);
     println!("Parsing time: {}µs", parse_time);
-    println!("Checking time: {}µs", check_time);
+    println!("Instruction generation time: {}µs", check_time);
     println!("Total time: {}µs", lex_time+parse_time+check_time);
 
     Ok(out)
