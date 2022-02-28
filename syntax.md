@@ -84,12 +84,12 @@ set<T>: a set of only T
 fset<T>: an immutable set of only T
 - fset[item, ...]
 dict<K, V>: a dictionary with K keys and V values
-- {key: value, ...}
+- dict[key: value, ...]
 
 === Functions ===
-func<[T], R>: a function that accepts args of T and returns R
+func<[T, ...], R>: a function that accepts args of T and returns R
 
-Declaring a function:
+Declaring a function (procedure):
 proc {...} // function that takes in nothing and returns nothing
 proc: #A {...} // function that takes in nothing and returns a value
 proc|arg: #A, ...| {...} // function that takes in args and returns nothing
@@ -222,20 +222,19 @@ x ~ y; // concatenation
 20. all assignment operators
 21. :=
 22. if {}
-99. literals
 
 ```
 **Implemented:** ~~Lexer Parser Instructor Interpreter~~
 
-## Statements
+## Keyword expressions
 ```
 === Conditional ===
 if <cond> {...} elif <cond> {...} else {...}
 // returns a value
 
 match <var>
-case <val> {...}
-case <val> {...}
+of <val> {...}
+of <val> {...}
 else {...}
 
 while <cond> {...}
@@ -244,7 +243,7 @@ do {...} while <cond>;
 === Looping ===
 for x in list {...}
 for x: int in list {...}
-
+for {init; condition; after_cond} {...}
 loop {...}
 
 === Break, Continue & Labels ===
@@ -262,4 +261,10 @@ fn'outer {
     }
     return;
 }
+
+=== Preprocess ===
+pre {...} // returns a value
+
+=== Defer ===
+defer {...} // runs at end of scope
 ```
