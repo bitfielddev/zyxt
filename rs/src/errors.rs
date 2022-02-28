@@ -50,9 +50,13 @@ pub fn error_2_0_2(paren: char) -> ! {
     error_main("2.0.2", format!("Parenthesis `{}` not opened", paren))
 }
 
-/// unexpected ident
-pub fn error_2_1(ident: String) -> ! {
-    error_main("2.1", format!("Unexpected ident `{}`", ident))
+/// unexpected ident (generic)
+pub fn error_2_1_0(ident: String) -> ! {
+    error_main("2.1.0", format!("Unexpected ident `{}`", ident))
+}
+/// unexpected ident (lexer didnt recognise)
+pub fn error_2_1_1(ident: String) -> ! {
+    error_main("2.1.1", format!("Ident `{}` not recognised by lexer", ident))
 }
 
 /// assignment without variable name

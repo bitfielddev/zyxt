@@ -21,7 +21,7 @@ fn catch_between(opening: TokenType, closing: TokenType,
         if *cursor >= elements.len() {
             if opening == TokenType::Null {
                 errors::error_pos(&paren_pos);
-                errors::error_2_1("TODO".to_string())
+                errors::error_2_1_0("TODO".to_string())
             } else {
                 errors::error_pos(&paren_pos);
                 errors::error_2_0_1(opening_char)
@@ -127,25 +127,25 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> V
             TokenType::DotOpr => { // TODO rewrite this
                 if cursor == 0 {
                     errors::error_pos(&selected.position);
-                    errors::error_2_1(String::from(".")); // could be enum but thats for later
+                    errors::error_2_1_0(String::from(".")); // could be enum but thats for later
                 } else if cursor == elements.len()-1 {
                     errors::error_pos(&selected.position);
-                    errors::error_2_1(String::from(".")); // definitely at the wrong place
+                    errors::error_2_1_0(String::from(".")); // definitely at the wrong place
                 }
                 let prev_element = &elements[cursor-1];
                 let next_element = &elements[cursor+1];
                 if let Element::Token(next_element) = next_element {
                     if next_element.type_ != TokenType::Variable {
                         errors::error_pos(&next_element.position);
-                        errors::error_2_1(next_element.value.clone());
+                        errors::error_2_1_0(next_element.value.clone());
                     }} else if let Element::Literal{position, content, ..} = next_element {
                     errors::error_pos(position);
-                    errors::error_2_1(content.clone())
+                    errors::error_2_1_0(content.clone())
                 }
                 if let (Element::Token(prev_element), Element::Token(next_element)) = (prev_element, next_element) {
                     if !prev_element.categories.contains(&TokenCategory::ValueEnd) {
                         errors::error_pos(&selected.position);
-                        errors::error_2_1(String::from(".")); //could be enum but thats for later
+                        errors::error_2_1_0(String::from(".")); //could be enum but thats for later
                     }
                     catcher = Element::Variable{
                         position: next_element.position.clone(),
@@ -161,7 +161,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> V
                     };
                 } else {
                     errors::error_pos(&selected.position);
-                    errors::error_2_1(String::from(".")); // definitely at the wrong place
+                    errors::error_2_1_0(String::from(".")); // definitely at the wrong place
                 }
 
             }
@@ -203,7 +203,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> V
             TokenType::OpenParen => {
                 if cursor == 0 {
                     errors::error_pos(&selected.position);
-                    errors::error_2_1(String::from("(")); // parens should have been settled in the first part
+                    errors::error_2_1_0(String::from("(")); // parens should have been settled in the first part
                 }
                 let args: Vec<Element> = split_between(TokenType::Comma,
                     TokenType::OpenParen, TokenType::CloseParen,
@@ -240,7 +240,7 @@ fn parse_assignment_oprs(elements: Vec<Element>, filename: &String) -> Vec<Eleme
         if let Element::Token(Token{type_: TokenType::AssignmentOpr(opr_type), position, ..}) = ele {
             if i == 0 || i == elements.len()-1 {
                 errors::error_pos(position);
-                errors::error_2_1("TODO".to_string());
+                errors::error_2_1_0("TODO".to_string());
             }
             let variable = parse_expr(vec![elements[i-1].clone()], filename);
             let content = if opr_type == &OprType::Null {
@@ -272,7 +272,7 @@ fn parse_un_oprs(elements: Vec<Element>, filename: &String) -> Vec<Element> {
             if opr_side == &Side::Left {
                 if i == elements.len()-1 {
                     errors::error_pos(position);
-                    errors::error_2_1("TODO".to_string())
+                    errors::error_2_1_0("TODO".to_string())
                 }
                 return elements[..i].to_vec().into_iter()
                     .chain(vec![Element::UnaryOpr {
@@ -283,7 +283,7 @@ fn parse_un_oprs(elements: Vec<Element>, filename: &String) -> Vec<Element> {
             } else if opr_side == &Side::Right {
                 if i == 0 {
                     errors::error_pos(position);
-                    errors::error_2_1("TODO".to_string())
+                    errors::error_2_1_0("TODO".to_string())
                 }
                 return vec![Element::UnaryOpr {
                     position: position.clone(),
@@ -307,7 +307,7 @@ fn parse_normal_oprs(elements: Vec<Element>, filename: &String) -> Vec<Element> 
         if let Element::Token(Token{type_: TokenType::NormalOpr(opr_type), position, value, .. }) = ele {
             if i == 0 || i == elements.len()-1 {
                 errors::error_pos(position);
-                errors::error_2_1(value.clone());
+                errors::error_2_1_0(value.clone());
             }
             if get_order(&opr_type) >= highest_order {
                 highest_order_index = i;
@@ -338,7 +338,7 @@ fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Vec<Elem
         if let Element::Token(Token{type_: TokenType::DeclarationOpr, position, ..}) = selected {
             if cursor == elements.len() - 1 || cursor == 0 {
                 errors::error_pos(position);
-                errors::error_2_1(String::from(":="));
+                errors::error_2_1_0(String::from(":="));
             }
             let declared_var = &elements[cursor-1];
             let flags = if flag_pos == None {vec![]} else {
@@ -348,7 +348,7 @@ fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Vec<Elem
                         f.push(*flag);
                     } else {
                         errors::error_pos(&Position{filename: filename.clone(), line: 0, column: 0});
-                        errors::error_2_1(String::from("")); // TODO
+                        errors::error_2_1_0(String::from("")); // TODO
                     }
                 }
                 f
@@ -390,7 +390,7 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
                             Keyword::Else if prev_catcher_kwd != "else" => "else",
                             _ => {
                                 errors::error_pos(position);
-                                errors::error_2_1("TODO".to_string())
+                                errors::error_2_1_0("TODO".to_string())
                             },
                         };
                     } else {break}
@@ -420,7 +420,7 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
                         })
                     } else {
                         errors::error_pos(position);
-                        errors::error_2_1("TODO".to_string())
+                        errors::error_2_1_0("TODO".to_string())
                     }
                     cursor += 1;
                     if cursor == elements.len() {break;}
@@ -433,7 +433,7 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
             },
             Keyword::Elif | Keyword::Else => {
                 errors::error_pos(position);
-                errors::error_2_1(if kwd == &Keyword::Elif {"elif"} else {"else"}.to_string())
+                errors::error_2_1_0(if kwd == &Keyword::Elif {"elif"} else {"else"}.to_string())
             },
             _ => new_elements.push(selected.clone())
         }} else {new_elements.push(selected.clone());}
@@ -456,7 +456,7 @@ fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Element {
     }
     if elements.len() > 1 {
         errors::error_pos(&elements[1].get_pos());
-        errors::error_2_1("TODO".to_string());
+        errors::error_2_1_0("TODO".to_string());
     }
     elements.get(0).unwrap_or(&Element::NullElement).clone()
 }
@@ -483,7 +483,7 @@ pub fn parse_token_list(mut input: Vec<Token>, filename: &String) -> Vec<Element
             TokenType::MultilineCommentStart,
             TokenType::MultilineCommentEnd].contains(&token.type_) {
             errors::error_pos(&token.position);
-            errors::error_2_1(token.value.clone());
+            errors::error_2_1_0(token.value.clone());
         }
     }
     // remove quotes around LiteralStrings

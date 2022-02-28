@@ -81,7 +81,7 @@ fn lex_stage1(input: String, filename: &String) -> Result<Vec<Token>, Error> {
         }
         if !found {
             errors::error_pos(&pos);
-            errors::error_2_1(c.to_string());
+            errors::error_2_1_1(c.to_string());
         }
     }
     Ok(out)
