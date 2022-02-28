@@ -10,8 +10,10 @@ std.println("Adding 234 to y, it is now", y);
 pub z := 3@str;
 std.println("Var z is", z, "and of type", z@type);
 pub a := false;
-if a {
+std.println(if a {
     std.println("a is true");
+    2;
 } else {
     std.println("a is false");
-};
+    1;
+});

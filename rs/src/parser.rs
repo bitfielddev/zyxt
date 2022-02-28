@@ -48,6 +48,8 @@ fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
             if type_ == divider && paren_level == 0 {
                 if !ignore_empty && catcher.len() == 0 {
                     todo!()
+                } else if catcher.len() == 0 {
+                    out.push(Element::NullElement)
                 } else if catcher.len() != 0 {
                     out.push(parse_expr(catcher.clone(), filename));
                 }
@@ -71,6 +73,8 @@ fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
     }
     if !ignore_empty && catcher.len() == 0 {
         todo!()
+    } else if catcher.len() == 0 {
+        out.push(Element::NullElement)
     } else if catcher.len() != 0 {
         out.push(parse_expr(catcher.clone(), filename));
     }

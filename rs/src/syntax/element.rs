@@ -150,13 +150,74 @@ impl Element {
             errors::error_4_0_1(type_.to_string(), opnd_type)
         }
     }
-    pub fn get_type(&self, typelist: &HashMap<String, Element>) -> Element {
+    pub fn get_type(&mut self, typelist: &mut HashMap<String, Element>) -> Element {
         match self {
             Element::Literal {type_, ..} => (**type_).clone(),
-            Element::Variable {name, position, ..} => typelist.get(name).unwrap_or_else(|| {
+            Element::Variable {name, position, ..} =>
+                typelist.get(name).unwrap_or_else(|| {
                 errors::error_pos(position);
                 errors::error_3_0(name.clone())
             }).clone(),
+            Element::Block {content, ..} =>
+                content.get(content.len()-1).unwrap_or(&Element::Literal {
+                position: Default::default(),
+                type_: Box::new(Element::Variable {
+                    position: Default::default(),
+                    name: "#null".to_string(),
+                    parent: Box::new(Element::NullElement)
+                }),
+                content: "null".to_string()
+            }).clone().get_type(typelist),
+            Element::Declare {position, variable, content, flags, type_} => {
+                let content_type = content.get_type(typelist);
+                if *type_ == Box::new(Element::NullElement) {
+                    typelist.insert(variable.get_name(), content_type.clone());
+                    *self = Element::Declare {
+                        type_: Box::new(content_type.clone()),
+                        content: content.clone(),
+                        variable: variable.clone(),
+                        position: position.clone(),
+                        flags: flags.clone()
+                    };
+                } else {
+                    typelist.insert(variable.get_name(), *type_.clone());
+                    if content_type != **type_ {
+                        let new_content = Element::BinaryOpr {
+                            position: position.clone(),
+                            type_: OprType::TypeCast,
+                            operand1: content.clone(),
+                            operand2: type_.clone()
+                        };
+                        *self = Element::Declare {
+                            type_: type_.clone(),
+                            content: Box::new(new_content),
+                            variable: variable.clone(),
+                            position: position.clone(),
+                            flags: flags.clone()
+                        };
+                    }
+                };
+                content_type
+            },
+            Element::If {conditions, ..} =>
+                conditions[0].if_true.get(conditions[0].if_true.len()-1).unwrap_or(&Element::Literal {
+                    position: Default::default(),
+                    type_: Box::new(Element::Variable {
+                        position: Default::default(),
+                        name: "#null".to_string(),
+                        parent: Box::new(Element::NullElement)
+                    }),
+                    content: "null".to_string()
+                }).clone().get_type(typelist), // TODO consider all returns
+            Element::NullElement => Element::Literal {
+                position: Default::default(),
+                type_: Box::new(Element::Variable {
+                    position: Default::default(),
+                    name: "#null".to_string(),
+                    parent: Box::new(Element::NullElement)
+                }),
+                content: "null".to_string()
+            },
             _ => Element::Variable {
                 position: self.get_pos().clone(),
                 name: match self {

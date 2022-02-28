@@ -176,7 +176,8 @@ impl Variable {
 
 fn interpret_expr(input: Element, varlist: &mut HashMap<String, Variable>) -> Variable {
     match input {
-        Element::NullElement | Element::Token(..) | Element::Comment {..} => panic!(),
+        Element::Token(..) | Element::Comment {..} => panic!(),
+        Element::NullElement => Variable::Null,
         Element::UnaryOpr {type_, operand, position, ..} =>
             interpret_expr(*operand.clone(), varlist)
                 .un_opr(&type_).unwrap_or_else(|| {
