@@ -17,3 +17,4 @@ std.println(if a {
     std.println("a is false");
     1;
 });
+else;

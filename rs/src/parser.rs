@@ -450,15 +450,13 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
 fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Element {
     if elements.len() > 1 {
         elements = parse_parens(elements, filename);
-        elements = parse_if_expr(elements, filename);
     }
+    elements = parse_if_expr(elements, filename);
     elements = parse_vars_literals_and_calls(elements, filename);
-    if elements.len() > 1 {
-        elements = parse_declaration_expr(elements, filename);
-        elements = parse_assignment_oprs(elements, filename);
-        elements = parse_normal_oprs(elements, filename);
-        elements = parse_un_oprs(elements, filename);
-    }
+    elements = parse_declaration_expr(elements, filename);
+    elements = parse_assignment_oprs(elements, filename);
+    elements = parse_normal_oprs(elements, filename);
+    elements = parse_un_oprs(elements, filename);
     if elements.len() > 1 {
         errors::error_pos(&elements[1].get_pos());
         errors::error_2_1_0("TODO".to_string());
