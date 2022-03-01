@@ -82,6 +82,18 @@ pub fn error_2_1_6(ident: String) -> ! {
 pub fn error_2_1_7(ident: String) -> ! {
     error_main("2.1.7", format!("`{}` detected after `else` keyword", ident))
 }
+/// unexpected ident (block expected, not ident)
+pub fn error_2_1_8(ident: String) -> ! {
+    error_main("2.1.8", format!("Block expected, not `{}`", ident))
+}
+/// unexpected ident ('else/elif' found without 'if' keyword)
+pub fn error_2_1_9(ident: String) -> ! {
+    error_main("2.1.9", format!("Stray `{}` without starting `if`", ident))
+}
+/// unexpected ident (stray comment start / end)
+pub fn error_2_1_10(ident: String) -> ! {
+    error_main("2.1.10", format!("Stray unclosed/unopened `{}`", ident))
+}
 
 /// assignment without variable name
 pub fn error_2_2() -> ! {

@@ -386,13 +386,17 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
                     if let Element::Token(Token{type_: TokenType::Keyword(prekwd), position, ..}) = catcher_selected {
                         catcher_kwd = match prekwd {
                             Keyword::If if position == &start_pos => "if",
-                            Keyword::If if position != &start_pos => break,
                             Keyword::Elif if prev_catcher_kwd != "else" => "elif",
                             Keyword::Else if prev_catcher_kwd != "else" => "else",
-                            _ => {
+                            Keyword::Elif if prev_catcher_kwd == "else" => {
                                 errors::error_pos(position);
-                                errors::error_2_1_0("TODO".to_string())
+                                errors::error_2_1_7("elif".to_string())
                             },
+                            Keyword::Else if prev_catcher_kwd == "else" => {
+                                errors::error_pos(position);
+                                errors::error_2_1_7("else".to_string())
+                            },
+                            _ => break
                         };
                     } else {break}
                     prev_catcher_kwd = catcher_kwd;
@@ -421,7 +425,7 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
                         })
                     } else {
                         errors::error_pos(position);
-                        errors::error_2_1_0("TODO".to_string())
+                        errors::error_2_1_8("TODO".to_string())
                     }
                     cursor += 1;
                     if cursor == elements.len() {break;}
@@ -434,7 +438,7 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
             },
             Keyword::Elif | Keyword::Else => {
                 errors::error_pos(position);
-                errors::error_2_1_0(if kwd == &Keyword::Elif {"elif"} else {"else"}.to_string())
+                errors::error_2_1_9(if kwd == &Keyword::Elif {"elif"} else {"else"}.to_string())
             },
             _ => new_elements.push(selected.clone())
         }} else {new_elements.push(selected.clone());}
@@ -484,7 +488,7 @@ pub fn parse_token_list(mut input: Vec<Token>, filename: &String) -> Vec<Element
             TokenType::MultilineCommentStart,
             TokenType::MultilineCommentEnd].contains(&token.type_) {
             errors::error_pos(&token.position);
-            errors::error_2_1_0(token.value.clone());
+            errors::error_2_1_10(token.value.clone());
         }
     }
     // remove quotes around LiteralStrings
