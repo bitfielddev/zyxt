@@ -130,7 +130,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> V
                     errors::error_2_1_0(String::from(".")); // could be enum but thats for later
                 } else if cursor == elements.len()-1 {
                     errors::error_pos(&selected.position);
-                    errors::error_2_1_0(String::from(".")); // definitely at the wrong place
+                    errors::error_2_1_2(); // definitely at the wrong place
                 }
                 let prev_element = &elements[cursor-1];
                 let next_element = &elements[cursor+1];
@@ -240,7 +240,7 @@ fn parse_assignment_oprs(elements: Vec<Element>, filename: &String) -> Vec<Eleme
         if let Element::Token(Token{type_: TokenType::AssignmentOpr(opr_type), position, ..}) = ele {
             if i == 0 || i == elements.len()-1 {
                 errors::error_pos(position);
-                errors::error_2_1_0("TODO".to_string());
+                errors::error_2_1_3("TODO".to_string());
             }
             let variable = parse_expr(vec![elements[i-1].clone()], filename);
             let content = if opr_type == &OprType::Null {
@@ -272,7 +272,7 @@ fn parse_un_oprs(elements: Vec<Element>, filename: &String) -> Vec<Element> {
             if opr_side == &Side::Left {
                 if i == elements.len()-1 {
                     errors::error_pos(position);
-                    errors::error_2_1_0("TODO".to_string())
+                    errors::error_2_1_4("TODO".to_string())
                 }
                 return elements[..i].to_vec().into_iter()
                     .chain(vec![Element::UnaryOpr {
@@ -283,7 +283,7 @@ fn parse_un_oprs(elements: Vec<Element>, filename: &String) -> Vec<Element> {
             } else if opr_side == &Side::Right {
                 if i == 0 {
                     errors::error_pos(position);
-                    errors::error_2_1_0("TODO".to_string())
+                    errors::error_2_1_4("TODO".to_string())
                 }
                 return vec![Element::UnaryOpr {
                     position: position.clone(),
@@ -307,7 +307,7 @@ fn parse_normal_oprs(elements: Vec<Element>, filename: &String) -> Vec<Element> 
         if let Element::Token(Token{type_: TokenType::NormalOpr(opr_type), position, value, .. }) = ele {
             if i == 0 || i == elements.len()-1 {
                 errors::error_pos(position);
-                errors::error_2_1_0(value.clone());
+                errors::error_2_1_3(value.clone());
             }
             if get_order(&opr_type) >= highest_order {
                 highest_order_index = i;
@@ -338,7 +338,7 @@ fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Vec<Elem
         if let Element::Token(Token{type_: TokenType::DeclarationOpr, position, ..}) = selected {
             if cursor == elements.len() - 1 || cursor == 0 {
                 errors::error_pos(position);
-                errors::error_2_1_0(String::from(":="));
+                errors::error_2_1_5();
             }
             let declared_var = &elements[cursor-1];
             let flags = if flag_pos == None {vec![]} else {
@@ -348,7 +348,7 @@ fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Vec<Elem
                         f.push(*flag);
                     } else {
                         errors::error_pos(&Position{filename: filename.clone(), line: 0, column: 0});
-                        errors::error_2_1_0(String::from("")); // TODO
+                        errors::error_2_1_6(String::from("")); // TODO
                     }
                 }
                 f
@@ -386,7 +386,8 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
                     if let Element::Token(Token{type_: TokenType::Keyword(prekwd), position, ..}) = catcher_selected {
                         catcher_kwd = match prekwd {
                             Keyword::If if position == &start_pos => "if",
-                            Keyword::Elif => "elif",
+                            Keyword::If if position != &start_pos => break,
+                            Keyword::Elif if prev_catcher_kwd != "else" => "elif",
                             Keyword::Else if prev_catcher_kwd != "else" => "else",
                             _ => {
                                 errors::error_pos(position);

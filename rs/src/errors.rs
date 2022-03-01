@@ -58,6 +58,30 @@ pub fn error_2_1_0(ident: String) -> ! {
 pub fn error_2_1_1(ident: String) -> ! {
     error_main("2.1.1", format!("Ident `{}` not recognised by lexer", ident))
 }
+/// unexpected ident (dot at end of expression)
+pub fn error_2_1_2() -> ! {
+    error_main("2.1.2", format!("Stray `.` at end of expression"))
+}
+/// unexpected ident (binary operator at start/end of expression)
+pub fn error_2_1_3(ident: String) -> ! {
+    error_main("2.1.3", format!("Stray `{}` binary operator at start/end of expression", ident))
+}
+/// unexpected ident (unary operator at start/end of expression)
+pub fn error_2_1_4(ident: String) -> ! {
+    error_main("2.1.4", format!("Stray `{}` unary operator at start/end of expression", ident))
+}
+/// unexpected ident (declaration expr at start/end of expression)
+pub fn error_2_1_5() -> ! {
+    error_main("2.1.5", format!("Stray `:=` at start/end of expression"))
+}
+/// unexpected ident (non-flag between first flag and declared variable)
+pub fn error_2_1_6(ident: String) -> ! {
+    error_main("2.1.6", format!("Stray `{}` between first flag and declared variable", ident))
+}
+/// unexpected ident ('else/elif'  found after 'else' keyword)
+pub fn error_2_1_7(ident: String) -> ! {
+    error_main("2.1.7", format!("`{}` detected after `else` keyword", ident))
+}
 
 /// assignment without variable name
 pub fn error_2_2() -> ! {
