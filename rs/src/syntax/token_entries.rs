@@ -719,6 +719,24 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             ..Default::default()
         },
         CompoundTokenEntry{
+            value: "del",
+            type_: TokenType::Keyword(Keyword::Delete),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "del"),
+            ],
+            categories: &[TokenCategory::Literal, TokenCategory::ValueStart],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            value: "ret",
+            type_: TokenType::Keyword(Keyword::Return),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "ret"),
+            ],
+            categories: &[TokenCategory::Literal, TokenCategory::ValueStart],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
             value: "!is",
             type_: TokenType::AssignmentOpr(OprType::Isnteq),
             combination: &[
@@ -818,7 +836,6 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             categories: &[TokenCategory::Literal, TokenCategory::ValueStart, TokenCategory::ValueEnd],
             ..Default::default()
         },
-
         CompoundTokenEntry{
             value: "!istype",
             type_: TokenType::AssignmentOpr(OprType::Isnttype),

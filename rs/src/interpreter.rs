@@ -224,13 +224,19 @@ fn interpret_expr(input: Element, varlist: &mut HashMap<String, Variable>) -> Va
             }
             Variable::Null
         },
-        Element::Block {content, ..} => interpret_block(content, varlist)
+        Element::Block {content, ..} => interpret_block(content, varlist),
+        Element::Delete {name, ..} => {
+            varlist.remove(&*name);
+            Variable::Null
+        }
     }
 }
 
 pub fn interpret_block(input: Vec<Element>, varlist: &mut HashMap<String, Variable>) -> Variable {
     let mut last = Variable::Null;
+    let old_varlist = varlist.clone();
     for ele in input {last = interpret_expr(ele, varlist);}
+    *varlist = old_varlist;
     last
 }
 

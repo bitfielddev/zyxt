@@ -1,14 +1,24 @@
-/* test
-test */
-// test
+/* multiline
+comment */
+// single line comment
+
+ // floats, ints, addition and printing
 pub x := 4 + 54.3;
 std.println(x);
+
+// concatenation
 pub y := 1 ~ 2 ~ 3;
 std.println("Concatenating numbers", y);
+
+// assignment
 y += 234;
 std.println("Adding 234 to y, it is now", y);
+
+// type casting & type retrieval
 pub z := 3@str;
 std.println("Var z is", z, "and of type", z@type);
+
+// booleans and if statements
 pub a := false;
 std.println(if a {
     std.println("a is true");
@@ -17,3 +27,12 @@ std.println(if a {
     std.println("a is false");
     1;
 });
+
+// scoping and deletion
+b := 1;
+std.println(b);
+{
+    b = 2;
+    std.println(b);
+};
+std.println(b);

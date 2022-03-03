@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter, Result, write};
+use std::fmt::{Display, Formatter, Result};
 use crate::lexer::Position;
 use crate::syntax::token::{Flag, OprType};
 use crate::{errors, Token};
@@ -64,6 +64,10 @@ pub enum Element {
         position: Position,
         content: Vec<Element>
     },
+    Delete {
+        position: Position,
+        name: String
+    },
     NullElement,
     Token(Token)
 }
@@ -106,6 +110,9 @@ impl Display for Element {
             Element::Block {position, content} => {
                 format!("Block[position={}, content=[{}]]", position,
                         content.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
+            },
+            Element::Delete {position, name} => {
+                format!("Block[position={}, name={}]", position, name)
             }
         })
     }
@@ -124,7 +131,8 @@ impl Element {
             Element::Declare { position, .. } |
             Element::Set { position, .. } |
             Element::If { position, .. } |
-            Element::Block { position, .. } => position
+            Element::Block { position, .. } |
+            Element::Delete { position, .. } => position
         }
     }
     pub fn get_name(&self) -> String {
@@ -158,16 +166,20 @@ impl Element {
                 errors::error_pos(position);
                 errors::error_3_0(name.clone())
             }).clone(),
-            Element::Block {content, ..} =>
-                content.get(content.len()-1).unwrap_or(&Element::Literal {
-                position: Default::default(),
-                type_: Box::new(Element::Variable {
+            Element::Block {content, ..} => {
+                let old_typelist = typelist.clone();
+                let res = content.get(content.len() - 1).unwrap_or(&Element::Literal {
                     position: Default::default(),
-                    name: "#null".to_string(),
-                    parent: Box::new(Element::NullElement)
-                }),
-                content: "null".to_string()
-            }).clone().get_type(typelist),
+                    type_: Box::new(Element::Variable {
+                        position: Default::default(),
+                        name: "#null".to_string(),
+                        parent: Box::new(Element::NullElement)
+                    }),
+                    content: "null".to_string()
+                }).clone().get_type(typelist);
+                *typelist = old_typelist;
+                res
+            },
             Element::Declare {position, variable, content, flags, type_} => {
                 let content_type = content.get_type(typelist);
                 if *type_ == Box::new(Element::NullElement) {
@@ -199,8 +211,9 @@ impl Element {
                 };
                 content_type
             },
-            Element::If {conditions, ..} =>
-                conditions[0].if_true.get(conditions[0].if_true.len()-1).unwrap_or(&Element::Literal {
+            Element::If {conditions, ..} => {
+                let old_typelist = typelist.clone();
+                let res = conditions[0].if_true.get(conditions[0].if_true.len() - 1).unwrap_or(&Element::Literal {
                     position: Default::default(),
                     type_: Box::new(Element::Variable {
                         position: Default::default(),
@@ -208,7 +221,10 @@ impl Element {
                         parent: Box::new(Element::NullElement)
                     }),
                     content: "null".to_string()
-                }).clone().get_type(typelist), // TODO consider all returns
+                }).clone().get_type(typelist); // TODO consider all returns
+                *typelist = old_typelist;
+                res
+            },
             Element::NullElement => Element::Literal {
                 position: Default::default(),
                 type_: Box::new(Element::Variable {
@@ -231,7 +247,7 @@ impl Element {
                         Element::un_op_return_type(type_, opnd_type, position)
                     },
                     Element::Call {..} => "#null".to_string(),
-                    _ => "".to_string()
+                    _ => "#null".to_string()
                 },
                 parent: Box::new(Element::NullElement)
             }
