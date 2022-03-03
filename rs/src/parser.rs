@@ -327,11 +327,34 @@ fn parse_normal_oprs(elements: Vec<Element>, filename: &String) -> Vec<Element> 
 }
 
 fn parse_delete_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> {
+    let mut new_elements = vec![];
+
     for (i, ele) in elements.iter().enumerate() {
         if let Element::Token(Token{type_: TokenType::Keyword(Keyword::Delete), ..}) = ele {
-            let vars_to_delete = split_between(TokenType::Comma, TokenType::Null, TokenType::Null,
-                elements[i+1..]), filename)
+            let vars_to_delete = split_between(TokenType::Comma,
+                TokenType::Null, TokenType::Null,
+                elements[i+1..].to_vec(), filename, false);
+            let mut varnames = vec![];
+            for var in vars_to_delete.iter() {
+                if let Element::Variable {name, ..} = var {
+                    varnames.push(name.clone());
+                }
+                else if let Element::UnaryOpr {type_: OprType::Deref, position, ..} = var {
+                    errors::error_pos(position);
+                    errors::error_2_1_12("TODO".to_string());
+                }
+                else {
+                    errors::error_pos(var.get_pos());
+                    errors::error_2_1_11("TODO".to_string());
+                }
+            }
+            new_elements.push(Element::Delete {
+                position: ele.get_pos().clone(),
+                names: varnames
+            });
+            return new_elements
         }
+        new_elements.push(ele.clone());
     }
     elements
 }

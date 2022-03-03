@@ -1,8 +1,60 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use crate::errors;
+use crate::lexer::Position;
 use crate::syntax::element::Element;
 use crate::syntax::token::OprType;
+
+pub struct Varstack<T: Clone>(Vec<HashMap<String, T>>);
+impl <T: Clone> Varstack<T> {
+    pub fn default_variable() -> Varstack<Variable> {
+        let mut v = Varstack(vec![HashMap::new()]);
+        for t in ["str", "i32", "f64", "#null", "type"] {
+            v.0[0].insert(t.to_string(), Variable::Type(t.to_string()));
+        }
+        v
+    }
+    pub fn default_type() -> Varstack<Element> {
+        let mut v = Varstack(vec![HashMap::new()]);
+        for t in ["str", "i32", "f64", "#null", "type"] {
+            v.0[0].insert(t.to_string(), Element::Variable {
+                position: Default::default(),
+                name: "type".to_string(),
+                parent: Box::new(Element::NullElement)
+            });
+        }
+        v
+    }
+    pub fn add_set(&mut self) {
+        self.0.push(HashMap::new());
+    }
+    pub fn pop_set(&mut self) {
+        self.0.pop();
+    }
+    pub fn declare_val(&mut self, name: &String, value: &T) {
+        self.0.last_mut().unwrap().insert(name.clone(), value.clone());
+    }
+    pub fn set_val(&mut self, name: &String, value: &T, position: &Position) {
+        for set in self.0.iter_mut().rev() {
+            if set.contains_key(name) {set.insert(name.clone(), value.clone()); return}
+        }
+        errors::error_pos(position);
+        errors::error_3_0(name.clone());
+    }
+    pub fn get_val(&mut self, name: &String, position: &Position) -> T {
+        for set in self.0.iter().rev() {
+            if set.contains_key(name) {return set.get(name).unwrap().clone()}
+        }
+        errors::error_pos(position);
+        errors::error_3_0(name.clone());
+    }
+    pub fn delete_val(&mut self, name: &String, position: &Position) -> T {
+        self.0.last_mut().unwrap().remove(name).unwrap_or_else(|| {
+            errors::error_pos(position);
+            errors::error_3_0(name.clone());
+        })
+    }
+}
 
 #[derive(Clone)]
 pub enum Variable {
@@ -174,7 +226,7 @@ impl Variable {
     }
 }
 
-fn interpret_expr(input: Element, varlist: &mut HashMap<String, Variable>) -> Variable {
+fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable {
     match input {
         Element::Token(..) | Element::Comment {..} => panic!(),
         Element::NullElement => Variable::Null,
@@ -194,12 +246,16 @@ fn interpret_expr(input: Element, varlist: &mut HashMap<String, Variable>) -> Va
                                     interpret_expr(*operand1, varlist),
                                     interpret_expr(*operand2, varlist));
             }),
-        Element::Variable {name, ..} => (*varlist.get(&*name).unwrap()).clone(),
-        Element::Declare {variable, content, ..} |
-        Element::Set {variable, content, ..} => {
+        Element::Variable {name, position, ..} => varlist.get_val(&name, &position),
+        Element::Declare {variable, content, ..} => {
             let var = interpret_expr(*content, varlist);
-            varlist.insert(variable.get_name(), var);
-            (*varlist.get(&*variable.get_name()).unwrap()).clone()
+            varlist.declare_val(&variable.get_name(), &var);
+            var
+        },
+        Element::Set {variable, content, position, ..} => {
+            let var = interpret_expr(*content, varlist);
+            varlist.set_val(&variable.get_name(), &var, &position);
+            var
         },
         Element::Literal {type_, content, ..} => {
             Variable::from_type_content(*type_, content)
@@ -225,25 +281,22 @@ fn interpret_expr(input: Element, varlist: &mut HashMap<String, Variable>) -> Va
             Variable::Null
         },
         Element::Block {content, ..} => interpret_block(content, varlist),
-        Element::Delete {name, ..} => {
-            varlist.remove(&*name);
+        Element::Delete {names, position, ..} => {
+            for name in names {varlist.delete_val(&name, &position);}
             Variable::Null
         }
     }
 }
 
-pub fn interpret_block(input: Vec<Element>, varlist: &mut HashMap<String, Variable>) -> Variable {
+pub fn interpret_block(input: Vec<Element>, varlist: &mut Varstack<Variable>) -> Variable {
     let mut last = Variable::Null;
-    let old_varlist = varlist.clone();
+    varlist.add_set();
     for ele in input {last = interpret_expr(ele, varlist);}
-    *varlist = old_varlist;
+    varlist.pop_set();
     last
 }
 
 pub fn interpret_asts(input: Vec<Element>) {
-    let mut varlist: HashMap<String, Variable> = HashMap::new();
-    for t in ["str", "i32", "f64", "#null", "type"] {
-        varlist.insert(t.to_string(), Variable::Type(t.to_string()));
-    }
+    let mut varlist = Varstack::<Variable>::default_variable();
     for ele in input {interpret_expr(ele, &mut varlist);}
 }

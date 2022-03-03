@@ -94,6 +94,14 @@ pub fn error_2_1_9(ident: String) -> ! {
 pub fn error_2_1_10(ident: String) -> ! {
     error_main("2.1.10", format!("Stray unclosed/unopened `{}`", ident))
 }
+/// unexpected ident (must be variable)
+pub fn error_2_1_11(ident: String) -> ! {
+    error_main("2.1.11", format!("Only variables can be deleted (Got `{}`)", ident))
+}
+/// unexpected ident (cannot delete dereferenced variable)
+pub fn error_2_1_12(ident: String) -> ! {
+    error_main("2.1.12", format!("Cannot delete dereferenced variable (Got `{}`)", ident))
+}
 
 /// assignment without variable name
 pub fn error_2_2() -> ! {

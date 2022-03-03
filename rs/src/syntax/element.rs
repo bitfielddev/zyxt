@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter, Result};
 use crate::lexer::Position;
 use crate::syntax::token::{Flag, OprType};
 use crate::{errors, Token};
-use crate::interpreter::Variable;
+use crate::interpreter::{Variable, Varstack};
 
 #[derive(Clone, PartialEq)]
 pub struct Condition {
@@ -66,7 +66,7 @@ pub enum Element {
     },
     Delete {
         position: Position,
-        name: String
+        names: Vec<String>,
     },
     NullElement,
     Token(Token)
@@ -111,8 +111,9 @@ impl Display for Element {
                 format!("Block[position={}, content=[{}]]", position,
                         content.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
             },
-            Element::Delete {position, name} => {
-                format!("Block[position={}, name={}]", position, name)
+            Element::Delete {position, names} => {
+                format!("Block[position={}, name={}]", position,
+                        names.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
             }
         })
     }
@@ -158,16 +159,13 @@ impl Element {
             errors::error_4_0_1(type_.to_string(), opnd_type)
         }
     }
-    pub fn get_type(&mut self, typelist: &mut HashMap<String, Element>) -> Element {
+    pub fn get_type(&mut self, typelist: &mut Varstack<Element>) -> Element {
         match self {
             Element::Literal {type_, ..} => (**type_).clone(),
             Element::Variable {name, position, ..} =>
-                typelist.get(name).unwrap_or_else(|| {
-                errors::error_pos(position);
-                errors::error_3_0(name.clone())
-            }).clone(),
+                typelist.get_val(name, position),
             Element::Block {content, ..} => {
-                let old_typelist = typelist.clone();
+                typelist.add_set();
                 let res = content.get(content.len() - 1).unwrap_or(&Element::Literal {
                     position: Default::default(),
                     type_: Box::new(Element::Variable {
@@ -177,13 +175,14 @@ impl Element {
                     }),
                     content: "null".to_string()
                 }).clone().get_type(typelist);
-                *typelist = old_typelist;
+                typelist.pop_set();
                 res
             },
-            Element::Declare {position, variable, content, flags, type_} => {
+            Element::Declare {position, variable, content,
+                flags, type_} => {
                 let content_type = content.get_type(typelist);
                 if *type_ == Box::new(Element::NullElement) {
-                    typelist.insert(variable.get_name(), content_type.clone());
+                    typelist.declare_val(&variable.get_name(), &content_type);
                     *self = Element::Declare {
                         type_: Box::new(content_type.clone()),
                         content: content.clone(),
@@ -192,7 +191,7 @@ impl Element {
                         flags: flags.clone()
                     };
                 } else {
-                    typelist.insert(variable.get_name(), *type_.clone());
+                    typelist.declare_val(&variable.get_name(), &type_);
                     if content_type != **type_ {
                         let new_content = Element::BinaryOpr {
                             position: position.clone(),
@@ -212,7 +211,7 @@ impl Element {
                 content_type
             },
             Element::If {conditions, ..} => {
-                let old_typelist = typelist.clone();
+                typelist.add_set();
                 let res = conditions[0].if_true.get(conditions[0].if_true.len() - 1).unwrap_or(&Element::Literal {
                     position: Default::default(),
                     type_: Box::new(Element::Variable {
@@ -222,7 +221,7 @@ impl Element {
                     }),
                     content: "null".to_string()
                 }).clone().get_type(typelist); // TODO consider all returns
-                *typelist = old_typelist;
+                typelist.pop_set();
                 res
             },
             Element::NullElement => Element::Literal {

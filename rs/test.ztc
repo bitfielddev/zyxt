@@ -28,11 +28,18 @@ std.println(if a {
     1;
 });
 
-// scoping and deletion
+// scoping
 b := 1;
-std.println(b);
+c := 1;
+std.println(b, c);
 {
     b = 2;
-    std.println(b);
+    c := 2;
+    std.println(b, c);
 };
-std.println(b);
+std.println(b, c);
+
+// variable deletion
+to_delete := 4;
+to_delete_also := 5;
+del to_delete, to_delete_also;
