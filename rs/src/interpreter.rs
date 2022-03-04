@@ -63,7 +63,8 @@ pub enum Variable {
     Str(String),
     Bool(bool),
     Type(String),
-    Null
+    Null,
+    Return(Box<Variable>)
 }
 
 impl Display for Variable {
@@ -80,10 +81,12 @@ impl Variable {
             Variable::Str(v) => v.clone(),
             Variable::Bool(v) => v.to_string(),
             Variable::Type(v) => "<".to_owned()+&**v+">",
-            Variable::Null => "null".to_string()
+            Variable::Null => "null".to_string(),
+            Variable::Return(v) => v.get_displayed_value()
         }
     }
     pub fn un_opr(&self, type_: &OprType) -> Option<Variable> {
+        if let Variable::Return(v) = self {return v.un_opr(type_)}
         match type_ { // will prob clean this up with macros
             OprType::PlusSign => match *self {
                 Variable::I32(v) => Some(Variable::I32(v)),
@@ -99,6 +102,7 @@ impl Variable {
         }
     }
     pub fn bin_opr(&self, type_: &OprType, other: Variable) -> Option<Variable> {
+        if let Variable::Return(v) = self {return v.bin_opr(type_, other)}
         match type_ { // will prob clean this up with macros
             OprType::Plus => match self {
                 Variable::I32(v1) => match other {
@@ -212,13 +216,17 @@ impl Variable {
         }
     }
     pub fn get_type_name(&self) -> String {
+        if let Variable::Return(v) = self {
+            return v.get_type_name();
+        }
         match self {
             Variable::I32(..) => "i32",
             Variable::F64(..) => "f64",
             Variable::Str(..) => "str",
             Variable::Bool(..) => "bool",
             Variable::Type(..) => "type",
-            Variable::Null => "#null"
+            Variable::Null => "#null",
+            _ => panic!()
         }.to_string()
     }
     pub fn get_type(&self) -> Variable {
@@ -273,30 +281,48 @@ fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable 
         Element::If {conditions, ..} => {
             for cond in conditions {
                 if cond.condition == Element::NullElement {
-                    return interpret_block(cond.if_true, varlist)
+                    return interpret_block(cond.if_true, varlist, false)
                 } else if let Variable::Bool(true) = interpret_expr(cond.condition, varlist) {
-                    return interpret_block(cond.if_true, varlist)
+                    return interpret_block(cond.if_true, varlist, false)
                 }
             }
             Variable::Null
         },
-        Element::Block {content, ..} => interpret_block(content, varlist),
+        Element::Block {content, ..} => interpret_block(content, varlist, true),
         Element::Delete {names, position, ..} => {
             for name in names {varlist.delete_val(&name, &position);}
             Variable::Null
-        }
+        },
+        Element::Return {..} => Variable::Null
     }
 }
 
-pub fn interpret_block(input: Vec<Element>, varlist: &mut Varstack<Variable>) -> Variable {
+pub fn interpret_block(input: Vec<Element>, varlist: &mut Varstack<Variable>, returnable: bool) -> Variable {
     let mut last = Variable::Null;
     varlist.add_set();
-    for ele in input {last = interpret_expr(ele, varlist);}
+    for ele in input {
+        if let Element::Return {value, ..} = &ele {
+            if returnable {last = interpret_expr(*value.clone(), varlist)}
+            else {last = interpret_expr(ele, varlist);}
+            varlist.pop_set();
+            return last
+        } else {last = interpret_expr(ele, varlist);}
+    }
     varlist.pop_set();
     last
 }
 
-pub fn interpret_asts(input: Vec<Element>) {
+pub fn interpret_asts(input: Vec<Element>) -> i32 {
     let mut varlist = Varstack::<Variable>::default_variable();
-    for ele in input {interpret_expr(ele, &mut varlist);}
+    for ele in input {
+        if let Element::Return {value, position} = ele {
+            let return_val = interpret_expr(*value, &mut varlist);
+            if let Variable::I32(v) = return_val {return v}
+            else {
+                errors::error_pos(&position);
+                errors::error_4_2(return_val);
+            }
+        } else {interpret_expr(ele, &mut varlist);}
+    }
+    0
 }

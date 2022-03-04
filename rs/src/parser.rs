@@ -359,6 +359,23 @@ fn parse_delete_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> 
     elements
 }
 
+fn parse_return_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> {
+    let mut new_elements = vec![];
+
+    for (i, ele) in elements.iter().enumerate() {
+        if let Element::Token(Token { type_: TokenType::Keyword(Keyword::Return), .. }) = ele {
+            let return_val = parse_expr(elements[i+1..].to_vec(), filename);
+            new_elements.push(Element::Return {
+                position: ele.get_pos().clone(),
+                value: Box::new(return_val)
+            });
+            return new_elements
+        }
+        new_elements.push(ele.clone());
+    }
+    elements
+}
+
 fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Vec<Element> {
     let mut cursor = 0;
     let mut selected;
@@ -487,6 +504,7 @@ fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Element {
     elements = parse_if_expr(elements, filename);
     elements = parse_vars_literals_and_calls(elements, filename);
     elements = parse_delete_expr(elements, filename);
+    elements = parse_return_expr(elements, filename);
     elements = parse_declaration_expr(elements, filename);
     elements = parse_assignment_oprs(elements, filename);
     elements = parse_normal_oprs(elements, filename);

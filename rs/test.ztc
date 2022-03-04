@@ -43,3 +43,4 @@ std.println(b, c);
 to_delete := 4;
 to_delete_also := 5;
 del to_delete, to_delete_also;
+

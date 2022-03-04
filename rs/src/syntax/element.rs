@@ -68,6 +68,10 @@ pub enum Element {
         position: Position,
         names: Vec<String>,
     },
+    Return {
+        position: Position,
+        value: Box<Element>
+    },
     NullElement,
     Token(Token)
 }
@@ -97,7 +101,7 @@ impl Display for Element {
             Element::BinaryOpr {position, type_, operand1, operand2} =>
                 format!("BinaryOpr[position={}, type={:?}, operand1={}, operand2={}]", position, type_, **operand1, **operand2),
             Element::Declare {position, variable, content, flags, type_} => {
-                format!("Declare[position={}, variable={}, content={}, flags={}, type={}]", position, **variable, **content,
+                format!("Declare[position={}, variable={}, content={}, flags=[{}], type={}]", position, **variable, **content,
                         flags.iter().map(|arg| format!("{:?}", arg)).collect::<Vec<String>>().join(","), **type_)
             },
             Element::Set {position, variable, content} => {
@@ -112,8 +116,11 @@ impl Display for Element {
                         content.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
             },
             Element::Delete {position, names} => {
-                format!("Block[position={}, name={}]", position,
+                format!("Block[position={}, names=[{}]]", position,
                         names.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
+            },
+            Element::Return {position, value} => {
+                format!("Block[position={}, value={}]", position, value)
             }
         })
     }
@@ -133,7 +140,8 @@ impl Element {
             Element::Set { position, .. } |
             Element::If { position, .. } |
             Element::Block { position, .. } |
-            Element::Delete { position, .. } => position
+            Element::Delete { position, .. } |
+            Element::Return { position, .. } => position
         }
     }
     pub fn get_name(&self) -> String {
