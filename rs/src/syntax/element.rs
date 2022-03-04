@@ -215,6 +215,9 @@ impl Element {
                 typelist.pop_set();
                 res
             },
+            Element::Call {called, args, kwargs, ..} => {
+                Element::NullElement
+            }
             Element::Declare {position, variable, content,
                 flags, type_} => {
                 let content_type = content.get_type(typelist);
@@ -282,7 +285,7 @@ impl Element {
                         let opnd_type = operand.get_type(typelist).get_name();
                         Element::un_op_return_type(type_, opnd_type, position)
                     },
-                    Element::Call {..} => "#null".to_string(),
+                    Element::Procedure {is_fn, ..} => if *is_fn {"fn"} else {"proc"}.to_string(),
                     _ => "#null".to_string()
                 },
                 parent: Box::new(Element::NullElement)

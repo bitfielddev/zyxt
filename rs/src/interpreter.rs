@@ -310,7 +310,9 @@ fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable 
                     for (k, v) in fn_varlist.0[0].iter() {varlist.declare_val(k, v);}
                     varlist
                 };
-                interpret_block(content, proc_varlist, true)
+                let res = interpret_block(content, proc_varlist, true, false);
+                proc_varlist.pop_set();
+                res
             } else {
                 todo!("Call opr thingy")
             }
@@ -318,14 +320,14 @@ fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable 
         Element::If {conditions, ..} => {
             for cond in conditions {
                 if cond.condition == Element::NullElement {
-                    return interpret_block(cond.if_true, varlist, false)
+                    return interpret_block(cond.if_true, varlist, false, true)
                 } else if let Variable::Bool(true) = interpret_expr(cond.condition, varlist) {
-                    return interpret_block(cond.if_true, varlist, false)
+                    return interpret_block(cond.if_true, varlist, false, true)
                 }
             }
             Variable::Null
         },
-        Element::Block {content, ..} => interpret_block(content, varlist, true),
+        Element::Block {content, ..} => interpret_block(content, varlist, true, true),
         Element::Delete {names, position, ..} => {
             for name in names {varlist.delete_val(&name, &position);}
             Variable::Null
@@ -337,24 +339,24 @@ fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable 
     }
 }
 
-pub fn interpret_block(input: Vec<Element>, varlist: &mut Varstack<Variable>, returnable: bool) -> Variable {
+pub fn interpret_block(input: Vec<Element>, varlist: &mut Varstack<Variable>, returnable: bool, add_set: bool) -> Variable {
     let mut last = Variable::Null;
-    varlist.add_set();
+    if add_set {varlist.add_set();}
     for ele in input {
         if let Element::Return {value, ..} = &ele {
             if returnable {last = interpret_expr(*value.clone(), varlist)}
             else {last = interpret_expr(ele, varlist);}
-            varlist.pop_set();
+            if add_set {varlist.pop_set();}
             return last
         } else {
             last = interpret_expr(ele, varlist);
             if let Variable::Return(value) = last {
-                varlist.pop_set();
+                if add_set {varlist.pop_set();}
                 return if returnable {*value} else {Variable::Return(value)}
             }
         }
     }
-    varlist.pop_set();
+    if add_set {varlist.pop_set();}
     last
 }
 
