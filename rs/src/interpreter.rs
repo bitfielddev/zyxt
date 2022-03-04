@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use crate::errors;
 use crate::lexer::Position;
-use crate::syntax::element::Element;
+use crate::syntax::element::{Argument, Element};
 use crate::syntax::token::OprType;
 
 pub struct Varstack<T: Clone>(Vec<HashMap<String, T>>);
@@ -63,6 +63,12 @@ pub enum Variable {
     Str(String),
     Bool(bool),
     Type(String),
+    Proc{
+        is_fn: bool,
+        args: Vec<Argument>,
+        return_type: Element,
+        content: Vec<Element>
+    },
     Null,
     Return(Box<Variable>)
 }
@@ -81,6 +87,15 @@ impl Variable {
             Variable::Str(v) => v.clone(),
             Variable::Bool(v) => v.to_string(),
             Variable::Type(v) => "<".to_owned()+&**v+">",
+            Variable::Proc{is_fn, args, return_type, ..} =>
+                format!("{}|{}|: {}",
+                    if *is_fn {"fn"} else {"proc"},
+                    args.iter().map(|a| format!("{}{}{}",
+                        a.name, if a.type_.get_name() != "#any".to_string()
+                            {": ".to_owned()+&*a.type_.get_name()} else {"".to_string()},
+                        if let Some(_) = &a.default {": TODO"} else {""}
+                    )).collect::<Vec<String>>().join(","),
+                    return_type.get_name()),
             Variable::Null => "null".to_string(),
             Variable::Return(v) => v.get_displayed_value()
         }
@@ -226,6 +241,7 @@ impl Variable {
             Variable::Str(..) => "str",
             Variable::Bool(..) => "bool",
             Variable::Type(..) => "type",
+            Variable::Proc {is_fn, ..} => if *is_fn {"fn"} else {"proc"}, // TODO angle bracket thingy when it is implemented
             Variable::Null => "#null",
             _ => panic!()
         }.to_string()
@@ -270,14 +286,34 @@ fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable 
             Variable::from_type_content(*type_, content)
         },
         Element::Call {called, args, ..} => {
-            if let Element::Variable {parent, name, ..} = *called {
-                if name == "println".to_string() && parent.get_name() == "std".to_string() {
-                    println!("{}", args.into_iter().
+            let input_args = args;
+            if let Element::Variable {ref parent, ref name, ..} = *called {
+                if name == &"println".to_string() && parent.get_name() == "std".to_string() {
+                    println!("{}", input_args.into_iter().
                         map(|arg| interpret_expr(arg, varlist).get_displayed_value())
                         .collect::<Vec<String>>().join(" "));
-                    Variable::Null
-                } else {panic!()}
-            } else {panic!()}
+                    return Variable::Null
+                }
+            }
+            let to_call = interpret_expr(*called.clone(), varlist);
+            if let Variable::Proc {is_fn, args, content, ..} = to_call {
+                let mut fn_varlist: Varstack<Variable> = Varstack::<Variable>::default_variable();
+                let mut cursor = 0;
+                for Argument {name, default, ..} in args {
+                    let input_arg = if input_args.len() > cursor {input_args.get(cursor).unwrap().clone()}
+                        else {default.unwrap()};
+                    fn_varlist.declare_val(&name, &interpret_expr(input_arg, varlist));
+                    cursor += 1;
+                }
+                let proc_varlist = if is_fn {&mut fn_varlist} else {
+                    varlist.add_set();
+                    for (k, v) in fn_varlist.0[0].iter() {varlist.declare_val(k, v);}
+                    varlist
+                };
+                interpret_block(content, proc_varlist, true)
+            } else {
+                todo!("Call opr thingy")
+            }
         },
         Element::If {conditions, ..} => {
             for cond in conditions {
@@ -294,7 +330,10 @@ fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable 
             for name in names {varlist.delete_val(&name, &position);}
             Variable::Null
         },
-        Element::Return {value, ..} => Variable::Return(Box::new(interpret_expr(*value, varlist)))
+        Element::Return {value, ..} => Variable::Return(Box::new(interpret_expr(*value, varlist))),
+        Element::Procedure {is_fn, args, return_type, content, ..} => Variable::Proc {
+            is_fn, args, return_type: *return_type, content
+        }
     }
 }
 

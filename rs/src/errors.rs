@@ -102,6 +102,18 @@ pub fn error_2_1_11(ident: String) -> ! {
 pub fn error_2_1_12(ident: String) -> ! {
     error_main("2.1.12", format!("Cannot delete dereferenced variable (Got `{}`)", ident))
 }
+/// unexpected ident (bar not closed)
+pub fn error_2_1_13() -> ! {
+    error_main("2.1.13", format!("Opening bar not closed"))
+}
+/// unexpected ident (Vxtra values past default value)
+pub fn error_2_1_14(ident: String) -> ! {
+    error_main("2.1.14", format!("Extra values past default value (Got `{}`)", ident))
+}
+/// unexpected ident (Variable name isn't variable)
+pub fn error_2_1_15(ident: String) -> ! {
+    error_main("2.1.15", format!("Variable name isn't variable (Got `{}`)", ident))
+}
 
 /// assignment without variable name
 pub fn error_2_2() -> ! {

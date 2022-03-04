@@ -46,3 +46,18 @@ to_delete := 4;
 to_delete_also := 5;
 del to_delete, to_delete_also;
 
+// procs & fns
+p := proc {
+    std.println("In a proc, b =", b);
+};
+p();
+q := fn|a| {
+    std.println("This is a function, a =", a)
+};
+q(3);
+q(4);
+r := fn|s: str: "default value"| {
+    std.println("Printing string:", s);
+};
+r("not default value");
+r();

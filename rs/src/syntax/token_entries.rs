@@ -737,8 +737,26 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             ..Default::default()
         },
         CompoundTokenEntry{
+            value: "proc",
+            type_: TokenType::Keyword(Keyword::Proc),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "proc"),
+            ],
+            categories: &[TokenCategory::Literal, TokenCategory::ValueStart],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            value: "fn",
+            type_: TokenType::Keyword(Keyword::Fn),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "fn"),
+            ],
+            categories: &[TokenCategory::Literal, TokenCategory::ValueStart],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
             value: "!is",
-            type_: TokenType::AssignmentOpr(OprType::Isnteq),
+            type_: TokenType::NormalOpr(OprType::Isnt),
             combination: &[
                 Pattern::Token(TokenType::UnaryOpr(OprType::Not, Side::Left)),
                 Pattern::Value(TokenType::Variable, "is"),
@@ -748,7 +766,7 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: "is",
-            type_: TokenType::AssignmentOpr(OprType::Isnteq),
+            type_: TokenType::NormalOpr(OprType::Is),
             combination: &[
                 Pattern::Value(TokenType::Variable, "is"),
             ],
@@ -838,7 +856,7 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: "!istype",
-            type_: TokenType::AssignmentOpr(OprType::Isnttype),
+            type_: TokenType::NormalOpr(OprType::Isnttype),
             combination: &[
                 Pattern::Token(TokenType::AssignmentOpr(OprType::Is)),
                 Pattern::Value(TokenType::Variable, "type"),
@@ -848,7 +866,7 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: "istype",
-            type_: TokenType::AssignmentOpr(OprType::Istype),
+            type_: TokenType::NormalOpr(OprType::Istype),
             combination: &[
                 Pattern::Token(TokenType::AssignmentOpr(OprType::Iseq)),
                 Pattern::Value(TokenType::Variable, "type"),

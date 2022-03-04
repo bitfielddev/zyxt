@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::syntax::token::{TokenCategory, TokenType, get_order, Side, OprType, Keyword};
-use crate::syntax::element::{Condition, Element};
+use crate::syntax::element::{Argument, Condition, Element};
 use crate::{errors, Token};
 use crate::lexer::Position;
 
@@ -38,9 +38,10 @@ fn catch_between(opening: TokenType, closing: TokenType,
     catcher
 }
 
-fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
-                 elements: Vec<Element>, filename: &String, ignore_empty: bool) -> Vec<Element> {
-    let mut out: Vec<Element> = vec![];
+fn base_split<T: Clone>(parser_fn: &dyn Fn(Vec<Element>, &String) -> T, default_val: Option<T>,
+                 divider: TokenType, opening: TokenType, closing: TokenType,
+                 elements: Vec<Element>, filename: &String, ignore_empty: bool) -> Vec<T> {
+    let mut out: Vec<T> = vec![];
     let mut catcher: Vec<Element> = vec![];
     let mut paren_level = 0;
     for element in elements {
@@ -49,9 +50,9 @@ fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
                 if !ignore_empty && catcher.len() == 0 {
                     todo!()
                 } else if catcher.len() == 0 {
-                    out.push(Element::NullElement)
+                    out.push(default_val.clone().unwrap())
                 } else if catcher.len() != 0 {
-                    out.push(parse_expr(catcher.clone(), filename));
+                    out.push(parser_fn(catcher.clone(), filename));
                 }
                 catcher.clear();
             } else {
@@ -71,14 +72,21 @@ fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
             _ => '?'
         })
     }
+    if out.len() == 0 && catcher.len() == 0 {return vec![];}
     if !ignore_empty && catcher.len() == 0 {
         todo!()
     } else if catcher.len() == 0 {
-        out.push(Element::NullElement)
+        out.push(default_val.unwrap())
     } else if catcher.len() != 0 {
-        out.push(parse_expr(catcher.clone(), filename));
+        out.push(parser_fn(catcher.clone(), filename));
     }
     out
+}
+
+fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
+                 elements: Vec<Element>, filename: &String, ignore_empty: bool) -> Vec<Element> {
+    base_split(&parse_expr, Some(Element::NullElement), divider, opening, closing,
+        elements, filename, ignore_empty)
 }
 
 fn parse_parens(elements: Vec<Element>, filename: &String) -> Vec<Element> {
@@ -231,6 +239,97 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> V
     }
     if catcher != Element::NullElement {new_elements.push(catcher);}
     //catcher2 = Element::NullElement;
+    new_elements
+}
+
+fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Vec<Element> {
+    let mut new_elements = vec![];
+    let mut cursor = 0;
+    let mut selected;
+
+    while cursor < elements.len() {
+        selected = &elements[cursor];
+        if let Element::Token(Token{type_, ..}) = selected {
+        if [TokenType::Keyword(Keyword::Proc),
+            TokenType::Keyword(Keyword::Fn),
+            TokenType::Bar].contains(type_) {
+            let position = selected.get_pos().clone();
+            let is_fn= if type_ != &TokenType::Bar {
+                type_ == &TokenType::Keyword(Keyword::Fn)
+            } else {false};
+            if type_ != &TokenType::Bar {
+                cursor += 1;
+                if cursor >= elements.len() {
+                    errors::error_pos(selected.get_pos());
+                    errors::error_2_1_0("TODO".to_string())
+                }
+                selected = &elements[cursor];
+            }
+
+            let args = if let Element::Token(Token{type_: TokenType::Bar, ..}) = selected {
+                base_split(&|raw_arg, filename| {
+                    let parts = split_between(TokenType::Colon, TokenType::Null, TokenType::Null,
+                        raw_arg, filename, true);
+                    let name = if let Some(Element::Variable{name, ..}) = parts.get(0) {name.clone()} else {
+                        errors::error_pos(parts.get(0).unwrap().get_pos());
+                        errors::error_2_1_15("TODO".to_string());
+                    };
+                    let type_ = if let Some(t) = parts.get(1) {t.clone()} else {Element::NullElement};
+                    let default = if let Some(d) = parts.get(2) {Some(d.clone())} else {None};
+                    if parts.len() > 3 {
+                        errors::error_pos(parts.get(3).unwrap().get_pos());
+                        errors::error_2_1_14("TODO".to_string())
+                    }
+                    Argument{name, type_: if type_ == Element::NullElement {Element::Variable {
+                        position: Default::default(),
+                        name: "#any".to_string(),
+                        parent: Box::new(Element::NullElement)
+                    }} else {type_}, default}
+                }, None, TokenType::Comma,
+                    TokenType::Bar, TokenType::Bar,
+                    catch_between(TokenType::Bar, TokenType::Bar, &elements, &mut cursor),
+                    filename, false)
+            } else {cursor -= 1; vec![]};
+
+            cursor += 1;
+            if cursor >= elements.len() {
+                errors::error_pos(selected.get_pos());
+                errors::error_2_1_0("TODO".to_string())
+            }
+            selected = &elements[cursor];
+            let return_type = if let Element::Token(Token{type_: TokenType::Colon, ..}) = selected {
+                let mut catcher = vec![];
+                loop {
+                    cursor += 1;
+                    if cursor >= elements.len() {
+                        errors::error_pos(selected.get_pos());
+                        errors::error_2_1_0("TODO".to_string())
+                    }
+                    selected = &elements[cursor];
+                    if let Element::Block{..} = selected {break;}
+                    catcher.push(selected.clone());
+                }
+                parse_expr(catcher, filename)
+            } else {Element::NullElement};
+
+            if let Element::Block{content, ..} = selected {
+                new_elements.push(Element::Procedure {
+                    position, is_fn, args,
+                    return_type: Box::new(return_type),
+                    content: content.clone()
+                });
+            } else {
+                new_elements.push(Element::Procedure {
+                    position, is_fn, args,
+                    return_type: Box::new(return_type),
+                    content: vec![parse_expr(elements[cursor..].to_vec(), filename)]
+                });
+                return new_elements;
+            }
+
+        } else {new_elements.push(selected.clone())}} else {new_elements.push(selected.clone())}
+        cursor += 1;
+    }
     new_elements
 }
 
@@ -502,6 +601,7 @@ fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Element {
         elements = parse_parens(elements, filename);
     }
     elements = parse_if_expr(elements, filename);
+    elements = parse_procs_and_fns(elements, filename);
     elements = parse_vars_literals_and_calls(elements, filename);
     elements = parse_delete_expr(elements, filename);
     elements = parse_return_expr(elements, filename);

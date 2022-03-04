@@ -10,6 +10,12 @@ pub struct Condition {
     pub condition: Element,
     pub if_true: Vec<Element>
 }
+#[derive(Clone, PartialEq)]
+pub struct Argument {
+    pub name: String,
+    pub type_: Element,
+    pub default: Option<Element>
+}
 
 #[derive(Clone, PartialEq)]
 pub enum Element {
@@ -72,6 +78,13 @@ pub enum Element {
         position: Position,
         value: Box<Element>
     },
+    Procedure {
+        position: Position,
+        is_fn: bool,
+        args: Vec<Argument>,
+        return_type: Box<Element>,
+        content: Vec<Element>
+    },
     NullElement,
     Token(Token)
 }
@@ -79,6 +92,12 @@ impl Display for Condition {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "Condition[condition={}, if_true=[{}]]", self.condition,
                self.if_true.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
+    }
+}
+impl Display for Argument {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "Argument[name={}, type={}, default={}]", self.name, self.type_,
+            if self.default == None {"None".to_string()} else {self.default.clone().unwrap().to_string()})
     }
 }
 impl Display for Element {
@@ -116,11 +135,19 @@ impl Display for Element {
                         content.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
             },
             Element::Delete {position, names} => {
-                format!("Block[position={}, names=[{}]]", position,
+                format!("Delete[position={}, names=[{}]]", position,
                         names.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
             },
             Element::Return {position, value} => {
-                format!("Block[position={}, value={}]", position, value)
+                format!("Return[position={}, value={}]", position, value)
+            },
+            Element::Procedure {position, is_fn, args,
+                return_type, content} => {
+                format!("Procedure[position={}, is_fn={}, args={{{}}},, return_type={}, content=[{}]",
+                        position, is_fn,
+                        args.iter().map(|arg| arg.to_string()).collect::<Vec<String>>().join(","),
+                        return_type,
+                        content.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
             }
         })
     }
@@ -141,7 +168,8 @@ impl Element {
             Element::If { position, .. } |
             Element::Block { position, .. } |
             Element::Delete { position, .. } |
-            Element::Return { position, .. } => position
+            Element::Return { position, .. } |
+            Element::Procedure { position, .. } => position
         }
     }
     pub fn get_name(&self) -> String {
@@ -169,9 +197,10 @@ impl Element {
     }
     pub fn get_type(&mut self, typelist: &mut Varstack<Element>) -> Element {
         match self {
-            Element::Literal {type_, ..} => (**type_).clone(),
+            Element::Literal {type_, ..} => *type_.clone(),
             Element::Variable {name, position, ..} =>
                 typelist.get_val(name, position),
+            Element::Procedure {return_type, ..} => *return_type.clone(),
             Element::Block {content, ..} => {
                 typelist.add_set();
                 let res = content.get(content.len() - 1).unwrap_or(&Element::Literal {
