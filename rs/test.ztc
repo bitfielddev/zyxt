@@ -28,7 +28,7 @@ std.println(if a {
     1;
 });
 
-// scoping
+// scoping & returns
 b := 1;
 c := 1;
 std.println(b, c);
@@ -36,6 +36,8 @@ std.println(b, c);
     b = 2;
     c := 2;
     std.println(b, c);
+    ret;
+    std.println("I will never be printed :(")
 };
 std.println(b, c);
 

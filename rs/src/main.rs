@@ -51,8 +51,9 @@ fn interpret(input: Vec<Element>, debug_info: bool) {
     if !debug_info {interpret_asts(input); return}
     println!("{}", Yellow.bold().paint("\nInterpreting"));
     let interpret_start = Instant::now();
-    interpret_asts(input);
+    let exit_code = interpret_asts(input);
     let interpret_time = interpret_start.elapsed().as_micros();
+    println!("\nExited with code {}", exit_code);
     println!("{}", Yellow.bold().paint("\nStats"));
     println!("Interpreting time: {}µs", interpret_time);
 }

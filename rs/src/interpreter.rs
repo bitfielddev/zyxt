@@ -185,7 +185,8 @@ impl Variable {
                         Variable::Str(v) => Some(Variable::Bool(v.len() != 0)),
                         Variable::Bool(..) => Some(self.clone()),
                         Variable::Type(..) => Some(Variable::Bool(true)),
-                        Variable::Null => Some(Variable::Bool(false))
+                        Variable::Null => Some(Variable::Bool(false)),
+                        _ => None
                     }
                     "type" => Some(self.get_type()),
                     _ => None
@@ -293,7 +294,7 @@ fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable 
             for name in names {varlist.delete_val(&name, &position);}
             Variable::Null
         },
-        Element::Return {..} => Variable::Null
+        Element::Return {value, ..} => Variable::Return(Box::new(interpret_expr(*value, varlist)))
     }
 }
 
@@ -306,7 +307,13 @@ pub fn interpret_block(input: Vec<Element>, varlist: &mut Varstack<Variable>, re
             else {last = interpret_expr(ele, varlist);}
             varlist.pop_set();
             return last
-        } else {last = interpret_expr(ele, varlist);}
+        } else {
+            last = interpret_expr(ele, varlist);
+            if let Variable::Return(value) = last {
+                varlist.pop_set();
+                return if returnable {*value} else {Variable::Return(value)}
+            }
+        }
     }
     varlist.pop_set();
     last
@@ -322,7 +329,15 @@ pub fn interpret_asts(input: Vec<Element>) -> i32 {
                 errors::error_pos(&position);
                 errors::error_4_2(return_val);
             }
-        } else {interpret_expr(ele, &mut varlist);}
+        } else {
+            if let Variable::Return(value) = interpret_expr(ele.clone(), &mut varlist) {
+                varlist.pop_set();
+                if let Variable::I32(v) = *value {return v}
+                else {
+                    errors::error_pos(ele.get_pos());
+                    errors::error_4_2(*value);
+                }
+            }}
     }
     0
 }
