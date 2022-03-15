@@ -4,23 +4,24 @@ use crate::errors;
 use crate::lexer::Position;
 use crate::syntax::element::{Argument, Element};
 use crate::syntax::token::OprType;
+use crate::syntax::typeobj::TypeObj;
 
 pub struct Varstack<T: Clone>(Vec<HashMap<String, T>>);
 impl <T: Clone> Varstack<T> {
     pub fn default_variable() -> Varstack<Variable> {
         let mut v = Varstack(vec![HashMap::new()]);
         for t in ["str", "i32", "f64", "#null", "type"] {
-            v.0[0].insert(t.to_string(), Variable::Type(t.to_string()));
+            v.0[0].insert(t.to_string(), Variable::Type(TypeObj::Prim{
+                name: t.to_string(), type_args: vec![]
+            }));
         }
         v
     }
-    pub fn default_type() -> Varstack<Element> {
+    pub fn default_type() -> Varstack<TypeObj> {
         let mut v = Varstack(vec![HashMap::new()]);
         for t in ["str", "i32", "f64", "#null", "type"] {
-            v.0[0].insert(t.to_string(), Element::Variable {
-                position: Default::default(),
-                name: "type".to_string(),
-                parent: Box::new(Element::NullElement)
+            v.0[0].insert(t.to_string(), TypeObj::Prim{
+                name: t.to_string(), type_args: vec![]
             });
         }
         v
@@ -62,11 +63,11 @@ pub enum Variable {
     F64(f64),
     Str(String),
     Bool(bool),
-    Type(String),
+    Type(TypeObj),
     Proc{
         is_fn: bool,
         args: Vec<Argument>,
-        return_type: Element,
+        return_type: TypeObj,
         content: Vec<Element>
     },
     Null,
@@ -86,16 +87,16 @@ impl Variable {
             Variable::F64(v) => v.to_string(),
             Variable::Str(v) => v.clone(),
             Variable::Bool(v) => v.to_string(),
-            Variable::Type(v) => "<".to_owned()+&**v+">",
+            Variable::Type(v) => "<".to_owned()+&*v.to_string()+">",
             Variable::Proc{is_fn, args, return_type, ..} =>
                 format!("{}|{}|: {}",
                     if *is_fn {"fn"} else {"proc"},
                     args.iter().map(|a| format!("{}{}{}",
-                        a.name, if a.type_.get_name() != "#any".to_string()
-                            {": ".to_owned()+&*a.type_.get_name()} else {"".to_string()},
+                        a.name, if a.type_ != TypeObj::any()
+                            {": ".to_owned()+&*a.type_.to_string()} else {"".to_string()},
                         if let Some(_) = &a.default {": TODO"} else {""}
                     )).collect::<Vec<String>>().join(","),
-                    return_type.get_name()),
+                    return_type.to_string()),
             Variable::Null => "null".to_string(),
             Variable::Return(v) => v.get_displayed_value()
         }
@@ -174,7 +175,7 @@ impl Variable {
                 _ => None
             },
             OprType::TypeCast => match other {
-                Variable::Type(t) => match &*t {
+                Variable::Type(t) => match &*t.to_string() {
                     "i32" => match self {
                         Variable::I32(..) => Some(self.clone()),
                         Variable::F64(v) => Some(Variable::I32(*v as i32)),
@@ -211,43 +212,53 @@ impl Variable {
             _ => None
         }
     }
-    pub fn default(type_: String) -> Self {
-        match &*type_ {
-            "i32" => Variable::I32(0),
-            "f64" => Variable::F64(0.0),
-            "str" => Variable::Str("".to_string()),
-            "bool" => Variable::Bool(false),
-            "#null" => Variable::Null,
-            "type" => Variable::Type("#null".to_string()),
+    pub fn default(type_: TypeObj) -> Self {
+        match type_.clone() {
+            TypeObj::Prim{name, ..} => match &*name {
+                "i32" => Variable::I32(0),
+                "f64" => Variable::F64(0.0),
+                "str" => Variable::Str("".to_string()),
+                "bool" => Variable::Bool(false),
+                "#null" => Variable::Null,
+                "type" => Variable::Type(TypeObj::null()),
+                _ => panic!("{}", type_)
+            }
             _ => panic!("{}", type_)
         }
     }
-    pub fn from_type_content(type_: Element, content: String) -> Variable {
-        match &*type_.get_name() {
-            "i32" => Variable::I32(content.parse::<i32>().unwrap()),
-            "f64" => Variable::F64(content.parse::<f64>().unwrap()),
-            "str" => Variable::Str(content),
-            "bool" => Variable::Bool(&*content == "true"),
+    pub fn from_type_content(type_: TypeObj, content: String) -> Variable {
+        match type_ {
+            TypeObj::Prim{name, ..} => match &*name {
+                "i32" => Variable::I32(content.parse::<i32>().unwrap()),
+                "f64" => Variable::F64(content.parse::<f64>().unwrap()),
+                "str" => Variable::Str(content),
+                "bool" => Variable::Bool(&*content == "true"),
+                _ => panic!()
+            }
             _ => panic!()
         }
     }
-    pub fn get_type_name(&self) -> String {
+    pub fn get_type_obj(&self) -> TypeObj {
         if let Variable::Return(v) = self {
-            return v.get_type_name();
+            return v.get_type_obj();
         }
         match self {
-            Variable::I32(..) => "i32",
-            Variable::F64(..) => "f64",
-            Variable::Str(..) => "str",
-            Variable::Bool(..) => "bool",
-            Variable::Type(..) => "type",
-            Variable::Proc {is_fn, ..} => if *is_fn {"fn"} else {"proc"}, // TODO angle bracket thingy when it is implemented
-            Variable::Null => "#null",
+            Variable::I32(..) => TypeObj::from_str("i32"),
+            Variable::F64(..) => TypeObj::from_str("f64"),
+            Variable::Str(..) => TypeObj::from_str("str"),
+            Variable::Bool(..) => TypeObj::from_str("bool"),
+            Variable::Type(..) => TypeObj::from_str("type"),
+            Variable::Proc {is_fn, return_type, ..} =>
+                TypeObj::Prim{
+                    name: if *is_fn {"fn"} else {"proc"}.to_string(),
+                    type_args: vec![TypeObj::null(), return_type.clone()]
+                }, // TODO angle bracket thingy when it is implemented
+            Variable::Null => TypeObj::null(),
             _ => panic!()
-        }.to_string()
+        }
     }
     pub fn get_type(&self) -> Variable {
-        Variable::Type(self.get_type_name())
+        Variable::Type(self.get_type_obj())
     }
 }
 
@@ -283,7 +294,7 @@ fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable 
             var
         },
         Element::Literal {type_, content, ..} => {
-            Variable::from_type_content(*type_, content)
+            Variable::from_type_content(type_, content)
         },
         Element::Call {called, args, ..} => {
             let input_args = args;
@@ -334,7 +345,7 @@ fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable 
         },
         Element::Return {value, ..} => Variable::Return(Box::new(interpret_expr(*value, varlist))),
         Element::Procedure {is_fn, args, return_type, content, ..} => Variable::Proc {
-            is_fn, args, return_type: *return_type, content
+            is_fn, args, return_type, content
         }
     }
 }

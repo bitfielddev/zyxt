@@ -1,7 +1,6 @@
 /* multiline
 comment */
 // single line comment
-
 // floats, ints, addition and printing
 pub x := 4 + 54.3;
 std.println(x);

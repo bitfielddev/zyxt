@@ -3,6 +3,7 @@ use crate::syntax::token::{TokenCategory, TokenType, get_order, Side, OprType, K
 use crate::syntax::element::{Argument, Condition, Element};
 use crate::{errors, Token};
 use crate::lexer::Position;
+use crate::syntax::typeobj::TypeObj;
 
 fn catch_between(opening: TokenType, closing: TokenType,
                  elements: &Vec<Element>, cursor: &mut usize) -> Vec<Element> {
@@ -187,20 +188,16 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> V
                 if catcher != Element::NullElement {new_elements.push(catcher.clone());}
                 catcher = Element::Literal {
                     position: selected.position.clone(),
-                    type_: Box::from(Element::Variable {
-                        position: selected.position.clone(),
-                        name: if selected.type_ == TokenType::LiteralMisc {
-                            match &*selected.value {
-                                "true" | "false" => "bool",
-                                "null" => "#null",
-                                "inf" | "undef" => "#num",
-                                _ => panic!("{}", selected.value)
-                            }
-                        } else if selected.type_ == TokenType::LiteralNumber{
-                            if selected.value.contains(".") {"f64"} else {"i32"}
-                        } else {"str"}.to_string(),
-                        parent: Box::new(Element::NullElement)
-                    }),
+                    type_: TypeObj::from_str(if selected.type_ == TokenType::LiteralMisc {
+                        match &*selected.value {
+                            "true" | "false" => "bool",
+                            "null" => "#null",
+                            "inf" | "undef" => "#num",
+                            _ => panic!("{}", selected.value)
+                        }
+                    } else if selected.type_ == TokenType::LiteralNumber{
+                        if selected.value.contains(".") {"f64"} else {"i32"}
+                    } else {"str"}),
                     content: selected.value.clone()
                 }
             }
@@ -280,11 +277,11 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Vec<Element
                         errors::error_pos(parts.get(3).unwrap().get_pos());
                         errors::error_2_1_14("TODO".to_string())
                     }
-                    Argument{name, type_: if type_ == Element::NullElement {Element::Variable {
-                        position: Default::default(),
-                        name: "#any".to_string(),
-                        parent: Box::new(Element::NullElement)
-                    }} else {type_}, default}
+                    Argument{
+                        name,
+                        type_: if type_ == Element::NullElement {TypeObj::any()}
+                            else {TypeObj::Compound(Box::new(type_))},
+                        default}
                 }, None, TokenType::Comma,
                     TokenType::Bar, TokenType::Bar,
                     catch_between(TokenType::Bar, TokenType::Bar, &elements, &mut cursor),
@@ -309,19 +306,19 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Vec<Element
                     if let Element::Block{..} = selected {break;}
                     catcher.push(selected.clone());
                 }
-                parse_expr(catcher, filename)
-            } else {Element::NullElement};
+                TypeObj::Compound(Box::new(parse_expr(catcher, filename)))
+            } else {TypeObj::null()};
 
             if let Element::Block{content, ..} = selected {
                 new_elements.push(Element::Procedure {
                     position, is_fn, args,
-                    return_type: Box::new(return_type),
+                    return_type,
                     content: content.clone()
                 });
             } else {
                 new_elements.push(Element::Procedure {
                     position, is_fn, args,
-                    return_type: Box::new(return_type),
+                    return_type,
                     content: vec![parse_expr(elements[cursor..].to_vec(), filename)]
                 });
                 return new_elements;
@@ -508,7 +505,7 @@ fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Vec<Elem
                 variable: Box::new(parse_expr(vec![declared_var.clone()], filename)),
                 content: Box::new(parse_expr(elements[cursor+1..].to_vec(), filename)),
                 flags,
-                type_: Box::new(Element::NullElement) // TODO type later
+                type_: TypeObj::null() // TODO type later
             });
             break;
         } else {new_elements.push(selected.clone())}

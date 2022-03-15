@@ -144,12 +144,12 @@ pub fn error_4_0_1(operator: String, type_: String) -> ! {
 /// Binary operation unsuccessful
 pub fn error_4_1_0(operator: String, value1: Variable, value2: Variable) -> ! {
     error_main("4.1.0", format!("Operator {} unsuccessful on `{}` (type `{}`), `{}` (type `{}`)",
-                              operator, value1, value1.get_type_name(), value2, value2.get_type_name()))
+                                operator, value1, value1.get_type_obj(), value2, value2.get_type_obj()))
 }
 /// Unary operation unsuccessful
 pub fn error_4_1_1(operator: String, value: Variable) -> ! {
     error_main("4.1.1", format!("Operator {} unsuccessful on `{}` (type `{}`)",
-                              operator, value, value.get_type_name()))
+                              operator, value, value.get_type_obj()))
 }
 
 /// Non-i32 script return value
