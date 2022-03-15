@@ -8,10 +8,15 @@ use crate::syntax::token::OprType;
 use crate::syntax::typeobj::TypeObj;
 
 pub struct Varstack<T: Clone>(Vec<HashMap<String, T>>);
+const PRIM_NAMES: [&str; 18] = ["str",
+                                "i8", "i16", "i32", "i64", "i128", "isize",
+                                "u8", "u16", "u32", "u64", "u128", "usize",
+                                "f32", "f64",
+                                "#null", "#any", "type"];
 impl <T: Clone> Varstack<T> {
     pub fn default_variable() -> Varstack<Variable> {
         let mut v = Varstack(vec![HashMap::new()]);
-        for t in ["str", "i32", "f64", "#null", "type"] {
+        for t in PRIM_NAMES {
             v.0[0].insert(t.to_string(), Variable::Type(TypeObj::Prim{
                 name: t.to_string(), type_args: vec![]
             }));
@@ -20,7 +25,7 @@ impl <T: Clone> Varstack<T> {
     }
     pub fn default_type() -> Varstack<TypeObj> {
         let mut v = Varstack(vec![HashMap::new()]);
-        for t in ["str", "i32", "f64", "#null", "type"] {
+        for t in PRIM_NAMES {
             v.0[0].insert(t.to_string(), TypeObj::Prim{
                 name: t.to_string(), type_args: vec![]
             });
@@ -60,7 +65,19 @@ impl <T: Clone> Varstack<T> {
 
 #[derive(Clone)]
 pub enum Variable {
+    I8(i8),
+    I16(i16),
     I32(i32),
+    I64(i64),
+    I128(i128),
+    Isize(isize),
+    U8(u8),
+    U16(u16),
+    U32(u32),
+    U64(u64),
+    U128(u128),
+    Usize(usize),
+    F32(f32),
     F64(f64),
     Str(String),
     Bool(bool),
@@ -84,7 +101,19 @@ impl Display for Variable {
 impl Variable {
     pub fn get_displayed_value(&self) -> String {
         match self {
+            Variable::I8(v) => v.to_string(),
+            Variable::I16(v) => v.to_string(),
             Variable::I32(v) => v.to_string(),
+            Variable::I64(v) => v.to_string(),
+            Variable::I128(v) => v.to_string(),
+            Variable::Isize(v) => v.to_string(),
+            Variable::U8(v) => v.to_string(),
+            Variable::U16(v) => v.to_string(),
+            Variable::U32(v) => v.to_string(),
+            Variable::U64(v) => v.to_string(),
+            Variable::U128(v) => v.to_string(),
+            Variable::Usize(v) => v.to_string(),
+            Variable::F32(v) => v.to_string(),
             Variable::F64(v) => v.to_string(),
             Variable::Str(v) => v.clone(),
             Variable::Bool(v) => v.to_string(),
@@ -119,8 +148,8 @@ impl Variable {
             }
         }
         match type_ {
-            OprType::MinusSign => case!(Neg::neg => I32, F64),
-            OprType::PlusSign => case!(I32, F64),
+            OprType::MinusSign => case!(Neg::neg => I8, I16, I32, I64, I128, Isize, F32, F64),
+            OprType::PlusSign => case!(I8, I16, I32, I64, I128, Isize, F32, F64),
             _ => None
         }
     }
@@ -249,7 +278,19 @@ impl Variable {
     pub fn default(type_: TypeObj) -> Self {
         match type_.clone() {
             TypeObj::Prim{name, ..} => match &*name {
+                "i8" => Variable::I8(0),
+                "i16" => Variable::I16(0),
                 "i32" => Variable::I32(0),
+                "i64" => Variable::I64(0),
+                "i128" => Variable::I128(0),
+                "isize" => Variable::Isize(0),
+                "u8" => Variable::U8(0),
+                "u16" => Variable::U16(0),
+                "u32" => Variable::U32(0),
+                "u64" => Variable::U64(0),
+                "u128" => Variable::U128(0),
+                "usize" => Variable::Usize(0),
+                "f32" => Variable::F32(0.0),
                 "f64" => Variable::F64(0.0),
                 "str" => Variable::Str("".to_string()),
                 "bool" => Variable::Bool(false),
@@ -263,7 +304,19 @@ impl Variable {
     pub fn from_type_content(type_: TypeObj, content: String) -> Variable {
         match type_ {
             TypeObj::Prim{name, ..} => match &*name {
+                "i8" => Variable::I8(content.parse::<i8>().unwrap()),
+                "i16" => Variable::I16(content.parse::<i16>().unwrap()),
                 "i32" => Variable::I32(content.parse::<i32>().unwrap()),
+                "i64" => Variable::I64(content.parse::<i64>().unwrap()),
+                "i128" => Variable::I128(content.parse::<i128>().unwrap()),
+                "isize" => Variable::Isize(content.parse::<isize>().unwrap()),
+                "u8" => Variable::U8(content.parse::<u8>().unwrap()),
+                "u16" => Variable::U16(content.parse::<u16>().unwrap()),
+                "u32" => Variable::U32(content.parse::<u32>().unwrap()),
+                "u64" => Variable::U64(content.parse::<u64>().unwrap()),
+                "u128" => Variable::U128(content.parse::<u128>().unwrap()),
+                "usize" => Variable::Usize(content.parse::<usize>().unwrap()),
+                "f32" => Variable::F32(content.parse::<f32>().unwrap()),
                 "f64" => Variable::F64(content.parse::<f64>().unwrap()),
                 "str" => Variable::Str(content),
                 "bool" => Variable::Bool(&*content == "true"),
@@ -277,7 +330,19 @@ impl Variable {
             return v.get_type_obj();
         }
         match self {
+            Variable::I8(..) => TypeObj::from_str("i8"),
+            Variable::I16(..) => TypeObj::from_str("i16"),
             Variable::I32(..) => TypeObj::from_str("i32"),
+            Variable::I64(..) => TypeObj::from_str("i64"),
+            Variable::I128(..) => TypeObj::from_str("i128"),
+            Variable::Isize(..) => TypeObj::from_str("isize"),
+            Variable::U8(..) => TypeObj::from_str("u8"),
+            Variable::U16(..) => TypeObj::from_str("u16"),
+            Variable::U32(..) => TypeObj::from_str("u32"),
+            Variable::U64(..) => TypeObj::from_str("u64"),
+            Variable::U128(..) => TypeObj::from_str("u128"),
+            Variable::Usize(..) => TypeObj::from_str("usize"),
+            Variable::F32(..) => TypeObj::from_str("f32"),
             Variable::F64(..) => TypeObj::from_str("f64"),
             Variable::Str(..) => TypeObj::from_str("str"),
             Variable::Bool(..) => TypeObj::from_str("bool"),

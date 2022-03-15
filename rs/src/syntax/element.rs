@@ -196,13 +196,13 @@ impl Element {
             errors::error_4_0_1(type_.to_string(), opnd_type.to_string())
         }
     }
-    pub fn get_block_type(content: &mut Vec<Element>, typelist: &mut Varstack<TypeObj>) -> TypeObj {
+    pub fn get_block_type(content: &mut Vec<Element>, typelist: &mut Varstack<TypeObj>, add_set: bool) -> TypeObj {
         let mut last = TypeObj::null();
-        typelist.add_set();
+        if add_set {typelist.add_set();}
         for ele in content.iter_mut() {
             last = ele.get_type(typelist);
         }
-        typelist.pop_set();
+        if add_set {typelist.pop_set();}
         last
     }
     pub fn get_type(&mut self, typelist: &mut Varstack<TypeObj>) -> TypeObj {
@@ -210,9 +210,10 @@ impl Element {
             Element::Literal {type_, ..} => type_.clone(),
             Element::Variable {name, position, ..} =>
                 typelist.get_val(name, position),
-            Element::Block {content, ..} => Element::get_block_type(content, typelist),
-            Element::Call {called, ..} => {
+            Element::Block {content, ..} => Element::get_block_type(content, typelist, true),
+            Element::Call {called, args, ..} => {
                 // TODO arg type checking
+                for arg in args.iter_mut() {arg.get_type(typelist);}
                 match *called.clone() {
                     Element::Procedure {return_type, ..} => return_type,
                     _ => TypeObj::null() // TODO call return
@@ -250,7 +251,7 @@ impl Element {
                 };
                 content_type
             },
-            Element::If {conditions, ..} => Element::get_block_type(&mut conditions[0].if_true, typelist), // TODO consider all returns
+            Element::If {conditions, ..} => Element::get_block_type(&mut conditions[0].if_true, typelist, true), // TODO consider all returns
             Element::BinaryOpr {type_, operand1, operand2, position} => {
                 let type1 = operand1.get_type(typelist);
                 let type2 = operand2.get_type(typelist);
@@ -260,31 +261,19 @@ impl Element {
                 let opnd_type = operand.get_type(typelist);
                 Element::un_op_return_type(type_, opnd_type, position)
             },
-            Element::Procedure {is_fn, return_type, content, ..} => {
-                if return_type == &TypeObj::null() {*return_type = Element::get_block_type(content, typelist);}
-                TypeObj::Prim {
+            Element::Procedure {is_fn, return_type, content, args, ..} => {
+                typelist.add_set();
+                for arg in args {
+                    typelist.declare_val(&arg.name, &arg.type_);
+                }
+                let res =  Element::get_block_type(content, typelist, false);
+                if return_type == &TypeObj::null() {*return_type = res;}
+                    TypeObj::Prim {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),
                     type_args: vec![TypeObj::null(), return_type.clone()]
                 }
             }, // TODO angle bracket thingy when it is implemented
             _ => TypeObj::null()
-            /*_ => Element::Variable {
-                position: self.get_pos().clone(),
-                name: match self {
-                    Element::BinaryOpr {type_, operand1, operand2, position} => {
-                        let type1 = operand1.get_type(typelist).get_name();
-                        let type2 = operand2.get_type(typelist).get_name();
-                        Element::bin_op_return_type(type_, type1, type2, position)
-                    },
-                    Element::UnaryOpr {type_, operand, position} => {
-                        let opnd_type = operand.get_type(typelist).get_name();
-                        Element::un_op_return_type(type_, opnd_type, position)
-                    },
-                    Element::Procedure {is_fn, ..} => if *is_fn {"fn"} else {"proc"}.to_string(),
-                    _ => "#null".to_string()
-                },
-                parent: Box::new(Element::NullElement)
-            }*/
         }
     }
  }

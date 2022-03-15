@@ -66,4 +66,7 @@ r := fn|s: str: "default value"| {
 r("not default value");
 r();
 s := fn {3};
-std.println(s@type);
+std.println(s(), s@type);
+
+// numeric types other than i32 and f64
+std.println(3@u8);
