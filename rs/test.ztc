@@ -1,8 +1,13 @@
 /* multiline
 comment */
 // single line comment
+
 // floats, ints, addition and printing
 pub x := 4 + 54.3;
+std.println(x);
+
+// multiplication & division
+x = 2 * 4 / 3.0;
 std.println(x);
 
 // concatenation
@@ -60,3 +65,5 @@ r := fn|s: str: "default value"| {
 };
 r("not default value");
 r();
+s := fn {3};
+std.println(s@type);

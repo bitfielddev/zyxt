@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::ops::{Neg, Add, Sub};
+use std::ops::{Neg, Add, Sub, Mul, Div, Rem};
 use crate::errors;
 use crate::lexer::Position;
 use crate::syntax::element::{Argument, Element};
@@ -132,7 +132,7 @@ impl Variable {
             )),*) => {
                 match *self {
                     $(Variable::$var_type1(v1) => match other {
-                        $(Variable::$var_type2(v2) => Some(Variable::$return_type($opr(v1 as $rs_type, v2 as $rs_type))),)*
+                        $(Variable::$var_type2(v2) => Some(Variable::$return_type($opr(v1 as $rs_type, v2 as $rs_type) as $rs_type)),)*
                         _ => None
                     },)*
                     _ => None
@@ -149,6 +149,30 @@ impl Variable {
                     (F64 => F64, f64))
             ),
             OprType::Minus => case!(Sub::sub =>
+                (I32 =>
+                    (I32 => I32, i32),
+                    (F64 => F64, f64)),
+                (F64 =>
+                    (I32 => F64, f64),
+                    (F64 => F64, f64))
+            ),
+            OprType::AstMult | OprType::DotMult | OprType::CrossMult => case!(Mul::mul =>
+                (I32 =>
+                    (I32 => I32, i32),
+                    (F64 => F64, f64)),
+                (F64 =>
+                    (I32 => F64, f64),
+                    (F64 => F64, f64))
+            ),
+            OprType::Div | OprType::FractDiv => case!(Div::div =>
+                (I32 =>
+                    (I32 => I32, i32),
+                    (F64 => F64, f64)),
+                (F64 =>
+                    (I32 => F64, f64),
+                    (F64 => F64, f64))
+            ),
+            OprType::Modulo => case!(Rem::rem =>
                 (I32 =>
                     (I32 => I32, i32),
                     (F64 => F64, f64)),
