@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::ops::{Neg, Add, Sub};
 use crate::errors;
 use crate::lexer::Position;
 use crate::syntax::element::{Argument, Element};
@@ -103,50 +104,59 @@ impl Variable {
     }
     pub fn un_opr(&self, type_: &OprType) -> Option<Variable> {
         if let Variable::Return(v) = self {return v.un_opr(type_)}
-        match type_ { // will prob clean this up with macros
-            OprType::PlusSign => match *self {
-                Variable::I32(v) => Some(Variable::I32(v)),
-                Variable::F64(v) => Some(Variable::F64(v)),
-                _ => None
-            },
-            OprType::MinusSign => match *self {
-                Variable::I32(v) => Some(Variable::I32(-v)),
-                Variable::F64(v) => Some(Variable::F64(-v)),
-                _ => None
-            },
+        macro_rules! case {
+            ($opr: expr => $($var_type: ident),*) => {
+                match *self {
+                    $(Variable::$var_type(v) => Some(Variable::$var_type($opr(v))),)*
+                    _ => None
+                }
+            };
+            ($($var_type: ident),*) => {
+                match *self {
+                    $(Variable::$var_type(v) => Some(Variable::$var_type(v)),)*
+                    _ => None
+                }
+            }
+        }
+        match type_ {
+            OprType::MinusSign => case!(Neg::neg => I32, F64),
+            OprType::PlusSign => case!(I32, F64),
             _ => None
         }
     }
     pub fn bin_opr(&self, type_: &OprType, other: Variable) -> Option<Variable> {
         if let Variable::Return(v) = self {return v.bin_opr(type_, other)}
-        match type_ { // will prob clean this up with macros
-            OprType::Plus => match self {
-                Variable::I32(v1) => match other {
-                    Variable::I32(v2) => Some(Variable::I32(v1+v2)),
-                    Variable::F64(v2) => Some(Variable::F64(*v1 as f64+v2)),
+        macro_rules! case {
+            ($opr: expr => $((
+                $var_type1: ident => $(($var_type2: ident => $return_type: ident, $rs_type: ty)),*
+            )),*) => {
+                match *self {
+                    $(Variable::$var_type1(v1) => match other {
+                        $(Variable::$var_type2(v2) => Some(Variable::$return_type($opr(v1 as $rs_type, v2 as $rs_type))),)*
+                        _ => None
+                    },)*
                     _ => None
-                },
-                Variable::F64(v1) => match other {
-                    Variable::I32(v2) => Some(Variable::F64(v1+v2 as f64)),
-                    Variable::F64(v2) => Some(Variable::F64(v1+v2)),
-                    _ => None
-                },
-                _ => None
-            },
-            OprType::Minus => match self {
-                Variable::I32(v1) => match other {
-                    Variable::I32(v2) => Some(Variable::I32(v1-v2)),
-                    Variable::F64(v2) => Some(Variable::F64(*v1 as f64-v2)),
-                    _ => None
-                },
-                Variable::F64(v1) => match other {
-                    Variable::I32(v2) => Some(Variable::F64(v1-v2 as f64)),
-                    Variable::F64(v2) => Some(Variable::F64(v1-v2)),
-                    _ => None
-                },
-                _ => None
-            },
-            OprType::Concat => match self {
+                }
+            }
+        }
+        match type_ {
+            OprType::Plus => case!(Add::add =>
+                (I32 =>
+                    (I32 => I32, i32),
+                    (F64 => F64, f64)),
+                (F64 =>
+                    (I32 => F64, f64),
+                    (F64 => F64, f64))
+            ),
+            OprType::Minus => case!(Sub::sub =>
+                (I32 =>
+                    (I32 => I32, i32),
+                    (F64 => F64, f64)),
+                (F64 =>
+                    (I32 => F64, f64),
+                    (F64 => F64, f64))
+            ),
+            OprType::Concat => match self.clone() {
                 Variable::I32(v1) => match other {
                     Variable::I32(v2) => if let Ok(r2) = (v1.to_string()+&*v2.to_string()).parse::<i32>()
                         {Some(Variable::I32(r2))} else {None},
@@ -176,28 +186,28 @@ impl Variable {
             },
             OprType::TypeCast => match other {
                 Variable::Type(t) => match &*t.to_string() {
-                    "i32" => match self {
+                    "i32" => match self.clone() {
                         Variable::I32(..) => Some(self.clone()),
-                        Variable::F64(v) => Some(Variable::I32(*v as i32)),
+                        Variable::F64(v) => Some(Variable::I32(v as i32)),
                         Variable::Str(v) => if let Ok(r) = v.parse::<i32>()
                             {Some(Variable::I32(r))} else {None},
-                        Variable::Bool(v) => Some(Variable::I32(if *v {1} else {0})),
+                        Variable::Bool(v) => Some(Variable::I32(if v {1} else {0})),
                         Variable::Null => Some(Variable::I32(0)),
                         _ => None
                     },
-                    "f64" => match self {
-                        Variable::I32(v) => Some(Variable::F64(*v as f64)),
+                    "f64" => match self.clone() {
+                        Variable::I32(v) => Some(Variable::F64(v as f64)),
                         Variable::F64(..) => Some(self.clone()),
                         Variable::Str(v) => if let Ok(r) = v.parse::<f64>()
                             {Some(Variable::F64(r))} else {None},
-                        Variable::Bool(v) => Some(Variable::F64(if *v {1.0} else {0.0})),
+                        Variable::Bool(v) => Some(Variable::F64(if v {1.0} else {0.0})),
                         Variable::Null => Some(Variable::F64(0.0)),
                         _ => None
                     },
                     "str" => Some(Variable::Str(self.get_displayed_value())),
-                    "bool" => match self {
-                        Variable::I32(v) => Some(Variable::Bool(*v != 0)),
-                        Variable::F64(v) => Some(Variable::Bool(*v != 0.0)),
+                    "bool" => match self.clone() {
+                        Variable::I32(v) => Some(Variable::Bool(v != 0)),
+                        Variable::F64(v) => Some(Variable::Bool(v != 0.0)),
                         Variable::Str(v) => Some(Variable::Bool(v.len() != 0)),
                         Variable::Bool(..) => Some(self.clone()),
                         Variable::Type(..) => Some(Variable::Bool(true)),
