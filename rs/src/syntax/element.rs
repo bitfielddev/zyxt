@@ -6,19 +6,19 @@ use crate::{errors, Token};
 use crate::interpreter::{Variable, Varstack};
 use crate::syntax::typeobj::TypeObj;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
     pub condition: Element,
     pub if_true: Vec<Element>
 }
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Argument {
     pub name: String,
     pub type_: TypeObj,
     pub default: Option<Element>
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Element {
     Comment {
         position: Position,
@@ -91,60 +91,60 @@ pub enum Element {
 }
 impl Display for Condition {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "Condition[condition={}, if_true=[{}]]", self.condition,
-               self.if_true.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
+        write!(f, "Condition[condition={:#?}, if_true=[{}]]", self.condition,
+               self.if_true.iter().map(|ele| format!("{:#?}", ele)).collect::<Vec<String>>().join(","))
     }
 }
 impl Display for Argument {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "Argument[name={}, type={}, default={}]", self.name, self.type_,
-            if self.default == None {"None".to_string()} else {self.default.clone().unwrap().to_string()})
+            if self.default == None {"None".to_string()} else {format!("{:#?}", self.default.clone().unwrap())})
     }
 }
-impl Display for Element {
+/*impl Display for Element {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", match self {
             Element::NullElement => "NullElement".to_string(),
-            Element::Token(token) => format!("Element::{}", token),
+            Element::Token(token) => format!("Element::{:#?}", token),
             Element::Variable {position, name, parent} =>
-                format!("Variable[position={}, name={}, parent={}]", position, name, **parent),
+                format!("Variable[\n|position={},\n|name={},\n|parent={}]", position, name, **parent),
             Element::Literal {position, type_, content} =>
-                format!("Literal[position={}, type={}, content={}]", position, *type_, content),
+                format!("Literal[position={},\n|type={},\n|content={}]", position, *type_, content),
             Element::Comment {position, content} =>
-                format!("Comment[position={}, content={}]", position, content),
+                format!("Comment[position={},\n|content={}]", position, content),
             Element::Call {position, called, args, kwargs} =>
-                format!("Call[position={}, called={}, args=[{}], kwargs={{{}}}]", position, **called,
+                format!("Call[position={},\n|called={},\n|args=[{}],\n|kwargs={{{}}}]", position, **called,
                         args.iter().map(|arg| format!("{}", arg)).collect::<Vec<String>>().join(","),
                         kwargs.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<String>>().join(",")),
             Element::UnaryOpr {position, type_, operand} =>
-                format!("UnaryOpr[position={}, type={:?}, operand={}]", position, type_, **operand),
+                format!("UnaryOpr[position={},\n|type={:?},\n|operand={}]", position, type_, **operand),
             Element::BinaryOpr {position, type_, operand1, operand2} =>
-                format!("BinaryOpr[position={}, type={:?}, operand1={}, operand2={}]", position, type_, **operand1, **operand2),
+                format!("BinaryOpr[position={},\n|type={:?},\n|operand1={}, operand2={}]", position, type_, **operand1, **operand2),
             Element::Declare {position, variable, content, flags, type_} => {
-                format!("Declare[position={}, variable={}, content={}, flags=[{}], type={}]", position, **variable, **content,
+                format!("Declare[position={},\n|variable={},\n|content={}, flags=[{}], type={}]", position, **variable, **content,
                         flags.iter().map(|arg| format!("{:?}", arg)).collect::<Vec<String>>().join(","), *type_)
             },
             Element::Set {position, variable, content} => {
-                format!("Set[position={}, variable={}, content={}]", position, **variable, **content)
+                format!("Set[position={},\n|variable={},\n|content={}]", position, **variable, **content)
             },
             Element::If {position, conditions} => {
-                format!("If[position={}, conditions=[{}]]", position,
+                format!("If[position={},\n|conditions=[{}]]", position,
                         conditions.iter().map(|cond| cond.to_string()).collect::<Vec<String>>().join(","))
             },
             Element::Block {position, content} => {
-                format!("Block[position={}, content=[{}]]", position,
+                format!("Block[position={},\n|content=[{}]]", position,
                         content.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
             },
             Element::Delete {position, names} => {
-                format!("Delete[position={}, names=[{}]]", position,
+                format!("Delete[position={},\n|names=[{}]]", position,
                         names.iter().map(|ele| ele.to_string()).collect::<Vec<String>>().join(","))
             },
             Element::Return {position, value} => {
-                format!("Return[position={}, value={}]", position, value)
+                format!("Return[position={},\n|value={}]", position, value)
             },
             Element::Procedure {position, is_fn, args,
                 return_type, content} => {
-                format!("Procedure[position={}, is_fn={}, args={{{}}},, return_type={}, content=[{}]",
+                format!("Procedure[position={},\n|is_fn={},\n|args={{{}}},\n|return_type={},\n|content=[{}]",
                         position, is_fn,
                         args.iter().map(|arg| arg.to_string()).collect::<Vec<String>>().join(","),
                         return_type,
@@ -152,7 +152,7 @@ impl Display for Element {
             }
         })
     }
-}
+}*/
 impl Element {
     pub fn get_pos(&self) -> &Position {
         match self {

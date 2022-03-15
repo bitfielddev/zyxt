@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::io::Error;
 use regex::Regex;
 use crate::syntax::token::{Side, TokenCategory, TokenType};
@@ -23,6 +23,11 @@ impl Default for Position {
 impl Display for Position {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "{}:{}:{}", self.filename, self.line, self.column)
+    }
+}
+impl Debug for Position {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_string())
     }
 }
 

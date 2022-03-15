@@ -1,19 +1,13 @@
 use std::fmt::{Display, Formatter, Result};
 use crate::lexer::Position;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Token {
     pub value: String,
     pub type_: TokenType,
     pub position: Position,
     pub categories: &'static [TokenCategory],
     pub whitespace: String
-}
-impl Display for Token {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "Token[value=\"{}\", type={:?}, position={}, categories={:?}]",
-               self.value, self.type_, self.position, self.categories)
-    }
 }
 impl Default for Token {
     fn default() -> Self {

@@ -24,19 +24,19 @@ fn compile(input: String, filename: &String, debug_info: bool) -> Result<Vec<Ele
     let lex_start = Instant::now();
     let lexed = lex(input, filename)?;
     let lex_time = lex_start.elapsed().as_micros();
-    for token in lexed.iter() {println!("{}", White.dimmed().paint(token.to_string()));}
+    for token in lexed.iter() {println!("{}", White.dimmed().paint(format!("{:#?}", token)));}
 
     println!("{}", Yellow.bold().paint("\nParsing"));
     let parse_start = Instant::now();
     let parsed = parse_token_list(lexed, filename);
     let parse_time = parse_start.elapsed().as_micros();
-    for ele in parsed.iter() {println!("{}", White.dimmed().paint(ele.to_string()));}
+    for ele in parsed.iter() {println!("{}", White.dimmed().paint(format!("{:#?}", ele)));}
 
     println!("{}", Yellow.bold().paint("\nGenerating instructions"));
     let check_start = Instant::now();
     let out = gen_instructions(parsed);
     let check_time = check_start.elapsed().as_micros();
-    for ele in out.iter() {println!("{}", White.dimmed().paint(ele.to_string()));}
+    for ele in out.iter() {println!("{}", White.dimmed().paint(format!("{:#?}", ele)));}
 
     println!("{}", Yellow.bold().paint("\nStats"));
     println!("Lexing time: {}µs", lex_time);
