@@ -1,7 +1,7 @@
 mod errors;
 mod lexer;
 mod parser;
-mod syntax;
+mod objects;
 mod instructor;
 mod interpreter;
 
@@ -11,11 +11,11 @@ use std::time::Instant;
 use ansi_term::Color::{White, Yellow};
 use clap::Parser;
 use crate::lexer::lex;
-use crate::syntax::token::Token;
+use crate::objects::token::Token;
 use crate::parser::parse_token_list;
 use crate::instructor::gen_instructions;
 use crate::interpreter::interpret_asts;
-use crate::syntax::element::Element;
+use crate::objects::element::Element;
 
 fn compile(input: String, filename: &String, debug_info: bool) -> Result<Vec<Element>, Error> {
     if !debug_info {return Ok(gen_instructions(parse_token_list(lex(input, filename)?, filename)))}

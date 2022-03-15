@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result};
 use crate::lexer::Position;
-use crate::syntax::token::{Flag, OprType};
+use crate::objects::token::{Flag, OprType};
 use crate::{errors, Token};
 use crate::interpreter::{Variable, Varstack};
-use crate::syntax::typeobj::TypeObj;
+use crate::objects::typeobj::TypeObj;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {

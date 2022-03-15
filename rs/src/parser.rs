@@ -1,9 +1,9 @@
 use std::collections::HashMap;
-use crate::syntax::token::{TokenCategory, TokenType, get_order, Side, OprType, Keyword};
-use crate::syntax::element::{Argument, Condition, Element};
+use crate::objects::token::{TokenCategory, TokenType, get_order, Side, OprType, Keyword};
+use crate::objects::element::{Argument, Condition, Element};
 use crate::{errors, Token};
 use crate::lexer::Position;
-use crate::syntax::typeobj::TypeObj;
+use crate::objects::typeobj::TypeObj;
 
 fn catch_between(opening: TokenType, closing: TokenType,
                  elements: &Vec<Element>, cursor: &mut usize) -> Vec<Element> {

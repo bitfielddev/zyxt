@@ -1,8 +1,8 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::io::Error;
 use regex::Regex;
-use crate::syntax::token::{Side, TokenCategory, TokenType};
-use crate::syntax::token_entries::{Pattern, CompoundTokenEntry, compound_token_entries_1, compound_token_entries_2, singular_token_entries, side_dependent_token_entries};
+use crate::objects::token::{Side, TokenCategory, TokenType};
+use crate::objects::token_entries::{Pattern, CompoundTokenEntry, compound_token_entries_1, compound_token_entries_2, singular_token_entries, side_dependent_token_entries};
 use crate::{errors, Token};
 
 #[derive(Clone, PartialEq)]

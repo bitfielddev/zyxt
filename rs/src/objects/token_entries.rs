@@ -1,5 +1,5 @@
 use regex::Regex;
-use crate::syntax::token::{Flag, OprType, TokenCategory, TokenType, Side, Keyword};
+use crate::objects::token::{Flag, OprType, TokenCategory, TokenType, Side, Keyword};
 
 pub enum Pattern<'a> {
     Vartokens(TokenType),

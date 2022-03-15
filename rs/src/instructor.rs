@@ -1,5 +1,5 @@
 use crate::interpreter::Varstack;
-use crate::syntax::element::Element;
+use crate::objects::element::Element;
 
 pub fn gen_instructions(mut input: Vec<Element>) -> Vec<Element> {
     let mut typelist = Varstack::<Element>::default_type();

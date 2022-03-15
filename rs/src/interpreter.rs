@@ -3,9 +3,9 @@ use std::fmt::{Display, Formatter};
 use std::ops::{Neg, Add, Sub, Mul, Div, Rem};
 use crate::errors;
 use crate::lexer::Position;
-use crate::syntax::element::{Argument, Element};
-use crate::syntax::token::OprType;
-use crate::syntax::typeobj::TypeObj;
+use crate::objects::element::{Argument, Element};
+use crate::objects::token::OprType;
+use crate::objects::typeobj::TypeObj;
 
 pub struct Varstack<T: Clone>(Vec<HashMap<String, T>>);
 const PRIM_NAMES: [&str; 18] = ["str",
