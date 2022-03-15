@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter, Result};
-use crate::lexer::Position;
+use crate::objects::position::Position;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Token {

@@ -1,8 +1,8 @@
 use std::process::exit;
 use ansi_term::Color::{Black, Red, Yellow};
 use ansi_term::Style;
-use crate::interpreter::Variable;
-use crate::lexer::Position;
+use crate::objects::variable::Variable;
+use crate::objects::position::Position;
 
 fn error_main(code: &str, message: String) -> ! {
     println!("{}", Black.on(Yellow).paint(format!(" Error {} ", code)).to_string()

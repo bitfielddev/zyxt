@@ -1,62 +1,10 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Display, Formatter};
 use std::io::Error;
 use regex::Regex;
 use crate::objects::token::{Side, TokenCategory, TokenType};
-use crate::objects::token_entries::{Pattern, CompoundTokenEntry, compound_token_entries_1, compound_token_entries_2, singular_token_entries, side_dependent_token_entries};
+use crate::objects::token_entries::{compound_token_entries_1, compound_token_entries_2, CompoundTokenEntry, Pattern, side_dependent_token_entries, singular_token_entries};
 use crate::{errors, Token};
-
-#[derive(Clone, PartialEq)]
-pub struct Position {
-    pub filename: String,
-    pub line: u32,
-    pub column: u32,
-}
-impl Default for Position {
-    fn default() -> Self {
-        Position {
-            filename: String::from("[unknown]"),
-            line: 1,
-            column: 1,
-        }
-    }
-}
-impl Display for Position {
-    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-        write!(f, "{}:{}:{}", self.filename, self.line, self.column)
-    }
-}
-impl Debug for Position {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
-    }
-}
-
-impl Position {
-    fn next(&mut self, c: &char) {
-        if *c == '\n' {
-            self.line += 1;
-            self.column = 1;
-        } else {self.column += 1}
-    }
-}
-
-#[derive(Clone)]
-pub struct StateTracker {
-    pub position: Position,
-    pub is_literal_string: bool,
-    pub literal_string_type: TokenType,
-    pub prev_type: TokenType,
-}
-impl Default for StateTracker {
-    fn default() -> Self {
-        StateTracker {
-            position: Position::default(),
-            is_literal_string: false,
-            literal_string_type: TokenType::Null,
-            prev_type: TokenType::Null,
-        }
-    }
-}
+use crate::objects::position::Position;
 
 fn lex_stage1(input: String, filename: &String) -> Result<Vec<Token>, Error> {
     let mut out: Vec<Token> = vec![];

@@ -1,4 +1,4 @@
-use crate::interpreter::Varstack;
+use crate::objects::varstack::Varstack;
 use crate::objects::element::Element;
 
 pub fn gen_instructions(mut input: Vec<Element>) -> Vec<Element> {

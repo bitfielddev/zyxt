@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use crate::objects::token::{TokenCategory, TokenType, get_order, Side, OprType, Keyword};
 use crate::objects::element::{Argument, Condition, Element};
 use crate::{errors, Token};
-use crate::lexer::Position;
+use crate::objects::position::Position;
 use crate::objects::typeobj::TypeObj;
 
 fn catch_between(opening: TokenType, closing: TokenType,
