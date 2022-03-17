@@ -16,7 +16,7 @@ impl Display for TypeObj {
             TypeObj::Prim {name, type_args} =>
                 if !type_args.is_empty() {
                     format!("{}<{}>", name,
-                            type_args.iter().map(|arg| format!("{}", arg)).collect::<Vec<String>>().join(","))
+                            type_args.iter().map(|arg| format!("{}", arg)).collect::<Vec<String>>().join(", "))
                 } else {name.to_string()},
             TypeObj::Compound(ele) => format!("{}", ele.get_name())
         })

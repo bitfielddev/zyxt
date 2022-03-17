@@ -1,4 +1,3 @@
-use std::fmt::{Display, Formatter};
 use std::io::Error;
 use regex::Regex;
 use crate::objects::token::{Side, TokenCategory, TokenType};

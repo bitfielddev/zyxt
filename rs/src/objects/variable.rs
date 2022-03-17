@@ -326,6 +326,15 @@ impl Variable {
                     )
             }
         }
+        macro_rules! concat {
+            ($v1: ident, $v2: ident) => {
+                $v1.to_string()+&*$v2.to_string()
+            };
+            ($v1: ident, $v2: ident => $e: ident, $t: ty) => {
+                if let Ok(r2) = ($v1.to_string()+&*$v2.to_string()).parse::<$t>()
+                    {Some(Variable::$e(r2))} else {None}
+            }
+        }
         match type_ {
             OprType::Plus => case_arith!(Add::add),
             OprType::Minus => case_arith!(Sub::sub),
@@ -334,28 +343,25 @@ impl Variable {
             OprType::Modulo => case_arith!(Rem::rem),
             OprType::Concat => match self.clone() {
                 Variable::I32(v1) => match other {
-                    Variable::I32(v2) => if let Ok(r2) = (v1.to_string()+&*v2.to_string()).parse::<i32>()
-                        {Some(Variable::I32(r2))} else {None},
-                    Variable::F64(v2) => if let Ok(r2) = (v1.to_string()+&*v2.to_string()).parse::<f64>()
-                        {Some(Variable::F64(r2))} else {None},
-                    Variable::Str(v2) => Some(Variable::Str(v1.to_string()+&*v2)),
+                    Variable::I32(v2) => concat!(v1, v2 => I32, i32),
+                    Variable::F64(v2) => concat!(v1, v2 => F64, f64),
+                    Variable::Str(v2) => Some(Variable::Str(concat!(v1, v2))),
                     _ => None
                 },
                 Variable::F64(v1) => match other {
-                    Variable::I32(v2) => if let Ok(r2) = (v1.to_string()+&*v2.to_string()).parse::<f64>()
-                        {Some(Variable::F64(r2))} else {None},
-                    Variable::Str(v2) => Some(Variable::Str(v1.to_string()+&*v2)),
+                    Variable::I32(v2) => concat!(v1, v2 => F64, f64),
+                    Variable::Str(v2) => Some(Variable::Str(concat!(v1, v2))),
                     _ => None
                 },
                 Variable::Str(v1) => match other {
-                    Variable::I32(v2) => Some(Variable::Str(v1.to_string()+&*v2.to_string())),
-                    Variable::F64(v2) => Some(Variable::Str(v1.to_string()+&*v2.to_string())),
-                    Variable::Str(v2) => Some(Variable::Str(v1.to_string()+&*v2)),
-                    Variable::Bool(v2) => Some(Variable::Str(v1.to_string()+&*v2.to_string())),
+                    Variable::I32(v2) => Some(Variable::Str(concat!(v1, v2))),
+                    Variable::F64(v2) => Some(Variable::Str(concat!(v1, v2))),
+                    Variable::Str(v2) => Some(Variable::Str(concat!(v1, v2))),
+                    Variable::Bool(v2) => Some(Variable::Str(concat!(v1, v2))),
                     _ => None
                 },
                 Variable::Bool(v1) => match other {
-                    Variable::Str(v2) =>Some(Variable::Str(v1.to_string()+&*v2.to_string())),
+                    Variable::Str(v2) => Some(Variable::Str(concat!(v1, v2))),
                     _ => None
                 },
                 _ => None
