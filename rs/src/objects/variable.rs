@@ -73,6 +73,32 @@ impl Variable {
             Variable::Return(v) => v.get_displayed_value()
         }
     }
+    pub fn call(&self, args: Vec<Variable>) -> Option<Variable> {
+        if args.len() == 1 {
+        macro_rules! mult {
+            () => {self.bin_opr(&OprType::AstMult, args.get(0)?.clone())}
+        }
+            match self {
+                Variable::I8(_) => mult!(),
+                Variable::I16(_) => mult!(),
+                Variable::I32(_) => mult!(),
+                Variable::I64(_) => mult!(),
+                Variable::I128(_) => mult!(),
+                Variable::Isize(_) => mult!(),
+                Variable::U8(_) => mult!(),
+                Variable::U16(_) => mult!(),
+                Variable::U32(_) => mult!(),
+                Variable::U64(_) => mult!(),
+                Variable::U128(_) => mult!(),
+                Variable::Usize(_) => mult!(),
+                Variable::F32(_) => mult!(),
+                Variable::F64(_) => mult!(),
+                Variable::Proc{..} => panic!(),
+                Variable::Return(v) => v.call(args),
+                _ => None
+            }
+        } else {None}
+    }
     pub fn un_opr(&self, type_: &OprType) -> Option<Variable> {
         if let Variable::Return(v) = self {return v.un_opr(type_)}
         macro_rules! case {

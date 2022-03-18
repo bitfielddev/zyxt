@@ -67,7 +67,12 @@ fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable 
                 proc_varlist.pop_set();
                 res
             } else {
-                todo!("Call opr thingy")
+                to_call.call(input_args.into_iter()
+                    .map(|a| interpret_expr(a, varlist))
+                    .collect::<Vec<Variable>>())
+                .unwrap_or_else(|| {
+                    panic!()
+                })
             }
         },
         Element::If {conditions, ..} => {

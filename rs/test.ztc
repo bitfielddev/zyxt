@@ -68,5 +68,8 @@ r();
 s := fn {3};
 std.println(s(), s@type);
 
+// function calls on numbers
+std.println(3(4), 6(2));
+
 // numeric types other than i32 and f64
-std.println(3@u8);
+//std.println(3@u8);
