@@ -721,7 +721,6 @@ impl Variable {
         }
     }
     pub fn default(type_: TypeObj, typelist: &mut Varstack<TypeObj>) -> Result<Self, ZyxtError> {
-        println!("{:#?}", type_);
         match type_.clone() {
             TypeObj::Prim{name, ..} => Ok(match &*name {
                 "i8" => Variable::I8(0),
