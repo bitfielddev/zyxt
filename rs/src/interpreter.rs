@@ -4,7 +4,7 @@ use crate::objects::variable::Variable;
 use crate::objects::varstack::Varstack;
 
 
-fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable {
+pub(crate) fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -> Variable {
     match input {
         Element::Token(..) | Element::Comment {..} => panic!(),
         Element::NullElement => Variable::Null,

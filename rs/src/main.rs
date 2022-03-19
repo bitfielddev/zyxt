@@ -4,6 +4,7 @@ mod parser;
 mod objects;
 mod instructor;
 mod interpreter;
+mod repl;
 
 use std::fs::File;
 use std::io::{Error, Read};
@@ -13,12 +14,12 @@ use clap::Parser;
 use crate::lexer::lex;
 use crate::objects::token::Token;
 use crate::parser::parse_token_list;
-use crate::instructor::gen_instructions;
+use crate::instructor::gen_instructions_from_program;
 use crate::interpreter::interpret_asts;
 use crate::objects::element::Element;
 
 fn compile(input: String, filename: &String, debug_info: bool) -> Result<Vec<Element>, Error> {
-    if !debug_info {return Ok(gen_instructions(parse_token_list(lex(input, filename)?, filename)))}
+    if !debug_info {return Ok(gen_instructions_from_program(parse_token_list(lex(input, filename)?, filename)))}
 
     println!("{}", Yellow.bold().paint("Lexing"));
     let lex_start = Instant::now();
@@ -34,7 +35,7 @@ fn compile(input: String, filename: &String, debug_info: bool) -> Result<Vec<Ele
 
     println!("{}", Yellow.bold().paint("\nGenerating instructions"));
     let check_start = Instant::now();
-    let out = gen_instructions(parsed);
+    let out = gen_instructions_from_program(parsed);
     let check_time = check_start.elapsed().as_micros();
     for ele in out.iter() {println!("{}", White.dimmed().paint(format!("{:#?}", ele)));}
 
@@ -70,7 +71,9 @@ struct Args {
 #[derive(Parser)]
 enum Subcmd {
     /// Runs Zyxt source code
-    Run(Run)
+    Run(Run),
+    /// Start a REPL for Zyxt
+    Repl
 }
 #[derive(Parser)]
 struct Run {
@@ -97,5 +100,8 @@ fn main() {
             interpret(compile(content, filename, verbose).unwrap(), verbose);
         },
         // TODO Compile, Interpret
+        Subcmd::Repl => {
+            repl::repl(verbose)
+        }
     }
 }
