@@ -86,7 +86,11 @@ fn main() {
             let mut content = String::new();
             match File::open(filename) {
                 Ok(mut file) => {
-                    file.read_to_string(&mut content).unwrap();
+                    file.read_to_string(&mut content).unwrap_or_else(|e| {
+                        if e.to_string() == "Is a directory (os error 21)".to_string() {
+                            errors::error_1_2(filename.clone())
+                        } else {panic!("{}", e.to_string())}
+                    });
                 },
                 Err(_) => { errors::error_1_1(filename.clone()) }
             };

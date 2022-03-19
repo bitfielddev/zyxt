@@ -36,6 +36,10 @@ pub fn error_1_1(filename: String) -> ! {
     error_main("1.1", format!("File `{}` cannot be opened", filename))
 }
 
+pub fn error_1_2(dirname: String) -> ! {
+    error_main("1.2", format!("Directory given (Got `{}`)", dirname))
+}
+
 /* 2. Syntax errors */
 /// parentheses not closed properly (try swapping)
 pub fn error_2_0_0(paren1: char, paren2: char) -> ! {
