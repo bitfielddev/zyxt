@@ -1,7 +1,7 @@
 use std::io;
 use std::io::Write;
 use std::time::Instant;
-use ansi_term::Color::{White, Yellow};
+use ansi_term::Color::{Cyan, Green, White, Yellow};
 use text_io::read;
 use crate::compile;
 use crate::interpreter::interpret_expr;
@@ -13,8 +13,11 @@ pub fn repl(debug_info: bool) {
     let filename = "[stdin]".to_string();
     let mut typelist = Varstack::<TypeObj>::default_type();
     let mut varlist = Varstack::<Variable>::default_variable();
+    let in_symbol = Cyan.bold().paint(">>]");
+    let out_symbol = Green.bold().paint("[>>");
+    println!("{}", Yellow.bold().paint(format!("Zyxt Repl (v{})", env!("CARGO_PKG_VERSION"))));
     loop {
-        print!(">>> ");
+        print!("{} ", in_symbol);
         io::stdout().flush().unwrap();
         let input: String = read!("{}\n");
         // TODO support for multiline
@@ -37,7 +40,9 @@ pub fn repl(debug_info: bool) {
                     result
                 }} {
                 Ok(result) => {
-                    if result != Variable::Null && i == instr_len-1 { println!("{}", result) }
+                    if result != Variable::Null && i == instr_len-1 {
+                        println!("{} {}", out_symbol, Yellow.paint(result.to_string()))
+                    }
                 },
                 Err(e) => { e.print_noexit(); }
             }
