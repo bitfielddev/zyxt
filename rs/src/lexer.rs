@@ -1,11 +1,10 @@
-use std::io::Error;
 use regex::Regex;
 use crate::objects::token::{Side, TokenCategory, TokenType};
 use crate::objects::token_entries::{compound_token_entries_1, compound_token_entries_2, CompoundTokenEntry, Pattern, side_dependent_token_entries, singular_token_entries};
-use crate::{errors, Token};
+use crate::{Token, ZyxtError};
 use crate::objects::position::Position;
 
-fn lex_stage1(input: String, filename: &String) -> Result<Vec<Token>, Error> {
+fn lex_stage1(input: String, filename: &String) -> Result<Vec<Token>, ZyxtError> {
     let mut out: Vec<Token> = vec![];
     let mut pos = Position {
         filename: filename.clone(),
@@ -32,8 +31,7 @@ fn lex_stage1(input: String, filename: &String) -> Result<Vec<Token>, Error> {
             }
         }
         if !found {
-            errors::error_pos(&pos);
-            errors::error_2_1_1(c.to_string());
+            return Err(ZyxtError::from_pos(&pos).error_2_1_1(c.to_string()))
         }
     }
     Ok(out)
@@ -102,7 +100,7 @@ fn is_match(combination: &[Pattern<'_>], out: &Vec<Token>) -> Option<usize> {
     if match_count == 0 {None} else {Some(match_count)}
 }
 
-fn lex_stage2(input: Vec<Token>) -> Result<Vec<Token>, Error>{
+fn lex_stage2(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError>{
     let mut out: Vec<Token> = vec![];
 
     let token_entries = compound_token_entries_1();
@@ -137,7 +135,7 @@ fn lex_stage2(input: Vec<Token>) -> Result<Vec<Token>, Error>{
     Ok(out)
 }
 
-fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, Error>{
+fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError>{
     let mut out: Vec<Token> = vec![];
 
     let token_entries = compound_token_entries_2();
@@ -183,7 +181,7 @@ fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, Error>{
     Ok(out)
 }
 
-fn lex_stage4(input: Vec<Token>) -> Vec<Token> {
+fn lex_stage4(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError> {
     let mut out: Vec<Token> = vec![];
 
     let token_entries = side_dependent_token_entries();
@@ -215,7 +213,7 @@ fn lex_stage4(input: Vec<Token>) -> Vec<Token> {
         }
 
     }
-    out
+    Ok(out)
 }
 
 
@@ -236,7 +234,7 @@ fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
     out
 }
 
-pub fn lex(preinput: String, filename: &String) -> Result<Vec<Token>, Error> {
+pub fn lex(preinput: String, filename: &String) -> Result<Vec<Token>, ZyxtError> {
     if preinput.trim().len() == 0 {return Ok(vec![])};
     let input = preinput + "\n";
 
@@ -244,6 +242,6 @@ pub fn lex(preinput: String, filename: &String) -> Result<Vec<Token>, Error> {
     let out2 = lex_stage2(out1)?;
     let out3 = lex_stage3(out2)?;
     let out4 = clean_whitespaces(out3);
-    let out5 = lex_stage4(out4);
+    let out5 = lex_stage4(out4)?;
     Ok(out5)
 }

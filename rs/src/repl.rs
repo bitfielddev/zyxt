@@ -1,8 +1,9 @@
 use std::io;
 use std::io::Write;
+use std::time::Instant;
+use ansi_term::Color::{White, Yellow};
 use text_io::read;
-use crate::{lex, parse_token_list};
-use crate::instructor::gen_instructions_from_block;
+use crate::compile;
 use crate::interpreter::interpret_expr;
 use crate::objects::typeobj::TypeObj;
 use crate::objects::variable::Variable;
@@ -19,13 +20,27 @@ pub fn repl(debug_info: bool) {
         // TODO support for multiline
 
         if input == ";exit".to_string() {break;}
-        let instructions = gen_instructions_from_block(
-            parse_token_list(lex(input, &filename).unwrap(), &filename),
-            &mut typelist
-        );
-        for instr in instructions {
-            let result = interpret_expr(instr, &mut varlist);
-            if result != Variable::Null {println!("{}", result)}
+        let instructions = match compile(input, &filename, &mut typelist, debug_info) {
+            Ok(v) => v,
+            Err(e) => {e.print_noexit(); continue}
+        };
+
+        let instr_len = instructions.len();
+        if debug_info {println!("{}", Yellow.bold().paint("\nInterpreting"));}
+        for (i, instr) in instructions.into_iter().enumerate() {
+            match {
+                if !debug_info {interpret_expr(instr, &mut varlist)} else {
+                    let interpret_start = Instant::now();
+                    let result = interpret_expr(instr, &mut varlist);
+                    let interpret_time = interpret_start.elapsed().as_micros();
+                    println!("{}", White.dimmed().paint(format!("{}µs", interpret_time)));
+                    result
+                }} {
+                Ok(result) => {
+                    if result != Variable::Null && i == instr_len-1 { println!("{}", result) }
+                },
+                Err(e) => { e.print_noexit(); }
+            }
         }
     }
 }

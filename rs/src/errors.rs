@@ -4,159 +4,318 @@ use ansi_term::Style;
 use crate::objects::variable::Variable;
 use crate::objects::position::Position;
 
-fn error_main(code: &str, message: String) -> ! {
-    println!("{}", Black.on(Yellow).paint(format!(" Error {} ", code)).to_string()
-    + &*Red.bold().paint(format!(" {}", message)).to_string());
-    exit(0)
+#[derive(Clone)]
+pub struct ZyxtError {
+    pub position: Vec<Position>,
+    pub code: &'static str,
+    pub message: String
 }
+impl ZyxtError {
+    pub fn print(&self) -> ! {
+        self.print_noexit();
+        exit(0)
+    }
+    pub fn print_noexit(&self) {
+        print!("{}", Style::new().on(Red).bold().paint(
+            self.position.iter().map(|pos| format!(" {} ", pos)).collect::<Vec<String>>().join("\n")
+        ).to_string());
+        println!("{}", Black.on(Yellow).paint(format!(" Error {} ", self.code)).to_string()
+            + &*Red.bold().paint(format!(" {}", self.message)).to_string());
+    }
+    pub fn from_pos(pos: &Position) -> PositionForZyxtError {
+        PositionForZyxtError {position: vec![pos.clone()]}
+    }
+    pub fn no_pos() -> PositionForZyxtError {
+        PositionForZyxtError {position: vec![]}
+    }
+}
+pub struct PositionForZyxtError {
+    position: Vec<Position>
+}
+#[allow(dead_code)]
+impl PositionForZyxtError {
+    // TODO call stack thing
+    /* 0. Internal errors, have to do with the compiler-interpreter itself */
+    /// Rust error
+    pub fn error_0_0(self, stack: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "0.0",
+            message: format!("Internal error: \n{}", stack)
+        }
+    }
 
-pub fn error_pos(pos: &Position) {
-    print!("{}", Style::new().on(Red).bold().paint(format!(" {} ", pos)).to_string())
-}
+    /// No file given
+    pub fn error_0_1(self) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "0.1",
+            message: format!("No file given")
+        }
+    }
 
-/* 0. Internal errors, have to do with the compiler-interpreter itself */
-/// Rust error
-pub fn error_0_0(stack: String) -> ! {
-    error_main("0.0", format!("Internal error: \n{}", stack))
-}
+    /* 1. File and I/O errors */
+    /// File does not exist
+    pub fn error_1_0(self, filename: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "1.0",
+            message: format!("File `{}` does not exist", filename)
+        }
+    }
 
-/// No file given
-pub fn error_0_1() -> ! {
-    error_main("0.1", format!("No file given"))
-}
+    /// file cannot be opened
+    pub fn error_1_1(self, filename: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "1.1",
+            message: format!("File `{}` cannot be opened", filename)
+        }
+    }
 
-/* 1. File and I/O errors */
-/// File does not exist
-pub fn error_1_0(filename: String) {
-    error_main("1.0", format!("File `{}` does not exist", filename))
-}
+    pub fn error_1_2(self, dirname: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "1.2",
+            message: format!("Directory given (Got `{}`)", dirname)
+        }
+    }
 
-/// file cannot be opened
-pub fn error_1_1(filename: String) -> ! {
-    error_main("1.1", format!("File `{}` cannot be opened", filename))
-}
+    /* 2. Syntax errors */
+    /// parentheses not closed properly (try swapping)
+    pub fn error_2_0_0(self, paren1: char, paren2: char) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.0.0",
+            message: format!("Parentheses `{}` and `{}` not closed properly; try swapping them", paren1, paren2)
+        }
+    }
+    /// parentheses not closed properly (not closed)
+    pub fn error_2_0_1(self, paren: char) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.0.1",
+            message: format!("Parenthesis `{}` not closed", paren)
+        }
+    }
+    /// parentheses not closed properly (not opened)
+    pub fn error_2_0_2(self, paren: char) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.0.2",
+            message: format!("Parenthesis `{}` not opened", paren)
+        }
+    }
 
-pub fn error_1_2(dirname: String) -> ! {
-    error_main("1.2", format!("Directory given (Got `{}`)", dirname))
-}
+    /// unexpected ident (generic)
+    pub fn error_2_1_0(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.0",
+            message: format!("Unexpected ident `{}`", ident)
+        }
+    }
+    /// unexpected ident (lexer didnt recognise)
+    pub fn error_2_1_1(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.1",
+            message: format!("Ident `{}` not recognised by lexer", ident)
+        }
+    }
+    /// unexpected ident (dot at end of expression)
+    pub fn error_2_1_2(self) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.2",
+            message: format!("Stray `.` at end of expression")
+        }
+    }
+    /// unexpected ident (binary operator at start/end of expression)
+    pub fn error_2_1_3(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.3",
+            message: format!("Stray `{}` binary operator at start/end of expression", ident)
+        }
+    }
+    /// unexpected ident (unary operator at start/end of expression)
+    pub fn error_2_1_4(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.4",
+            message: format!("Stray `{}` unary operator at start/end of expression", ident)
+        }
+    }
+    /// unexpected ident (declaration expr at start/end of expression)
+    pub fn error_2_1_5(self) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.5",
+            message: format!("Stray `:=` at start/end of expression")
+        }
+    }
+    /// unexpected ident (non-flag between first flag and declared variable)
+    pub fn error_2_1_6(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.6",
+            message: format!("Stray `{}` between first flag and declared variable", ident)
+        }
+    }
+    /// unexpected ident ('else/elif'  found after 'else' keyword)
+    pub fn error_2_1_7(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.7",
+            message: format!("`{}` detected after `else` keyword", ident)
+        }
+    }
+    /// unexpected ident (block expected, not ident)
+    pub fn error_2_1_8(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.8",
+            message: format!("Block expected, not `{}`", ident)
+        }
+    }
+    /// unexpected ident ('else/elif' found without 'if' keyword)
+    pub fn error_2_1_9(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.9",
+            message: format!("Stray `{}` without starting `if`", ident)
+        }
+    }
+    /// unexpected ident (stray comment start / end)
+    pub fn error_2_1_10(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.10",
+            message: format!("Stray unclosed/unopened `{}`", ident)
+        }
+    }
+    /// unexpected ident (must be variable)
+    pub fn error_2_1_11(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.11",
+            message: format!("Only variables can be deleted (Got `{}`)", ident)
+        }
+    }
+    /// unexpected ident (cannot delete dereferenced variable)
+    pub fn error_2_1_12(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.12",
+            message: format!("Cannot delete dereferenced variable (Got `{}`)", ident)
+        }
+    }
+    /// unexpected ident (bar not closed)
+    pub fn error_2_1_13(self) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.13",
+            message: format!("Opening bar not closed")
+        }
+    }
+    /// unexpected ident (Vxtra values past default value)
+    pub fn error_2_1_14(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.14",
+            message: format!("Extra values past default value (Got `{}`)", ident)
+        }
+    }
+    /// unexpected ident (Variable name isn't variable)
+    pub fn error_2_1_15(self, ident: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.15",
+            message: format!("Variable name isn't variable (Got `{}`)", ident)
+        }
+    }
 
-/* 2. Syntax errors */
-/// parentheses not closed properly (try swapping)
-pub fn error_2_0_0(paren1: char, paren2: char) -> ! {
-    error_main("2.0.0", format!("Parentheses `{}` and `{}` not closed properly; try swapping them", paren1, paren2))
-}
-/// parentheses not closed properly (not closed)
-pub fn error_2_0_1(paren: char) -> ! {
-    error_main("2.0.1", format!("Parenthesis `{}` not closed", paren))
-}
-/// parentheses not closed properly (not opened)
-pub fn error_2_0_2(paren: char) -> ! {
-    error_main("2.0.2", format!("Parenthesis `{}` not opened", paren))
-}
+    /// assignment without variable name
+    pub fn error_2_2(self) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.2",
+            message: format!("Assignment without variable name")
+        }
+    }
 
-/// unexpected ident (generic)
-pub fn error_2_1_0(ident: String) -> ! {
-    error_main("2.1.0", format!("Unexpected ident `{}`", ident))
-}
-/// unexpected ident (lexer didnt recognise)
-pub fn error_2_1_1(ident: String) -> ! {
-    error_main("2.1.1", format!("Ident `{}` not recognised by lexer", ident))
-}
-/// unexpected ident (dot at end of expression)
-pub fn error_2_1_2() -> ! {
-    error_main("2.1.2", format!("Stray `.` at end of expression"))
-}
-/// unexpected ident (binary operator at start/end of expression)
-pub fn error_2_1_3(ident: String) -> ! {
-    error_main("2.1.3", format!("Stray `{}` binary operator at start/end of expression", ident))
-}
-/// unexpected ident (unary operator at start/end of expression)
-pub fn error_2_1_4(ident: String) -> ! {
-    error_main("2.1.4", format!("Stray `{}` unary operator at start/end of expression", ident))
-}
-/// unexpected ident (declaration expr at start/end of expression)
-pub fn error_2_1_5() -> ! {
-    error_main("2.1.5", format!("Stray `:=` at start/end of expression"))
-}
-/// unexpected ident (non-flag between first flag and declared variable)
-pub fn error_2_1_6(ident: String) -> ! {
-    error_main("2.1.6", format!("Stray `{}` between first flag and declared variable", ident))
-}
-/// unexpected ident ('else/elif'  found after 'else' keyword)
-pub fn error_2_1_7(ident: String) -> ! {
-    error_main("2.1.7", format!("`{}` detected after `else` keyword", ident))
-}
-/// unexpected ident (block expected, not ident)
-pub fn error_2_1_8(ident: String) -> ! {
-    error_main("2.1.8", format!("Block expected, not `{}`", ident))
-}
-/// unexpected ident ('else/elif' found without 'if' keyword)
-pub fn error_2_1_9(ident: String) -> ! {
-    error_main("2.1.9", format!("Stray `{}` without starting `if`", ident))
-}
-/// unexpected ident (stray comment start / end)
-pub fn error_2_1_10(ident: String) -> ! {
-    error_main("2.1.10", format!("Stray unclosed/unopened `{}`", ident))
-}
-/// unexpected ident (must be variable)
-pub fn error_2_1_11(ident: String) -> ! {
-    error_main("2.1.11", format!("Only variables can be deleted (Got `{}`)", ident))
-}
-/// unexpected ident (cannot delete dereferenced variable)
-pub fn error_2_1_12(ident: String) -> ! {
-    error_main("2.1.12", format!("Cannot delete dereferenced variable (Got `{}`)", ident))
-}
-/// unexpected ident (bar not closed)
-pub fn error_2_1_13() -> ! {
-    error_main("2.1.13", format!("Opening bar not closed"))
-}
-/// unexpected ident (Vxtra values past default value)
-pub fn error_2_1_14(ident: String) -> ! {
-    error_main("2.1.14", format!("Extra values past default value (Got `{}`)", ident))
-}
-/// unexpected ident (Variable name isn't variable)
-pub fn error_2_1_15(ident: String) -> ! {
-    error_main("2.1.15", format!("Variable name isn't variable (Got `{}`)", ident))
-}
+    /// unfilled argument
+    pub fn error_2_3(self, func: String, index: usize) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.3",
+            message: format!("Unfilled argument #{} of {}", index, func)
+        }
+    }
 
-/// assignment without variable name
-pub fn error_2_2() -> ! {
-    error_main("2.2", format!("Assignment without variable name"))
-}
+    /* 3. Variable & attribute errors */
+    /// Variable not defined
+    pub fn error_3_0(self, varname: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "3.0",
+            message: format!("Undefined variable `{}`", varname)
+        }
+    }
 
-/// unfilled argument
-pub fn error_2_3(func: String, index: usize) -> ! {
-    error_main("2.3", format!("Unfilled argument #{} of {}", index, func))
-}
+    /// Type has no attribute
+    pub fn error_3_1(self, parent: Variable, attribute: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "3.1",
+            message: format!("`{}` (type `{}`) has no attribute `{}`", parent, parent.get_type_obj(), attribute)
+        }
+    }
 
-/* 3. Variable & attribute errors */
-/// Variable not defined
-pub fn error_3_0(varname: String) -> ! {
-    error_main("3.0", format!("Undefined variable `{}`", varname))
-}
+    /* 4. Type errors */
+    /// Binary operator not implemented for type
+    pub fn error_4_0_0(self, operator: String, type1: String, type2: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "4.0.0",
+            message: format!("Operator {} not implemented for types `{}`, `{}`", operator, type1, type2)
+        }
+    }
+    /// Unary operator not implemented for type
+    pub fn error_4_0_1(self, operator: String, type_: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "4.0.1",
+            message: format!("Operator {} not implemented for type `{}`", operator, type_)
+        }
+    }
 
-/* 4. Type errors */
-/// Binary operator not implemented for type
-pub fn error_4_0_0(operator: String, type1: String, type2: String) -> ! {
-    error_main("4.0.0", format!("Operator {} not implemented for types `{}`, `{}`", operator, type1, type2))
-}
-/// Unary operator not implemented for type
-pub fn error_4_0_1(operator: String, type_: String) -> ! {
-    error_main("4.0.1", format!("Operator {} not implemented for type `{}`", operator, type_))
-}
+    /// Binary operation unsuccessful
+    pub fn error_4_1_0(self, operator: String, value1: Variable, value2: Variable) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "4.1.0",
+            message: format!("Operator {} unsuccessful on `{}` (type `{}`), `{}` (type `{}`)",
+                             operator, value1, value1.get_type_obj(), value2, value2.get_type_obj())
+        }
+    }
+    /// Unary operation unsuccessful
+    pub fn error_4_1_1(self, operator: String, value: Variable) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "4.1.1",
+            message: format!("Operator {} unsuccessful on `{}` (type `{}`)",
+                             operator, value, value.get_type_obj())
+        }
+    }
 
-/// Binary operation unsuccessful
-pub fn error_4_1_0(operator: String, value1: Variable, value2: Variable) -> ! {
-    error_main("4.1.0", format!("Operator {} unsuccessful on `{}` (type `{}`), `{}` (type `{}`)",
-                                operator, value1, value1.get_type_obj(), value2, value2.get_type_obj()))
-}
-/// Unary operation unsuccessful
-pub fn error_4_1_1(operator: String, value: Variable) -> ! {
-    error_main("4.1.1", format!("Operator {} unsuccessful on `{}` (type `{}`)",
-                              operator, value, value.get_type_obj()))
-}
-
-/// Non-i32 script return value
-pub fn error_4_2(value: Variable) -> ! {
-    error_main("4.2", format!("Non-i32 script return value detected (Got `{}`)", value.get_displayed_value()))
+    /// Non-i32 script return value
+    pub fn error_4_2(self, value: Variable) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "4.2",
+            message: format!("Non-i32 script return value detected (Got `{}`)", value.get_displayed_value())
+        }
+    }
 }

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::errors;
+use crate::errors::ZyxtError;
 use crate::objects::position::Position;
 use crate::objects::typeobj::TypeObj;
 use crate::objects::variable::Variable;
@@ -40,24 +40,20 @@ impl <T: Clone> Varstack<T> {
     pub fn declare_val(&mut self, name: &String, value: &T) {
         self.0.last_mut().unwrap().insert(name.clone(), value.clone());
     }
-    pub fn set_val(&mut self, name: &String, value: &T, position: &Position) {
+    pub fn set_val(&mut self, name: &String, value: &T, position: &Position) -> Result<(), ZyxtError>{
         for set in self.0.iter_mut().rev() {
-            if set.contains_key(name) {set.insert(name.clone(), value.clone()); return}
+            if set.contains_key(name) {set.insert(name.clone(), value.clone()); return Ok(())}
         }
-        errors::error_pos(position);
-        errors::error_3_0(name.clone());
+        Err(ZyxtError::from_pos(position).error_3_0(name.clone()))
     }
-    pub fn get_val(&mut self, name: &String, position: &Position) -> T {
+    pub fn get_val(&mut self, name: &String, position: &Position) -> Result<T, ZyxtError> {
         for set in self.0.iter().rev() {
-            if set.contains_key(name) {return set.get(name).unwrap().clone()}
+            if set.contains_key(name) {return Ok(set.get(name).unwrap().clone())}
         }
-        errors::error_pos(position);
-        errors::error_3_0(name.clone());
+        Err(ZyxtError::from_pos(position).error_3_0(name.clone()))
     }
-    pub fn delete_val(&mut self, name: &String, position: &Position) -> T {
-        self.0.last_mut().unwrap().remove(name).unwrap_or_else(|| {
-            errors::error_pos(position);
-            errors::error_3_0(name.clone());
-        })
+    pub fn delete_val(&mut self, name: &String, position: &Position) -> Result<T, ZyxtError> {
+        if let Some(v) = self.0.last_mut().unwrap().remove(name) {Ok(v)}
+        else {Err(ZyxtError::from_pos(position).error_3_0(name.clone()))}
     }
 }

@@ -32,8 +32,8 @@ pub fn get_order(opr: &OprType) -> u8 {
         OprType::Deref => 1,
         OprType::TypeCast => 2,
         OprType::Power => 3,
-        OprType::Root |
-        OprType::Logarithm => 4,
+        //OprType::Root |
+        //OprType::Logarithm => 4,
         OprType::DotMult => 5,
         OprType::AstMult |
         OprType::FractDiv |
@@ -70,14 +70,13 @@ pub fn get_order(opr: &OprType) -> u8 {
     }
 }
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[allow(dead_code)]
 pub enum OprType {
     Increment,
     Decrement,
     PlusSign,
     MinusSign,
     Not,
-    Logarithm,
-    Root,
     Power,
     DotMult,
     AstMult,
@@ -124,12 +123,14 @@ impl Display for OprType {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum Flag {Hoi, Pub, Priv, Prot, Const}
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Keyword {If, Else, Elif, Do, While, For, Delete, Return, Proc, Fn}
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Side { Left, Right }
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum TokenType {
     CommentStart, // //
     CommentEnd, // \n
