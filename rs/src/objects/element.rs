@@ -126,19 +126,21 @@ impl Element {
     pub fn get_name(&self) -> String {
         if let Element::Variable {name: type1, ..} = self {return type1.clone()} else {panic!("not variable")}
     }
-    pub fn bin_op_return_type(type_: &OprType, type1: TypeObj, type2: TypeObj, position: &Position) -> Result<TypeObj, ZyxtError> {
+    pub fn bin_op_return_type(type_: &OprType, type1: TypeObj, type2: TypeObj,
+                              typelist: &mut Varstack<TypeObj>, position: &Position) -> Result<TypeObj, ZyxtError> {
         if type_ == &OprType::TypeCast {
             return Ok(type2)
         }
-        if let Some(v) = Variable::default(type1.clone())
-            .bin_opr(type_, Variable::default(type2.clone())) {
+        if let Some(v) = Variable::default(type1.clone(), typelist)?
+            .bin_opr(type_, Variable::default(type2.clone(), typelist)?) {
             return Ok(v.get_type_obj())
         } else {
             Err(ZyxtError::from_pos(position).error_4_0_0(type_.to_string(), type1.to_string(), type2.to_string()))
         }
     }
-    pub fn un_op_return_type(type_: &OprType, opnd_type: TypeObj, position: &Position) -> Result<TypeObj, ZyxtError> {
-        if let Some(v) = Variable::default(opnd_type.clone()).un_opr(type_) {
+    pub fn un_op_return_type(type_: &OprType, opnd_type: TypeObj,
+                             typelist: &mut Varstack<TypeObj>, position: &Position) -> Result<TypeObj, ZyxtError> {
+        if let Some(v) = Variable::default(opnd_type.clone(), typelist)?.un_opr(type_) {
             return Ok(v.get_type_obj())
         } else{
             Err(ZyxtError::from_pos(position).error_4_0_1(type_.to_string(), opnd_type.to_string()))
@@ -203,11 +205,11 @@ impl Element {
             Element::BinaryOpr {type_, operand1, operand2, position} => {
                 let type1 = operand1.get_type(typelist)?;
                 let type2 = operand2.get_type(typelist)?;
-                Element::bin_op_return_type(type_, type1, type2, position)
+                Element::bin_op_return_type(type_, type1, type2, typelist, position)
             },
             Element::UnaryOpr {type_, operand, position} => {
                 let opnd_type = operand.get_type(typelist)?;
-                Element::un_op_return_type(type_, opnd_type, position)
+                Element::un_op_return_type(type_, opnd_type, typelist, position)
             },
             Element::Procedure {is_fn, return_type, content, args, ..} => {
                 typelist.add_set();

@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
-use crate::Element;
+use crate::{Element, Varstack, ZyxtError};
 use crate::objects::element::Argument;
 use crate::objects::token::OprType;
 use crate::objects::typeobj::TypeObj;
@@ -720,9 +720,10 @@ impl Variable {
             _ => None
         }
     }
-    pub fn default(type_: TypeObj) -> Self {
+    pub fn default(type_: TypeObj, typelist: &mut Varstack<TypeObj>) -> Result<Self, ZyxtError> {
+        println!("{:#?}", type_);
         match type_.clone() {
-            TypeObj::Prim{name, ..} => match &*name {
+            TypeObj::Prim{name, ..} => Ok(match &*name {
                 "i8" => Variable::I8(0),
                 "i16" => Variable::I16(0),
                 "i32" => Variable::I32(0),
@@ -741,9 +742,11 @@ impl Variable {
                 "bool" => Variable::Bool(false),
                 "#null" => Variable::Null,
                 "type" => Variable::Type(TypeObj::null()),
-                _ => panic!("{}", type_)
+                _ => panic!("{:#?}", type_)
+            }),
+            TypeObj::Compound(mut ele) => {
+                Variable::default(ele.get_type(typelist)?, typelist)
             }
-            _ => panic!("{}", type_)
         }
     }
     pub fn from_type_content(type_: TypeObj, content: String) -> Variable {

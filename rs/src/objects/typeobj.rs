@@ -24,7 +24,10 @@ impl Display for TypeObj {
 }
 impl Debug for TypeObj {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
+        match self {
+            TypeObj::Prim{..} => write!(f, "{}", self.to_string()),
+            TypeObj::Compound(ele) => write!(f, "(TypeObj) {:#?}", ele)
+        }
     }
 }
 impl TypeObj {

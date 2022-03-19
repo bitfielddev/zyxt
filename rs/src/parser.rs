@@ -218,8 +218,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> R
             }
         }} else {
             if catcher != Element::NullElement {new_elements.push(catcher.clone());}
-            catcher = Element::NullElement;
-            new_elements.push(selected.clone());
+            catcher = selected.clone()
         }
         cursor += 1;
     }
@@ -580,6 +579,7 @@ fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Result<Element, 
     elements = parse_assignment_oprs(elements, filename)?;
     elements = parse_normal_oprs(elements, filename)?;
     elements = parse_un_oprs(elements, filename)?;
+    println!("{:#?}", elements);
     if elements.len() > 1 {
         return Err(ZyxtError::from_pos(&elements[1].get_pos()).error_2_1_0("TODO".to_string()))
     }
