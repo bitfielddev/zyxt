@@ -26,7 +26,7 @@ impl <T: Clone> Varstack<T> {
         let mut v = Varstack(vec![HashMap::new()]);
         for t in PRIM_NAMES {
             v.0[0].insert(t.to_string(), TypeObj::Prim{
-                name: t.to_string(), type_args: vec![]
+                name: "type".to_string(), type_args: vec![]
             });
         }
         v
