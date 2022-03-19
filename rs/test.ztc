@@ -71,5 +71,8 @@ std.println(s(), s@type);
 // function calls on numbers
 std.println(3(4), 6(2));
 
+// string multiplication
+std.println("hi "*5);
+
 // numeric types other than i32 and f64
 //std.println(3@u8);

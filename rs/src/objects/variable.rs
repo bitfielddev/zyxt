@@ -5,7 +5,7 @@ use crate::objects::element::Argument;
 use crate::objects::token::OprType;
 use crate::objects::typeobj::TypeObj;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Variable {
     I8(i8),
     I16(i16),
@@ -364,8 +364,26 @@ impl Variable {
         match type_ {
             OprType::Plus => case_arith!(Add::add),
             OprType::Minus => case_arith!(Sub::sub),
-            OprType::AstMult | OprType::DotMult | OprType::CrossMult => case_arith!(Mul::mul),
-            OprType::Div | OprType::FractDiv => case_arith!(Div::div),
+            OprType::AstMult | 
+            OprType::DotMult | 
+            OprType::CrossMult => {
+                if let Variable::Str(v1) = self.clone() {
+                    if let Variable::I32(v2) = other {
+                        Some(Variable::Str(v1.repeat(v2.try_into().ok()?)))
+                    } else {case_arith!(Mul::mul)}
+                } else if let Variable::I32(v1) = self.clone() {
+                    if let Variable::Str(v2) = other {
+                        Some(Variable::Str(v2.repeat(v1.try_into().ok()?)))
+                    } else {case_arith!(Mul::mul)}
+                } else {case_arith!(Mul::mul)}
+            }, // TODO implement for all number types
+            OprType::Div |
+            OprType::FractDiv => {
+                if other == Variable::I32(0) {
+                    todo!("implement undefined type thing")
+                }
+                case_arith!(Div::div)
+            },
             OprType::Modulo => case_arith!(Rem::rem),
             OprType::Concat => match self.clone() {
                 Variable::I32(v1) => match other {
