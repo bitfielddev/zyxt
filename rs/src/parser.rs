@@ -513,7 +513,7 @@ fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Result<V
                         f.push(*flag);
                     } else {
                         return Err(ZyxtError::from_pos(&Position{filename: filename.clone(), line: 0, column: 0})
-                            .error_2_1_6(String::from(""))) // TODO
+                            .error_2_1_6(elements[i].get_raw()))
                     }
                 }
                 f
