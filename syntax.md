@@ -96,33 +96,58 @@ proc|arg: #A, ...| {...} // function that takes in args and returns nothing
 proc|arg: #A, ...|: #A {...} // function that takes in args and returns a value
 proc|kwarg: #A: 0| {...} // keyword arg
 proc|args: #varg<#A>| {...} // variable arguments
-proc|kwargs: #vkwarg<#A>| {...} // variable keyword arguments
+proc|kwargs: #vkwarg<str, #A>| {...} // variable keyword arguments
 proc<T>|num: T|: T {...} // generics
 proc|num: i32| {...} |string: str| {...} // overloading
 infix proc|arg1: #A, arg2: #A| {...} // makes function infixable, must be ≥2 args
 fn {...} // function without side effects
 infix fn|arg1: #A, arg2: #A| {...} // closure infix
+a :| ... // shorthand for proc for only one argument
 
 Calling a function:
 f(); // call function
-f(arg) or f arg// call function with one argument
+f(arg) or f arg // call function with one argument
 f(arg: val) or f arg: val // keyword argument
 f(arg1, arg2) or f arg1, arg2 // call function with two arguments
 arg1 f arg2 // if infix
 
 === Classes ===
-cls {...} // normal class
-cls|Class| {...} // inherited
+class { // class
+    ..Class; // inheritance
+    x := 3; // static value
+    inst value := 3; // instance value with default
+    
+    #init := fn|&#, ...| {...}; // class instantiation
+    #add := fn|&#, o: #@type|: #@type {#.value+o.value}; // instance methods
+    
+    f := fn {...}; // static method
+    g := fn |&#cls, ...| {...};
+};
+struct | // structs
+    x: #num,
+    y: #num
+| {...}; // same method rules as class
+mixin {...} // Like classes, but can't be instantiated
+
+class_(...) // instantiating class
+struct_(...) // instantiating struct
 
 === Enums ===
-enum{A, B} // enum
+enum {
+    A; // no value
+    B := 3; // value
+    C := struct |...|; // struct enum
+}
+enum_.A; enum_.B; enum_.C(...) // instantiating enum
 
 === Typing ===
 T1 / T2: Union
+#U<T1, T2, ...>: Union
 #A: Any
 #num: Number
 #seq: Sequence
-#C<tuple<T, ...>, T>: callable (eg functions, objects)
+#has_attr(#call: fn<[...], T>): has attribute
+#no_inherited<T>: must be T and not an inherited class / struct
 T?: nullable
 ```
 **Implemented:** ~~Lexer Parser Instructor Interpreter~~
@@ -194,13 +219,25 @@ x || y; // or
 x ^^ y; // xor
 !x; // not
 
+=== Null & error handling ===
+x? // becomes #U<x, null>
+x?.y; // null if x or y is null
+x ?: y; // y if x is null
+x!!; // non-null assertion
+
+{...} ?! e :| {...}; // calls proc/fn if error in first block
+x !: y; // y if error in x;
+
 === Misc ===
 x istype y; // x is of type y
 x !istype y; // x is not of type y
 x >< y; // swap x and y
 x ~ y; // concatenation
+x @ y; // typecast
 &x; // get reference of x
 \x; // dereference x
+**x; // spread syntax
+x..y // range syntax
 
 === Parsing order ===
 -1. ()
