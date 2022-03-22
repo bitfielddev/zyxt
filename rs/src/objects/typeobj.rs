@@ -39,6 +39,7 @@ impl TypeObj {
             TypeObj::Prim {name, ..} => Element::Variable {
                 position: Default::default(),
                 name: name.clone(), // TODO type args
+                raw: self.to_string(),
                 parent: Box::new(Element::NullElement)
             },
             TypeObj::Compound(ele) => *ele.clone()

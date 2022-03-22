@@ -136,10 +136,10 @@ impl Element {
             Element::Procedure { position, .. } => position
         }
     }
-    pub fn get_raw(&self) -> &String {
+    pub fn get_raw(&self) -> String {
         match self {
-            Element::NullElement => &"".to_string(),
-            Element::Token(t) => &t.get_raw(),
+            Element::NullElement => "".to_string(),
+            Element::Token(t) => t.get_raw(),
             Element::Variable { raw, .. } |
             Element::Literal { raw, .. } |
             Element::Comment { raw, .. } |
@@ -152,7 +152,7 @@ impl Element {
             Element::Block { raw, .. } |
             Element::Delete { raw, .. } |
             Element::Return { raw, .. } |
-            Element::Procedure { raw, .. } => raw
+            Element::Procedure { raw, .. } => raw.clone()
         }
     }
     pub fn get_name(&self) -> String {

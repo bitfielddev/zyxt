@@ -21,9 +21,9 @@ fn catch_between(opening: TokenType, closing: TokenType,
         *cursor += 1;
         if *cursor >= elements.len() {
             return if opening == TokenType::Null {
-                Err(ZyxtError::from_pos(&paren_pos).error_2_1_0("TODO".to_string()))
+                Err(ZyxtError::from_pos(&paren_pos).error_2_1_0(elements[*cursor].get_raw().trim().to_string()))
             } else {
-                Err(ZyxtError::from_pos(&paren_pos).error_2_0_1(opening_char))
+                Err(ZyxtError::from_pos(&paren_pos).error_2_0_1(opening_char.to_string()))
             }
         }
         let catcher_selected = &elements[*cursor];
@@ -68,7 +68,7 @@ fn base_split<T: Clone>(parser_fn: &dyn Fn(Vec<Element>, &String) -> Result<T, Z
             TokenType::OpenCurlyParen => '{',
             TokenType::OpenAngleBracket => '<',
             _ => '?'
-        })) // TODO
+        }.to_string())) // TODO
     }
     if out.len() == 0 && catcher.len() == 0 {return Ok(vec![]);}
     if !ignore_empty && catcher.len() == 0 {
@@ -106,11 +106,16 @@ fn parse_parens(elements: Vec<Element>, filename: &String) -> Result<Vec<Element
                     } else {new_elements.push(Element::Token(selected.clone()))} // or else it's function args
                 } else {new_elements.push(Element::Token(selected.clone()))}
             } else if selected.type_ == TokenType::OpenCurlyParen { // blocks, {
+                let raw = selected.get_raw();
                 let paren_contents = catch_between(TokenType::OpenCurlyParen,
                                                    TokenType::CloseCurlyParen,
                                                    &elements, &mut cursor)?;
                 new_elements.push(Element::Block {
                     position: selected.position.clone(),
+                    raw: format!("{}{}{}", raw, paren_contents.iter()
+                        .map(|e| e.get_raw().clone())
+                        .collect::<Vec<String>>().join(""),
+                        elements[cursor].get_raw()),
                     content: parse_block(paren_contents, filename)?
                 });
             } else {new_elements.push(Element::Token(selected.clone()))}
@@ -151,6 +156,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> R
                     catcher = Element::Variable{
                         position: next_element.position.clone(),
                         name: next_element.value.clone(),
+                        raw: format!("{}{}{}", catcher.get_raw(), selected.get_raw(), next_element.get_raw()),
                         parent: Box::new(catcher)
                     };
                     cursor += 1;
@@ -158,6 +164,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> R
                     catcher = Element::Variable{
                         position: next_element.position.clone(),
                         name: next_element.value.clone(),
+                        raw: format!("{}{}{}", catcher.get_raw(), selected.get_raw(), next_element.get_raw()),
                         parent: Box::new(catcher)
                     };
                 } else {
@@ -170,6 +177,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> R
                 catcher = Element::Variable {
                     position: selected.position.clone(),
                     name: selected.value.clone(),
+                    raw: selected.get_raw(),
                     parent: Box::new(Element::NullElement)
                 }
             }
@@ -179,6 +187,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> R
                 if catcher != Element::NullElement {new_elements.push(catcher.clone());}
                 catcher = Element::Literal {
                     position: selected.position.clone(),
+                    raw: selected.get_raw(),
                     type_: TypeObj::from_str(if selected.type_ == TokenType::LiteralMisc {
                         match &*selected.value {
                             "true" | "false" => "bool",
@@ -193,20 +202,27 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> R
                 }
             }
             TokenType::CloseParen => {
-                return Err(ZyxtError::from_pos(&selected.position).error_2_0_2(')'))
+                return Err(ZyxtError::from_pos(&selected.position).error_2_0_2(')'.to_string()))
             }
             TokenType::OpenParen => {
                 if cursor == 0 {
                     return Err(ZyxtError::from_pos(&selected.position).error_2_1_0(String::from("("))) // parens should have been settled in the first part
                 }
+                let mut raw = selected.get_raw();
+                let contents = catch_between(TokenType::OpenParen,
+                                             TokenType::CloseParen,
+                                             &elements, &mut cursor)?;
+                raw = format!("{}{}{}", raw, contents.iter()
+                    .map(|e| e.get_raw().clone())
+                    .collect::<Vec<String>>().join(""),
+                    elements[cursor].get_raw());
                 let args = split_between(TokenType::Comma,
                                                        TokenType::OpenParen, TokenType::CloseParen,
-                                                       catch_between(TokenType::OpenParen,
-                                                                     TokenType::CloseParen,
-                                                                     &elements, &mut cursor)?,
+                                                       contents,
                                                        filename, false)?;
                 catcher = Element::Call {
                     position: selected.position.clone(),
+                    raw: format!("{}{}", catcher.get_raw(), raw),
                     called: Box::new(catcher),
                     args, kwargs: Box::new(HashMap::new())
                 }
@@ -242,25 +258,31 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Result<Vec<
                 let is_fn= if type_ != &TokenType::Bar {
                     type_ == &TokenType::Keyword(Keyword::Fn)
                 } else {false};
+                let mut raw = selected.get_raw().clone();
                 if type_ != &TokenType::Bar {
                     cursor += 1;
                     if cursor >= elements.len() {
-                        return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_0("TODO".to_string()))
+                        return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_0(elements[cursor-1].get_raw().trim().to_string()))
                     }
                     selected = &elements[cursor];
+                    raw = format!("{}{}", raw, selected.get_raw());
                 }
 
                 let args = if let Element::Token(Token{type_: TokenType::Bar, ..}) = selected {
+                    let contents = catch_between(TokenType::Bar, TokenType::Bar, &elements, &mut cursor)?;
+                    raw = format!("{}{}{}", raw, contents.iter()
+                        .map(|e| e.get_raw().clone())
+                        .collect::<Vec<String>>().join(""), elements[cursor].get_raw());
                     base_split(&|raw_arg, filename| {
                         let parts = split_between(TokenType::Colon, TokenType::Null, TokenType::Null,
                                                   raw_arg, filename, true)?;
                         let name = if let Some(Element::Variable{name, ..}) = parts.get(0) {name.clone()} else {
-                            return Err(ZyxtError::from_pos(parts.get(0).unwrap().get_pos()).error_2_1_15("TODO".to_string()))
+                            return Err(ZyxtError::from_pos(parts.get(0).unwrap().get_pos()).error_2_1_15(",".to_string()))
                         };
                         let type_ = if let Some(t) = parts.get(1) {t.clone()} else {Element::NullElement};
                         let default = if let Some(d) = parts.get(2) {Some(d.clone())} else {None};
                         if parts.len() > 3 {
-                            return Err(ZyxtError::from_pos(parts.get(3).unwrap().get_pos()).error_2_1_14("TODO".to_string()))
+                            return Err(ZyxtError::from_pos(parts.get(3).unwrap().get_pos()).error_2_1_14(parts[3].get_raw().trim().to_string()))
                         }
                         Ok(Argument{
                             name,
@@ -269,13 +291,13 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Result<Vec<
                             default})
                     }, None, TokenType::Comma,
                                TokenType::Bar, TokenType::Bar,
-                               catch_between(TokenType::Bar, TokenType::Bar, &elements, &mut cursor)?,
+                               contents,
                                filename, false)
                 } else {cursor -= 1; Ok(vec![])}?;
 
                 cursor += 1;
                 if cursor >= elements.len() {
-                    return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_0("TODO".to_string()))
+                    return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_0(elements[cursor-1].get_raw().trim().to_string()))
                 }
                 selected = &elements[cursor];
                 let return_type = if let Element::Token(Token{type_: TokenType::Colon, ..}) = selected {
@@ -283,9 +305,10 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Result<Vec<
                     loop {
                         cursor += 1;
                         if cursor >= elements.len() {
-                            return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_0("TODO".to_string()))
+                            return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_0(elements[cursor-1].get_raw().trim().to_string()))
                         }
                         selected = &elements[cursor];
+                        raw = format!("{}{}", raw, selected.get_raw());
                         if let Element::Block{..} = selected {break;}
                         catcher.push(selected.clone());
                     }
@@ -296,13 +319,16 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Result<Vec<
                     new_elements.push(Element::Procedure {
                         position, is_fn, args,
                         return_type,
+                        raw: format!("{}{}", raw, selected.get_raw()),
                         content: content.clone()
                     });
                 } else {
+                    let content = parse_expr(elements[cursor..].to_vec(), filename)?;
                     new_elements.push(Element::Procedure {
                         position, is_fn, args,
                         return_type,
-                        content: vec![parse_expr(elements[cursor..].to_vec(), filename)?]
+                        raw: format!("{}{}", raw, content.get_raw()),
+                        content: vec![content]
                     });
                     return Ok(new_elements);
                 }
@@ -318,23 +344,26 @@ fn parse_assignment_oprs(elements: Vec<Element>, filename: &String) -> Result<Ve
     for (i, ele) in elements.iter().enumerate() {
         if let Element::Token(Token{type_: TokenType::AssignmentOpr(opr_type), position, ..}) = ele {
             if i == 0 || i == elements.len()-1 {
-                return Err(ZyxtError::from_pos(position).error_2_1_3("TODO".to_string()))
+                return Err(ZyxtError::from_pos(position).error_2_1_3(ele.get_raw().trim().to_string()))
             }
             let variable = parse_expr(vec![elements[i-1].clone()], filename)?;
             let content = if opr_type == &OprType::Null {
                 parse_expr(elements[i+1..].to_vec(), filename)?
             } else {
+                let operand2 = parse_expr(elements[i+1..].to_vec(), filename)?;
                 Element::BinaryOpr {
                     position: position.clone(),
                     type_: opr_type.clone(),
+                    raw: operand2.get_raw().clone(),
                     operand1: Box::new(variable.clone()),
-                    operand2: Box::new(parse_expr(elements[i+1..].to_vec(), filename)?)
+                    operand2: Box::new(operand2)
                 }
             };
 
             return Ok(elements[..i-1].to_vec().into_iter()
                 .chain(vec![Element::Set {
                     position: position.clone(),
+                    raw: format!("{}{}{}", variable.get_raw(), ele.get_raw(), content.get_raw()),
                     variable: Box::new(variable),
                     content: Box::new(content)
                 }]).collect::<Vec<Element>>())
@@ -349,22 +378,26 @@ fn parse_un_oprs(elements: Vec<Element>, filename: &String) -> Result<Vec<Elemen
         if let Element::Token(Token{type_: TokenType::UnaryOpr(opr_type, opr_side), position, ..}) = ele {
             if opr_side == &Side::Left {
                 if i == elements.len()-1 {
-                    return Err(ZyxtError::from_pos(position).error_2_1_4("TODO".to_string()))
+                    return Err(ZyxtError::from_pos(position).error_2_1_4(ele.get_raw().trim().to_string()))
                 }
+                let operand = parse_expr(elements[i+1..].to_vec(), filename)?;
                 return Ok(elements[..i].to_vec().into_iter()
                     .chain(vec![Element::UnaryOpr {
                         position: position.clone(),
                         type_: *opr_type,
-                        operand: Box::new(parse_expr(elements[i+1..].to_vec(), filename)?)
+                        raw: format!("{}{}", ele.get_raw(), operand.get_raw()),
+                        operand: Box::new(operand)
                     }]).collect::<Vec<Element>>())
             } else if opr_side == &Side::Right {
                 if i == 0 {
-                    return Err(ZyxtError::from_pos(position).error_2_1_4("TODO".to_string()))
+                    return Err(ZyxtError::from_pos(position).error_2_1_4(ele.get_raw().trim().to_string()))
                 }
+                let operand = parse_expr(elements[..i].to_vec(), filename)?;
                 return Ok(vec![Element::UnaryOpr {
                     position: position.clone(),
                     type_: *opr_type,
-                    operand: Box::new(parse_expr(elements[..i].to_vec(), filename)?)
+                    raw: format!("{}{}", operand.get_raw(), ele.get_raw()),
+                    operand: Box::new(operand)
                 }].into_iter()
                     .chain(elements[i+1..].to_vec())
                     .collect::<Vec<Element>>());
@@ -392,11 +425,14 @@ fn parse_normal_oprs(elements: Vec<Element>, filename: &String) -> Result<Vec<El
     }
     Ok(if !opr_detected {elements}
     else if let Element::Token(Token{type_: TokenType::NormalOpr(opr_type), position, ..}) = &elements[highest_order_index] {
+        let operand1 = parse_expr(elements[..highest_order_index].to_vec(), filename)?;
+        let operand2 = parse_expr(elements[highest_order_index+1..].to_vec(), filename)?;
         vec![Element::BinaryOpr {
             position: position.clone(),
             type_: *opr_type,
-            operand1: Box::new(parse_expr(elements[..highest_order_index].to_vec(), filename)?),
-            operand2: Box::new(parse_expr(elements[highest_order_index+1..].to_vec(), filename)?)
+            raw: format!("{}{}{}", operand1.get_raw(), elements[highest_order_index].get_raw(), operand2.get_raw()),
+            operand1: Box::new(operand1),
+            operand2: Box::new(operand2)
         }]
     } else {elements})
 }
@@ -414,15 +450,18 @@ fn parse_delete_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
                 if let Element::Variable {name, ..} = var {
                     varnames.push(name.clone());
                 }
-                else if let Element::UnaryOpr {type_: OprType::Deref, position, ..} = var {
-                    return Err(ZyxtError::from_pos(position).error_2_1_12("TODO".to_string()))
+                else if let Element::UnaryOpr {type_: OprType::Deref, position, raw, ..} = var {
+                    return Err(ZyxtError::from_pos(position).error_2_1_12(raw.clone()))
                 }
                 else {
-                    return Err(ZyxtError::from_pos(var.get_pos()).error_2_1_11("TODO".to_string()))
+                    return Err(ZyxtError::from_pos(var.get_pos()).error_2_1_11(var.get_raw().trim().to_string()))
                 }
             }
             new_elements.push(Element::Delete {
                 position: ele.get_pos().clone(),
+                raw: format!("{}{}", ele.get_raw(), elements[i+1..].iter()
+                    .map(|e| e.get_raw().clone())
+                    .collect::<Vec<String>>().join("")),
                 names: varnames
             });
             return Ok(new_elements)
@@ -436,10 +475,11 @@ fn parse_return_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
     let mut new_elements = vec![];
 
     for (i, ele) in elements.iter().enumerate() {
-        if let Element::Token(Token { type_: TokenType::Keyword(Keyword::Return), .. }) = ele {
+        if let Element::Token(Token { type_: TokenType::Keyword(Keyword::Return), whitespace, value, .. }) = ele {
             let return_val = parse_expr(elements[i+1..].to_vec(), filename)?;
             new_elements.push(Element::Return {
                 position: ele.get_pos().clone(),
+                raw: format!("{}{}{}", whitespace, value, return_val.get_raw()),
                 value: Box::new(return_val)
             });
             return Ok(new_elements)
@@ -464,10 +504,12 @@ fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Result<V
                 return Err(ZyxtError::from_pos(position).error_2_1_5())
             }
             let declared_var = &elements[cursor-1];
+            let mut raw = format!("{}{}{}", declared_var.get_raw(), whitespace, value);
             let flags = if flag_pos == None {vec![]} else {
                 let mut f = vec![];
                 for i in flag_pos.unwrap()..cursor-1 {
-                    if let Element::Token(Token{type_: TokenType::Flag(flag), ..}) = &elements[i] {
+                    if let Element::Token(Token{type_: TokenType::Flag(flag), whitespace, value, ..}) = &elements[i] {
+                        raw = format!("{}{}{}", whitespace, value, raw);
                         f.push(*flag);
                     } else {
                         return Err(ZyxtError::from_pos(&Position{filename: filename.clone(), line: 0, column: 0})
@@ -477,10 +519,12 @@ fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Result<V
                 f
             };
             for _ in 0..flags.len()+1 {new_elements.pop();}
+            let content = parse_expr(elements[cursor+1..].to_vec(), filename)?;
             new_elements.push(Element::Declare {
                 position: position.clone(),
+                raw: format!("{}{}", raw, content.get_raw()),
                 variable: Box::new(parse_expr(vec![declared_var.clone()], filename)?),
-                content: Box::new(parse_expr(elements[cursor+1..].to_vec(), filename)?),
+                content: Box::new(content),
                 flags,
                 type_: TypeObj::null() // TODO type later
             });
@@ -552,7 +596,7 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
                             if_true: content.clone()
                         })
                     } else {
-                        return Err(ZyxtError::from_pos(position).error_2_1_8("TODO".to_string()))
+                        return Err(ZyxtError::from_pos(position).error_2_1_8(catcher_selected.get_raw().trim().to_string()))
                     }
                     cursor += 1;
                     if cursor == elements.len() {break;}
@@ -589,7 +633,7 @@ fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Result<Element, 
     elements = parse_normal_oprs(elements, filename)?;
     elements = parse_un_oprs(elements, filename)?;
     if elements.len() > 1 {
-        return Err(ZyxtError::from_pos(&elements[1].get_pos()).error_2_1_0("TODO".to_string()))
+        return Err(ZyxtError::from_pos(&elements[1].get_pos()).error_2_1_0(elements[1].get_raw().trim().to_string()))
     }
     Ok(elements.get(0).unwrap_or(&Element::NullElement).clone())
 }

@@ -1,4 +1,4 @@
-use std::fmt::{Display, format, Formatter, Result};
+use std::fmt::{Display, Formatter, Result};
 use crate::objects::position::Position;
 
 #[derive(Clone, PartialEq, Debug)]

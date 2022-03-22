@@ -83,7 +83,7 @@ impl PositionForZyxtError {
 
     /* 2. Syntax errors */
     /// parentheses not closed properly (try swapping)
-    pub fn error_2_0_0(self, paren1: char, paren2: char) -> ZyxtError {
+    pub fn error_2_0_0(self, paren1: String, paren2: String) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.0.0",
@@ -91,7 +91,7 @@ impl PositionForZyxtError {
         }
     }
     /// parentheses not closed properly (not closed)
-    pub fn error_2_0_1(self, paren: char) -> ZyxtError {
+    pub fn error_2_0_1(self, paren: String) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.0.1",
@@ -99,7 +99,7 @@ impl PositionForZyxtError {
         }
     }
     /// parentheses not closed properly (not opened)
-    pub fn error_2_0_2(self, paren: char) -> ZyxtError {
+    pub fn error_2_0_2(self, paren: String) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.0.2",
