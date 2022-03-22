@@ -136,6 +136,25 @@ impl Element {
             Element::Procedure { position, .. } => position
         }
     }
+    pub fn get_raw(&self) -> &String {
+        match self {
+            Element::NullElement => &"".to_string(),
+            Element::Token(t) => &t.get_raw(),
+            Element::Variable { raw, .. } |
+            Element::Literal { raw, .. } |
+            Element::Comment { raw, .. } |
+            Element::Call { raw, .. } |
+            Element::UnaryOpr { raw, .. } |
+            Element::BinaryOpr { raw, .. } |
+            Element::Declare { raw, .. } |
+            Element::Set { raw, .. } |
+            Element::If { raw, .. } |
+            Element::Block { raw, .. } |
+            Element::Delete { raw, .. } |
+            Element::Return { raw, .. } |
+            Element::Procedure { raw, .. } => raw
+        }
+    }
     pub fn get_name(&self) -> String {
         if let Element::Variable {name: type1, ..} = self {return type1.clone()} else {panic!("not variable")}
     }

@@ -458,7 +458,8 @@ fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Result<V
     while cursor < elements.len() {
         selected = &elements[cursor];
         if let Element::Token(Token{type_: TokenType::Flag(_), ..}) = selected {flag_pos = Some(cursor);}
-        if let Element::Token(Token{type_: TokenType::DeclarationOpr, position, ..}) = selected {
+        if let Element::Token(Token{type_: TokenType::DeclarationOpr, position,
+                                  whitespace, value, ..}) = selected {
             if cursor == elements.len() - 1 || cursor == 0 {
                 return Err(ZyxtError::from_pos(position).error_2_1_5())
             }
@@ -497,8 +498,8 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
 
     while cursor < elements.len() {
         selected = &elements[cursor];
-        if let Element::Token(Token{type_: TokenType::Keyword(kwd), position,
-                                  whitespace, value, ..}) = selected { match kwd {
+        if let Element::Token(Token{type_: TokenType::Keyword(kwd),
+                                  position, ..}) = selected { match kwd {
             Keyword::If => {
                 let start_pos = position.clone();
                 let mut conditions: Vec<Condition> = vec![];
@@ -537,12 +538,14 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
                         loop {
                             cursor += 1;
                             let catcher_selected = &elements[cursor];
+                            raw = format!("{}{}", raw, catcher_selected.get_raw());
                             if let Element::Block {..} = catcher_selected {break}
                             else {catcher.push(catcher_selected.clone());}
                         };
                         parse_expr(catcher, filename)?
                     };
                     catcher_selected = &elements[cursor];
+                    raw = format!("{}{}", raw, catcher_selected.get_raw());
                     if let Element::Block {content, ..} = catcher_selected {
                         conditions.push(Condition {
                             condition,
@@ -556,7 +559,7 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
                 }
                 new_elements.push(Element::If {
                     position: start_pos,
-                    raw:
+                    raw,
                     conditions
                 });
                 cursor -= 1;
