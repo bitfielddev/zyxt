@@ -31,7 +31,13 @@ fn lex_stage1(input: String, filename: &String) -> Result<Vec<Token>, ZyxtError>
             }
         }
         if !found {
-            return Err(ZyxtError::from_pos(&pos).error_2_1_1(c.to_string()))
+            out.push(Token{
+                value: c.to_string(),
+                type_: TokenType::Null,
+                position: pos.clone(),
+                ..Default::default()
+            });
+            pos.next(&c);
         }
     }
     Ok(out)
@@ -234,6 +240,15 @@ fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
     out
 }
 
+fn check_no_unknown_tokens(input: &Vec<Token>) -> Result<(), ZyxtError> {
+    for token in input.iter() {
+        if token.type_ == TokenType::Null {
+            return Err(ZyxtError::from_pos(&token.position).error_2_1_1(token.value.clone()))
+        }
+    }
+    Ok(())
+}
+
 pub fn lex(preinput: String, filename: &String) -> Result<Vec<Token>, ZyxtError> {
     if preinput.trim().len() == 0 {return Ok(vec![])};
     let input = preinput + "\n";
@@ -243,5 +258,6 @@ pub fn lex(preinput: String, filename: &String) -> Result<Vec<Token>, ZyxtError>
     let out3 = lex_stage3(out2)?;
     let out4 = clean_whitespaces(out3);
     let out5 = lex_stage4(out4)?;
+    check_no_unknown_tokens(&out5)?;
     Ok(out5)
 }

@@ -24,27 +24,32 @@ pub struct Argument {
 pub enum Element {
     Comment {
         position: Position,
+        raw: String,
         content: String,
     },
     Call {
         position: Position,
+        raw: String,
         called: Box<Element>,
         args: Vec<Element>,
         kwargs: Box<HashMap<String, Element>>,
     },
     UnaryOpr {
         position: Position,
+        raw: String,
         type_: OprType,
         operand: Box<Element>
     },
     BinaryOpr {
         position: Position,
+        raw: String,
         type_: OprType,
         operand1: Box<Element>,
         operand2: Box<Element>
     },
     Declare {
         position: Position,
+        raw: String,
         variable: Box<Element>, // variable
         content: Box<Element>,
         flags: Vec<Flag>,
@@ -52,37 +57,45 @@ pub enum Element {
     },
     Set {
         position: Position,
+        raw: String,
         variable: Box<Element>, // variable
         content: Box<Element>
     },
     Literal {
         position: Position,
+        raw: String,
         type_: TypeObj,
         content: String
     },
     Variable {
         position: Position,
+        raw: String,
         name: String,
         parent: Box<Element>
     },
     If {
         position: Position,
+        raw: String,
         conditions: Vec<Condition>
     },
     Block {
         position: Position,
+        raw: String,
         content: Vec<Element>
     },
     Delete {
         position: Position,
+        raw: String,
         names: Vec<String>,
     },
     Return {
         position: Position,
+        raw: String,
         value: Box<Element>
     },
     Procedure {
         position: Position,
+        raw: String,
         is_fn: bool,
         args: Vec<Argument>,
         return_type: TypeObj,
@@ -170,7 +183,7 @@ impl Element {
                 }
             }
             Element::Declare {position, variable, content,
-                flags, type_} => {
+                flags, type_, raw} => {
                 let content_type = content.get_type(typelist)?;
                 if *type_ == TypeObj::null() {
                     typelist.declare_val(&variable.get_name(), &content_type);
@@ -179,6 +192,7 @@ impl Element {
                         content: content.clone(),
                         variable: variable.clone(),
                         position: position.clone(),
+                        raw: raw.clone(),
                         flags: flags.clone()
                     };
                 } else {
@@ -186,6 +200,7 @@ impl Element {
                     if content_type != *type_ {
                         let new_content = Element::BinaryOpr {
                             position: position.clone(),
+                            raw: raw.clone(),
                             type_: OprType::TypeCast,
                             operand1: content.clone(),
                             operand2: Box::new(type_.as_element())
@@ -195,6 +210,7 @@ impl Element {
                             content: Box::new(new_content),
                             variable: variable.clone(),
                             position: position.clone(),
+                            raw: raw.clone(),
                             flags: flags.clone()
                         };
                     }
@@ -202,12 +218,12 @@ impl Element {
                 Ok(content_type)
             },
             Element::If {conditions, ..} => Element::get_block_type(&mut conditions[0].if_true, typelist, true), // TODO consider all returns
-            Element::BinaryOpr {type_, operand1, operand2, position} => {
+            Element::BinaryOpr {type_, operand1, operand2, position, ..} => {
                 let type1 = operand1.get_type(typelist)?;
                 let type2 = operand2.get_type(typelist)?;
                 Element::bin_op_return_type(type_, type1, type2, typelist, position)
             },
-            Element::UnaryOpr {type_, operand, position} => {
+            Element::UnaryOpr {type_, operand, position, ..} => {
                 let opnd_type = operand.get_type(typelist)?;
                 Element::un_op_return_type(type_, opnd_type, typelist, position)
             },

@@ -497,15 +497,18 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
 
     while cursor < elements.len() {
         selected = &elements[cursor];
-        if let Element::Token(Token{type_: TokenType::Keyword(kwd), position, ..}) = selected { match kwd {
+        if let Element::Token(Token{type_: TokenType::Keyword(kwd), position,
+                                  whitespace, value, ..}) = selected { match kwd {
             Keyword::If => {
                 let start_pos = position.clone();
                 let mut conditions: Vec<Condition> = vec![];
                 let mut prev_catcher_kwd = "";
+                let mut raw = String::new();
                 loop {
                     let catcher_kwd;
                     let mut catcher_selected = &elements[cursor];
-                    if let Element::Token(Token{type_: TokenType::Keyword(prekwd), position, ..}) = catcher_selected {
+                    if let Element::Token(Token{type_: TokenType::Keyword(prekwd), position,
+                                              whitespace, value, ..}) = catcher_selected {
                         catcher_kwd = match prekwd {
                             Keyword::If if position == &start_pos => "if",
                             Keyword::Elif if prev_catcher_kwd != "else" => "elif",
@@ -518,13 +521,15 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
                             },
                             _ => break
                         };
+                        raw = format!("{}{}{}", raw, whitespace, value);
                     } else {break}
                     prev_catcher_kwd = catcher_kwd;
                     cursor += 1;
                     catcher_selected = &elements[cursor];
                     let condition= if catcher_kwd == "else" {
                         Element::NullElement
-                    } else if let Element::Block {..} = catcher_selected {
+                    } else if let Element::Block {raw: block_raw, ..} = catcher_selected {
+                        raw = format!("{}{}", raw, block_raw);
                         cursor += 1;
                         catcher_selected.clone()
                     } else {
@@ -551,6 +556,7 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
                 }
                 new_elements.push(Element::If {
                     position: start_pos,
+                    raw:
                     conditions
                 });
                 cursor -= 1;
@@ -600,6 +606,7 @@ pub fn parse_token_list(mut input: Vec<Token>, filename: &String) -> Result<Vec<
         if token.type_ == TokenType::Comment {
             comments.push(Element::Comment {
                 position: token.position.clone(),
+                raw: token.get_raw(),
                 content: token.value.clone()
             })
         } else if [TokenType::CommentStart,

@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Display, format, Formatter, Result};
 use crate::objects::position::Position;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -18,6 +18,11 @@ impl Default for Token {
             categories: &[],
             whitespace: "".to_string()
         }
+    }
+}
+impl Token {
+    pub fn get_raw(&self) -> String {
+        format!("{}{}", &self.whitespace, &self.value)
     }
 }
 pub fn get_order(opr: &OprType) -> u8 {

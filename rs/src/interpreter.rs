@@ -92,7 +92,7 @@ pub(crate) fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -
             for name in names {varlist.delete_val(&name, &position)?;}
             Ok(Variable::Null)
         },
-        Element::Return {value, ..} => Ok(Variable::Return(Box::new(interpret_expr(*value, varlist)?))),
+        Element::Return { value: value, ..} => Ok(Variable::Return(Box::new(interpret_expr(*value, varlist)?))),
         Element::Procedure {is_fn, args, return_type, content, ..} => Ok(Variable::Proc {
             is_fn, args, return_type, content
         })
@@ -103,7 +103,7 @@ pub fn interpret_block(input: Vec<Element>, varlist: &mut Varstack<Variable>, re
     let mut last = Variable::Null;
     if add_set {varlist.add_set();}
     for ele in input {
-        if let Element::Return {value, ..} = &ele {
+        if let Element::Return { value: value, ..} = &ele {
             if returnable {last = interpret_expr(*value.clone(), varlist)?}
             else {last = interpret_expr(ele, varlist)?;}
             if add_set {varlist.pop_set();}
@@ -123,7 +123,7 @@ pub fn interpret_block(input: Vec<Element>, varlist: &mut Varstack<Variable>, re
 pub fn interpret_asts(input: Vec<Element>) -> Result<i32, ZyxtError> {
     let mut varlist = Varstack::<Variable>::default_variable();
     for ele in input {
-        if let Element::Return {value, position} = ele {
+        if let Element::Return { value: value, position} = ele {
             let return_val = interpret_expr(*value, &mut varlist)?;
             return if let Variable::I32(v) = return_val { Ok(v) } else {
                 Err(ZyxtError::from_pos(&position).error_4_2(return_val))
