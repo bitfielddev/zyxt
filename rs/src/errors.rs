@@ -1,6 +1,7 @@
 use std::process::exit;
 use ansi_term::Color::{Black, Red, Yellow};
 use ansi_term::Style;
+use crate::{Element, TypeObj};
 use crate::objects::variable::Variable;
 use crate::objects::position::Position;
 
@@ -246,11 +247,11 @@ impl PositionForZyxtError {
     }
 
     /// unfilled argument
-    pub fn error_2_3(self, func: String, index: usize) -> ZyxtError {
+    pub fn error_2_3(self, arg: String) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.3",
-            message: format!("Unfilled argument #{} of {}", index, func)
+            message: format!("Unfilled argument `{}`", arg)
         }
     }
 
@@ -264,8 +265,16 @@ impl PositionForZyxtError {
         }
     }
 
-    /// Type has no attribute
-    pub fn error_3_1(self, parent: Variable, attribute: String) -> ZyxtError {
+    /// Type has no attribute (typechecker)
+    pub fn error_3_1_0(self, parent: Element, parent_type: TypeObj, attribute: String) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "3.1",
+            message: format!("`{}` (type `{}`) has no attribute `{}`", parent.get_name(), parent_type, attribute)
+        }
+    }
+    /// Type has no attribute (interpreter)
+    pub fn error_3_1_1(self, parent: Variable, attribute: String) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "3.1",

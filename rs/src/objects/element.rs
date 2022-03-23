@@ -165,7 +165,7 @@ impl Element {
         }
         if let Some(v) = Variable::default(type1.clone(), typelist)?
             .bin_opr(type_, Variable::default(type2.clone(), typelist)?) {
-            return Ok(v.get_type_obj())
+            Ok(v.get_type_obj())
         } else {
             Err(ZyxtError::from_pos(position).error_4_0_0(type_.to_string(), type1.to_string(), type2.to_string()))
         }
@@ -173,12 +173,12 @@ impl Element {
     pub fn un_op_return_type(type_: &OprType, opnd_type: TypeObj,
                              typelist: &mut Varstack<TypeObj>, position: &Position) -> Result<TypeObj, ZyxtError> {
         if let Some(v) = Variable::default(opnd_type.clone(), typelist)?.un_opr(type_) {
-            return Ok(v.get_type_obj())
-        } else{
+            Ok(v.get_type_obj())
+        } else {
             Err(ZyxtError::from_pos(position).error_4_0_1(type_.to_string(), opnd_type.to_string()))
         }
     }
-    pub fn get_block_type(content: &mut Vec<Element>, typelist: &mut Varstack<TypeObj>, add_set: bool) -> Result<TypeObj, ZyxtError> {
+    pub fn block_type(content: &mut Vec<Element>, typelist: &mut Varstack<TypeObj>, add_set: bool) -> Result<TypeObj, ZyxtError> {
         let mut last = TypeObj::null();
         if add_set {typelist.add_set();}
         for ele in content.iter_mut() {
@@ -187,20 +187,57 @@ impl Element {
         if add_set {typelist.pop_set();}
         Ok(last)
     }
+    pub fn call_return_type(called: &mut Element, args: &mut Vec<Element>, typelist: &mut Varstack<TypeObj>) -> Result<TypeObj, ZyxtError> {
+        if let Element::Variable {ref parent, ref name, ..} = *called {
+            if name == &"println".to_string() && parent.get_name() == "std".to_string() {
+                return Ok(TypeObj::null())
+            }
+        }
+        if let Element::Procedure{is_fn, args: proc_args, content, position, ..} = called {
+            let mut fn_typelist: Varstack<TypeObj> = Varstack::<TypeObj>::default_type();
+            let mut cursor = 0;
+            for Argument {name, default, ..} in proc_args {
+                let mut input_arg = if args.len() > cursor {Ok(args.get(cursor).unwrap().clone())}
+                else {default.clone().ok_or(
+                    ZyxtError::from_pos(position).error_2_3(name.clone())
+                )}?;
+                fn_typelist.declare_val(&name, &input_arg.get_type(typelist)?);
+                if args.len() > cursor {*args.get_mut(cursor).unwrap() = input_arg;}
+                else {*default = Some(input_arg)}
+                cursor += 1;
+            }
+            let proc_varlist = if *is_fn {&mut fn_typelist} else {
+                typelist.add_set();
+                for (k, v) in fn_typelist.0[0].iter() {typelist.declare_val(k, v);}
+                typelist
+            };
+            let res = Element::block_type(content, proc_varlist, true)?;
+            proc_varlist.pop_set();
+            return Ok(res)
+        }
+        if let TypeObj::Prim {name, type_args} = called.get_type(typelist)? {
+            if name == "proc".to_string() || name == "fn".to_string() {return Ok(type_args[1].clone())}
+        } // TODO type checking for args when arrays are implemented
+        if let Some(v) = Variable::default(called.get_type(typelist)?, typelist)?.call(
+            args.iter_mut().map(|e| Variable::default(e.get_type(typelist)?, typelist))
+                .collect::<Result<Vec<_>, _>>()?
+        ) { // TODO same as above
+            Ok(v.get_type_obj())
+        } else {
+            Err(ZyxtError::from_pos(called.get_pos())
+                .error_3_1_0(called.clone(),
+                             called.get_type(typelist)?,
+                             "#call".to_string()))
+        }
+    }
     pub fn get_type(&mut self, typelist: &mut Varstack<TypeObj>) -> Result<TypeObj, ZyxtError> {
         match self {
             Element::Literal {type_, ..} => Ok(type_.clone()),
             Element::Variable {name, position, ..} =>
                 typelist.get_val(name, position),
-            Element::Block {content, ..} => Element::get_block_type(content, typelist, true),
-            Element::Call {called, args, ..} => {
-                // TODO arg type checking
-                for arg in args.iter_mut() {arg.get_type(typelist)?;}
-                match *called.clone() {
-                    Element::Procedure {return_type, ..} => Ok(return_type),
-                    _ => Ok(TypeObj::null()) // TODO call return
-                }
-            }
+            Element::Block {content, ..} => Element::block_type(content, typelist, true),
+            Element::Call {called, args, ..} =>
+                Element::call_return_type(called, args, typelist),
             Element::Declare {position, variable, content,
                 flags, type_, raw} => {
                 let content_type = content.get_type(typelist)?;
@@ -236,7 +273,7 @@ impl Element {
                 };
                 Ok(content_type)
             },
-            Element::If {conditions, ..} => Element::get_block_type(&mut conditions[0].if_true, typelist, true), // TODO consider all returns
+            Element::If {conditions, ..} => Element::block_type(&mut conditions[0].if_true, typelist, true), // TODO consider all returns
             Element::BinaryOpr {type_, operand1, operand2, position, ..} => {
                 let type1 = operand1.get_type(typelist)?;
                 let type2 = operand2.get_type(typelist)?;
@@ -251,7 +288,7 @@ impl Element {
                 for arg in args {
                     typelist.declare_val(&arg.name, &arg.type_);
                 }
-                let res =  Element::get_block_type(content, typelist, false)?;
+                let res =  Element::block_type(content, typelist, false)?;
                 if return_type == &TypeObj::null() {*return_type = res;}
                 Ok(TypeObj::Prim {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),

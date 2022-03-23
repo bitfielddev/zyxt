@@ -72,7 +72,7 @@ pub(crate) fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -
                 if let Some(v) = to_call.call(input_args.into_iter()
                     .map(|a| interpret_expr(a, varlist))
                     .collect::<Result<Vec<_>, _>>()?) {Ok(v)} else {
-                    Err(ZyxtError::from_pos(&position).error_3_1(to_call, "#call".to_string()))
+                    Err(ZyxtError::from_pos(&position).error_3_1_1(to_call, "#call".to_string()))
                 }
             }
         },
