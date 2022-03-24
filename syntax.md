@@ -1,5 +1,4 @@
 # Zyxt syntax
-**Implementations:** Implemented ~~Not implemented~~
 
 ## Comments
 ```
@@ -8,7 +7,6 @@
 line
 comment */
 ```
-**Implemented:** Lexer ~~Parser Instructor Interpreter~~
 
 ## Printing to console
 ```
@@ -17,7 +15,6 @@ std.println("hello world");
 // in the future it will be:
 std.ter.println("hello world");
 ```
-**Implemented:** ~~Lexer Parser Instructor Interpreter~~
 
 ## Declaring variables
 ```
@@ -37,7 +34,6 @@ hoi x := 0; // hoist variable to top of scope
 
 
 ```
-**Implemented:** ~~Lexer Parser Instructor Interpreter~~
 
 ## Data types
 ```
@@ -102,7 +98,6 @@ proc|num: i32| {...} |string: str| {...} // overloading
 infix proc|arg1: #A, arg2: #A| {...} // makes function infixable, must be ≥2 args
 fn {...} // function without side effects
 infix fn|arg1: #A, arg2: #A| {...} // closure infix
-a :| ... // shorthand for proc for only one argument
 
 Calling a function:
 f(); // call function
@@ -121,7 +116,7 @@ class { // class
     #add := fn|&#, o: #@type|: #@type {#.value+o.value}; // instance methods
     
     f := fn {...}; // static method
-    g := fn |&#cls, ...| {...};
+    g := fn |&#cls, ...| {...}; // classmethod
 };
 struct | // structs
     x: #num,
@@ -150,7 +145,6 @@ T1 / T2: Union
 #no_inherited<T>: must be T and not an inherited class / struct
 T?: nullable
 ```
-**Implemented:** ~~Lexer Parser Instructor Interpreter~~
 
 ## Operators
 ```
@@ -261,7 +255,6 @@ x..y // range syntax
 22. if {}
 
 ```
-**Implemented:** ~~Lexer Parser Instructor Interpreter~~
 
 ## Keyword expressions
 ```

@@ -324,7 +324,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.2",
-            message: format!("Non-i32 script return value detected (Got `{}`)", value.get_displayed_value())
+            message: format!("Non-i32 script return value detected (Got `{}`)", value.to_string())
         }
     }
 }

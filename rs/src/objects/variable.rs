@@ -36,13 +36,7 @@ pub enum Variable {
 
 impl Display for Variable {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.get_displayed_value())
-    }
-}
-
-impl Variable {
-    pub fn get_displayed_value(&self) -> String {
-        match self {
+        write!(f, "{}", match self {
             Variable::I8(v) => v.to_string(),
             Variable::I16(v) => v.to_string(),
             Variable::I32(v) => v.to_string(),
@@ -65,14 +59,17 @@ impl Variable {
                     if *is_fn {"fn"} else {"proc"},
                     args.iter().map(|a| format!("{}{}{}",
                         a.name, if a.type_ != TypeObj::any()
-                            {": ".to_owned()+&*a.type_.to_string()} else {"".to_string()},
+                        {": ".to_owned()+&*a.type_.to_string()} else {"".to_string()},
                         if let Some(_) = &a.default {": TODO"} else {""}
                     )).collect::<Vec<String>>().join(","),
-                    return_type.to_string()),
+                        return_type.to_string()),
             Variable::Null => "null".to_string(),
-            Variable::Return(v) => v.get_displayed_value()
-        }
+            Variable::Return(v) => v.to_string()
+        })
     }
+}
+
+impl Variable {
     pub fn call(&self, args: Vec<Variable>) -> Option<Variable> {
         if args.len() == 1 {
         macro_rules! mult {
@@ -702,7 +699,7 @@ impl Variable {
                         U16, U32, U64, U128, Usize, F64 => F32, f32),
                     "f64" => typecast_int!(I8, I16, I32, I64, I128, Isize, U8,
                         U16, U32, U64, U128, Usize, F32 => F64, f64),
-                    "str" => Some(Variable::Str(self.get_displayed_value())),
+                    "str" => Some(Variable::Str(self.to_string())),
                     "bool" => match self.clone() {
                         Variable::I32(v) => Some(Variable::Bool(v != 0)),
                         Variable::F64(v) => Some(Variable::Bool(v != 0.0)),
@@ -805,5 +802,37 @@ impl Variable {
     }
     pub fn get_type(&self) -> Variable {
         Variable::Type(self.get_type_obj())
+    }
+    pub fn as_element(&self) -> Element {
+        macro_rules! to_literal {
+            ($v: ident) => {
+                Element::Literal {
+                    position: Default::default(),
+                    raw: $v.to_string(),
+                    type_: self.get_type_obj(),
+                    content: $v.to_string()
+                }
+            }
+        }
+        match self {
+            Variable::I8(v) => to_literal!(v),
+            Variable::I16(v) => to_literal!(v),
+            Variable::I32(v) => to_literal!(v),
+            Variable::I64(v) => to_literal!(v),
+            Variable::I128(v) => to_literal!(v),
+            Variable::Isize(v) => to_literal!(v),
+            Variable::U8(v) => to_literal!(v),
+            Variable::U16(v) => to_literal!(v),
+            Variable::U32(v) => to_literal!(v),
+            Variable::U64(v) => to_literal!(v),
+            Variable::U128(v) => to_literal!(v),
+            Variable::Usize(v) => to_literal!(v),
+            Variable::F32(v) => to_literal!(v),
+            Variable::F64(v) => to_literal!(v),
+            Variable::Str(v) => to_literal!(v),
+            Variable::Bool(v) => to_literal!(v),
+            Variable::Type(v) => to_literal!(v),
+            _ => todo!()
+        }
     }
 }

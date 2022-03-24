@@ -625,6 +625,8 @@ fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Result<Element, 
     }
     elements = parse_if_expr(elements, filename)?;
     elements = parse_procs_and_fns(elements, filename)?;
+    //elements = parse_defer(elements, filename)?;
+    //elements = parse_preprocess(elements, filename)?;
     elements = parse_vars_literals_and_calls(elements, filename)?;
     elements = parse_delete_expr(elements, filename)?;
     elements = parse_return_expr(elements, filename)?;

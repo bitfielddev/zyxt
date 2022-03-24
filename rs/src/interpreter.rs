@@ -45,7 +45,7 @@ pub(crate) fn interpret_expr(input: Element, varlist: &mut Varstack<Variable>) -
                         map(|arg| interpret_expr(arg, varlist))
                         .collect::<Result<Vec<_>, _>>()?
                         .into_iter()
-                        .map(|v| v.get_displayed_value())
+                        .map(|v| v.to_string())
                         .collect::<Vec<String>>().join(" "));
                     return Ok(Variable::Null)
                 }
