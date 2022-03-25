@@ -672,13 +672,27 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
     Ok(new_elements)
 }
 
+fn parse_unparen_calls(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+    Ok(vec![Element::Call {
+        position: elements[0].get_pos().clone(),
+        raw: elements.iter()
+            .map(|e| e.get_raw().clone())
+            .collect::<Vec<String>>().join(""),
+        called: Box::new(elements[0].clone()),
+        args: split_between(TokenType::Comma,
+                            TokenType::Null, TokenType::Null,
+                            elements[1..].to_vec(),
+                            filename, false)?,
+        kwargs: Box::new(Default::default())
+    }])
+}
+
 fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Result<Element, ZyxtError> {
     if elements.len() > 1 {
         elements = parse_parens(elements, filename)?;
     }
     elements = parse_if_expr(elements, filename)?;
     elements = parse_procs_and_fns(elements, filename)?;
-    //elements = parse_defer(elements, filename)?;
     elements = parse_preprocess_and_defer(elements, filename)?;
     elements = parse_vars_literals_and_calls(elements, filename)?;
     elements = parse_delete_expr(elements, filename)?;
@@ -687,6 +701,9 @@ fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Result<Element, 
     elements = parse_assignment_oprs(elements, filename)?;
     elements = parse_normal_oprs(elements, filename)?;
     elements = parse_un_oprs(elements, filename)?;
+    if elements.len() > 1 {
+        elements = parse_unparen_calls(elements, filename)?;
+    }
     if elements.len() > 1 {
         return Err(ZyxtError::from_pos(&elements[1].get_pos()).error_2_1_0(elements[1].get_raw().trim().to_string()))
     }

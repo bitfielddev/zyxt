@@ -321,7 +321,24 @@ impl Element {
                 *self = pre_value.as_element();
                 self.get_type(typelist)
             },
-            _ => Ok(TypeObj::null())
+            Element::Defer {content, ..} => {
+                *content = gen_instructions(content.clone(), typelist)?;
+                Ok(TypeObj::null())
+            },
+            Element::Set {position, variable, content, ..} => {
+                let content_type = content.get_type(typelist)?;
+                let var_type = typelist.get_val(&variable.get_name(), position)?;
+                if content_type != var_type {
+                    Err(ZyxtError::from_pos(position).error_4_3(variable.get_name(),
+                                                            var_type, content_type))
+                } else {Ok(var_type)}
+            },
+            Element::NullElement |
+            Element::Delete {..} |
+            Element::Comment {..} |
+            Element::Return {..} => Ok(TypeObj::null()),
+            Element::Token(Token{position,..}) =>
+                Err(ZyxtError::from_pos(position).error_2_1_0(self.get_raw()))
         }
     }
 }

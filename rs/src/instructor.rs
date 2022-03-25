@@ -8,4 +8,4 @@ pub fn gen_instructions(mut input: Vec<Element>, typelist: &mut Stack<TypeObj>) 
         ele.get_type(typelist)?;
     }
     Ok(input)
-}
+} // TODO move Defer here

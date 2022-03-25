@@ -10,7 +10,7 @@ use crate::objects::typeobj::TypeObj;
 use crate::objects::variable::Variable;
 use crate::objects::varstack::Stack;
 
-pub fn repl(debug_info: bool) {
+pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
     let mut typelist = Stack::<TypeObj>::default_type();
     let mut varlist = Stack::<Variable>::default_variable();
@@ -18,6 +18,7 @@ pub fn repl(debug_info: bool) {
     let in_symbol = Cyan.bold().paint(">>]");
     let out_symbol = Green.bold().paint("[>>");
     println!("{}", Yellow.bold().paint(format!("Zyxt Repl (v{})", env!("CARGO_PKG_VERSION"))));
+    println!("{}", Cyan.paint("`;exit` to exit"));
     loop {
         print!("{} ", in_symbol);
         io::stdout().flush().unwrap();
@@ -25,16 +26,16 @@ pub fn repl(debug_info: bool) {
         // TODO support for multiline
 
         if input == ";exit".to_string() {break;}
-        let instructions = match compile(input, &filename, &mut typelist, debug_info) {
+        let instructions = match compile(input, &filename, &mut typelist, verbosity) {
             Ok(v) => v,
             Err(e) => {e.print_noexit(); continue}
         };
 
         let instr_len = instructions.len();
-        if debug_info {println!("{}", Yellow.bold().paint("\nInterpreting"));}
+        if verbosity >= 2 {println!("{}", Yellow.bold().paint("\nInterpreting"));}
         for (i, instr) in instructions.into_iter().enumerate() {
             match {
-                if !debug_info {interpret_expr(instr, &mut varlist, &mut deferlist)} else {
+                if verbosity == 0 {interpret_expr(instr, &mut varlist, &mut deferlist)} else {
                     let interpret_start = Instant::now();
                     let result = interpret_expr(instr, &mut varlist, &mut deferlist);
                     let interpret_time = interpret_start.elapsed().as_micros();

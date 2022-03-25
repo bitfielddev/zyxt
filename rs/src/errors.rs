@@ -335,4 +335,14 @@ impl PositionForZyxtError {
             message: format!("Non-i32 script return value detected (Got `{}`)", value.to_string())
         }
     }
+
+    /// Wrong type assigned to variable
+    pub fn error_4_3(self, variable: String, var_type: TypeObj, value_type: TypeObj) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "4.3",
+            message: format!("Value of type `{}` assigned to variable `{}` of type `{}`",
+                value_type, variable, var_type)
+        }
+    }
 }

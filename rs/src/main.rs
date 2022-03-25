@@ -21,45 +21,52 @@ use crate::objects::element::Element;
 use crate::objects::typeobj::TypeObj;
 use crate::objects::varstack::Stack;
 
-fn compile(input: String, filename: &String, typelist: &mut Stack<TypeObj>, debug_info: bool) -> Result<Vec<Element>, ZyxtError> {
-    if !debug_info {return gen_instructions(parse_token_list(lex(input, filename)?, filename)?, typelist)}
+fn compile(input: String, filename: &String, typelist: &mut Stack<TypeObj>,
+           verbosity: u8) -> Result<Vec<Element>, ZyxtError> {
+    if verbosity == 0 {return gen_instructions(parse_token_list(lex(input, filename)?, filename)?, typelist)}
 
-    println!("{}", Yellow.bold().paint("Lexing"));
+    if verbosity >= 2 {println!("{}", Yellow.bold().paint("Lexing"));}
     let lex_start = Instant::now();
     let lexed = lex(input, filename)?;
     let lex_time = lex_start.elapsed().as_micros();
-    for token in lexed.iter() {println!("{}", White.dimmed().paint(format!("{:#?}", token)));}
+    if verbosity >= 2 {
+        for token in lexed.iter() {println!("{}", White.dimmed().paint(format!("{:#?}", token)));}
+    }
 
-    println!("{}", Yellow.bold().paint("\nParsing"));
+    if verbosity >= 2 {println!("{}", Yellow.bold().paint("\nParsing"));}
     let parse_start = Instant::now();
     let parsed = parse_token_list(lexed, filename)?;
     let parse_time = parse_start.elapsed().as_micros();
-    for ele in parsed.iter() {println!("{}", White.dimmed().paint(format!("{:#?}", ele)));}
+    if verbosity >= 2 {
+        for ele in parsed.iter() {println!("{}", White.dimmed().paint(format!("{:#?}", ele)));}
+    }
 
-    println!("{}", Yellow.bold().paint("\nGenerating instructions"));
+    if verbosity >= 2 {println!("{}", Yellow.bold().paint("\nGenerating instructions"));}
     let check_start = Instant::now();
     let out = gen_instructions(parsed, typelist)?;
     let check_time = check_start.elapsed().as_micros();
-    for ele in out.iter() {println!("{}", White.dimmed().paint(format!("{:#?}", ele)));}
+    if verbosity >= 2 {
+        for ele in out.iter() {println!("{}", White.dimmed().paint(format!("{:#?}", ele)));}
+    }
 
     println!("{}", Yellow.bold().paint("\nStats"));
-    println!("Lexing time: {}µs", lex_time);
-    println!("Parsing time: {}µs", parse_time);
-    println!("Instruction generation time: {}µs", check_time);
-    println!("Total time: {}µs", lex_time+parse_time+check_time);
+    println!("{}", Yellow.paint(format!("Lexing time: {}µs", lex_time)));
+    println!("{}", Yellow.paint(format!("Parsing time: {}µs", parse_time)));
+    println!("{}", Yellow.paint(format!("Instruction generation time: {}µs", check_time)));
+    println!("{}", Yellow.paint(format!("Total time: {}µs\n", lex_time+parse_time+check_time)));
 
     Ok(out)
 }
 
-fn interpret(input: Vec<Element>, debug_info: bool) -> Result<(), ZyxtError>{
-    if !debug_info {interpret_asts(input)?; return Ok(())}
-    println!("{}", Yellow.bold().paint("\nInterpreting"));
+fn interpret(input: Vec<Element>, verbosity: u8) -> Result<(), ZyxtError>{
+    if verbosity == 0 {interpret_asts(input)?; return Ok(())}
+    if verbosity >= 2 {println!("{}", Yellow.bold().paint("\nInterpreting"));}
     let interpret_start = Instant::now();
     let exit_code = interpret_asts(input)?;
     let interpret_time = interpret_start.elapsed().as_micros();
     println!("\nExited with code {}", exit_code);
     println!("{}", Yellow.bold().paint("\nStats"));
-    println!("Interpreting time: {}µs", interpret_time);
+    println!("{}", Yellow.paint(format!("Interpreting time: {}µs", interpret_time)));
     Ok(())
 }
 
@@ -69,8 +76,8 @@ struct Args {
     #[clap(subcommand)]
     subcmd: Subcmd,
     /// Enables debugging info
-    #[clap(short, long)]
-    verbose: bool,
+    #[clap(short, long, parse(from_occurrences))]
+    verbose: u8,
 }
 #[derive(Parser)]
 enum Subcmd {
@@ -86,7 +93,7 @@ struct Run {
 
 fn main() {
     let args = Args::parse();
-    let verbose = if cfg!(debug_assertions) {true} else {args.verbose};
+    let verbose = if cfg!(debug_assertions) {2u8} else {args.verbose};
     match args.subcmd {
         Subcmd::Run(sargs) => {
             let filename = &sargs.filename;
