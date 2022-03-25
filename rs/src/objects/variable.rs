@@ -832,7 +832,20 @@ impl Variable {
             Variable::Str(v) => to_literal!(v),
             Variable::Bool(v) => to_literal!(v),
             Variable::Type(v) => to_literal!(v),
-            _ => todo!()
+            Variable::Proc {is_fn, args, return_type, content} => Element::Procedure {
+                position: Default::default(),
+                raw: "".to_string(),
+                is_fn: *is_fn,
+                args: args.clone(),
+                return_type: return_type.clone(),
+                content: content.clone()
+            },
+            Variable::Null => Element::NullElement,
+            Variable::Return(v) => Element::Return {
+                position: Default::default(),
+                raw: "".to_string(),
+                value: Box::new(v.as_element())
+            }
         }
     }
 }

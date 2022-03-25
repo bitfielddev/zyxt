@@ -126,6 +126,36 @@ fn parse_parens(elements: Vec<Element>, filename: &String) -> Result<Vec<Element
     Ok(new_elements)
 }
 
+fn parse_preprocess(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+    let mut cursor = 0;
+    let mut selected;
+    let mut new_elements = vec![];
+
+    while cursor < elements.len() {
+        selected = &elements[cursor];
+        if let Element::Token(Token{type_: TokenType::Keyword(Keyword::Pre), position, ..}) = selected {
+            if cursor == elements.len()-1 {
+                return Err(ZyxtError::from_pos(position).error_2_1_16())
+            }
+            let raw = selected.get_raw();
+            cursor += 1;
+            selected = &elements[cursor];
+            if let Element::Block {content, raw: block_raw, ..} = selected {
+                new_elements.push(Element::Preprocess {
+                    position: position.clone(),
+                    raw: format!("{}{}", raw, block_raw),
+                    content: content.clone()
+                })
+            } else {
+                return Err(ZyxtError::from_pos(position).error_2_1_17(selected.get_raw()))
+            }
+
+        } else {new_elements.push(selected.clone())}
+        cursor += 1;
+    }
+    Ok(new_elements)
+}
+
 fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
     let mut cursor = 0;
     let mut selected;
@@ -626,7 +656,7 @@ fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Result<Element, 
     elements = parse_if_expr(elements, filename)?;
     elements = parse_procs_and_fns(elements, filename)?;
     //elements = parse_defer(elements, filename)?;
-    //elements = parse_preprocess(elements, filename)?;
+    elements = parse_preprocess(elements, filename)?;
     elements = parse_vars_literals_and_calls(elements, filename)?;
     elements = parse_delete_expr(elements, filename)?;
     elements = parse_return_expr(elements, filename)?;

@@ -755,6 +755,24 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             ..Default::default()
         },
         CompoundTokenEntry{
+            value: "pre",
+            type_: TokenType::Keyword(Keyword::Pre),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "pre"),
+            ],
+            categories: &[TokenCategory::Literal, TokenCategory::ValueStart],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            value: "defer",
+            type_: TokenType::Keyword(Keyword::Defer),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "defer"),
+            ],
+            categories: &[TokenCategory::Literal, TokenCategory::ValueStart],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
             value: "!is",
             type_: TokenType::NormalOpr(OprType::Isnt),
             combination: &[

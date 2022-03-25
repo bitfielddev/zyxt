@@ -101,6 +101,11 @@ pub enum Element {
         return_type: TypeObj,
         content: Vec<Element>
     },
+    Preprocess {
+        position: Position,
+        raw: String,
+        content: Vec<Element>
+    },
     NullElement,
     Token(Token)
 }
@@ -133,7 +138,8 @@ impl Element {
             Element::Block { position, .. } |
             Element::Delete { position, .. } |
             Element::Return { position, .. } |
-            Element::Procedure { position, .. } => position
+            Element::Procedure { position, .. } |
+            Element::Preprocess { position, .. } => position
         }
     }
     pub fn get_raw(&self) -> String {
@@ -152,7 +158,8 @@ impl Element {
             Element::Block { raw, .. } |
             Element::Delete { raw, .. } |
             Element::Return { raw, .. } |
-            Element::Procedure { raw, .. } => raw.clone()
+            Element::Procedure { raw, .. } |
+            Element::Preprocess { raw, .. } => raw.clone()
         }
     }
     pub fn get_name(&self) -> String {
@@ -295,6 +302,7 @@ impl Element {
                     type_args: vec![TypeObj::null(), return_type.clone()]
                 })
             }, // TODO angle bracket thingy when it is implemented
+            Element::Preprocess {..} => todo!(),
             _ => Ok(TypeObj::null())
         }
     }
