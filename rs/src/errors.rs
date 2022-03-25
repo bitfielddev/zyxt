@@ -243,13 +243,6 @@ impl PositionForZyxtError {
             code: "2.1.16",
             message: format!("`pre` at end of line")
         }
-    }/// unexpected ident (pre keyword at end of expression)
-    pub fn error_2_1_17(self, ident: String) -> ZyxtError {
-        ZyxtError {
-            position: self.position,
-            code: "2.1.17",
-            message: format!("Block expected after `pre` (Got `{}`)", ident)
-        }
     }
 
     /// assignment without variable name

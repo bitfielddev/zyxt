@@ -19,9 +19,9 @@ use crate::instructor::gen_instructions;
 use crate::interpreter::interpret_asts;
 use crate::objects::element::Element;
 use crate::objects::typeobj::TypeObj;
-use crate::objects::varstack::Varstack;
+use crate::objects::varstack::Stack;
 
-fn compile(input: String, filename: &String, typelist: &mut Varstack<TypeObj>, debug_info: bool) -> Result<Vec<Element>, ZyxtError> {
+fn compile(input: String, filename: &String, typelist: &mut Stack<TypeObj>, debug_info: bool) -> Result<Vec<Element>, ZyxtError> {
     if !debug_info {return gen_instructions(parse_token_list(lex(input, filename)?, filename)?, typelist)}
 
     println!("{}", Yellow.bold().paint("Lexing"));
@@ -101,7 +101,7 @@ fn main() {
                 },
                 Err(_) => { ZyxtError::no_pos().error_1_1(filename.clone()).print() }
             };
-            let mut typelist = Varstack::<TypeObj>::default_type();
+            let mut typelist = Stack::<TypeObj>::default_type();
             interpret(compile(content, filename, &mut typelist,verbose).unwrap_or_else(|e| {
                 e.print()
             }), verbose).unwrap_or_else(|e| {

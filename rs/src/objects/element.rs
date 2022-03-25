@@ -2,11 +2,13 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use crate::objects::position::Position;
 use crate::objects::token::{Flag, OprType};
-use crate::Token;
+use crate::{gen_instructions, Token};
 use crate::errors::ZyxtError;
+use crate::interpreter::interpret_block;
+use crate::objects::deferstack::DeferStack;
 use crate::objects::variable::Variable;
 use crate::objects::typeobj::TypeObj;
-use crate::objects::varstack::Varstack;
+use crate::objects::varstack::Stack;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
@@ -106,6 +108,11 @@ pub enum Element {
         raw: String,
         content: Vec<Element>
     },
+    Defer {
+        position: Position,
+        raw: String,
+        content: Vec<Element>
+    },
     NullElement,
     Token(Token)
 }
@@ -139,7 +146,8 @@ impl Element {
             Element::Delete { position, .. } |
             Element::Return { position, .. } |
             Element::Procedure { position, .. } |
-            Element::Preprocess { position, .. } => position
+            Element::Preprocess { position, .. } |
+            Element::Defer { position, .. }=> position
         }
     }
     pub fn get_raw(&self) -> String {
@@ -159,14 +167,15 @@ impl Element {
             Element::Delete { raw, .. } |
             Element::Return { raw, .. } |
             Element::Procedure { raw, .. } |
-            Element::Preprocess { raw, .. } => raw.clone()
+            Element::Preprocess { raw, .. } |
+            Element::Defer { raw, .. } => raw.clone()
         }
     }
     pub fn get_name(&self) -> String {
         if let Element::Variable {name: type1, ..} = self {return type1.clone()} else {panic!("not variable")}
     }
     pub fn bin_op_return_type(type_: &OprType, type1: TypeObj, type2: TypeObj,
-                              typelist: &mut Varstack<TypeObj>, position: &Position) -> Result<TypeObj, ZyxtError> {
+                              typelist: &mut Stack<TypeObj>, position: &Position) -> Result<TypeObj, ZyxtError> {
         if type_ == &OprType::TypeCast {
             return Ok(type2)
         }
@@ -178,14 +187,14 @@ impl Element {
         }
     }
     pub fn un_op_return_type(type_: &OprType, opnd_type: TypeObj,
-                             typelist: &mut Varstack<TypeObj>, position: &Position) -> Result<TypeObj, ZyxtError> {
+                             typelist: &mut Stack<TypeObj>, position: &Position) -> Result<TypeObj, ZyxtError> {
         if let Some(v) = Variable::default(opnd_type.clone(), typelist)?.un_opr(type_) {
             Ok(v.get_type_obj())
         } else {
             Err(ZyxtError::from_pos(position).error_4_0_1(type_.to_string(), opnd_type.to_string()))
         }
     }
-    pub fn block_type(content: &mut Vec<Element>, typelist: &mut Varstack<TypeObj>, add_set: bool) -> Result<TypeObj, ZyxtError> {
+    pub fn block_type(content: &mut Vec<Element>, typelist: &mut Stack<TypeObj>, add_set: bool) -> Result<TypeObj, ZyxtError> {
         let mut last = TypeObj::null();
         if add_set {typelist.add_set();}
         for ele in content.iter_mut() {
@@ -194,14 +203,14 @@ impl Element {
         if add_set {typelist.pop_set();}
         Ok(last)
     }
-    pub fn call_return_type(called: &mut Element, args: &mut Vec<Element>, typelist: &mut Varstack<TypeObj>) -> Result<TypeObj, ZyxtError> {
+    pub fn call_return_type(called: &mut Element, args: &mut Vec<Element>, typelist: &mut Stack<TypeObj>) -> Result<TypeObj, ZyxtError> {
         if let Element::Variable {ref parent, ref name, ..} = *called {
             if name == &"println".to_string() && parent.get_name() == "std".to_string() {
                 return Ok(TypeObj::null())
             }
         }
         if let Element::Procedure{is_fn, args: proc_args, content, position, ..} = called {
-            let mut fn_typelist: Varstack<TypeObj> = Varstack::<TypeObj>::default_type();
+            let mut fn_typelist: Stack<TypeObj> = Stack::<TypeObj>::default_type();
             let mut cursor = 0;
             for Argument {name, default, ..} in proc_args {
                 let mut input_arg = if args.len() > cursor {Ok(args.get(cursor).unwrap().clone())}
@@ -237,7 +246,7 @@ impl Element {
                              "#call".to_string()))
         }
     }
-    pub fn get_type(&mut self, typelist: &mut Varstack<TypeObj>) -> Result<TypeObj, ZyxtError> {
+    pub fn get_type(&mut self, typelist: &mut Stack<TypeObj>) -> Result<TypeObj, ZyxtError> {
         match self {
             Element::Literal {type_, ..} => Ok(type_.clone()),
             Element::Variable {name, position, ..} =>
@@ -302,7 +311,16 @@ impl Element {
                     type_args: vec![TypeObj::null(), return_type.clone()]
                 })
             }, // TODO angle bracket thingy when it is implemented
-            Element::Preprocess {..} => todo!(),
+            Element::Preprocess {content, ..} => {
+                let mut pre_typelist = Stack::<TypeObj>::default_type();
+                let mut varlist = Stack::<Variable>::default_variable();
+                let mut deferlist = DeferStack::new();
+                let pre_instructions = gen_instructions(content.clone(), &mut pre_typelist)?;
+                let pre_value = interpret_block(pre_instructions, &mut varlist,
+                                                &mut deferlist,true, false)?;
+                *self = pre_value.as_element();
+                self.get_type(typelist)
+            },
             _ => Ok(TypeObj::null())
         }
     }

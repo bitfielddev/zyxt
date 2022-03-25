@@ -76,3 +76,15 @@ std.println("hi "*5);
 
 // numeric types other than i32 and f64
 std.println(3@u8, 3@u8@type);
+
+// deferred expressions
+defer {
+    std.println("This will be printed when the block ends");
+};
+
+// preprocessed value
+a := pre {
+    std.println("This will be printed before the actual script runs");
+    3
+};
+std.println(a);

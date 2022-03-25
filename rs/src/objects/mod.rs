@@ -6,3 +6,4 @@ pub mod position;
 pub mod state_tracker;
 pub mod varstack;
 pub mod variable;
+pub mod deferstack;

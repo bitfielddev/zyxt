@@ -5,14 +5,16 @@ use ansi_term::Color::{Cyan, Green, White, Yellow};
 use text_io::read;
 use crate::compile;
 use crate::interpreter::interpret_expr;
+use crate::objects::deferstack::DeferStack;
 use crate::objects::typeobj::TypeObj;
 use crate::objects::variable::Variable;
-use crate::objects::varstack::Varstack;
+use crate::objects::varstack::Stack;
 
 pub fn repl(debug_info: bool) {
     let filename = "[stdin]".to_string();
-    let mut typelist = Varstack::<TypeObj>::default_type();
-    let mut varlist = Varstack::<Variable>::default_variable();
+    let mut typelist = Stack::<TypeObj>::default_type();
+    let mut varlist = Stack::<Variable>::default_variable();
+    let mut deferlist = DeferStack::new();
     let in_symbol = Cyan.bold().paint(">>]");
     let out_symbol = Green.bold().paint("[>>");
     println!("{}", Yellow.bold().paint(format!("Zyxt Repl (v{})", env!("CARGO_PKG_VERSION"))));
@@ -32,9 +34,9 @@ pub fn repl(debug_info: bool) {
         if debug_info {println!("{}", Yellow.bold().paint("\nInterpreting"));}
         for (i, instr) in instructions.into_iter().enumerate() {
             match {
-                if !debug_info {interpret_expr(instr, &mut varlist)} else {
+                if !debug_info {interpret_expr(instr, &mut varlist, &mut deferlist)} else {
                     let interpret_start = Instant::now();
-                    let result = interpret_expr(instr, &mut varlist);
+                    let result = interpret_expr(instr, &mut varlist, &mut deferlist);
                     let interpret_time = interpret_start.elapsed().as_micros();
                     println!("{}", White.dimmed().paint(format!("{}µs", interpret_time)));
                     result

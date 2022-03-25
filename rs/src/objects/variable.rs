@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
-use crate::{Element, Varstack, ZyxtError};
+use crate::{Element, Stack, ZyxtError};
 use crate::objects::element::Argument;
 use crate::objects::token::OprType;
 use crate::objects::typeobj::TypeObj;
@@ -717,7 +717,7 @@ impl Variable {
             _ => None
         }
     }
-    pub fn default(type_: TypeObj, typelist: &mut Varstack<TypeObj>) -> Result<Self, ZyxtError> {
+    pub fn default(type_: TypeObj, typelist: &mut Stack<TypeObj>) -> Result<Self, ZyxtError> {
         match type_.clone() {
             TypeObj::Prim{name, ..} => Ok(match &*name {
                 "i8" => Variable::I8(0),

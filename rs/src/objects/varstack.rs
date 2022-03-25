@@ -10,11 +10,11 @@ const PRIM_NAMES: [&str; 18] = ["str",
     "f32", "f64",
     "#null", "#any", "type"];
 
-pub struct Varstack<T: Clone>(pub Vec<HashMap<String, T>>);
+pub struct Stack<T: Clone>(pub Vec<HashMap<String, T>>);
 
-impl <T: Clone> Varstack<T> {
-    pub fn default_variable() -> Varstack<Variable> {
-        let mut v = Varstack(vec![HashMap::new()]);
+impl <T: Clone> Stack<T> {
+    pub fn default_variable() -> Stack<Variable> {
+        let mut v = Stack(vec![HashMap::new()]);
         for t in PRIM_NAMES {
             v.0[0].insert(t.to_string(), Variable::Type(TypeObj::Prim{
                 name: t.to_string(), type_args: vec![]
@@ -22,8 +22,8 @@ impl <T: Clone> Varstack<T> {
         }
         v
     }
-    pub fn default_type() -> Varstack<TypeObj> {
-        let mut v = Varstack(vec![HashMap::new()]);
+    pub fn default_type() -> Stack<TypeObj> {
+        let mut v = Stack(vec![HashMap::new()]);
         for t in PRIM_NAMES {
             v.0[0].insert(t.to_string(), TypeObj::Prim{
                 name: "type".to_string(), type_args: vec![]
