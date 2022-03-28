@@ -140,6 +140,7 @@ pub fn interpret_block(input: Vec<Element>, varlist: &mut Stack<Variable>,
 pub fn interpret_asts(input: Vec<Element>) -> Result<i32, ZyxtError> {
     let mut varlist = Stack::<Variable>::default_variable();
     let mut deferlist = DeferStack::new();
+    let mut last = Variable::Null;
     for ele in input {
         if let Element::Return { value, position, ..} = ele {
             let return_val = interpret_expr(*value, &mut varlist, &mut deferlist)?;
@@ -150,7 +151,8 @@ pub fn interpret_asts(input: Vec<Element>) -> Result<i32, ZyxtError> {
                 Err(ZyxtError::from_pos(&position).error_4_2(return_val))
             }
         } else {
-            if let Variable::Return(value) = interpret_expr(ele.clone(), &mut varlist, &mut deferlist)? {
+            last = interpret_expr(ele.clone(), &mut varlist, &mut deferlist)?;
+            if let Variable::Return(value) = last {
                 deferlist.execute_and_clear(&mut varlist)?;
                 varlist.pop_set();
                 return if let Variable::I32(v) = *value { Ok(v) } else {
@@ -159,5 +161,11 @@ pub fn interpret_asts(input: Vec<Element>) -> Result<i32, ZyxtError> {
             }}
     }
     deferlist.execute_and_clear(&mut varlist)?;
-    Ok(0)
+    return if let Variable::I32(v) = last {
+        Ok(v)
+    } else if let Variable::Null = last {
+        Ok(0)
+    } else {
+        Err(ZyxtError::from_pos(input.last().unwrap().get_pos()).error_4_2(last))
+    }
 }

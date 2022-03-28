@@ -92,3 +92,4 @@ a := pre {
     3
 };
 std.println(a);
+1
