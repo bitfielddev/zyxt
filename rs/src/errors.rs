@@ -278,7 +278,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "3.1",
-            message: format!("`{}` (type `{}`) has no attribute `{}`", parent.get_name(), parent_type, attribute)
+            message: format!("`{}` (type `{}`) has no attribute `{}`", parent.get_raw().trim(), parent_type, attribute)
         }
     }
     /// Type has no attribute (interpreter)

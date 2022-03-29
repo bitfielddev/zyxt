@@ -113,6 +113,12 @@ pub enum Element {
         raw: String,
         content: Vec<Element>
     },
+    Class {
+        position: Position,
+        raw: String,
+        attrs: HashMap<String, Element>,
+        content: Vec<Element>
+    },
     NullElement,
     Token(Token)
 }
@@ -147,7 +153,8 @@ impl Element {
             Element::Return { position, .. } |
             Element::Procedure { position, .. } |
             Element::Preprocess { position, .. } |
-            Element::Defer { position, .. }=> position
+            Element::Defer { position, .. } |
+            Element::Class { position, .. } => position
         }
     }
     pub fn get_raw(&self) -> String {
@@ -168,7 +175,8 @@ impl Element {
             Element::Return { raw, .. } |
             Element::Procedure { raw, .. } |
             Element::Preprocess { raw, .. } |
-            Element::Defer { raw, .. } => raw.clone()
+            Element::Defer { raw, .. } |
+            Element::Class { raw, .. } => raw.clone()
         }
     }
     pub fn get_name(&self) -> String {
@@ -333,6 +341,7 @@ impl Element {
                                                             var_type, content_type))
                 } else {Ok(var_type)}
             },
+            Element::Class {..} => todo!(),
             Element::NullElement |
             Element::Delete {..} |
             Element::Comment {..} |

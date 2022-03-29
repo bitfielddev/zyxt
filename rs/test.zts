@@ -90,6 +90,10 @@ defer {
 a := pre {
     std.println("This will be printed before the actual script runs");
     3
-};
+}
 std.println(a);
-1
+
+// classes (WIP)
+A := class {
+
+};

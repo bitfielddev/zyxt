@@ -764,6 +764,24 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             ..Default::default()
         },
         CompoundTokenEntry{
+            value: "class",
+            type_: TokenType::Keyword(Keyword::Class),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "class"),
+            ],
+            categories: &[TokenCategory::Literal, TokenCategory::ValueStart],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
+            value: "struct",
+            type_: TokenType::Keyword(Keyword::Struct),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "struct"),
+            ],
+            categories: &[TokenCategory::Literal, TokenCategory::ValueStart],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
             value: "defer",
             type_: TokenType::Keyword(Keyword::Defer),
             combination: &[

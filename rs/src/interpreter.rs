@@ -141,9 +141,9 @@ pub fn interpret_asts(input: Vec<Element>) -> Result<i32, ZyxtError> {
     let mut varlist = Stack::<Variable>::default_variable();
     let mut deferlist = DeferStack::new();
     let mut last = Variable::Null;
-    for ele in input {
+    for ele in &input {
         if let Element::Return { value, position, ..} = ele {
-            let return_val = interpret_expr(*value, &mut varlist, &mut deferlist)?;
+            let return_val = interpret_expr(*value.clone(), &mut varlist, &mut deferlist)?;
             return if let Variable::I32(v) = return_val {
                 deferlist.execute_and_clear(&mut varlist)?;
                 Ok(v)
