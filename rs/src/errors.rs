@@ -4,6 +4,7 @@ use ansi_term::Style;
 use crate::{Element, TypeObj};
 use crate::objects::variable::Variable;
 use crate::objects::position::Position;
+use crate::objects::token::Keyword;
 
 #[derive(Clone)]
 pub struct ZyxtError {
@@ -242,6 +243,22 @@ impl PositionForZyxtError {
             position: self.position,
             code: "2.1.16",
             message: format!("`pre` at end of line")
+        }
+    }
+    /// unexpected ident (parameters with class keyword)
+    pub fn error_2_1_17(self) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.17",
+            message: format!("Parameters found after `class` keyword")
+        }
+    }
+    /// unexpected ident (parameters with class keyword)
+    pub fn error_2_1_18(self, kwd: &Keyword) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "2.1.18",
+            message: format!("Block expected after `{:?}`", kwd)
         }
     }
 

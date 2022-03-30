@@ -5,6 +5,16 @@ use crate::{Token, ZyxtError};
 use crate::objects::position::Position;
 use crate::objects::typeobj::TypeObj;
 
+macro_rules! check_and_update_cursor {
+    ($cursor: ident, $selected: ident, $elements: ident) => {
+        if $cursor == $elements.len()-1 {
+            return Err(ZyxtError::from_pos($selected.get_pos()).error_2_1_16())
+        }
+        $cursor += 1;
+        $selected = &$elements[$cursor];
+    }
+}
+
 fn catch_between(opening: TokenType, closing: TokenType,
                  elements: &Vec<Element>, cursor: &mut usize) -> Result<Vec<Element>, ZyxtError> {
     let mut paren_level = 0;
@@ -87,6 +97,33 @@ fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
                elements, filename, ignore_empty)
 }
 
+fn get_arguments(cursor: &mut usize, elements: &Vec<Element>, raw: &mut String, filename: &String) -> Result<Vec<Argument>, ZyxtError> {
+    let contents = catch_between(TokenType::Bar, TokenType::Bar, &elements, &mut cursor)?;
+    *raw = format!("{}{}{}", raw, contents.iter()
+        .map(|e| e.get_raw().clone())
+        .collect::<Vec<String>>().join(""), elements[*cursor].get_raw());
+    base_split(&|raw_arg, filename| {
+        let parts = split_between(TokenType::Colon, TokenType::Null, TokenType::Null,
+                                  raw_arg, filename, true)?;
+        let name = if let Some(Element::Variable{name, ..}) = parts.get(0) {name.clone()} else {
+            return Err(ZyxtError::from_pos(parts.get(0).unwrap().get_pos()).error_2_1_15(",".to_string()))
+        };
+        let type_ = if let Some(t) = parts.get(1) {t.clone()} else {Element::NullElement};
+        let default = if let Some(d) = parts.get(2) {Some(d.clone())} else {None};
+        if parts.len() > 3 {
+            return Err(ZyxtError::from_pos(parts.get(3).unwrap().get_pos()).error_2_1_14(parts[3].get_raw().trim().to_string()))
+        }
+        Ok(Argument{
+            name,
+            type_: if type_ == Element::NullElement {TypeObj::any()}
+            else {TypeObj::Compound(Box::new(type_))},
+            default})
+    }, None, TokenType::Comma,
+               TokenType::Bar, TokenType::Bar,
+               contents,
+               filename, false)
+}
+
 fn parse_parens(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
     let mut cursor = 0;
     let mut selected;
@@ -140,8 +177,7 @@ fn parse_preprocess_and_defer(elements: Vec<Element>, filename: &String) -> Resu
             }
             let raw = selected.get_raw();
             let is_pre = raw.trim() == "pre";
-            cursor += 1;
-            selected = &elements[cursor];
+            check_and_update_cursor!(cursor, selected, elements);
             if let Element::Block {content, raw: block_raw, ..} = selected {
                 if is_pre {
                     new_elements.push(Element::Preprocess {
@@ -186,15 +222,24 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>, filename: &String) -
 
     while cursor < elements.len() {
         selected = &elements[cursor];
-        if let Element::Token(Token{type_: TokenType::Keyword(keyword), position, ..}) = selected {
+        if let Element::Token(Token{type_: TokenType::Keyword(keyword), ..}) = selected {
         if [Keyword::Class, Keyword::Struct].contains(keyword) {
-            if cursor == elements.len()-1 {
-                return Err(ZyxtError::from_pos(position).error_2_1_16())
+            let mut raw = selected.get_raw();
+            check_and_update_cursor!(cursor, selected, elements);
+
+            let mut args = vec![];
+            if let Element::Token(Token{type_: TokenType::Bar, position, ..}) = selected {
+                if keyword == &Keyword::Class {
+                    return Err(ZyxtError::from_pos(position).error_2_1_17())
+                }
+                args = get_arguments(&mut cursor, &elements, &mut raw, filename)?;
             }
-            let raw = selected.get_raw();
-            cursor += 1;
-            selected = &elements[cursor]; // TODO increase & err macro for cursor
-            // if bar
+            check_and_update_cursor!(cursor, selected, elements);
+            if let Element::Block {content, ..} = selected {
+                todo!()
+            } else {
+                return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_18(keyword))
+            }
 
         } else {new_elements.push(selected.clone())}} else {new_elements.push(selected.clone())}
         cursor += 1;
@@ -336,54 +381,19 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Result<Vec<
                 } else {false};
                 let mut raw = selected.get_raw().clone();
                 if type_ != &TokenType::Bar {
-                    cursor += 1;
-                    if cursor >= elements.len() {
-                        return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_0(elements[cursor-1].get_raw().trim().to_string()))
-                    }
-                    selected = &elements[cursor];
+                    check_and_update_cursor!(cursor, selected, elements);
                     raw = format!("{}{}", raw, selected.get_raw());
                 }
 
                 let args = if let Element::Token(Token{type_: TokenType::Bar, ..}) = selected {
-                    let contents = catch_between(TokenType::Bar, TokenType::Bar, &elements, &mut cursor)?;
-                    raw = format!("{}{}{}", raw, contents.iter()
-                        .map(|e| e.get_raw().clone())
-                        .collect::<Vec<String>>().join(""), elements[cursor].get_raw());
-                    base_split(&|raw_arg, filename| {
-                        let parts = split_between(TokenType::Colon, TokenType::Null, TokenType::Null,
-                                                  raw_arg, filename, true)?;
-                        let name = if let Some(Element::Variable{name, ..}) = parts.get(0) {name.clone()} else {
-                            return Err(ZyxtError::from_pos(parts.get(0).unwrap().get_pos()).error_2_1_15(",".to_string()))
-                        };
-                        let type_ = if let Some(t) = parts.get(1) {t.clone()} else {Element::NullElement};
-                        let default = if let Some(d) = parts.get(2) {Some(d.clone())} else {None};
-                        if parts.len() > 3 {
-                            return Err(ZyxtError::from_pos(parts.get(3).unwrap().get_pos()).error_2_1_14(parts[3].get_raw().trim().to_string()))
-                        }
-                        Ok(Argument{
-                            name,
-                            type_: if type_ == Element::NullElement {TypeObj::any()}
-                            else {TypeObj::Compound(Box::new(type_))},
-                            default})
-                    }, None, TokenType::Comma,
-                               TokenType::Bar, TokenType::Bar,
-                               contents,
-                               filename, false)
-                } else {cursor -= 1; Ok(vec![])}?;
+                    get_arguments(&mut cursor, &elements, &mut raw, filename)?
+                } else {cursor -= 1; vec![]};
 
-                cursor += 1;
-                if cursor >= elements.len() {
-                    return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_0(elements[cursor-1].get_raw().trim().to_string()))
-                }
-                selected = &elements[cursor];
+                check_and_update_cursor!(cursor, selected, elements);
                 let return_type = if let Element::Token(Token{type_: TokenType::Colon, ..}) = selected {
                     let mut catcher = vec![];
                     loop {
-                        cursor += 1;
-                        if cursor >= elements.len() {
-                            return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_0(elements[cursor-1].get_raw().trim().to_string()))
-                        }
-                        selected = &elements[cursor];
+                        check_and_update_cursor!(cursor, selected, elements);
                         raw = format!("{}{}", raw, selected.get_raw());
                         if let Element::Block{..} = selected {break;}
                         catcher.push(selected.clone());
@@ -645,19 +655,17 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
                         raw = format!("{}{}{}", raw, whitespace, value);
                     } else {break}
                     prev_catcher_kwd = catcher_kwd;
-                    cursor += 1;
-                    catcher_selected = &elements[cursor];
+                    check_and_update_cursor!(cursor, catcher_selected, elements);
                     let condition= if catcher_kwd == "else" {
                         Element::NullElement
                     } else if let Element::Block {raw: block_raw, ..} = catcher_selected {
                         raw = format!("{}{}", raw, block_raw);
-                        cursor += 1;
+                        check_and_update_cursor!(cursor, catcher_selected, elements);
                         catcher_selected.clone()
                     } else {
                         let mut catcher = vec![elements[cursor].clone()];
                         loop {
-                            cursor += 1;
-                            let catcher_selected = &elements[cursor];
+                            check_and_update_cursor!(cursor, catcher_selected, elements);
                             raw = format!("{}{}", raw, catcher_selected.get_raw());
                             if let Element::Block {..} = catcher_selected {break}
                             else {catcher.push(catcher_selected.clone());}
