@@ -117,7 +117,8 @@ pub enum Element {
         position: Position,
         raw: String,
         attrs: HashMap<String, Element>,
-        content: Vec<Element>
+        content: Vec<Element>,
+        args: Option<Vec<Argument>>
     },
     NullElement,
     Token(Token)

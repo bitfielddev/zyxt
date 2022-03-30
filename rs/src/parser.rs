@@ -222,25 +222,34 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>, filename: &String) -
 
     while cursor < elements.len() {
         selected = &elements[cursor];
-        if let Element::Token(Token{type_: TokenType::Keyword(keyword), ..}) = selected {
+        if let Element::Token(Token{type_: TokenType::Keyword(keyword), position, ..}) = selected {
         if [Keyword::Class, Keyword::Struct].contains(keyword) {
             let mut raw = selected.get_raw();
             check_and_update_cursor!(cursor, selected, elements);
 
-            let mut args = vec![];
+            let mut args = None;
             if let Element::Token(Token{type_: TokenType::Bar, position, ..}) = selected {
                 if keyword == &Keyword::Class {
                     return Err(ZyxtError::from_pos(position).error_2_1_17())
                 }
-                args = get_arguments(&mut cursor, &elements, &mut raw, filename)?;
+                args = Some(get_arguments(&mut cursor, &elements, &mut raw, filename)?);
             }
             check_and_update_cursor!(cursor, selected, elements);
-            if let Element::Block {content, ..} = selected {
-                todo!()
+            let mut content = &vec![];
+            if let Element::Block {content: block_content, ..} = selected {
+                content = block_content
             } else {
-                return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_18(keyword))
+                if keyword == &Keyword::Class {
+                    return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_18(keyword))
+                }
             }
-
+            new_elements.push(Element::Class {
+                position: position.clone(),
+                raw,
+                attrs: Default::default(),
+                content: vec![],
+                args
+            })
         } else {new_elements.push(selected.clone())}} else {new_elements.push(selected.clone())}
         cursor += 1;
     }
