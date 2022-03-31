@@ -99,7 +99,8 @@ pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: 
         Element::Defer {content, ..} => {
             deferlist.add_defer(content.clone());
             Ok(Variable::Null)
-        }
+        },
+        Element::Class {..} => todo!()
     }
 }
 

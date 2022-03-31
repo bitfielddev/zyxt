@@ -741,7 +741,7 @@ impl Variable {
                 _ => panic!("{:#?}", type_)
             }),
             TypeObj::Compound(mut ele) => {
-                Variable::default(ele.get_type(typelist)?, typelist)
+                Variable::default(ele.eval_type(typelist)?, typelist)
             }
         }
     }

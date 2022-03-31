@@ -61,7 +61,7 @@ pub fn singular_token_entries() -> Vec<SingularTokenEntry<'static>> {
             ..Default::default()
         },
         SingularTokenEntry {
-            re: Some(Regex::new(r"\w").unwrap()),
+            re: Some(Regex::new(r"[\w#]").unwrap()),
             type_: TokenType::Variable,
             categories: &[TokenCategory::ValueStart, TokenCategory::ValueEnd],
             ..Default::default()
@@ -290,7 +290,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
             type_: TokenType::Variable,
             combination: &[
                 Pattern::Token(TokenType::Variable),
-                Pattern::Token(TokenType::Variable)
+                Pattern::Re(TokenType::Variable, "[^#]")
             ],
             categories: &[TokenCategory::ValueStart, TokenCategory::ValueEnd],
             ..Default::default()

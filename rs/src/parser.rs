@@ -8,7 +8,7 @@ use crate::objects::typeobj::TypeObj;
 macro_rules! check_and_update_cursor {
     ($cursor: ident, $selected: ident, $elements: ident) => {
         if $cursor == $elements.len()-1 {
-            return Err(ZyxtError::from_pos($selected.get_pos()).error_2_1_16())
+            return Err(ZyxtError::from_pos($selected.get_pos()).error_2_1_0($selected.get_raw()))
         }
         $cursor += 1;
         $selected = &$elements[$cursor];
@@ -98,7 +98,7 @@ fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
 }
 
 fn get_arguments(cursor: &mut usize, elements: &Vec<Element>, raw: &mut String, filename: &String) -> Result<Vec<Argument>, ZyxtError> {
-    let contents = catch_between(TokenType::Bar, TokenType::Bar, &elements, &mut cursor)?;
+    let contents = catch_between(TokenType::Bar, TokenType::Bar, &elements, cursor)?;
     *raw = format!("{}{}{}", raw, contents.iter()
         .map(|e| e.get_raw().clone())
         .collect::<Vec<String>>().join(""), elements[*cursor].get_raw());
@@ -233,11 +233,12 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>, filename: &String) -
                     return Err(ZyxtError::from_pos(position).error_2_1_17())
                 }
                 args = Some(get_arguments(&mut cursor, &elements, &mut raw, filename)?);
+                check_and_update_cursor!(cursor, selected, elements);
             }
-            check_and_update_cursor!(cursor, selected, elements);
-            let mut content = &vec![];
-            if let Element::Block {content: block_content, ..} = selected {
-                content = block_content
+            let mut content = vec![];
+            if let Element::Block {content: block_content, raw: block_raw, ..} = selected {
+                content = block_content.clone();
+                raw = format!("{}{}", raw, block_raw);
             } else {
                 if keyword == &Keyword::Class {
                     return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_18(keyword))
@@ -247,7 +248,7 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>, filename: &String) -
                 position: position.clone(),
                 raw,
                 attrs: Default::default(),
-                content: vec![],
+                content,
                 args
             })
         } else {new_elements.push(selected.clone())}} else {new_elements.push(selected.clone())}
@@ -734,7 +735,7 @@ fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Result<Element, 
     elements = parse_if_expr(elements, filename)?;
     elements = parse_procs_and_fns(elements, filename)?;
     elements = parse_preprocess_and_defer(elements, filename)?;
-    //elements = parse_classes_structs_and_mixins(elements, filename)?;
+    elements = parse_classes_structs_and_mixins(elements, filename)?;
     //elements = parse_enums(elements, filename)?;
     elements = parse_vars_literals_and_calls(elements, filename)?;
     elements = parse_delete_expr(elements, filename)?;

@@ -207,7 +207,7 @@ impl Element {
         let mut last = TypeObj::null();
         if add_set {typelist.add_set();}
         for ele in content.iter_mut() {
-            last = ele.get_type(typelist)?;
+            last = ele.eval_type(typelist)?;
         }
         if add_set {typelist.pop_set();}
         Ok(last)
@@ -226,7 +226,7 @@ impl Element {
                 else {default.clone().ok_or(
                     ZyxtError::from_pos(position).error_2_3(name.clone())
                 )}?;
-                fn_typelist.declare_val(&name, &input_arg.get_type(typelist)?);
+                fn_typelist.declare_val(&name, &input_arg.eval_type(typelist)?);
                 if args.len() > cursor {*args.get_mut(cursor).unwrap() = input_arg;}
                 else {*default = Some(input_arg)}
                 cursor += 1;
@@ -240,22 +240,22 @@ impl Element {
             proc_varlist.pop_set();
             return Ok(res)
         }
-        if let TypeObj::Prim {name, type_args} = called.get_type(typelist)? {
+        if let TypeObj::Prim {name, type_args} = called.eval_type(typelist)? {
             if name == "proc".to_string() || name == "fn".to_string() {return Ok(type_args[1].clone())}
         } // TODO type checking for args when arrays are implemented
-        if let Some(v) = Variable::default(called.get_type(typelist)?, typelist)?.call(
-            args.iter_mut().map(|e| Variable::default(e.get_type(typelist)?, typelist))
+        if let Some(v) = Variable::default(called.eval_type(typelist)?, typelist)?.call(
+            args.iter_mut().map(|e| Variable::default(e.eval_type(typelist)?, typelist))
                 .collect::<Result<Vec<_>, _>>()?
         ) { // TODO same as above
             Ok(v.get_type_obj())
         } else {
             Err(ZyxtError::from_pos(called.get_pos())
                 .error_3_1_0(called.clone(),
-                             called.get_type(typelist)?,
+                             called.eval_type(typelist)?,
                              "#call".to_string()))
         }
     }
-    pub fn get_type(&mut self, typelist: &mut Stack<TypeObj>) -> Result<TypeObj, ZyxtError> {
+    pub fn eval_type(&mut self, typelist: &mut Stack<TypeObj>) -> Result<TypeObj, ZyxtError> {
         match self {
             Element::Literal {type_, ..} => Ok(type_.clone()),
             Element::Variable {name, position, ..} =>
@@ -265,7 +265,7 @@ impl Element {
                 Element::call_return_type(called, args, typelist),
             Element::Declare {position, variable, content,
                 flags, type_, raw} => {
-                let content_type = content.get_type(typelist)?;
+                let content_type = content.eval_type(typelist)?;
                 if *type_ == TypeObj::null() {
                     typelist.declare_val(&variable.get_name(), &content_type);
                     *self = Element::Declare {
@@ -300,12 +300,12 @@ impl Element {
             },
             Element::If {conditions, ..} => Element::block_type(&mut conditions[0].if_true, typelist, true), // TODO consider all returns
             Element::BinaryOpr {type_, operand1, operand2, position, ..} => {
-                let type1 = operand1.get_type(typelist)?;
-                let type2 = operand2.get_type(typelist)?;
+                let type1 = operand1.eval_type(typelist)?;
+                let type2 = operand2.eval_type(typelist)?;
                 Element::bin_op_return_type(type_, type1, type2, typelist, position)
             },
             Element::UnaryOpr {type_, operand, position, ..} => {
-                let opnd_type = operand.get_type(typelist)?;
+                let opnd_type = operand.eval_type(typelist)?;
                 Element::un_op_return_type(type_, opnd_type, typelist, position)
             },
             Element::Procedure {is_fn, return_type, content, args, ..} => {
@@ -328,21 +328,28 @@ impl Element {
                 let pre_value = interpret_block(pre_instructions, &mut varlist,
                                                 &mut deferlist,true, false)?;
                 *self = pre_value.as_element();
-                self.get_type(typelist)
+                self.eval_type(typelist)
             },
             Element::Defer {content, ..} => {
                 *content = gen_instructions(content.clone(), typelist)?;
                 Ok(TypeObj::null())
             },
             Element::Set {position, variable, content, ..} => {
-                let content_type = content.get_type(typelist)?;
+                let content_type = content.eval_type(typelist)?;
                 let var_type = typelist.get_val(&variable.get_name(), position)?;
                 if content_type != var_type {
                     Err(ZyxtError::from_pos(position).error_4_3(variable.get_name(),
                                                             var_type, content_type))
                 } else {Ok(var_type)}
             },
-            Element::Class {..} => todo!(),
+            Element::Class {content, ..} => {
+                for expr in content {
+                    if let Element::Declare {..} = expr {
+
+                    }
+                }
+                Ok(TypeObj::Compound(Box::new(self.clone())))
+            },
             Element::NullElement |
             Element::Delete {..} |
             Element::Comment {..} |

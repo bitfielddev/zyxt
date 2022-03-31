@@ -294,7 +294,7 @@ impl PositionForZyxtError {
     pub fn error_3_1_0(self, parent: Element, parent_type: TypeObj, attribute: String) -> ZyxtError {
         ZyxtError {
             position: self.position,
-            code: "3.1",
+            code: "3.1.0",
             message: format!("`{}` (type `{}`) has no attribute `{}`", parent.get_raw().trim(), parent_type, attribute)
         }
     }
@@ -302,7 +302,7 @@ impl PositionForZyxtError {
     pub fn error_3_1_1(self, parent: Variable, attribute: String) -> ZyxtError {
         ZyxtError {
             position: self.position,
-            code: "3.1",
+            code: "3.1.1",
             message: format!("`{}` (type `{}`) has no attribute `{}`", parent, parent.get_type_obj(), attribute)
         }
     }

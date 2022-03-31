@@ -90,10 +90,13 @@ defer {
 a := pre {
     std.println("This will be printed before the actual script runs");
     3
-}
+};
 std.println(a);
 
 // classes (WIP)
-A := class {
-
+Point1 := class {
+    #init := fn|x: i32, y: i32| {
+        #.x = x;
+        #.y = y;
+    }
 };
