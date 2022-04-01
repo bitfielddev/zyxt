@@ -100,7 +100,10 @@ pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: 
             deferlist.add_defer(content.clone());
             Ok(Variable::Null)
         },
-        Element::Class {..} => Ok(Variable::Type(TypeObj::Compound(Box::new(input.clone())))),
+        Element::Class {class_attrs, inst_attrs, ..} => Ok(Variable::Type(TypeObj::Typedef{
+            generics: vec![],
+            class_attrs, inst_attrs
+        })),
     }
 }
 

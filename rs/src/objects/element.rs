@@ -116,6 +116,7 @@ pub enum Element {
     Class {
         position: Position,
         raw: String,
+        is_struct: bool,
         class_attrs: HashMap<String, Element>,
         inst_attrs: HashMap<String, Element>,
         content: Vec<Element>,
@@ -237,7 +238,7 @@ impl Element {
             proc_varlist.pop_set();
             return Ok(res)
         }
-        if let TypeObj::Prim {name, type_args} = called.eval_type(typelist)? {
+        if let TypeObj::Type {name, type_args, ..} = called.eval_type(typelist)? {
             if name == "proc".to_string() || name == "fn".to_string() {return Ok(type_args[1].clone())}
         } // TODO type checking for args when arrays are implemented
         if let Some(v) = Variable::default(called.eval_type(typelist)?, typelist)?.call(
@@ -251,6 +252,9 @@ impl Element {
                              called.eval_type(typelist)?,
                              "#call".to_string()))
         }
+    }
+    pub fn as_type(&self) -> TypeObj {
+        todo!()
     }
     pub fn eval_type(&mut self, typelist: &mut Stack<TypeObj>) -> Result<TypeObj, ZyxtError> {
         match self {
@@ -312,9 +316,10 @@ impl Element {
                 }
                 let res =  Element::block_type(content, typelist, false)?;
                 if return_type == &TypeObj::null() {*return_type = res;}
-                Ok(TypeObj::Prim {
+                Ok(TypeObj::Type {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),
-                    type_args: vec![TypeObj::null(), return_type.clone()]
+                    type_args: vec![TypeObj::null(), return_type.clone()],
+                    implementation: if *is_fn {TypeObj::fn_impl} else {TypeObj::proc_impl}()
                 })
             }, // TODO angle bracket thingy when it is implemented
             Element::Preprocess {content, ..} => {
@@ -339,7 +344,7 @@ impl Element {
                                                             var_type, content_type))
                 } else {Ok(var_type)}
             },
-            Element::Class {content, inst_attrs, args, ..} => {
+            Element::Class {content, inst_attrs, args, is_struct, ..} => {
                 typelist.add_set();
                 let class_attrs = HashMap::new();
                 for expr in content.iter_mut() {
@@ -356,7 +361,9 @@ impl Element {
                     }
                 }
                 typelist.pop_set();
-                Ok(TypeObj::Compound {
+                Ok(TypeObj::Typedef {
+                    name: if *is_struct { "struct" } else { "class" }.to_string(),
+                    generics: vec![],
                     class_attrs,
                     inst_attrs: inst_attrs.clone()
                 })

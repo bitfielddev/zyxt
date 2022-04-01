@@ -723,7 +723,7 @@ impl Variable {
     }
     pub fn default(type_: TypeObj, typelist: &mut Stack<TypeObj>) -> Result<Self, ZyxtError> {
         match type_.clone() {
-            TypeObj::Prim{name, ..} => Ok(match &*name {
+            TypeObj::Type {name, ..} => Ok(match &*name {
                 "i8" => Variable::I8(0),
                 "i16" => Variable::I16(0),
                 "i32" => Variable::I32(0),
@@ -751,7 +751,7 @@ impl Variable {
     }
     pub fn from_type_content(type_: TypeObj, content: String) -> Variable {
         match type_ {
-            TypeObj::Prim{name, ..} => match &*name {
+            TypeObj::Type {name, ..} => match &*name {
                 "i8" => Variable::I8(content.parse::<i8>().unwrap()),
                 "i16" => Variable::I16(content.parse::<i16>().unwrap()),
                 "i32" => Variable::I32(content.parse::<i32>().unwrap()),
@@ -796,7 +796,7 @@ impl Variable {
             Variable::Bool(..) => TypeObj::from_str("bool"),
             Variable::Type(..) => TypeObj::from_str("type"),
             Variable::Proc {is_fn, return_type, ..} =>
-                TypeObj::Prim{
+                TypeObj::Type {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),
                     type_args: vec![TypeObj::null(), return_type.clone()]
                 }, // TODO angle bracket thingy when it is implemented

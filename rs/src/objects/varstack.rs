@@ -16,7 +16,7 @@ impl <T: Clone> Stack<T> {
     pub fn default_variable() -> Stack<Variable> {
         let mut v = Stack(vec![HashMap::new()]);
         for t in PRIM_NAMES {
-            v.0[0].insert(t.to_string(), Variable::Type(TypeObj::Prim{
+            v.0[0].insert(t.to_string(), Variable::Type(TypeObj::Type {
                 name: t.to_string(), type_args: vec![]
             }));
         }
@@ -25,7 +25,7 @@ impl <T: Clone> Stack<T> {
     pub fn default_type() -> Stack<TypeObj> {
         let mut v = Stack(vec![HashMap::new()]);
         for t in PRIM_NAMES {
-            v.0[0].insert(t.to_string(), TypeObj::Prim{
+            v.0[0].insert(t.to_string(), TypeObj::Type {
                 name: "type".to_string(), type_args: vec![]
             });
         }
