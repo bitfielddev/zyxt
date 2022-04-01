@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 use crate::{Element, Stack, ZyxtError};
@@ -30,6 +31,10 @@ pub enum Variable {
         return_type: TypeObj,
         content: Vec<Element>
     },
+    ClassInstance{
+        type_: TypeObj,
+        attrs: HashMap<String, Variable>,
+    },
     Null,
     Return(Box<Variable>)
 }
@@ -53,15 +58,12 @@ impl Display for Variable {
             Variable::F64(v) => v.to_string(),
             Variable::Str(v) => v.clone(),
             Variable::Bool(v) => v.to_string(),
-            Variable::Type(v) => "<".to_owned()+&*v.to_string()+">",
+            Variable::Type(v) |
+            Variable::ClassInstance {type_: v, ..} => format!("<{}>", v),
             Variable::Proc{is_fn, args, return_type, ..} =>
                 format!("{}|{}|: {}",
                     if *is_fn {"fn"} else {"proc"},
-                    args.iter().map(|a| format!("{}{}{}",
-                        a.name, if a.type_ != TypeObj::any()
-                        {": ".to_owned()+&*a.type_.to_string()} else {"".to_string()},
-                        if let Some(_) = &a.default {": TODO"} else {""}
-                    )).collect::<Vec<String>>().join(","),
+                    args.iter().map(|a| a.to_string()).collect::<Vec<String>>().join(","),
                         return_type.to_string()),
             Variable::Null => "null".to_string(),
             Variable::Return(v) => v.to_string()
@@ -92,6 +94,8 @@ impl Variable {
                 Variable::F64(_) => mult!(),
                 Variable::Proc{..} => panic!(),
                 Variable::Return(v) => v.call(args),
+                Variable::Type(v) => todo!(),
+                Variable::ClassInstance {type_, ..} => todo!(),
                 _ => None
             }
         } else {None}
@@ -845,7 +849,8 @@ impl Variable {
                 position: Default::default(),
                 raw: "".to_string(),
                 value: Box::new(v.as_element())
-            }
+            },
+            Variable::ClassInstance{..} => todo!()
         }
     }
 }

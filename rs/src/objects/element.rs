@@ -116,23 +116,20 @@ pub enum Element {
     Class {
         position: Position,
         raw: String,
-        attrs: HashMap<String, Element>,
+        class_attrs: HashMap<String, Element>,
+        inst_attrs: HashMap<String, Element>,
         content: Vec<Element>,
         args: Option<Vec<Argument>>
     },
     NullElement,
     Token(Token)
 }
-impl Display for Condition {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Condition[condition={:#?}, if_true=[{}]]", self.condition,
-               self.if_true.iter().map(|ele| format!("{:#?}", ele)).collect::<Vec<String>>().join(","))
-    }
-}
 impl Display for Argument {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Argument[name={}, type={}, default={}]", self.name, self.type_,
-               if self.default == None {"None".to_string()} else {format!("{:#?}", self.default.clone().unwrap())})
+        write!(f, "{}{}{}", self.name,
+               if self.type_ != TypeObj::any() {format!(": {}", self.type_)} else {"".to_string()},
+               if let Some(r) = &self.default {format!(": {}", r.get_raw().trim())} else {"".to_string()}
+        )
     }
 }
 impl Element {
@@ -342,55 +339,33 @@ impl Element {
                                                             var_type, content_type))
                 } else {Ok(var_type)}
             },
-            Element::Class {content, attrs, args, ..} => {
-                for expr in content {
-                    if let Element::Declare {variable, content, ..} = expr {
+            Element::Class {content, inst_attrs, args, ..} => {
+                typelist.add_set();
+                let class_attrs = HashMap::new();
+                for expr in content.iter_mut() {
+                    expr.eval_type(typelist)?;
+                    if let Element::Declare {variable, content, flags, ..} = expr {
                         content.eval_type(typelist)?;
-                        attrs.insert(variable.get_name(), *content.clone());
+                        if flags.contains(&Flag::Inst) && args != &None {todo!("raise error here")}
+                        if flags.contains(&Flag::Inst) {inst_attrs.insert(variable.get_name(), *content.clone());}
                     }
                 }
-                if let Some(args) = args {
-                    if attrs.contains_key("#init") {
+                if let Some(_) = args {
+                    if class_attrs.contains_key("#init") {
                         todo!("raise error here")
                     }
-                    attrs.insert("#init".to_string(), Element::Procedure {
-                        position: Default::default(),
-                        raw: "".to_string(),
-                        is_fn: false,
-                        args: args.clone(),
-                        return_type: TypeObj::null(),
-                        content: args.iter().map(|a| Element::Declare {
-                            position: Default::default(),
-                            raw: "".to_string(),
-                            variable: Box::new(Element::Variable {
-                                position: Default::default(),
-                                raw: "".to_string(),
-                                name: a.name.clone(),
-                                parent: Box::new(Element::Variable {
-                                    position: Default::default(),
-                                    raw: "#".to_string(),
-                                    name: "#".to_string(),
-                                    parent: Box::new(Element::NullElement)
-                                })
-                            }),
-                            content: Box::new(Element::Variable {
-                                position: Default::default(),
-                                raw: "".to_string(),
-                                name: a.name.clone(),
-                                parent: Box::new(Element::NullElement)
-                            }),
-                            flags: vec![],
-                            type_: a.type_.clone()
-                        }).collect()
-                    });
                 }
-                Ok(TypeObj::Compound(Box::new(self.clone())))
-            },
+                typelist.pop_set();
+                Ok(TypeObj::Compound {
+                    class_attrs,
+                    inst_attrs: inst_attrs.clone()
+                })
+            }
             Element::NullElement |
             Element::Delete {..} |
             Element::Comment {..} |
             Element::Return {..} => Ok(TypeObj::null()),
-            Element::Token(Token{position,..}) =>
+            Element::Token(Token{position, ..}) =>
                 Err(ZyxtError::from_pos(position).error_2_1_0(self.get_raw()))
         }
     }

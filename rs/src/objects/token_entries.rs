@@ -846,6 +846,15 @@ pub fn compound_token_entries_2() -> Vec<CompoundTokenEntry<'static>> {
             ..Default::default()
         },
         CompoundTokenEntry{
+            value: "inst",
+            type_: TokenType::Flag(Flag::Inst),
+            combination: &[
+                Pattern::Value(TokenType::Variable, "inst"),
+            ],
+            categories: &[TokenCategory::ValueStart],
+            ..Default::default()
+        },
+        CompoundTokenEntry{
             value: "true",
             type_: TokenType::LiteralMisc,
             combination: &[

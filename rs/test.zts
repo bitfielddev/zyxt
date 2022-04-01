@@ -100,3 +100,4 @@ Point1 := class {
         #.y = y;
     }
 };
+Point1(2, 3);

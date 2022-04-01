@@ -129,7 +129,7 @@ impl Display for OprType {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[allow(dead_code)]
-pub enum Flag {Hoi, Pub, Priv, Prot, Const}
+pub enum Flag {Hoi, Pub, Priv, Prot, Const, Inst}
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Keyword {If, Else, Elif, Do, While, For, Delete, Return, Proc, Fn, Pre, Defer, Class, Struct}
 #[derive(Copy, Clone, Debug, PartialEq)]

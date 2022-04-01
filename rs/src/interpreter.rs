@@ -1,5 +1,5 @@
 use crate::objects::deferstack::DeferStack;
-use crate::ZyxtError;
+use crate::{TypeObj, ZyxtError};
 use crate::objects::element::{Argument, Element};
 use crate::objects::variable::Variable;
 use crate::objects::varstack::Stack;
@@ -100,7 +100,7 @@ pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: 
             deferlist.add_defer(content.clone());
             Ok(Variable::Null)
         },
-        Element::Class {..} => todo!()
+        Element::Class {..} => Ok(Variable::Type(TypeObj::Compound(Box::new(input.clone())))),
     }
 }
 

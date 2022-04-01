@@ -1,13 +1,18 @@
+use std::collections::HashMap;
 use std::fmt::{Debug, Display, Formatter};
 use crate::Element;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum TypeObj {
     Prim {
         name: String,
         type_args: Vec<TypeObj>
     },
-    Compound(Box<Element>)
+    Compound {
+        class_attrs: HashMap<String, Element>,
+        inst_attrs: HashMap<String, Element>,
+    },
+    //Type // todo
 }
 
 impl Display for TypeObj {
@@ -18,16 +23,8 @@ impl Display for TypeObj {
                     format!("{}<{}>", name,
                             type_args.iter().map(|arg| format!("{}", arg)).collect::<Vec<String>>().join(", "))
                 } else {name.to_string()},
-            TypeObj::Compound(ele) => format!("{}", ele.get_name())
+            TypeObj::Compound {..} => todo!()
         })
-    }
-}
-impl Debug for TypeObj {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TypeObj::Prim{..} => write!(f, "{}", self.to_string()),
-            TypeObj::Compound(ele) => write!(f, "(TypeObj) {:#?}", ele)
-        }
     }
 }
 impl TypeObj {
@@ -42,7 +39,7 @@ impl TypeObj {
                 raw: self.to_string(),
                 parent: Box::new(Element::NullElement)
             },
-            TypeObj::Compound(ele) => *ele.clone()
+            TypeObj::Compound { .. } => todo!()
         }
     }
 }
