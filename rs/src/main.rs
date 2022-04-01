@@ -19,7 +19,7 @@ use crate::instructor::gen_instructions;
 use crate::interpreter::interpret_asts;
 use crate::objects::element::Element;
 use crate::objects::typeobj::TypeObj;
-use crate::objects::varstack::Stack;
+use crate::objects::stack::Stack;
 
 fn compile(input: String, filename: &String, typelist: &mut Stack<TypeObj>,
            verbosity: u8) -> Result<Vec<Element>, ZyxtError> {

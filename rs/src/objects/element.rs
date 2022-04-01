@@ -8,7 +8,7 @@ use crate::interpreter::interpret_block;
 use crate::objects::deferstack::DeferStack;
 use crate::objects::variable::Variable;
 use crate::objects::typeobj::TypeObj;
-use crate::objects::varstack::Stack;
+use crate::objects::stack::Stack;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {

@@ -8,7 +8,7 @@ use crate::interpreter::interpret_expr;
 use crate::objects::deferstack::DeferStack;
 use crate::objects::typeobj::TypeObj;
 use crate::objects::variable::Variable;
-use crate::objects::varstack::Stack;
+use crate::objects::stack::Stack;
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();

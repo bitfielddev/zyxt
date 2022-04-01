@@ -2,7 +2,7 @@ use crate::objects::deferstack::DeferStack;
 use crate::{TypeObj, ZyxtError};
 use crate::objects::element::{Argument, Element};
 use crate::objects::variable::Variable;
-use crate::objects::varstack::Stack;
+use crate::objects::stack::Stack;
 
 
 pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: &mut DeferStack) -> Result<Variable, ZyxtError> {

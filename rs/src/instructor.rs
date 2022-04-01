@@ -1,4 +1,4 @@
-use crate::objects::varstack::Stack;
+use crate::objects::stack::Stack;
 use crate::objects::element::Element;
 use crate::objects::typeobj::TypeObj;
 use crate::ZyxtError;
