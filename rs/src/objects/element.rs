@@ -342,11 +342,47 @@ impl Element {
                                                             var_type, content_type))
                 } else {Ok(var_type)}
             },
-            Element::Class {content, ..} => {
+            Element::Class {content, attrs, args, ..} => {
                 for expr in content {
-                    if let Element::Declare {..} = expr {
-
+                    if let Element::Declare {variable, content, ..} = expr {
+                        content.eval_type(typelist)?;
+                        attrs.insert(variable.get_name(), *content.clone());
                     }
+                }
+                if let Some(args) = args {
+                    if attrs.contains_key("#init") {
+                        todo!("raise error here")
+                    }
+                    attrs.insert("#init".to_string(), Element::Procedure {
+                        position: Default::default(),
+                        raw: "".to_string(),
+                        is_fn: false,
+                        args: args.clone(),
+                        return_type: TypeObj::null(),
+                        content: args.iter().map(|a| Element::Declare {
+                            position: Default::default(),
+                            raw: "".to_string(),
+                            variable: Box::new(Element::Variable {
+                                position: Default::default(),
+                                raw: "".to_string(),
+                                name: a.name.clone(),
+                                parent: Box::new(Element::Variable {
+                                    position: Default::default(),
+                                    raw: "#".to_string(),
+                                    name: "#".to_string(),
+                                    parent: Box::new(Element::NullElement)
+                                })
+                            }),
+                            content: Box::new(Element::Variable {
+                                position: Default::default(),
+                                raw: "".to_string(),
+                                name: a.name.clone(),
+                                parent: Box::new(Element::NullElement)
+                            }),
+                            flags: vec![],
+                            type_: a.type_.clone()
+                        }).collect()
+                    });
                 }
                 Ok(TypeObj::Compound(Box::new(self.clone())))
             },
