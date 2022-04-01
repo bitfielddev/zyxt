@@ -100,7 +100,8 @@ pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: 
             deferlist.add_defer(content.clone());
             Ok(Variable::Null)
         },
-        Element::Class {class_attrs, inst_attrs, ..} => Ok(Variable::Type(TypeObj::Typedef{
+        Element::Class {class_attrs, inst_attrs, is_struct, ..} => Ok(Variable::Type(TypeObj::Typedef{
+            name: if is_struct {"struct"} else {"class"}.to_string(),
             generics: vec![],
             class_attrs, inst_attrs
         })),

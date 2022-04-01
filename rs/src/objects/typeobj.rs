@@ -8,7 +8,7 @@ pub enum TypeObj {
     Type { // str, bool, cpx<int> etc, is of type Typedef
         name: String,
         type_args: Vec<TypeObj>,
-        implementation: &'static TypeObj
+        implementation: Option<&'static TypeObj>
     },
     Typedef { // class, struct, (anything that implements a Type), is of type <type> (Typedef)
         name: String,
@@ -27,56 +27,58 @@ impl Display for TypeObj {
                     format!("{}<{}>", name,
                             type_args.iter().map(|arg| format!("{}", arg)).collect::<Vec<String>>().join(", "))
                 } else {name.to_string()},
-            TypeObj::Typedef {..} => todo!()
+            TypeObj::Typedef {name, ..} => name.clone()
         })
     }
 }
 impl TypeObj {
-    pub fn from_str(s: &str) -> Self {TypeObj::Type {name: s.to_string(), type_args: vec![], implementation: match s {
-        "#null" => TypeObj::null_impl(),
-        "#any" => TypeObj::any_impl(),
-        "#num" => TypeObj::num_impl(),
-        "bool" => TypeObj::bool_impl(),
-        _ => panic!()
-    }}}
+    pub fn from_str(s: &str) -> Self {TypeObj::Type {name: s.to_string(), type_args: vec![], implementation: None}}
     pub fn null() -> Self { TypeObj::from_str("#null") }
     pub fn any() -> Self { TypeObj::from_str("#any") }
-    pub fn null_impl() -> &'static Self { &TypeObj::Typedef {
-        name: "class".to_string(),
-        generics: vec![],
-        class_attrs: Default::default(),
-        inst_attrs: Default::default()
-    } }
-    pub fn any_impl() -> &'static Self { &TypeObj::Typedef {
-        name: "class".to_string(),
-        generics: vec![],
-        class_attrs: Default::default(),
-        inst_attrs: Default::default()
-    } }
-    pub fn num_impl() -> &'static Self { &TypeObj::Typedef {
-        name: "class".to_string(),
-        generics: vec![],
-        class_attrs: Default::default(),
-        inst_attrs: Default::default()
-    } }
-    pub fn bool_impl() -> &'static Self { &TypeObj::Typedef {
-        name: "class".to_string(),
-        generics: vec![],
-        class_attrs: Default::default(),
-        inst_attrs: Default::default()
-    } }
-    pub fn proc_impl() -> &'static Self { &TypeObj::Typedef {
-        name: "class".to_string(),
-        generics: vec![],
-        class_attrs: Default::default(),
-        inst_attrs: Default::default()
-    } }
-    pub fn fn_impl() -> &'static Self { &TypeObj::Typedef {
-        name: "class".to_string(),
-        generics: vec![],
-        class_attrs: Default::default(),
-        inst_attrs: Default::default()
-    } }
+    /*pub fn get_impl(s: &str) -> &'static Self { match s {
+        "#null" => &TypeObj::Typedef {
+            name: "class".to_string(),
+            generics: vec![],
+            class_attrs: Default::default(),
+            inst_attrs: Default::default()
+        },
+        "#any" => &TypeObj::Typedef {
+            name: "class".to_string(),
+            generics: vec![],
+            class_attrs: Default::default(),
+            inst_attrs: Default::default()
+        },
+        "#num" => &TypeObj::Typedef {
+            name: "class".to_string(),
+            generics: vec![],
+            class_attrs: Default::default(),
+            inst_attrs: Default::default()
+        },
+        "bool" => &TypeObj::Typedef {
+            name: "class".to_string(),
+            generics: vec![],
+            class_attrs: Default::default(),
+            inst_attrs: Default::default()
+        },
+        "proc" => &TypeObj::Typedef {
+            name: "class".to_string(),
+            generics: vec![],
+            class_attrs: Default::default(),
+            inst_attrs: Default::default()
+        },
+        "fn" => &TypeObj::Typedef {
+            name: "class".to_string(),
+            generics: vec![],
+            class_attrs: Default::default(),
+            inst_attrs: Default::default()
+        },
+        _ => &TypeObj::Typedef {
+            name: "class".to_string(),
+            generics: vec![],
+            class_attrs: Default::default(),
+            inst_attrs: Default::default()
+        }
+    } }*/
     pub fn as_element(&self) -> Element {
         match self {
             TypeObj::Type {name, ..} => Element::Variable {

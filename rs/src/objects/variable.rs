@@ -744,9 +744,7 @@ impl Variable {
                 "type" => Variable::Type(TypeObj::null()),
                 _ => panic!("{:#?}", type_)
             }),
-            TypeObj::Compound(mut ele) => {
-                Variable::default(ele.eval_type(typelist)?, typelist)
-            }
+            _ => panic!()
         }
     }
     pub fn from_type_content(type_: TypeObj, content: String) -> Variable {
@@ -798,7 +796,8 @@ impl Variable {
             Variable::Proc {is_fn, return_type, ..} =>
                 TypeObj::Type {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),
-                    type_args: vec![TypeObj::null(), return_type.clone()]
+                    type_args: vec![TypeObj::null(), return_type.clone()],
+                    implementation: None
                 }, // TODO angle bracket thingy when it is implemented
             Variable::Null => TypeObj::null(),
             _ => panic!()

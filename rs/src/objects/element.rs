@@ -181,6 +181,13 @@ impl Element {
     pub fn get_name(&self) -> String {
         if let Element::Variable {name: type1, ..} = self {return type1.clone()} else {panic!("not variable")}
     }
+    pub fn as_type(&self) -> TypeObj {
+        if let Element::Variable {name: type1, ..} = self {return TypeObj::Type {
+            name: type1.clone(),
+            type_args: vec![],
+            implementation: None
+        }} else {panic!("not variable")}
+    }
     pub fn bin_op_return_type(type_: &OprType, type1: TypeObj, type2: TypeObj,
                               typelist: &mut Stack<TypeObj>, position: &Position) -> Result<TypeObj, ZyxtError> {
         if type_ == &OprType::TypeCast {
@@ -241,6 +248,7 @@ impl Element {
         if let TypeObj::Type {name, type_args, ..} = called.eval_type(typelist)? {
             if name == "proc".to_string() || name == "fn".to_string() {return Ok(type_args[1].clone())}
         } // TODO type checking for args when arrays are implemented
+        return Ok(TypeObj::null());
         if let Some(v) = Variable::default(called.eval_type(typelist)?, typelist)?.call(
             args.iter_mut().map(|e| Variable::default(e.eval_type(typelist)?, typelist))
                 .collect::<Result<Vec<_>, _>>()?
@@ -252,9 +260,6 @@ impl Element {
                              called.eval_type(typelist)?,
                              "#call".to_string()))
         }
-    }
-    pub fn as_type(&self) -> TypeObj {
-        todo!()
     }
     pub fn eval_type(&mut self, typelist: &mut Stack<TypeObj>) -> Result<TypeObj, ZyxtError> {
         match self {
@@ -319,7 +324,7 @@ impl Element {
                 Ok(TypeObj::Type {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),
                     type_args: vec![TypeObj::null(), return_type.clone()],
-                    implementation: if *is_fn {TypeObj::fn_impl} else {TypeObj::proc_impl}()
+                    implementation: None
                 })
             }, // TODO angle bracket thingy when it is implemented
             Element::Preprocess {content, ..} => {

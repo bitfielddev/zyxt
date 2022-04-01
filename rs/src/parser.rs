@@ -116,7 +116,7 @@ fn get_arguments(cursor: &mut usize, elements: &Vec<Element>, raw: &mut String, 
         Ok(Argument{
             name,
             type_: if type_ == Element::NullElement {TypeObj::any()}
-            else {TypeObj::Compound(Box::new(type_))},
+            else {type_.as_type()},
             default})
     }, None, TokenType::Comma,
                TokenType::Bar, TokenType::Bar,
@@ -247,9 +247,11 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>, filename: &String) -
             new_elements.push(Element::Class {
                 position: position.clone(),
                 raw,
-                attrs: Default::default(),
+                is_struct: keyword == &Keyword::Struct,
+                class_attrs: Default::default(),
+                inst_attrs: Default::default(),
                 content,
-                args
+                args,
             })
         } else {new_elements.push(selected.clone())}} else {new_elements.push(selected.clone())}
         cursor += 1;
@@ -408,7 +410,13 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Result<Vec<
                         if let Element::Block{..} = selected {break;}
                         catcher.push(selected.clone());
                     }
-                    TypeObj::Compound(Box::new(parse_expr(catcher, filename)?))
+                    if let Element::Variable {name, ..} = parse_expr(catcher, filename)? {
+                        TypeObj::Type {
+                            name,
+                            type_args: vec![],
+                            implementation: None
+                        }
+                    } else {todo!("throw error here")}
                 } else {TypeObj::null()};
 
                 if let Element::Block{content, ..} = selected {
