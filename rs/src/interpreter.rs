@@ -41,7 +41,7 @@ pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: 
         },
         Element::Call {called, args: input_args, position, ..} => {
             if let Element::Variable {ref parent, ref name, ..} = *called {
-                if name == &"println".to_string() && parent.get_name() == "std".to_string() {
+                if name == &"println".to_string() && parent.get_name() == *"std" {
                     println!("{}", input_args.into_iter().
                         map(|arg| interpret_expr(arg, varlist, deferlist))
                         .collect::<Result<Vec<_>, _>>()?
@@ -51,15 +51,13 @@ pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: 
                     return Ok(Variable::Null)
                 }
             }
-            let to_call = interpret_expr(*called.clone(), varlist, deferlist)?;
+            let to_call = interpret_expr(*called, varlist, deferlist)?;
             if let Variable::Proc {is_fn, args, content, ..} = to_call {
                 let mut fn_varlist: Stack<Variable> = Stack::<Variable>::default_variable();
-                let mut cursor = 0;
-                for Argument {name, default, ..} in args {
+                for (cursor, Argument {name, default, ..}) in args.into_iter().enumerate() {
                     let input_arg = if input_args.len() > cursor {input_args.get(cursor).unwrap().clone()}
                     else {default.unwrap()};
                     fn_varlist.declare_val(&name, &interpret_expr(input_arg, varlist, deferlist)?);
-                    cursor += 1;
                 }
                 let proc_varlist = if is_fn {&mut fn_varlist} else {
                     varlist.add_set();
@@ -69,12 +67,10 @@ pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: 
                 let res = interpret_block(content, proc_varlist, deferlist, true, false);
                 proc_varlist.pop_set();
                 res
-            } else {
-                if let Some(v) = to_call.call(input_args.into_iter()
-                    .map(|a| interpret_expr(a, varlist, deferlist))
-                    .collect::<Result<Vec<_>, _>>()?) {Ok(v)} else {
-                    Err(ZyxtError::from_pos(&position).error_3_1_1(to_call, "#call".to_string()))
-                }
+            } else if let Some(v) = to_call.call(input_args.into_iter()
+                .map(|a| interpret_expr(a, varlist, deferlist))
+                .collect::<Result<Vec<_>, _>>()?) {Ok(v)} else {
+                Err(ZyxtError::from_pos(&position).error_3_1_1(to_call, "#call".to_string()))
             }
         },
         Element::If {conditions, ..} => {
@@ -97,7 +93,7 @@ pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: 
             is_fn, args, return_type, content
         }),
         Element::Defer {content, ..} => {
-            deferlist.add_defer(content.clone());
+            deferlist.add_defer(content);
             Ok(Variable::Null)
         },
         Element::Class {class_attrs, inst_attrs, is_struct, ..} => Ok(Variable::Type(TypeObj::Typedef{
@@ -153,7 +149,7 @@ pub fn interpret_asts(input: Vec<Element>) -> Result<i32, ZyxtError> {
                 deferlist.execute_and_clear(&mut varlist)?;
                 Ok(v)
             } else {
-                Err(ZyxtError::from_pos(&position).error_4_2(return_val))
+                Err(ZyxtError::from_pos(position).error_4_2(return_val))
             }
         } else {
             last = interpret_expr(ele.clone(), &mut varlist, &mut deferlist)?;

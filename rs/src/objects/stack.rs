@@ -40,8 +40,8 @@ impl <T: Clone> Stack<T> {
     pub fn pop_set(&mut self) {
         self.0.pop();
     }
-    pub fn declare_val(&mut self, name: &String, value: &T) {
-        self.0.last_mut().unwrap().insert(name.clone(), value.clone());
+    pub fn declare_val(&mut self, name: &str, value: &T) {
+        self.0.last_mut().unwrap().insert(name.to_string(), value.clone());
     }
     pub fn set_val(&mut self, name: &String, value: &T, position: &Position) -> Result<(), ZyxtError>{
         for set in self.0.iter_mut().rev() {

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
-use crate::{Element, Stack, ZyxtError};
+use crate::{Element, ZyxtError};
 use crate::objects::element::Argument;
 use crate::objects::token::OprType;
 use crate::objects::typeobj::TypeObj;
@@ -64,7 +64,7 @@ impl Display for Variable {
                 format!("{}|{}|: {}",
                     if *is_fn {"fn"} else {"proc"},
                     args.iter().map(|a| a.to_string()).collect::<Vec<String>>().join(","),
-                        return_type.to_string()),
+                        return_type),
             Variable::Null => "null".to_string(),
             Variable::Return(v) => v.to_string()
         })
@@ -94,8 +94,8 @@ impl Variable {
                 Variable::F64(_) => mult!(),
                 Variable::Proc{..} => panic!(),
                 Variable::Return(v) => v.call(args),
-                Variable::Type(v) => todo!(),
-                Variable::ClassInstance {type_, ..} => todo!(),
+                Variable::Type(_v) => todo!(),
+                Variable::ClassInstance {type_: _, ..} => todo!(),
                 _ => None
             }
         } else {None}
@@ -707,7 +707,7 @@ impl Variable {
                     "bool" => match self.clone() {
                         Variable::I32(v) => Some(Variable::Bool(v != 0)),
                         Variable::F64(v) => Some(Variable::Bool(v != 0.0)),
-                        Variable::Str(v) => Some(Variable::Bool(v.len() != 0)),
+                        Variable::Str(v) => Some(Variable::Bool(!v.is_empty())),
                         Variable::Bool(..) => Some(self.clone()),
                         Variable::Type(..) => Some(Variable::Bool(true)),
                         Variable::Null => Some(Variable::Bool(false)),
@@ -721,7 +721,7 @@ impl Variable {
             _ => None
         }
     }
-    pub fn default(type_: TypeObj, typelist: &mut Stack<TypeObj>) -> Result<Self, ZyxtError> {
+    pub fn default(type_: TypeObj) -> Result<Self, ZyxtError> {
         match type_.clone() {
             TypeObj::Type {name, ..} => Ok(match &*name {
                 "i8" => Variable::I8(0),

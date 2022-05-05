@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use crate::objects::token::{TokenCategory, TokenType, get_order, Side, OprType, Keyword};
 use crate::objects::element::{Argument, Condition, Element};
 use crate::{Token, ZyxtError};
-use crate::objects::position::Position;
 use crate::objects::typeobj::TypeObj;
 
 macro_rules! check_and_update_cursor {
@@ -16,7 +15,7 @@ macro_rules! check_and_update_cursor {
 }
 
 fn catch_between(opening: TokenType, closing: TokenType,
-                 elements: &Vec<Element>, cursor: &mut usize) -> Result<Vec<Element>, ZyxtError> {
+                 elements: &[Element], cursor: &mut usize) -> Result<Vec<Element>, ZyxtError> {
     let mut paren_level = 0;
     let mut catcher: Vec<Element> = vec![];
     let opening_char = match opening {
@@ -47,21 +46,21 @@ fn catch_between(opening: TokenType, closing: TokenType,
     Ok(catcher)
 }
 
-fn base_split<T: Clone>(parser_fn: &dyn Fn(Vec<Element>, &String) -> Result<T, ZyxtError>, default_val: Option<T>,
+fn base_split<T: Clone>(parser_fn: &dyn Fn(Vec<Element>) -> Result<T, ZyxtError>, default_val: Option<T>,
                         divider: TokenType, opening: TokenType, closing: TokenType,
-                        elements: Vec<Element>, filename: &String, ignore_empty: bool) -> Result<Vec<T>, ZyxtError> {
+                        elements: Vec<Element>, ignore_empty: bool) -> Result<Vec<T>, ZyxtError> {
     let mut out: Vec<T> = vec![];
     let mut catcher: Vec<Element> = vec![];
     let mut paren_level = 0;
     for element in elements {
         if let Element::Token(Token{type_, ..}) = element {
             if type_ == divider && paren_level == 0 {
-                if !ignore_empty && catcher.len() == 0 {
+                if !ignore_empty && catcher.is_empty() {
                     todo!()
-                } else if catcher.len() == 0 {
+                } else if catcher.is_empty() {
                     out.push(default_val.clone().unwrap())
-                } else if catcher.len() != 0 {
-                    out.push(parser_fn(catcher.clone(), filename)?);
+                } else if !catcher.is_empty() {
+                    out.push(parser_fn(catcher.clone())?);
                 }
                 catcher.clear();
             } else {
@@ -80,36 +79,36 @@ fn base_split<T: Clone>(parser_fn: &dyn Fn(Vec<Element>, &String) -> Result<T, Z
             _ => '?'
         }.to_string())) // TODO
     }
-    if out.len() == 0 && catcher.len() == 0 {return Ok(vec![]);}
-    if !ignore_empty && catcher.len() == 0 {
+    if out.is_empty() && catcher.is_empty() {return Ok(vec![]);}
+    if !ignore_empty && catcher.is_empty() {
         todo!()
-    } else if catcher.len() == 0 {
+    } else if catcher.is_empty() {
         out.push(default_val.unwrap())
-    } else if catcher.len() != 0 {
-        out.push(parser_fn(catcher.clone(), filename)?);
+    } else if !catcher.is_empty() {
+        out.push(parser_fn(catcher.clone())?);
     }
     Ok(out)
 }
 
 fn split_between(divider: TokenType, opening: TokenType, closing: TokenType,
-                 elements: Vec<Element>, filename: &String, ignore_empty: bool) -> Result<Vec<Element>, ZyxtError> {
+                 elements: Vec<Element>, ignore_empty: bool) -> Result<Vec<Element>, ZyxtError> {
     base_split(&parse_expr, Some(Element::NullElement), divider, opening, closing,
-               elements, filename, ignore_empty)
+               elements, ignore_empty)
 }
 
-fn get_arguments(cursor: &mut usize, elements: &Vec<Element>, raw: &mut String, filename: &String) -> Result<Vec<Argument>, ZyxtError> {
-    let contents = catch_between(TokenType::Bar, TokenType::Bar, &elements, cursor)?;
+fn get_arguments(cursor: &mut usize, elements: &[Element], raw: &mut String) -> Result<Vec<Argument>, ZyxtError> {
+    let contents = catch_between(TokenType::Bar, TokenType::Bar, elements, cursor)?;
     *raw = format!("{}{}{}", raw, contents.iter()
-        .map(|e| e.get_raw().clone())
+        .map(|e| e.get_raw())
         .collect::<Vec<String>>().join(""), elements[*cursor].get_raw());
-    base_split(&|raw_arg, filename| {
+    base_split(&|raw_arg| {
         let parts = split_between(TokenType::Colon, TokenType::Null, TokenType::Null,
-                                  raw_arg, filename, true)?;
+                                  raw_arg, true)?;
         let name = if let Some(Element::Variable{name, ..}) = parts.get(0) {name.clone()} else {
             return Err(ZyxtError::from_pos(parts.get(0).unwrap().get_pos()).error_2_1_15(",".to_string()))
         };
         let type_ = if let Some(t) = parts.get(1) {t.clone()} else {Element::NullElement};
-        let default = if let Some(d) = parts.get(2) {Some(d.clone())} else {None};
+        let default = parts.get(2).cloned();
         if parts.len() > 3 {
             return Err(ZyxtError::from_pos(parts.get(3).unwrap().get_pos()).error_2_1_14(parts[3].get_raw().trim().to_string()))
         }
@@ -120,11 +119,10 @@ fn get_arguments(cursor: &mut usize, elements: &Vec<Element>, raw: &mut String, 
             default})
     }, None, TokenType::Comma,
                TokenType::Bar, TokenType::Bar,
-               contents,
-               filename, false)
+               contents, false)
 }
 
-fn parse_parens(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+fn parse_parens(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     let mut cursor = 0;
     let mut selected;
     let mut new_elements: Vec<Element> = vec![];
@@ -139,7 +137,7 @@ fn parse_parens(elements: Vec<Element>, filename: &String) -> Result<Vec<Element
                         let paren_contents = catch_between(TokenType::OpenParen,
                                                            TokenType::CloseParen,
                                                            &elements, &mut cursor)?;
-                        new_elements.push(parse_expr(paren_contents, &filename)?);
+                        new_elements.push(parse_expr(paren_contents)?);
                     } else {new_elements.push(Element::Token(selected.clone()))} // or else it's function args
                 } else {new_elements.push(Element::Token(selected.clone()))}
             } else if selected.type_ == TokenType::OpenCurlyParen { // blocks, {
@@ -150,10 +148,10 @@ fn parse_parens(elements: Vec<Element>, filename: &String) -> Result<Vec<Element
                 new_elements.push(Element::Block {
                     position: selected.position.clone(),
                     raw: format!("{}{}{}", raw, paren_contents.iter()
-                        .map(|e| e.get_raw().clone())
+                        .map(|e| e.get_raw())
                         .collect::<Vec<String>>().join(""),
                         elements[cursor].get_raw()),
-                    content: parse_block(paren_contents, filename)?
+                    content: parse_block(paren_contents)?
                 });
             } else {new_elements.push(Element::Token(selected.clone()))}
         } else {new_elements.push(selected.clone())}
@@ -163,7 +161,7 @@ fn parse_parens(elements: Vec<Element>, filename: &String) -> Result<Vec<Element
     Ok(new_elements)
 }
 
-fn parse_preprocess_and_defer(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+fn parse_preprocess_and_defer(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     let mut cursor = 0;
     let mut selected;
     let mut new_elements = vec![];
@@ -193,7 +191,7 @@ fn parse_preprocess_and_defer(elements: Vec<Element>, filename: &String) -> Resu
                     })
                 }
             } else {
-                let content = parse_expr(elements[cursor..].to_vec(), filename)?;
+                let content = parse_expr(elements[cursor..].to_vec())?;
                 if is_pre {
                     new_elements.push(Element::Preprocess {
                         position: position.clone(),
@@ -215,7 +213,7 @@ fn parse_preprocess_and_defer(elements: Vec<Element>, filename: &String) -> Resu
     Ok(new_elements)
 }
 
-fn parse_classes_structs_and_mixins(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+fn parse_classes_structs_and_mixins(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     let mut cursor = 0;
     let mut selected;
     let mut new_elements = vec![];
@@ -232,17 +230,15 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>, filename: &String) -
                 if keyword == &Keyword::Class {
                     return Err(ZyxtError::from_pos(position).error_2_1_17())
                 }
-                args = Some(get_arguments(&mut cursor, &elements, &mut raw, filename)?);
+                args = Some(get_arguments(&mut cursor, &elements, &mut raw)?);
                 check_and_update_cursor!(cursor, selected, elements);
             }
             let mut content = vec![];
             if let Element::Block {content: block_content, raw: block_raw, ..} = selected {
                 content = block_content.clone();
                 raw = format!("{}{}", raw, block_raw);
-            } else {
-                if keyword == &Keyword::Class {
-                    return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_18(keyword))
-                }
+            } else if keyword == &Keyword::Class {
+                return Err(ZyxtError::from_pos(selected.get_pos()).error_2_1_18(keyword))
             }
             new_elements.push(Element::Class {
                 position: position.clone(),
@@ -259,7 +255,7 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>, filename: &String) -
     Ok(new_elements)
 }
 
-fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     let mut cursor = 0;
     let mut selected;
     let mut new_elements: Vec<Element> = vec![];
@@ -329,7 +325,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> R
                             _ => panic!("{}", selected.value)
                         }
                     } else if selected.type_ == TokenType::LiteralNumber{
-                        if selected.value.contains(".") {"f64"} else {"i32"}
+                        if selected.value.contains('.') {"f64"} else {"i32"}
                     } else {"str"}),
                     content: selected.value.clone()
                 }
@@ -346,18 +342,18 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> R
                                              TokenType::CloseParen,
                                              &elements, &mut cursor)?;
                 raw = format!("{}{}{}", raw, contents.iter()
-                    .map(|e| e.get_raw().clone())
+                    .map(|e| e.get_raw())
                     .collect::<Vec<String>>().join(""),
                     elements[cursor].get_raw());
                 let args = split_between(TokenType::Comma,
                                                        TokenType::OpenParen, TokenType::CloseParen,
                                                        contents,
-                                                       filename, false)?;
+                                                       false)?;
                 catcher = Element::Call {
                     position: selected.position.clone(),
                     raw: format!("{}{}", catcher.get_raw(), raw),
                     called: Box::new(catcher),
-                    args, kwargs: Box::new(HashMap::new())
+                    args, kwargs: HashMap::new()
                 }
             }
             _ => {
@@ -376,7 +372,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>, filename: &String) -> R
     Ok(new_elements)
 }
 
-fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     let mut new_elements = vec![];
     let mut cursor = 0;
     let mut selected;
@@ -398,7 +394,7 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Result<Vec<
                 }
 
                 let args = if let Element::Token(Token{type_: TokenType::Bar, ..}) = selected {
-                    get_arguments(&mut cursor, &elements, &mut raw, filename)?
+                    get_arguments(&mut cursor, &elements, &mut raw)?
                 } else {cursor -= 1; vec![]};
 
                 check_and_update_cursor!(cursor, selected, elements);
@@ -410,7 +406,7 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Result<Vec<
                         if let Element::Block{..} = selected {break;}
                         catcher.push(selected.clone());
                     }
-                    if let Element::Variable {name, ..} = parse_expr(catcher, filename)? {
+                    if let Element::Variable {name, ..} = parse_expr(catcher)? {
                         TypeObj::Type {
                             name,
                             type_args: vec![],
@@ -427,7 +423,7 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Result<Vec<
                         content: content.clone()
                     });
                 } else {
-                    let content = parse_expr(elements[cursor..].to_vec(), filename)?;
+                    let content = parse_expr(elements[cursor..].to_vec())?;
                     new_elements.push(Element::Procedure {
                         position, is_fn, args,
                         return_type,
@@ -443,28 +439,28 @@ fn parse_procs_and_fns(elements: Vec<Element>, filename: &String) -> Result<Vec<
     Ok(new_elements)
 }
 
-fn parse_assignment_oprs(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
-    if elements.len() == 0 {return Ok(vec![])}
+fn parse_assignment_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
+    if elements.is_empty() {return Ok(vec![])}
     for (i, ele) in elements.iter().enumerate() {
         if let Element::Token(Token{type_: TokenType::AssignmentOpr(opr_type), position, ..}) = ele {
             if i == 0 || i == elements.len()-1 {
                 return Err(ZyxtError::from_pos(position).error_2_1_3(ele.get_raw().trim().to_string()))
             }
-            let variable = parse_expr(vec![elements[i-1].clone()], filename)?;
+            let variable = parse_expr(vec![elements[i-1].clone()])?;
             let content = if opr_type == &OprType::Null {
-                parse_expr(elements[i+1..].to_vec(), filename)?
+                parse_expr(elements[i+1..].to_vec())?
             } else {
-                let operand2 = parse_expr(elements[i+1..].to_vec(), filename)?;
+                let operand2 = parse_expr(elements[i+1..].to_vec())?;
                 Element::BinaryOpr {
                     position: position.clone(),
-                    type_: opr_type.clone(),
-                    raw: operand2.get_raw().clone(),
+                    type_: *opr_type,
+                    raw: operand2.get_raw(),
                     operand1: Box::new(variable.clone()),
                     operand2: Box::new(operand2)
                 }
             };
 
-            return Ok(elements[..i-1].to_vec().into_iter()
+            return Ok(elements[..i-1].iter().cloned()
                 .chain(vec![Element::Set {
                     position: position.clone(),
                     raw: format!("{}{}{}", variable.get_raw(), ele.get_raw(), content.get_raw()),
@@ -476,16 +472,16 @@ fn parse_assignment_oprs(elements: Vec<Element>, filename: &String) -> Result<Ve
     Ok(elements)
 }
 
-fn parse_un_oprs(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
-    if elements.len() == 0 {return Ok(vec![])}
+fn parse_un_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
+    if elements.is_empty() {return Ok(vec![])}
     for (i, ele) in elements.iter().enumerate().rev() {
         if let Element::Token(Token{type_: TokenType::UnaryOpr(opr_type, opr_side), position, ..}) = ele {
             if opr_side == &Side::Left {
                 if i == elements.len()-1 {
                     return Err(ZyxtError::from_pos(position).error_2_1_4(ele.get_raw().trim().to_string()))
                 }
-                let operand = parse_expr(elements[i+1..].to_vec(), filename)?;
-                return Ok(elements[..i].to_vec().into_iter()
+                let operand = parse_expr(elements[i+1..].to_vec())?;
+                return Ok(elements[..i].iter().cloned()
                     .chain(vec![Element::UnaryOpr {
                         position: position.clone(),
                         type_: *opr_type,
@@ -496,7 +492,7 @@ fn parse_un_oprs(elements: Vec<Element>, filename: &String) -> Result<Vec<Elemen
                 if i == 0 {
                     return Err(ZyxtError::from_pos(position).error_2_1_4(ele.get_raw().trim().to_string()))
                 }
-                let operand = parse_expr(elements[..i].to_vec(), filename)?;
+                let operand = parse_expr(elements[..i].to_vec())?;
                 return Ok(vec![Element::UnaryOpr {
                     position: position.clone(),
                     type_: *opr_type,
@@ -511,8 +507,8 @@ fn parse_un_oprs(elements: Vec<Element>, filename: &String) -> Result<Vec<Elemen
     Ok(elements)
 }
 
-fn parse_normal_oprs(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
-    if elements.len() == 0 {return Ok(vec![])}
+fn parse_normal_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
+    if elements.is_empty() {return Ok(vec![])}
     let mut highest_order_index: usize = 0;
     let mut highest_order = 0;
     let mut opr_detected = false;
@@ -521,16 +517,16 @@ fn parse_normal_oprs(elements: Vec<Element>, filename: &String) -> Result<Vec<El
             if i == 0 || i == elements.len()-1 {
                 return Err(ZyxtError::from_pos(position).error_2_1_3(value.clone()))
             }
-            if get_order(&opr_type) >= highest_order {
+            if get_order(opr_type) >= highest_order {
                 highest_order_index = i;
-                highest_order = get_order(&opr_type);
+                highest_order = get_order(opr_type);
                 opr_detected = true
             }}
     }
     Ok(if !opr_detected {elements}
     else if let Element::Token(Token{type_: TokenType::NormalOpr(opr_type), position, ..}) = &elements[highest_order_index] {
-        let operand1 = parse_expr(elements[..highest_order_index].to_vec(), filename)?;
-        let operand2 = parse_expr(elements[highest_order_index+1..].to_vec(), filename)?;
+        let operand1 = parse_expr(elements[..highest_order_index].to_vec())?;
+        let operand2 = parse_expr(elements[highest_order_index+1..].to_vec())?;
         vec![Element::BinaryOpr {
             position: position.clone(),
             type_: *opr_type,
@@ -541,14 +537,14 @@ fn parse_normal_oprs(elements: Vec<Element>, filename: &String) -> Result<Vec<El
     } else {elements})
 }
 
-fn parse_delete_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+fn parse_delete_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     let mut new_elements = vec![];
 
     for (i, ele) in elements.iter().enumerate() {
         if let Element::Token(Token{type_: TokenType::Keyword(Keyword::Delete), ..}) = ele {
             let vars_to_delete = split_between(TokenType::Comma,
                                                TokenType::Null, TokenType::Null,
-                                               elements[i+1..].to_vec(), filename, false)?;
+                                               elements[i+1..].to_vec(), false)?;
             let mut varnames = vec![];
             for var in vars_to_delete.iter() {
                 if let Element::Variable {name, ..} = var {
@@ -564,7 +560,7 @@ fn parse_delete_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
             new_elements.push(Element::Delete {
                 position: ele.get_pos().clone(),
                 raw: format!("{}{}", ele.get_raw(), elements[i+1..].iter()
-                    .map(|e| e.get_raw().clone())
+                    .map(|e| e.get_raw())
                     .collect::<Vec<String>>().join("")),
                 names: varnames
             });
@@ -575,12 +571,12 @@ fn parse_delete_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
     Ok(elements)
 }
 
-fn parse_return_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+fn parse_return_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     let mut new_elements = vec![];
 
     for (i, ele) in elements.iter().enumerate() {
         if let Element::Token(Token { type_: TokenType::Keyword(Keyword::Return), whitespace, value, .. }) = ele {
-            let return_val = parse_expr(elements[i+1..].to_vec(), filename)?;
+            let return_val = parse_expr(elements[i+1..].to_vec())?;
             new_elements.push(Element::Return {
                 position: ele.get_pos().clone(),
                 raw: format!("{}{}{}", whitespace, value, return_val.get_raw()),
@@ -593,7 +589,7 @@ fn parse_return_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
     Ok(elements)
 }
 
-fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     let mut cursor = 0;
     let mut selected;
     let mut new_elements: Vec<Element> = vec![];
@@ -611,23 +607,23 @@ fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Result<V
             let mut raw = format!("{}{}{}", declared_var.get_raw(), whitespace, value);
             let flags = if flag_pos == None {vec![]} else {
                 let mut f = vec![];
-                for i in flag_pos.unwrap()..cursor-1 {
-                    if let Element::Token(Token{type_: TokenType::Flag(flag), whitespace, value, ..}) = &elements[i] {
+                for ele in elements[flag_pos.unwrap()..cursor-1].iter() {
+                    if let Element::Token(Token{type_: TokenType::Flag(flag), whitespace, value, ..}) = &ele {
                         raw = format!("{}{}{}", whitespace, value, raw);
                         f.push(*flag);
                     } else {
-                        return Err(ZyxtError::from_pos(&Position{filename: filename.clone(), line: 0, column: 0})
-                            .error_2_1_6(elements[i].get_raw()))
+                        return Err(ZyxtError::from_pos(ele.get_pos())
+                            .error_2_1_6(ele.get_raw()))
                     }
                 }
                 f
             };
             for _ in 0..flags.len()+1 {new_elements.pop();}
-            let content = parse_expr(elements[cursor+1..].to_vec(), filename)?;
+            let content = parse_expr(elements[cursor+1..].to_vec())?;
             new_elements.push(Element::Declare {
                 position: position.clone(),
                 raw: format!("{}{}", raw, content.get_raw()),
-                variable: Box::new(parse_expr(vec![declared_var.clone()], filename)?),
+                variable: Box::new(parse_expr(vec![declared_var.clone()])?),
                 content: Box::new(content),
                 flags,
                 type_: TypeObj::null() // TODO type later
@@ -639,7 +635,7 @@ fn parse_declaration_expr(elements: Vec<Element>, filename: &String) -> Result<V
     Ok(new_elements)
 }
 
-pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     let mut cursor = 0;
     let mut selected;
     let mut new_elements: Vec<Element> = vec![];
@@ -688,7 +684,7 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
                             if let Element::Block {..} = catcher_selected {break}
                             else {catcher.push(catcher_selected.clone());}
                         };
-                        parse_expr(catcher, filename)?
+                        parse_expr(catcher)?
                     };
                     catcher_selected = &elements[cursor];
                     raw = format!("{}{}", raw, catcher_selected.get_raw());
@@ -721,54 +717,54 @@ pub fn parse_if_expr(elements: Vec<Element>, filename: &String) -> Result<Vec<El
     Ok(new_elements)
 }
 
-fn parse_unparen_calls(elements: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+fn parse_unparen_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     Ok(vec![Element::Call {
         position: elements[0].get_pos().clone(),
         raw: elements.iter()
-            .map(|e| e.get_raw().clone())
+            .map(|e| e.get_raw())
             .collect::<Vec<String>>().join(""),
         called: Box::new(elements[0].clone()),
         args: split_between(TokenType::Comma,
                             TokenType::Null, TokenType::Null,
                             elements[1..].to_vec(),
-                            filename, false)?,
-        kwargs: Box::new(Default::default())
+                            false)?,
+        kwargs: Default::default()
     }])
 }
 
-fn parse_expr(mut elements: Vec<Element>, filename: &String) -> Result<Element, ZyxtError> {
+fn parse_expr(mut elements: Vec<Element>) -> Result<Element, ZyxtError> {
     if elements.len() > 1 {
-        elements = parse_parens(elements, filename)?;
+        elements = parse_parens(elements)?;
     }
-    elements = parse_if_expr(elements, filename)?;
-    elements = parse_procs_and_fns(elements, filename)?;
-    elements = parse_preprocess_and_defer(elements, filename)?;
-    elements = parse_classes_structs_and_mixins(elements, filename)?;
-    //elements = parse_enums(elements, filename)?;
-    elements = parse_vars_literals_and_calls(elements, filename)?;
-    elements = parse_delete_expr(elements, filename)?;
-    elements = parse_return_expr(elements, filename)?;
-    elements = parse_declaration_expr(elements, filename)?;
-    elements = parse_assignment_oprs(elements, filename)?;
-    elements = parse_normal_oprs(elements, filename)?;
+    elements = parse_if_expr(elements)?;
+    elements = parse_procs_and_fns(elements)?;
+    elements = parse_preprocess_and_defer(elements)?;
+    elements = parse_classes_structs_and_mixins(elements)?;
+    //elements = parse_enums(elements)?;
+    elements = parse_vars_literals_and_calls(elements)?;
+    elements = parse_delete_expr(elements)?;
+    elements = parse_return_expr(elements)?;
+    elements = parse_declaration_expr(elements)?;
+    elements = parse_assignment_oprs(elements)?;
+    elements = parse_normal_oprs(elements)?;
     if elements.len() > 1 {
-        elements = parse_unparen_calls(elements, filename)?;
+        elements = parse_unparen_calls(elements)?;
     }
-    elements = parse_un_oprs(elements, filename)?;
+    elements = parse_un_oprs(elements)?;
     if elements.len() > 1 {
-        return Err(ZyxtError::from_pos(&elements[1].get_pos()).error_2_1_0(elements[1].get_raw().trim().to_string()))
+        return Err(ZyxtError::from_pos(elements[1].get_pos()).error_2_1_0(elements[1].get_raw().trim().to_string()))
     }
     Ok(elements.get(0).unwrap_or(&Element::NullElement).clone())
 }
 
-fn parse_block(input: Vec<Element>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+fn parse_block(input: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     split_between(TokenType::StatementEnd,
                   TokenType::OpenCurlyParen,
                   TokenType::CloseCurlyParen,
-                  input, filename, true)
+                  input, true)
 }
 
-pub fn parse_token_list(mut input: Vec<Token>, filename: &String) -> Result<Vec<Element>, ZyxtError> {
+pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError> {
     let mut comments: Vec<Element> = vec![];
 
     // detect & remove comments
@@ -796,6 +792,6 @@ pub fn parse_token_list(mut input: Vec<Token>, filename: &String) -> Result<Vec<
     input = input.into_iter().filter(|token| token.type_ != TokenType::Comment).collect();
 
     // generate and return an AST for each expression
-    parse_block(input.into_iter().map(|t| Element::Token(t))
-                    .collect::<Vec<Element>>(), filename)
+    parse_block(input.into_iter().map(Element::Token)
+                    .collect::<Vec<Element>>())
 }

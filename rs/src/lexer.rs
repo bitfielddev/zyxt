@@ -4,20 +4,18 @@ use crate::objects::token_entries::{compound_token_entries_1, compound_token_ent
 use crate::{Token, ZyxtError};
 use crate::objects::position::Position;
 
-fn lex_stage1(input: String, filename: &String) -> Result<Vec<Token>, ZyxtError> {
+fn lex_stage1(input: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
     let mut out: Vec<Token> = vec![];
     let mut pos = Position {
-        filename: filename.clone(),
+        filename: filename.to_string(),
         ..Default::default()
     };
     let token_entries = singular_token_entries();
     for c in input.chars() {
         let mut found = false;
         for entry in token_entries.iter() {
-            if {
-                if let Some(re) = &entry.re {re.is_match(&*c.to_string())}
-                else {c == entry.value}
-            } {
+            if if let Some(re) = &entry.re {re.is_match(&*c.to_string())}
+            else {c == entry.value} {
                 out.push(Token{
                     value: c.to_string(),
                     type_: entry.type_,
@@ -43,7 +41,7 @@ fn lex_stage1(input: String, filename: &String) -> Result<Vec<Token>, ZyxtError>
     Ok(out)
 }
 
-fn is_literal_match(out: &Vec<Token>, entry: &CompoundTokenEntry) -> Option<usize> {
+fn is_literal_match(out: &[Token], entry: &CompoundTokenEntry) -> Option<usize> {
     let mut cursor = out.len()-1;
     let mut selected = out.last().unwrap();
     let mut match_count = 1usize;
@@ -61,7 +59,7 @@ fn is_literal_match(out: &Vec<Token>, entry: &CompoundTokenEntry) -> Option<usiz
 }
 
 
-fn is_match(combination: &[Pattern<'_>], out: &Vec<Token>) -> Option<usize> {
+fn is_match(combination: &[Pattern<'_>], out: &[Token]) -> Option<usize> {
     let mut _cursor = out.len()-1;
     let mut selected = out.last().unwrap();
     let mut match_count = 0usize;
@@ -120,7 +118,7 @@ fn lex_stage2(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError>{
             if token_type == &TokenType::Null
                 || token_type == &t.type_ && {
                 if let Pattern::Value(_, value) = entry.combination.last().unwrap() {
-                    t.value == value.to_string()
+                    t.value == *value
                 } else { true }
             } { if let Some(count) = is_match(entry.combination, &out) {
                     let pos = out.get(out.len() - count).unwrap().position.clone();
@@ -155,7 +153,7 @@ fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError>{
             if token_type == &TokenType::Null
                 || token_type == &t.type_ && {
                 if let Pattern::Value(_, value) = entry.combination.last().unwrap() {
-                    t.value == value.to_string()
+                    t.value == *value
                 } else { true }
             } { if entry.literal {
                 if let Some(count) = is_literal_match(&out, entry) {
@@ -191,9 +189,9 @@ fn lex_stage4(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError> {
     let mut out: Vec<Token> = vec![];
 
     let token_entries = side_dependent_token_entries();
-    let type_list = token_entries.iter().map(|e| e.from).collect::<Vec<TokenType>>();
+    let mut type_list = token_entries.iter().map(|e| e.from);
     for (i, t) in input.iter().enumerate() {
-        if !type_list.contains(&t.type_) {
+        if !type_list.any(|a| a == t.type_) {
             out.push(t.clone());
             continue;
         }
@@ -240,7 +238,7 @@ fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
     out
 }
 
-fn check_no_unknown_tokens(input: &Vec<Token>) -> Result<(), ZyxtError> {
+fn check_no_unknown_tokens(input: &[Token]) -> Result<(), ZyxtError> {
     for token in input.iter() {
         if token.type_ == TokenType::Null {
             return Err(ZyxtError::from_pos(&token.position).error_2_1_1(token.value.clone()))
@@ -249,8 +247,8 @@ fn check_no_unknown_tokens(input: &Vec<Token>) -> Result<(), ZyxtError> {
     Ok(())
 }
 
-pub fn lex(preinput: String, filename: &String) -> Result<Vec<Token>, ZyxtError> {
-    if preinput.trim().len() == 0 {return Ok(vec![])};
+pub fn lex(preinput: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
+    if preinput.trim().is_empty() {return Ok(vec![])};
     let input = preinput + "\n";
 
     let out1 = lex_stage1(input, filename)?;

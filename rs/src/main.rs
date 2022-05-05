@@ -21,9 +21,9 @@ use crate::objects::element::Element;
 use crate::objects::typeobj::TypeObj;
 use crate::objects::stack::Stack;
 
-fn compile(input: String, filename: &String, typelist: &mut Stack<TypeObj>,
+fn compile(input: String, filename: &str, typelist: &mut Stack<TypeObj>,
            verbosity: u8) -> Result<Vec<Element>, ZyxtError> {
-    if verbosity == 0 {return gen_instructions(parse_token_list(lex(input, filename)?, filename)?, typelist)}
+    if verbosity == 0 {return gen_instructions(parse_token_list(lex(input, filename)?)?, typelist)}
 
     if verbosity >= 2 {println!("{}", Yellow.bold().paint("Lexing"));}
     let lex_start = Instant::now();
@@ -35,7 +35,7 @@ fn compile(input: String, filename: &String, typelist: &mut Stack<TypeObj>,
 
     if verbosity >= 2 {println!("{}", Yellow.bold().paint("\nParsing"));}
     let parse_start = Instant::now();
-    let parsed = parse_token_list(lexed, filename)?;
+    let parsed = parse_token_list(lexed)?;
     let parse_time = parse_start.elapsed().as_micros();
     if verbosity >= 2 {
         for ele in parsed.iter() {println!("{}", White.dimmed().paint(format!("{:#?}", ele)));}
@@ -101,7 +101,7 @@ fn main() {
             match File::open(filename) {
                 Ok(mut file) => {
                     file.read_to_string(&mut content).unwrap_or_else(|e| {
-                        if e.to_string() == "Is a directory (os error 21)".to_string() {
+                        if e.to_string() == *"Is a directory (os error 21)" {
                             ZyxtError::no_pos().error_1_2(filename.clone()).print()
                         } else {panic!("{}", e.to_string())}
                     });

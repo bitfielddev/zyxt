@@ -25,7 +25,7 @@ pub fn repl(verbosity: u8) {
         let input: String = read!("{}\n");
         // TODO support for multiline
 
-        if input == ";exit".to_string() {break;}
+        if input == *";exit" {break;}
         let instructions = match compile(input, &filename, &mut typelist, verbosity) {
             Ok(v) => v,
             Err(e) => {e.print_noexit(); continue}

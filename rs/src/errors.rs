@@ -20,7 +20,7 @@ impl ZyxtError {
     pub fn print_noexit(&self) {
         print!("{}", Style::new().on(Red).bold().paint(
             self.position.iter().map(|pos| format!(" {} ", pos)).collect::<Vec<String>>().join("\n")
-        ).to_string());
+        ));
         println!("{}", Black.on(Yellow).paint(format!(" Error {} ", self.code)).to_string()
             + &*Red.bold().paint(format!(" {}", self.message)).to_string());
     }
@@ -52,7 +52,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "0.1",
-            message: format!("No file given")
+            message: "No file given".to_string()
         }
     }
 
@@ -130,7 +130,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.2",
-            message: format!("Stray `.` at end of expression")
+            message: "Stray `.` at end of expression".to_string()
         }
     }
     /// unexpected ident (binary operator at start/end of expression)
@@ -154,7 +154,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.5",
-            message: format!("Stray `:=` at start/end of expression")
+            message: "Stray `:=` at start/end of expression".to_string()
         }
     }
     /// unexpected ident (non-flag between first flag and declared variable)
@@ -218,7 +218,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.13",
-            message: format!("Opening bar not closed")
+            message: "Opening bar not closed".to_string()
         }
     }
     /// unexpected ident (Vxtra values past default value)
@@ -242,7 +242,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.16",
-            message: format!("`pre` at end of line")
+            message: "`pre` at end of line".to_string()
         }
     }
     /// unexpected ident (parameters with class keyword)
@@ -250,7 +250,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.17",
-            message: format!("Parameters found after `class` keyword")
+            message: "Parameters found after `class` keyword".to_string()
         }
     }
     /// unexpected ident (parameters with class keyword)
@@ -267,7 +267,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.2",
-            message: format!("Assignment without variable name")
+            message: "Assignment without variable name".to_string()
         }
     }
 
@@ -349,7 +349,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.2",
-            message: format!("Non-i32 script return value detected (Got `{}`)", value.to_string())
+            message: format!("Non-i32 script return value detected (Got `{}`)", value)
         }
     }
 

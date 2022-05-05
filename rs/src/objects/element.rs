@@ -34,7 +34,7 @@ pub enum Element {
         raw: String,
         called: Box<Element>,
         args: Vec<Element>,
-        kwargs: Box<HashMap<String, Element>>,
+        kwargs: HashMap<String, Element>,
     },
     UnaryOpr {
         position: Position,
@@ -179,36 +179,36 @@ impl Element {
         }
     }
     pub fn get_name(&self) -> String {
-        if let Element::Variable {name: type1, ..} = self {return type1.clone()} else {panic!("not variable")}
+        if let Element::Variable {name: type1, ..} = self {type1.clone()} else {panic!("not variable")}
     }
     pub fn as_type(&self) -> TypeObj {
-        if let Element::Variable {name: type1, ..} = self {return TypeObj::Type {
+        if let Element::Variable {name: type1, ..} = self {TypeObj::Type {
             name: type1.clone(),
             type_args: vec![],
             implementation: None
         }} else {panic!("not variable")}
     }
-    pub fn bin_op_return_type(type_: &OprType, type1: TypeObj, type2: TypeObj,
-                              typelist: &mut Stack<TypeObj>, position: &Position) -> Result<TypeObj, ZyxtError> {
+    pub fn bin_op_return_type(type_: &OprType, type1: TypeObj,
+                              type2: TypeObj, position: &Position) -> Result<TypeObj, ZyxtError> {
         if type_ == &OprType::TypeCast {
             return Ok(type2)
         }
-        if let Some(v) = Variable::default(type1.clone(), typelist)?
-            .bin_opr(type_, Variable::default(type2.clone(), typelist)?) {
+        if let Some(v) = Variable::default(type1.clone())?
+            .bin_opr(type_, Variable::default(type2.clone())?) {
             Ok(v.get_type_obj())
         } else {
             Err(ZyxtError::from_pos(position).error_4_0_0(type_.to_string(), type1.to_string(), type2.to_string()))
         }
     }
     pub fn un_op_return_type(type_: &OprType, opnd_type: TypeObj,
-                             typelist: &mut Stack<TypeObj>, position: &Position) -> Result<TypeObj, ZyxtError> {
-        if let Some(v) = Variable::default(opnd_type.clone(), typelist)?.un_opr(type_) {
+                             position: &Position) -> Result<TypeObj, ZyxtError> {
+        if let Some(v) = Variable::default(opnd_type.clone())?.un_opr(type_) {
             Ok(v.get_type_obj())
         } else {
             Err(ZyxtError::from_pos(position).error_4_0_1(type_.to_string(), opnd_type.to_string()))
         }
     }
-    pub fn block_type(content: &mut Vec<Element>, typelist: &mut Stack<TypeObj>, add_set: bool) -> Result<TypeObj, ZyxtError> {
+    pub fn block_type(content: &mut [Element], typelist: &mut Stack<TypeObj>, add_set: bool) -> Result<TypeObj, ZyxtError> {
         let mut last = TypeObj::null();
         if add_set {typelist.add_set();}
         for ele in content.iter_mut() {
@@ -217,24 +217,20 @@ impl Element {
         if add_set {typelist.pop_set();}
         Ok(last)
     }
-    pub fn call_return_type(called: &mut Element, args: &mut Vec<Element>, typelist: &mut Stack<TypeObj>) -> Result<TypeObj, ZyxtError> {
+    pub fn call_return_type(called: &mut Element, args: &mut [Element], typelist: &mut Stack<TypeObj>) -> Result<TypeObj, ZyxtError> {
         if let Element::Variable {ref parent, ref name, ..} = *called {
-            if name == &"println".to_string() && parent.get_name() == "std".to_string() {
+            if name == &"println".to_string() && parent.get_name() == *"std" {
                 return Ok(TypeObj::null())
             }
         }
         if let Element::Procedure{is_fn, args: proc_args, content, position, ..} = called {
             let mut fn_typelist: Stack<TypeObj> = Stack::<TypeObj>::default_type();
-            let mut cursor = 0;
-            for Argument {name, default, ..} in proc_args {
+            for (cursor, Argument {name, default, ..}) in proc_args.iter_mut().enumerate() {
                 let mut input_arg = if args.len() > cursor {Ok(args.get(cursor).unwrap().clone())}
-                else {default.clone().ok_or(
-                    ZyxtError::from_pos(position).error_2_3(name.clone())
-                )}?;
-                fn_typelist.declare_val(&name, &input_arg.eval_type(typelist)?);
+                else {default.clone().ok_or_else(|| ZyxtError::from_pos(position).error_2_3(name.clone()))}?;
+                fn_typelist.declare_val(name, &input_arg.eval_type(typelist)?);
                 if args.len() > cursor {*args.get_mut(cursor).unwrap() = input_arg;}
                 else {*default = Some(input_arg)}
-                cursor += 1;
             }
             let proc_varlist = if *is_fn {&mut fn_typelist} else {
                 typelist.add_set();
@@ -246,10 +242,10 @@ impl Element {
             return Ok(res)
         }
         if let TypeObj::Type {name, type_args, ..} = called.eval_type(typelist)? {
-            if name == "proc".to_string() || name == "fn".to_string() {return Ok(type_args[1].clone())}
+            if name == *"proc" || name == *"fn" {return Ok(type_args[1].clone())}
         } // TODO type checking for args when arrays are implemented
-        return Ok(TypeObj::null());
-        if let Some(v) = Variable::default(called.eval_type(typelist)?, typelist)?.call(
+        Ok(TypeObj::null())
+        /*if let Some(v) = Variable::default(called.eval_type(typelist)?, typelist)?.call(
             args.iter_mut().map(|e| Variable::default(e.eval_type(typelist)?, typelist))
                 .collect::<Result<Vec<_>, _>>()?
         ) { // TODO same as above
@@ -259,7 +255,7 @@ impl Element {
                 .error_3_1_0(called.clone(),
                              called.eval_type(typelist)?,
                              "#call".to_string()))
-        }
+        }*/
     }
     pub fn eval_type(&mut self, typelist: &mut Stack<TypeObj>) -> Result<TypeObj, ZyxtError> {
         match self {
@@ -283,7 +279,7 @@ impl Element {
                         flags: flags.clone()
                     };
                 } else {
-                    typelist.declare_val(&variable.get_name(), &type_);
+                    typelist.declare_val(&variable.get_name(), type_);
                     if content_type != *type_ {
                         let new_content = Element::BinaryOpr {
                             position: position.clone(),
@@ -308,11 +304,11 @@ impl Element {
             Element::BinaryOpr {type_, operand1, operand2, position, ..} => {
                 let type1 = operand1.eval_type(typelist)?;
                 let type2 = operand2.eval_type(typelist)?;
-                Element::bin_op_return_type(type_, type1, type2, typelist, position)
+                Element::bin_op_return_type(type_, type1, type2, position)
             },
             Element::UnaryOpr {type_, operand, position, ..} => {
                 let opnd_type = operand.eval_type(typelist)?;
-                Element::un_op_return_type(type_, opnd_type, typelist, position)
+                Element::un_op_return_type(type_, opnd_type, position)
             },
             Element::Procedure {is_fn, return_type, content, args, ..} => {
                 typelist.add_set();
@@ -360,10 +356,8 @@ impl Element {
                         if flags.contains(&Flag::Inst) {inst_attrs.insert(variable.get_name(), *content.clone());}
                     }
                 }
-                if let Some(_) = args {
-                    if class_attrs.contains_key("#init") {
-                        todo!("raise error here")
-                    }
+                if args.is_some() && class_attrs.contains_key("#init") {
+                    todo!("raise error here")
                 }
                 typelist.pop_set();
                 Ok(TypeObj::Typedef {
