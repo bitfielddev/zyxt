@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::errors::ZyxtError;
 use crate::objects::position::Position;
-use crate::objects::typeobj::TypeObj;
+use crate::objects::typeobj::Type;
 use crate::objects::variable::Variable;
 
 const PRIM_NAMES: [&str; 18] = ["str",
@@ -16,7 +16,7 @@ impl <T: Clone> Stack<T> {
     pub fn default_variable() -> Stack<Variable> {
         let mut v = Stack(vec![HashMap::new()]);
         for t in PRIM_NAMES {
-            v.0[0].insert(t.to_string(), Variable::Type(TypeObj::Type {
+            v.0[0].insert(t.to_string(), Variable::Type(Type::Instance {
                 name: t.to_string(),
                 type_args: vec![],
                 implementation: None
@@ -24,10 +24,10 @@ impl <T: Clone> Stack<T> {
         }
         v
     }
-    pub fn default_type() -> Stack<TypeObj> {
+    pub fn default_type() -> Stack<Type> {
         let mut v = Stack(vec![HashMap::new()]);
         for t in PRIM_NAMES {
-            v.0[0].insert(t.to_string(), TypeObj::Type {
+            v.0[0].insert(t.to_string(), Type::Instance {
                 name: "type".to_string(), type_args: vec![],
                 implementation: None
             });

@@ -1,7 +1,7 @@
 use std::process::exit;
 use ansi_term::Color::{Black, Red, Yellow};
 use ansi_term::Style;
-use crate::{Element, TypeObj};
+use crate::{Element, Type};
 use crate::objects::variable::Variable;
 use crate::objects::position::Position;
 use crate::objects::token::Keyword;
@@ -291,7 +291,7 @@ impl PositionForZyxtError {
     }
 
     /// Type has no attribute (typechecker)
-    pub fn error_3_1_0(self, parent: Element, parent_type: TypeObj, attribute: String) -> ZyxtError {
+    pub fn error_3_1_0(self, parent: Element, parent_type: Type, attribute: String) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "3.1.0",
@@ -354,7 +354,7 @@ impl PositionForZyxtError {
     }
 
     /// Wrong type assigned to variable
-    pub fn error_4_3(self, variable: String, var_type: TypeObj, value_type: TypeObj) -> ZyxtError {
+    pub fn error_4_3(self, variable: String, var_type: Type, value_type: Type) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.3",

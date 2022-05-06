@@ -1,5 +1,5 @@
 use crate::objects::deferstack::DeferStack;
-use crate::{TypeObj, ZyxtError};
+use crate::{Type, ZyxtError};
 use crate::objects::element::{Argument, Element};
 use crate::objects::variable::Variable;
 use crate::objects::stack::Stack;
@@ -96,7 +96,7 @@ pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: 
             deferlist.add_defer(content);
             Ok(Variable::Null)
         },
-        Element::Class {class_attrs, inst_attrs, is_struct, ..} => Ok(Variable::Type(TypeObj::Typedef{
+        Element::Class {class_attrs, inst_attrs, is_struct, ..} => Ok(Variable::Type(Type::Definition {
             name: if is_struct {"struct"} else {"class"}.to_string(),
             generics: vec![],
             class_attrs, inst_attrs

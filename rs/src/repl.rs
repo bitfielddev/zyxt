@@ -6,13 +6,13 @@ use text_io::read;
 use crate::compile;
 use crate::interpreter::interpret_expr;
 use crate::objects::deferstack::DeferStack;
-use crate::objects::typeobj::TypeObj;
+use crate::objects::typeobj::Type;
 use crate::objects::variable::Variable;
 use crate::objects::stack::Stack;
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
-    let mut typelist = Stack::<TypeObj>::default_type();
+    let mut typelist = Stack::<Type>::default_type();
     let mut varlist = Stack::<Variable>::default_variable();
     let mut deferlist = DeferStack::new();
     let in_symbol = Cyan.bold().paint(">>]");

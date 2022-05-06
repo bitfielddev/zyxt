@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use crate::objects::token::{TokenCategory, TokenType, get_order, Side, OprType, Keyword};
 use crate::objects::element::{Argument, Condition, Element};
 use crate::{Token, ZyxtError};
-use crate::objects::typeobj::TypeObj;
+use crate::objects::typeobj::Type;
 
 macro_rules! check_and_update_cursor {
     ($cursor: ident, $selected: ident, $elements: ident) => {
@@ -114,7 +114,7 @@ fn get_arguments(cursor: &mut usize, elements: &[Element], raw: &mut String) -> 
         }
         Ok(Argument{
             name,
-            type_: if type_ == Element::NullElement {TypeObj::any()}
+            type_: if type_ == Element::NullElement { Type::any()}
             else {type_.as_type()},
             default})
     }, None, TokenType::Comma,
@@ -317,7 +317,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                 catcher = Element::Literal {
                     position: selected.position.clone(),
                     raw: selected.get_raw(),
-                    type_: TypeObj::from_str(if selected.type_ == TokenType::LiteralMisc {
+                    type_: Type::from_str(if selected.type_ == TokenType::LiteralMisc {
                         match &*selected.value {
                             "true" | "false" => "bool",
                             "null" => "#null",
@@ -407,13 +407,13 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                         catcher.push(selected.clone());
                     }
                     if let Element::Variable {name, ..} = parse_expr(catcher)? {
-                        TypeObj::Type {
+                        Type::Instance {
                             name,
                             type_args: vec![],
                             implementation: None
                         }
                     } else {todo!("throw error here")}
-                } else {TypeObj::null()};
+                } else { Type::null()};
 
                 if let Element::Block{content, ..} = selected {
                     new_elements.push(Element::Procedure {
@@ -626,7 +626,7 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
                 variable: Box::new(parse_expr(vec![declared_var.clone()])?),
                 content: Box::new(content),
                 flags,
-                type_: TypeObj::null() // TODO type later
+                type_: Type::null() // TODO type later
             });
             break;
         } else {new_elements.push(selected.clone())}

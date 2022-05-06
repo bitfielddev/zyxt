@@ -4,7 +4,7 @@ use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 use crate::{Element, ZyxtError};
 use crate::objects::element::Argument;
 use crate::objects::token::OprType;
-use crate::objects::typeobj::TypeObj;
+use crate::objects::typeobj::Type;
 
 #[derive(Clone, PartialEq)]
 pub enum Variable {
@@ -24,15 +24,15 @@ pub enum Variable {
     F64(f64),
     Str(String),
     Bool(bool),
-    Type(TypeObj),
+    Type(Type),
     Proc{
         is_fn: bool,
         args: Vec<Argument>,
-        return_type: TypeObj,
+        return_type: Type,
         content: Vec<Element>
     },
     ClassInstance{
-        type_: TypeObj,
+        type_: Type,
         attrs: HashMap<String, Variable>,
     },
     Null,
@@ -721,9 +721,9 @@ impl Variable {
             _ => None
         }
     }
-    pub fn default(type_: TypeObj) -> Result<Self, ZyxtError> {
+    pub fn default(type_: Type) -> Result<Self, ZyxtError> {
         match type_.clone() {
-            TypeObj::Type {name, ..} => Ok(match &*name {
+            Type::Instance {name, ..} => Ok(match &*name {
                 "i8" => Variable::I8(0),
                 "i16" => Variable::I16(0),
                 "i32" => Variable::I32(0),
@@ -741,15 +741,15 @@ impl Variable {
                 "str" => Variable::Str("".to_string()),
                 "bool" => Variable::Bool(false),
                 "#null" => Variable::Null,
-                "type" => Variable::Type(TypeObj::null()),
+                "type" => Variable::Type(Type::null()),
                 _ => panic!("{:#?}", type_)
             }),
             _ => panic!()
         }
     }
-    pub fn from_type_content(type_: TypeObj, content: String) -> Variable {
+    pub fn from_type_content(type_: Type, content: String) -> Variable {
         match type_ {
-            TypeObj::Type {name, ..} => match &*name {
+            Type::Instance {name, ..} => match &*name {
                 "i8" => Variable::I8(content.parse::<i8>().unwrap()),
                 "i16" => Variable::I16(content.parse::<i16>().unwrap()),
                 "i32" => Variable::I32(content.parse::<i32>().unwrap()),
@@ -771,35 +771,35 @@ impl Variable {
             _ => panic!()
         }
     }
-    pub fn get_type_obj(&self) -> TypeObj {
+    pub fn get_type_obj(&self) -> Type {
         if let Variable::Return(v) = self {
             return v.get_type_obj();
         }
         match self {
-            Variable::I8(..) => TypeObj::from_str("i8"),
-            Variable::I16(..) => TypeObj::from_str("i16"),
-            Variable::I32(..) => TypeObj::from_str("i32"),
-            Variable::I64(..) => TypeObj::from_str("i64"),
-            Variable::I128(..) => TypeObj::from_str("i128"),
-            Variable::Isize(..) => TypeObj::from_str("isize"),
-            Variable::U8(..) => TypeObj::from_str("u8"),
-            Variable::U16(..) => TypeObj::from_str("u16"),
-            Variable::U32(..) => TypeObj::from_str("u32"),
-            Variable::U64(..) => TypeObj::from_str("u64"),
-            Variable::U128(..) => TypeObj::from_str("u128"),
-            Variable::Usize(..) => TypeObj::from_str("usize"),
-            Variable::F32(..) => TypeObj::from_str("f32"),
-            Variable::F64(..) => TypeObj::from_str("f64"),
-            Variable::Str(..) => TypeObj::from_str("str"),
-            Variable::Bool(..) => TypeObj::from_str("bool"),
-            Variable::Type(..) => TypeObj::from_str("type"),
+            Variable::I8(..) => Type::from_str("i8"),
+            Variable::I16(..) => Type::from_str("i16"),
+            Variable::I32(..) => Type::from_str("i32"),
+            Variable::I64(..) => Type::from_str("i64"),
+            Variable::I128(..) => Type::from_str("i128"),
+            Variable::Isize(..) => Type::from_str("isize"),
+            Variable::U8(..) => Type::from_str("u8"),
+            Variable::U16(..) => Type::from_str("u16"),
+            Variable::U32(..) => Type::from_str("u32"),
+            Variable::U64(..) => Type::from_str("u64"),
+            Variable::U128(..) => Type::from_str("u128"),
+            Variable::Usize(..) => Type::from_str("usize"),
+            Variable::F32(..) => Type::from_str("f32"),
+            Variable::F64(..) => Type::from_str("f64"),
+            Variable::Str(..) => Type::from_str("str"),
+            Variable::Bool(..) => Type::from_str("bool"),
+            Variable::Type(..) => Type::from_str("type"),
             Variable::Proc {is_fn, return_type, ..} =>
-                TypeObj::Type {
+                Type::Instance {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),
-                    type_args: vec![TypeObj::null(), return_type.clone()],
+                    type_args: vec![Type::null(), return_type.clone()],
                     implementation: None
                 }, // TODO angle bracket thingy when it is implemented
-            Variable::Null => TypeObj::null(),
+            Variable::Null => Type::null(),
             _ => panic!()
         }
     }
