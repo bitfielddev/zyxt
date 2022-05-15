@@ -12,5 +12,5 @@ Current plan is in `syntax.md`
 std.println "Hello World";
 
 // though in the future it will become:
-ter.out "Hello World"
+ter.out "Hello World";
 ``
