@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use crate::errors::ZyxtError;
 use crate::objects::position::Position;
 use crate::objects::typeobj::Type;
@@ -10,11 +11,24 @@ const PRIM_NAMES: [&str; 18] = ["str",
     "f32", "f64",
     "#null", "#any", "type"];
 
-pub struct Stack<T: Clone>(pub Vec<HashMap<String, T>>);
+pub struct Heap<T: Clone>(pub Vec<HashMap<String, T>>);
 
-impl <T: Clone> Stack<T> {
-    pub fn default_variable() -> Stack<Variable> {
-        let mut v = Stack(vec![HashMap::new()]);
+impl Display for Heap<Variable> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.iter()
+            .map(|hmap| hmap.iter()
+                .map(|(k, v)| format!("{}: {} = {}", k, v.get_type_obj(), v))
+                .collect::<Vec<String>>()
+                .join("\n"))
+            .collect::<Vec<String>>()
+            .join("\n-------\n")
+        )
+    }
+}
+
+impl <T: Clone> Heap<T> {
+    pub fn default_variable() -> Heap<Variable> {
+        let mut v = Heap(vec![HashMap::new()]);
         for t in PRIM_NAMES {
             v.0[0].insert(t.to_string(), Variable::Type(Type::Instance {
                 name: t.to_string(),
@@ -22,16 +36,18 @@ impl <T: Clone> Stack<T> {
                 implementation: None
             }));
         }
+        v.add_set();
         v
     }
-    pub fn default_type() -> Stack<Type> {
-        let mut v = Stack(vec![HashMap::new()]);
+    pub fn default_type() -> Heap<Type> {
+        let mut v = Heap(vec![HashMap::new()]);
         for t in PRIM_NAMES {
             v.0[0].insert(t.to_string(), Type::Instance {
                 name: "type".to_string(), type_args: vec![],
                 implementation: None
             });
         }
+        v.add_set();
         v
     }
     pub fn add_set(&mut self) {

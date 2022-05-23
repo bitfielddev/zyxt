@@ -19,9 +19,9 @@ use crate::instructor::gen_instructions;
 use crate::interpreter::interpret_asts;
 use crate::objects::element::Element;
 use crate::objects::typeobj::Type;
-use crate::objects::stack::Stack;
+use crate::objects::heap::Heap;
 
-fn compile(input: String, filename: &str, typelist: &mut Stack<Type>,
+fn compile(input: String, filename: &str, typelist: &mut Heap<Type>,
            verbosity: u8) -> Result<Vec<Element>, ZyxtError> {
     if verbosity == 0 {return gen_instructions(parse_token_list(lex(input, filename)?)?, typelist)}
 
@@ -108,7 +108,7 @@ fn main() {
                 },
                 Err(_) => { ZyxtError::no_pos().error_1_1(filename.clone()).print() }
             };
-            let mut typelist = Stack::<Type>::default_type();
+            let mut typelist = Heap::<Type>::default_type();
             interpret(compile(content, filename, &mut typelist,verbose).unwrap_or_else(|e| {
                 e.print()
             }), verbose).unwrap_or_else(|e| {

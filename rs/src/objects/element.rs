@@ -8,7 +8,7 @@ use crate::interpreter::interpret_block;
 use crate::objects::deferstack::DeferStack;
 use crate::objects::variable::Variable;
 use crate::objects::typeobj::Type;
-use crate::objects::stack::Stack;
+use crate::objects::heap::Heap;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
@@ -209,7 +209,7 @@ impl Element {
             Err(ZyxtError::from_pos(position).error_4_0_1(type_.to_string(), opnd_type.to_string()))
         }
     }
-    pub fn block_type(content: &mut [Element], typelist: &mut Stack<Type>, add_set: bool) -> Result<Type, ZyxtError> {
+    pub fn block_type(content: &mut [Element], typelist: &mut Heap<Type>, add_set: bool) -> Result<Type, ZyxtError> {
         let mut last = Type::null();
         if add_set {typelist.add_set();}
         for ele in content.iter_mut() {
@@ -218,14 +218,14 @@ impl Element {
         if add_set {typelist.pop_set();}
         Ok(last)
     }
-    pub fn call_return_type(called: &mut Element, args: &mut [Element], typelist: &mut Stack<Type>) -> Result<Type, ZyxtError> {
+    pub fn call_return_type(called: &mut Element, args: &mut [Element], typelist: &mut Heap<Type>) -> Result<Type, ZyxtError> {
         if let Element::Variable {ref parent, ref name, ..} = *called {
             if name == &"println".to_string() && parent.get_name() == *"std" {
                 return Ok(Type::null())
             }
         }
         if let Element::Procedure{is_fn, args: proc_args, content, position, ..} = called {
-            let mut fn_typelist: Stack<Type> = Stack::<Type>::default_type();
+            let mut fn_typelist: Heap<Type> = Heap::<Type>::default_type();
             for (cursor, Argument {name, default, ..}) in proc_args.iter_mut().enumerate() {
                 let mut input_arg = if args.len() > cursor {Ok(args.get(cursor).unwrap().clone())}
                 else {default.clone().ok_or_else(|| ZyxtError::from_pos(position).error_2_3(name.clone()))}?;
@@ -258,7 +258,7 @@ impl Element {
                              "#call".to_string()))
         }*/
     }
-    pub fn eval_type(&mut self, typelist: &mut Stack<Type>) -> Result<Type, ZyxtError> {
+    pub fn eval_type(&mut self, typelist: &mut Heap<Type>) -> Result<Type, ZyxtError> {
         match self {
             Element::Literal {type_, ..} => Ok(type_.clone()),
             Element::Variable {name, position, ..} =>
@@ -325,8 +325,8 @@ impl Element {
                 })
             }, // TODO angle bracket thingy when it is implemented
             Element::Preprocess {content, ..} => {
-                let mut pre_typelist = Stack::<Type>::default_type();
-                let mut varlist = Stack::<Variable>::default_variable();
+                let mut pre_typelist = Heap::<Type>::default_type();
+                let mut varlist = Heap::<Variable>::default_variable();
                 let mut deferlist = DeferStack::new();
                 let pre_instructions = gen_instructions(content.clone(), &mut pre_typelist)?;
                 let pre_value = interpret_block(pre_instructions, &mut varlist,

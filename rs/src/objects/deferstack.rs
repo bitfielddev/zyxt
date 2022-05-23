@@ -1,4 +1,4 @@
-use crate::{Element, Stack, ZyxtError};
+use crate::{Element, Heap, ZyxtError};
 use crate::interpreter::interpret_block;
 use crate::objects::variable::Variable;
 
@@ -17,7 +17,7 @@ impl DeferStack {
     pub fn add_defer(&mut self, content: Vec<Element>) {
         self.0.last_mut().unwrap().push(content);
     }
-    pub fn execute_and_clear(&mut self, varlist: &mut Stack<Variable>) -> Result<Variable, ZyxtError>{
+    pub fn execute_and_clear(&mut self, varlist: &mut Heap<Variable>) -> Result<Variable, ZyxtError>{
         for content in self.0.last().unwrap().clone() {
             if let Variable::Return(v) = interpret_block(content, varlist,
                                                          self, false, false)? {

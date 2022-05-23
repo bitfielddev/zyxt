@@ -8,17 +8,18 @@ use crate::interpreter::interpret_expr;
 use crate::objects::deferstack::DeferStack;
 use crate::objects::typeobj::Type;
 use crate::objects::variable::Variable;
-use crate::objects::stack::Stack;
+use crate::objects::heap::Heap;
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
-    let mut typelist = Stack::<Type>::default_type();
-    let mut varlist = Stack::<Variable>::default_variable();
+    let mut typelist = Heap::<Type>::default_type();
+    let mut varlist = Heap::<Variable>::default_variable();
     let mut deferlist = DeferStack::new();
     let in_symbol = Cyan.bold().paint(">>]");
     let out_symbol = Green.bold().paint("[>>");
     println!("{}", Yellow.bold().paint(format!("Zyxt Repl (v{})", env!("CARGO_PKG_VERSION"))));
     println!("{}", Cyan.paint("`;exit` to exit"));
+    println!("{}", Cyan.paint("`;vars` to show variables"));
     loop {
         print!("{} ", in_symbol);
         io::stdout().flush().unwrap();
@@ -26,6 +27,10 @@ pub fn repl(verbosity: u8) {
         // TODO support for multiline
 
         if input == *";exit" {break;}
+        if input == *";vars" {
+            println!("{}", varlist);
+            continue;
+        }
         let instructions = match compile(input, &filename, &mut typelist, verbosity) {
             Ok(v) => v,
             Err(e) => {e.print_noexit(); continue}

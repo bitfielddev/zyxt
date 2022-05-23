@@ -2,10 +2,10 @@ use crate::objects::deferstack::DeferStack;
 use crate::{Type, ZyxtError};
 use crate::objects::element::{Argument, Element};
 use crate::objects::variable::Variable;
-use crate::objects::stack::Stack;
+use crate::objects::heap::Heap;
 
 
-pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: &mut DeferStack) -> Result<Variable, ZyxtError> {
+pub fn interpret_expr(input: Element, varlist: &mut Heap<Variable>, deferlist: &mut DeferStack) -> Result<Variable, ZyxtError> {
     match input {
         Element::Token(..) | Element::Comment {..} | Element::Preprocess {..} => panic!(),
         Element::NullElement => Ok(Variable::Null),
@@ -53,7 +53,7 @@ pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: 
             }
             let to_call = interpret_expr(*called, varlist, deferlist)?;
             if let Variable::Proc {is_fn, args, content, ..} = to_call {
-                let mut fn_varlist: Stack<Variable> = Stack::<Variable>::default_variable();
+                let mut fn_varlist: Heap<Variable> = Heap::<Variable>::default_variable();
                 for (cursor, Argument {name, default, ..}) in args.into_iter().enumerate() {
                     let input_arg = if input_args.len() > cursor {input_args.get(cursor).unwrap().clone()}
                     else {default.unwrap()};
@@ -104,7 +104,7 @@ pub fn interpret_expr(input: Element, varlist: &mut Stack<Variable>, deferlist: 
     }
 }
 
-pub fn interpret_block(input: Vec<Element>, varlist: &mut Stack<Variable>,
+pub fn interpret_block(input: Vec<Element>, varlist: &mut Heap<Variable>,
                        deferlist: &mut DeferStack, returnable: bool, add_set: bool) -> Result<Variable, ZyxtError> {
     let mut last = Variable::Null;
     if add_set {
@@ -139,7 +139,7 @@ pub fn interpret_block(input: Vec<Element>, varlist: &mut Stack<Variable>,
 }
 
 pub fn interpret_asts(input: Vec<Element>) -> Result<i32, ZyxtError> {
-    let mut varlist = Stack::<Variable>::default_variable();
+    let mut varlist = Heap::<Variable>::default_variable();
     let mut deferlist = DeferStack::new();
     let mut last = Variable::Null;
     for ele in &input {
