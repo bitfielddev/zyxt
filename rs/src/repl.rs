@@ -30,6 +30,7 @@ pub fn repl(verbosity: u8) {
         let input = rl.readline(&*in_symbol.to_string());
         match input {
             Ok(input) => {
+                rl.add_history_entry(&input);
                 if input == *";exit" {break;}
                 if input == *";vars" {
                     println!("{}", varlist);
@@ -70,4 +71,5 @@ pub fn repl(verbosity: u8) {
 
 
     }
+    rl.save_history("~/.zyxthistory").unwrap_or(());
 }
