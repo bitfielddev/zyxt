@@ -11,7 +11,7 @@ description = "Toolset for Zyxtlang."
 ansi_term = "0.12.1"
 regex = "1.5.4"
 clap = { version = "3.1.2", features = ["derive"] }
-text_io = "0.1.10"
+rustyline = "9.1.2"
 
 [profile.dev]
 opt-level = 0
