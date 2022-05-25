@@ -5,10 +5,10 @@ use crate::objects::position::Position;
 use crate::objects::typeobj::Type;
 use crate::objects::variable::Variable;
 
-const PRIM_NAMES: [&str; 18] = ["str",
+const PRIM_NAMES: [&str; 19] = ["str",
     "i8", "i16", "i32", "i64", "i128", "isize",
     "u8", "u16", "u32", "u64", "u128", "usize",
-    "f32", "f64",
+    "f32", "f64", "bool",
     "#null", "#any", "type"];
 
 pub struct Heap<T: Clone>(pub Vec<HashMap<String, T>>);

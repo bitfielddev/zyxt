@@ -305,6 +305,9 @@ impl Element {
             Element::BinaryOpr {type_, operand1, operand2, position, ..} => {
                 let type1 = operand1.eval_type(typelist)?;
                 let type2 = operand2.eval_type(typelist)?;
+                if type_ == &OprType::TypeCast && type2 == Type::from_str("type") {
+                    return Ok(Type::from_str(&*operand2.get_name()));
+                }
                 Element::bin_op_return_type(type_, type1, type2, position)
             },
             Element::UnaryOpr {type_, operand, position, ..} => {

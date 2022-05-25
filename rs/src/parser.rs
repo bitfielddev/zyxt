@@ -133,7 +133,7 @@ fn parse_parens(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                 let mut prev_element = &Element::Token(Token{..Default::default()});
                 if cursor != 0 { prev_element = &elements[cursor - 1]; }
                 if let Element::Token(prev_element) = prev_element { // if selected is Token and is (
-                    if cursor == 0 && !prev_element.categories.contains(&TokenCategory::ValueEnd) {
+                    if cursor == 0 || !prev_element.categories.contains(&TokenCategory::ValueEnd) {
                         let paren_contents = catch_between(TokenType::OpenParen,
                                                            TokenType::CloseParen,
                                                            &elements, &mut cursor)?;
@@ -603,7 +603,7 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
             if cursor == elements.len() - 1 || cursor == 0 {
                 return Err(ZyxtError::from_pos(position).error_2_1_5())
             }
-            let declared_var = &elements[cursor-1];
+            let declared_var: &Element = &elements[cursor-1];
             let mut raw = format!("{}{}{}", declared_var.get_raw(), whitespace, value);
             let flags = if flag_pos == None {vec![]} else {
                 let mut f = vec![];
