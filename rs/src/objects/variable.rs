@@ -797,6 +797,7 @@ impl Variable {
                 Type::Instance {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),
                     type_args: vec![Type::null(), return_type.clone()],
+                    inst_attrs: Default::default(),
                     implementation: None
                 }, // TODO angle bracket thingy when it is implemented
             Variable::Null => Type::null(),

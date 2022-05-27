@@ -410,6 +410,7 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                         Type::Instance {
                             name,
                             type_args: vec![],
+                            inst_attrs: Default::default(),
                             implementation: None
                         }
                     } else {todo!("throw error here")}

@@ -33,6 +33,7 @@ impl <T: Clone> Heap<T> {
             v.0[0].insert(t.to_string(), Variable::Type(Type::Instance {
                 name: t.to_string(),
                 type_args: vec![],
+                inst_attrs: Default::default(),
                 implementation: None
             }));
         }
@@ -43,7 +44,9 @@ impl <T: Clone> Heap<T> {
         let mut v = Heap(vec![HashMap::new()]);
         for t in PRIM_NAMES {
             v.0[0].insert(t.to_string(), Type::Instance {
-                name: "type".to_string(), type_args: vec![],
+                name: "type".to_string(),
+                type_args: vec![],
+                inst_attrs: Default::default(),
                 implementation: None
             });
         }

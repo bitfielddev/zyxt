@@ -186,6 +186,7 @@ impl Element {
             Type::Instance {
             name: type1.clone(),
             type_args: vec![],
+            inst_attrs: Default::default(),
             implementation: None
         }} else {panic!("not variable")}
     }
@@ -324,6 +325,7 @@ impl Element {
                 Ok(Type::Instance {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),
                     type_args: vec![Type::null(), return_type.clone()],
+                    inst_attrs: Default::default(),
                     implementation: None
                 })
             }, // TODO angle bracket thingy when it is implemented
