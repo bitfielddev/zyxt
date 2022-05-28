@@ -35,7 +35,7 @@ impl ZyxtError {
         PositionForZyxtError {position: vec![(element.get_pos().clone(), element.get_raw())]}
     }
     pub fn from_token(token: &Token) -> PositionForZyxtError {
-        PositionForZyxtError {position: vec![(token.position.clone(), token.value.clone())]}
+        PositionForZyxtError {position: vec![(token.position.clone(), token.value.clone().trim().to_string())]}
     }
     pub fn no_pos() -> PositionForZyxtError {
         PositionForZyxtError {position: vec![]}
