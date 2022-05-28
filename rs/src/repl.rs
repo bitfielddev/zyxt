@@ -2,6 +2,7 @@ use std::io;
 use std::io::Write;
 use std::time::Instant;
 use ansi_term::Color::{Cyan, Green, White, Yellow};
+use dirs::home_dir;
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
 use crate::{compile, ZyxtError};
@@ -17,7 +18,9 @@ pub fn repl(verbosity: u8) {
     let mut varlist = Heap::<Variable>::default_variable();
     let mut deferlist = DeferStack::new();
     let mut rl = Editor::<()>::new();
-    rl.load_history("~/.zyxthistory").unwrap_or(());
+    let mut history_path = home_dir().unwrap();
+    history_path.push(".zyxt_history");
+    rl.load_history(history_path.to_str().unwrap()).unwrap_or(());
 
     let in_symbol = Cyan.bold().paint(">>] ");
     let out_symbol = Green.bold().paint("[>> ");
@@ -71,5 +74,5 @@ pub fn repl(verbosity: u8) {
 
 
     }
-    rl.save_history("~/.zyxthistory").unwrap_or(());
+    rl.save_history(history_path.to_str().unwrap()).unwrap();
 }
