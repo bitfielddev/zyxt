@@ -39,11 +39,11 @@ impl PositionForZyxtError {
     // TODO call stack thing
     /* 0. Internal errors, have to do with the compiler-interpreter itself */
     /// Rust error
-    pub fn error_0_0(self, stack: String) -> ZyxtError {
+    pub fn error_0_0(self, error: String) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "0.0",
-            message: format!("Internal error: \n{}", stack)
+            message: format!("Internal error: \n{}\n\nThis shouldn't happen! Open an issue on our Github repo page: [TODO]", error)
         }
     }
 

@@ -8,6 +8,7 @@ mod repl;
 
 use std::fs::File;
 use std::io::Read;
+use std::panic;
 use std::time::Instant;
 use ansi_term::Color::{White, Yellow};
 use clap::Parser;
@@ -94,6 +95,11 @@ struct Run {
 fn main() {
     let args = Args::parse();
     let verbose = if cfg!(debug_assertions) {2u8} else {args.verbose};
+
+    panic::set_hook(Box::new(|a| {
+        ZyxtError::no_pos().error_0_0(a.to_string()).print_noexit();
+    }));
+
     match args.subcmd {
         Subcmd::Run(sargs) => {
             let filename = &sargs.filename;
