@@ -29,10 +29,10 @@ impl ZyxtError {
             + &*Red.bold().paint(format!(" {}", self.message)).to_string());
     }
     pub fn from_pos_and_raw(pos: &Position, raw: &String) -> PositionForZyxtError {
-        PositionForZyxtError {position: vec![(pos.clone(), raw.clone())]}
+        PositionForZyxtError {position: vec![(pos.clone(), raw.clone().trim().to_string())]}
     }
     pub fn from_element(element: &Element) -> PositionForZyxtError {
-        PositionForZyxtError {position: vec![(element.get_pos().clone(), element.get_raw())]}
+        PositionForZyxtError {position: vec![(element.get_pos().clone(), element.get_raw().trim().to_string())]}
     }
     pub fn from_token(token: &Token) -> PositionForZyxtError {
         PositionForZyxtError {position: vec![(token.position.clone(), token.value.clone().trim().to_string())]}
@@ -231,7 +231,7 @@ impl PositionForZyxtError {
             message: "Opening bar not closed".to_string()
         }
     }
-    /// unexpected ident (Vxtra values past default value)
+    /// unexpected ident (Extra values past default value)
     pub fn error_2_1_14(self, ident: String) -> ZyxtError {
         ZyxtError {
             position: self.position,

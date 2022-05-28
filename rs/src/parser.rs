@@ -234,7 +234,7 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>) -> Result<Vec<Elemen
             if let Element::Token(Token{type_: TokenType::Bar, position, value, ..}) = selected {
                 if keyword == &Keyword::Class {
                     return Err(ZyxtError::from_pos_and_raw(
-                        position, &format!("class {}", value.trim().to_string())).error_2_1_17())
+                        position, &format!("class {}", value.trim())).error_2_1_17())
                 }
                 args = Some(get_arguments(&mut cursor, &elements, &mut raw)?);
                 check_and_update_cursor!(cursor, selected, elements);
@@ -306,7 +306,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                         parent: Box::new(catcher)
                     };
                 } else {
-                    return Err(ZyxtError::from_token(&selected).error_2_1_0(String::from("."))) // definitely at the wrong place
+                    return Err(ZyxtError::from_token(selected).error_2_1_0(String::from("."))) // definitely at the wrong place
                 }
 
             }
@@ -340,11 +340,11 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                 }
             }
             TokenType::CloseParen => {
-                return Err(ZyxtError::from_token(&selected).error_2_0_2(')'.to_string()))
+                return Err(ZyxtError::from_token(selected).error_2_0_2(')'.to_string()))
             }
             TokenType::OpenParen => {
                 if cursor == 0 {
-                    return Err(ZyxtError::from_token(&selected).error_2_1_0(String::from("("))) // parens should have been settled in the first part
+                    return Err(ZyxtError::from_token(selected).error_2_1_0(String::from("("))) // parens should have been settled in the first part
                 }
                 let mut raw = selected.get_raw();
                 let contents = catch_between(TokenType::OpenParen,
