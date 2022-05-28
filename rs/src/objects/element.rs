@@ -170,7 +170,7 @@ impl Element {
     pub fn get_raw(&self) -> String {
         match self {
             Element::NullElement => "".to_string(),
-            Element::Token(t) => t.get_raw().trim().to_string(),
+            Element::Token(t) => t.get_raw(),
             Element::Variable { raw, .. } |
             Element::Literal { raw, .. } |
             Element::Comment { raw, .. } |
@@ -186,7 +186,7 @@ impl Element {
             Element::Procedure { raw, .. } |
             Element::Preprocess { raw, .. } |
             Element::Defer { raw, .. } |
-            Element::Class { raw, .. } => raw.clone().trim().to_string()
+            Element::Class { raw, .. } => raw.clone()
         }
     }
     pub fn get_name(&self) -> String {
@@ -253,7 +253,7 @@ impl Element {
     }
     pub fn call_return_type(called: &mut Element, args: &mut [Element], typelist: &mut InterpreterData<Type>) -> Result<Type, ZyxtError> {
         if let Element::Variable {ref parent, ref name, ..} = *called {
-            if name == &"println".to_string() && parent.get_name() == *"std" {
+            if name == &"out".to_string() && parent.get_name() == *"ter" {
                 return Ok(Type::null())
             }
         }

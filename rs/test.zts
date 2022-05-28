@@ -4,46 +4,46 @@ comment */
 
 // floats, ints, addition and printing
 pub x := 4 + 54.3;
-std.println(x);
+ter.out x;
 
 // multiplication & division
 x = 2 * 4 / 3.0;
-std.println(x);
+ter.out x;
 
 // concatenation
 pub y := 1 ~ 2 ~ 3;
-std.println("Concatenating numbers", y);
+ter.out "Concatenating numbers", y;
 
 // assignment
 y += 234;
-std.println("Adding 234 to y, it is now", y);
+ter.out "Adding 234 to y, it is now", y;
 
 // type casting & type retrieval
 pub z := 3@str;
-std.println("Var z is", z, "and of type", z@type);
+ter.out "Var z is", z, "and of type", z@type ;
 
 // booleans and if statements
 pub a := false;
-std.println(if a {
-    std.println("a is true");
+ter.out if a {
+    ter.out "a is true";
     2;
 } else {
-    std.println("a is false");
+    ter.out "a is false";
     1;
-});
+};
 
 // scoping & returns
 b := 1;
 c := 1;
-std.println(b, c);
+ter.out b, c;
 {
     b = 2;
     c := 2;
-    std.println(b, c);
+    ter.out b, c;
     ret;
-    std.println("I will never be printed :(")
+    ter.out "I will never be printed :(";
 };
-std.println(b, c);
+ter.out b, c;
 
 // variable deletion
 to_delete := 4;
@@ -52,46 +52,46 @@ del to_delete, to_delete_also;
 
 // procs & fns
 p := proc {
-    std.println("In a proc, b =", b);
+    ter.out "In a proc, b =", b;
 };
 p();
 q := fn|a| {
-    std.println("This is a function, a =", a)
+    ter.out "This is a function, a =", a;
 };
 q(3);
 q(4);
 r := fn|s: str: "default value"| {
-    std.println("Printing string:", s);
+    ter.out "Printing string:", s;
 };
 r("not default value");
 r();
 s := fn {3};
-std.println(s(), s@type);
+ter.out s(), s@type;
 
 // calling without parentheses
-t := |a, b| std.println(a, b);
+t := |a, b| ter.out a, b;
 t 1, 2;
 
 // function calls on numbers
-std.println(3(4), 6(2));
+ter.out 3(4), 6 2;
 
 // string multiplication
-std.println("hi "*5);
+ter.out("hi "*5);
 
 // numeric types other than i32 and f64
-std.println(3@u8, 3@u8@type);
+ter.out(3@u8, 3@u8@type);
 
 // deferred expressions
 defer {
-    std.println("This will be printed when the block ends");
+    ter.out "This will be printed when the block ends";
 };
 
 // preprocessed value
 a := pre {
-    std.println("This will be printed before the actual script runs");
+    ter.out "This will be printed before the actual script runs";
     3
 };
-std.println(a);
+ter.out a;
 
 // classes (WIP)
 Point1 := class {
@@ -100,4 +100,4 @@ Point1 := class {
         #.y = y;
     }
 };
-Point1(2, 3);
+Point1 2, 3;

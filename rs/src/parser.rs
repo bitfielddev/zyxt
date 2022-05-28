@@ -728,6 +728,7 @@ pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
 }
 
 fn parse_unparen_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
+    println!("{:#?}", elements);
     Ok(vec![Element::Call {
         position: elements[0].get_pos().clone(),
         raw: elements.iter()

@@ -41,7 +41,7 @@ pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Variable>) ->
         },
         Element::Call {called, args: input_args, position, raw, ..} => {
             if let Element::Variable {ref parent, ref name, ..} = *called {
-                if name == &"println".to_string() && parent.get_name() == *"std" {
+                if name == &"out".to_string() && parent.get_name() == *"ter" {
                     println!("{}", input_args.into_iter().
                         map(|arg| interpret_expr(arg, i_data))
                         .collect::<Result<Vec<_>, _>>()?
