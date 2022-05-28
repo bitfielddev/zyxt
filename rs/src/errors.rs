@@ -1,14 +1,14 @@
 use std::process::exit;
 use ansi_term::Color::{Black, Red, Yellow};
 use ansi_term::Style;
-use crate::{Element, Type};
+use crate::{Element, Token, Type};
 use crate::objects::variable::Variable;
 use crate::objects::position::Position;
 use crate::objects::token::Keyword;
 
 #[derive(Clone)]
 pub struct ZyxtError {
-    pub position: Vec<Position>,
+    pub position: Vec<(Position, String)>,
     pub code: &'static str,
     pub message: String
 }
@@ -18,21 +18,31 @@ impl ZyxtError {
         exit(0)
     }
     pub fn print_noexit(&self) {
-        print!("{}", Style::new().on(Red).bold().paint(
-            self.position.iter().map(|pos| format!(" {} ", pos)).collect::<Vec<String>>().join("\n")
-        ));
+        for (pos, raw) in &self.position {
+            println!("{}{}", Style::new().on(Red).bold().paint(
+                format!(" {} ", pos)
+            ), Style::new().bold().paint(
+                format!(" {} ", raw)
+            ));
+        }
         println!("{}", Black.on(Yellow).paint(format!(" Error {} ", self.code)).to_string()
             + &*Red.bold().paint(format!(" {}", self.message)).to_string());
     }
-    pub fn from_pos(pos: &Position) -> PositionForZyxtError {
-        PositionForZyxtError {position: vec![pos.clone()]}
+    pub fn from_pos_and_raw(pos: &Position, raw: &String) -> PositionForZyxtError {
+        PositionForZyxtError {position: vec![(pos.clone(), raw.clone())]}
+    }
+    pub fn from_element(element: &Element) -> PositionForZyxtError {
+        PositionForZyxtError {position: vec![(element.get_pos().clone(), element.get_raw())]}
+    }
+    pub fn from_token(token: &Token) -> PositionForZyxtError {
+        PositionForZyxtError {position: vec![(token.position.clone(), token.value.clone())]}
     }
     pub fn no_pos() -> PositionForZyxtError {
         PositionForZyxtError {position: vec![]}
     }
 }
 pub struct PositionForZyxtError {
-    position: Vec<Position>
+    position: Vec<(Position, String)>
 }
 #[allow(dead_code)]
 impl PositionForZyxtError {
@@ -360,6 +370,15 @@ impl PositionForZyxtError {
             code: "4.3",
             message: format!("Value of type `{}` assigned to variable `{}` of type `{}`",
                 value_type, variable, var_type)
+        }
+    }
+
+    /// inconsistent block return type (temporary)
+    pub fn error_4_t(self, block_type: Type, return_type: Type) -> ZyxtError {
+        ZyxtError {
+            position: self.position,
+            code: "4.4",
+            message: format!("Block returns variable of type `{}` earlier on, but also returns variable of type `{}`", block_type, return_type)
         }
     }
 }

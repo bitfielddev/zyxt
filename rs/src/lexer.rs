@@ -241,7 +241,8 @@ fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
 fn check_no_unknown_tokens(input: &[Token]) -> Result<(), ZyxtError> {
     for token in input.iter() {
         if token.type_ == TokenType::Null {
-            return Err(ZyxtError::from_pos(&token.position).error_2_1_1(token.value.clone()))
+            return Err(ZyxtError::from_pos_and_raw(&token.position, &token.value)
+                .error_2_1_1(token.value.clone()))
         }
     }
     Ok(())

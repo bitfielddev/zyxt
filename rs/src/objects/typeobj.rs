@@ -17,6 +17,7 @@ pub enum Type {
         class_attrs: HashMap<String, Element>,
         inst_attrs: HashMap<String, Element>,
     },
+    Return(Box<Type>)
 }
 
 impl Display for Type {
@@ -27,7 +28,8 @@ impl Display for Type {
                     format!("{}<{}>", name,
                             type_args.iter().map(|arg| format!("{}", arg)).collect::<Vec<String>>().join(", "))
                 } else {name.to_string()},
-            Type::Definition {name, ..} => name.clone()
+            Type::Definition {name, ..} => name.clone(),
+            Type::Return(ty) => format!("{}", ty)
         })
     }
 }
@@ -48,7 +50,8 @@ impl Type {
                 raw: self.to_string(),
                 parent: Box::new(Element::NullElement)
             },
-            Type::Definition { .. } => todo!()
+            Type::Definition { .. } => todo!(),
+            Type::Return(ty) => ty.as_element()
         }
     }
     pub fn get_attrs(&self) -> HashMap<String, Element> {
@@ -75,6 +78,7 @@ impl Type {
                 }
                 attrs
             }
+            Type::Return(ty) => ty.get_attrs()
             // TODO get class from type, maybe?
         }
     }

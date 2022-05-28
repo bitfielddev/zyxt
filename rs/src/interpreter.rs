@@ -1,49 +1,49 @@
-use crate::objects::deferstack::DeferStack;
+use std::collections::HashMap;
 use crate::{Type, ZyxtError};
 use crate::objects::element::{Argument, Element};
 use crate::objects::variable::Variable;
-use crate::objects::heap::Heap;
+use crate::objects::interpreter_data::{FrameData, InterpreterData};
 
 
-pub fn interpret_expr(input: Element, varlist: &mut Heap<Variable>, deferlist: &mut DeferStack) -> Result<Variable, ZyxtError> {
+pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Variable>) -> Result<Variable, ZyxtError> {
     match input {
         Element::Token(..) | Element::Comment {..} | Element::Preprocess {..} => panic!(),
         Element::NullElement => Ok(Variable::Null),
-        Element::UnaryOpr {type_, operand, position, ..} =>
-            if let Some(v) = interpret_expr(*operand.clone(), varlist, deferlist)?.un_opr(&type_)
+        Element::UnaryOpr {type_, operand, position, raw, ..} =>
+            if let Some(v) = interpret_expr(*operand.clone(), i_data)?.un_opr(&type_)
                 {Ok(v)} else {
-                    Err(ZyxtError::from_pos(&position)
+                    Err(ZyxtError::from_pos_and_raw(&position, &raw)
                         .error_4_1_1(type_.to_string(),
-                                     interpret_expr(*operand, varlist, deferlist)?))
+                                     interpret_expr(*operand, i_data)?))
                 },
-        Element::BinaryOpr {type_, operand1, operand2, position, ..} =>
-            if let Some(v) = interpret_expr(*operand1.clone(), varlist, deferlist)?
-                .bin_opr(&type_, interpret_expr(*operand2.clone(), varlist, deferlist)?)
+        Element::BinaryOpr {type_, operand1, operand2, position, raw, ..} =>
+            if let Some(v) = interpret_expr(*operand1.clone(), i_data)?
+                .bin_opr(&type_, interpret_expr(*operand2.clone(), i_data)?)
                 {Ok(v)} else {
-                    Err(ZyxtError::from_pos(&position)
+                    Err(ZyxtError::from_pos_and_raw(&position, &raw)
                         .error_4_1_0(type_.to_string(),
-                                 interpret_expr(*operand1, varlist, deferlist)?,
-                                 interpret_expr(*operand2, varlist, deferlist)?))
+                                 interpret_expr(*operand1, i_data)?,
+                                 interpret_expr(*operand2, i_data)?))
             },
-        Element::Variable {name, position, ..} => varlist.get_val(&name, &position),
+        Element::Variable {name, position, raw, ..} => i_data.get_val(&name, &position, &raw),
         Element::Declare {variable, content, ..} => {
-            let var = interpret_expr(*content, varlist, deferlist);
-            varlist.declare_val(&variable.get_name(), &var.clone()?);
+            let var = interpret_expr(*content, i_data);
+            i_data.declare_val(&variable.get_name(), &var.clone()?);
             var
         },
-        Element::Set {variable, content, position, ..} => {
-            let var = interpret_expr(*content, varlist, deferlist);
-            varlist.set_val(&variable.get_name(), &var.clone()?, &position)?;
+        Element::Set {variable, content, position, raw, ..} => {
+            let var = interpret_expr(*content, i_data);
+            i_data.set_val(&variable.get_name(), &var.clone()?, &position, &raw)?;
             var
         },
         Element::Literal {type_, content, ..} => {
             Ok(Variable::from_type_content(type_, content))
         },
-        Element::Call {called, args: input_args, position, ..} => {
+        Element::Call {called, args: input_args, position, raw, ..} => {
             if let Element::Variable {ref parent, ref name, ..} = *called {
                 if name == &"println".to_string() && parent.get_name() == *"std" {
                     println!("{}", input_args.into_iter().
-                        map(|arg| interpret_expr(arg, varlist, deferlist))
+                        map(|arg| interpret_expr(arg, i_data))
                         .collect::<Result<Vec<_>, _>>()?
                         .into_iter()
                         .map(|v| v.to_string())
@@ -51,49 +51,59 @@ pub fn interpret_expr(input: Element, varlist: &mut Heap<Variable>, deferlist: &
                     return Ok(Variable::Null)
                 }
             }
-            let to_call = interpret_expr(*called, varlist, deferlist)?;
+            let to_call = interpret_expr(*called, i_data)?;
             if let Variable::Proc {is_fn, args, content, ..} = to_call {
-                let mut fn_varlist: Heap<Variable> = Heap::<Variable>::default_variable();
+                let mut processed_args = HashMap::new();
                 for (cursor, Argument {name, default, ..}) in args.into_iter().enumerate() {
                     let input_arg = if input_args.len() > cursor {input_args.get(cursor).unwrap().clone()}
                     else {default.unwrap()};
-                    fn_varlist.declare_val(&name, &interpret_expr(input_arg, varlist, deferlist)?);
+                    processed_args.insert(name, interpret_expr(input_arg, i_data)?);
                 }
-                let proc_varlist = if is_fn {&mut fn_varlist} else {
-                    varlist.add_set();
-                    for (k, v) in fn_varlist.0[0].iter() {varlist.declare_val(k, v);}
-                    varlist
+
+                let mut fn_i_data = InterpreterData::<Variable>::default_variable();
+                let fn_i_data=  if is_fn {
+                    &mut fn_i_data
+                } else {
+                    i_data.add_frame(Some(FrameData {
+                        position,
+                        raw_call: raw,
+                        args: processed_args.clone(),
+                    }));
+                    i_data
                 };
-                let res = interpret_block(content, proc_varlist, deferlist, true, false);
-                proc_varlist.pop_set();
+                fn_i_data.heap.last_mut().unwrap().extend(processed_args);
+
+                let res = interpret_block(content, fn_i_data, true, false);
+                fn_i_data.pop_frame()?;
                 res
             } else if let Some(v) = to_call.call(input_args.into_iter()
-                .map(|a| interpret_expr(a, varlist, deferlist))
+                .map(|a| interpret_expr(a, i_data))
                 .collect::<Result<Vec<_>, _>>()?) {Ok(v)} else {
-                Err(ZyxtError::from_pos(&position).error_3_1_1(to_call, "#call".to_string()))
+                Err(ZyxtError::from_pos_and_raw(&position, &raw)
+                    .error_3_1_1(to_call, "#call".to_string()))
             }
         },
         Element::If {conditions, ..} => {
             for cond in conditions {
                 if cond.condition == Element::NullElement {
-                    return interpret_block(cond.if_true, varlist, deferlist, false, true)
-                } else if let Variable::Bool(true) = interpret_expr(cond.condition, varlist, deferlist)? {
-                    return interpret_block(cond.if_true, varlist, deferlist, false, true)
+                    return interpret_block(cond.if_true, i_data, false, true)
+                } else if let Variable::Bool(true) = interpret_expr(cond.condition, i_data)? {
+                    return interpret_block(cond.if_true, i_data, false, true)
                 }
             }
             Ok(Variable::Null)
         },
-        Element::Block {content, ..} => interpret_block(content, varlist, deferlist, true, true),
-        Element::Delete {names, position, ..} => {
-            for name in names {varlist.delete_val(&name, &position)?;}
+        Element::Block {content, ..} => interpret_block(content, i_data, true, true),
+        Element::Delete {names, position, raw, ..} => {
+            for name in names {i_data.delete_val(&name, &position, &raw)?;}
             Ok(Variable::Null)
         },
-        Element::Return { value, ..} => Ok(Variable::Return(Box::new(interpret_expr(*value, varlist, deferlist)?))),
+        Element::Return { value, ..} => Ok(Variable::Return(Box::new(interpret_expr(*value, i_data)?))),
         Element::Procedure {is_fn, args, return_type, content, ..} => Ok(Variable::Proc {
             is_fn, args, return_type, content
         }),
         Element::Defer {content, ..} => {
-            deferlist.add_defer(content);
+            i_data.add_defer(content);
             Ok(Variable::Null)
         },
         Element::Class {class_attrs, inst_attrs, is_struct, ..} => Ok(Variable::Type(Type::Definition {
@@ -104,69 +114,78 @@ pub fn interpret_expr(input: Element, varlist: &mut Heap<Variable>, deferlist: &
     }
 }
 
-pub fn interpret_block(input: Vec<Element>, varlist: &mut Heap<Variable>,
-                       deferlist: &mut DeferStack, returnable: bool, add_set: bool) -> Result<Variable, ZyxtError> {
+pub fn interpret_block(input: Vec<Element>, i_data: &mut InterpreterData<Variable>,
+                       returnable: bool, add_frame: bool) -> Result<Variable, ZyxtError> {
     let mut last = Variable::Null;
-    if add_set {
-        varlist.add_set();
-        deferlist.add_set();
+
+    macro_rules! pop {
+        () => {
+            if add_frame {
+                let res = i_data.pop_frame()?;
+                if let Some(res) = res {
+                    return Ok(res)
+                }
+            }
+        }
+    }
+
+    if add_frame {
+        i_data.add_frame(None);
     }
     for ele in input {
         if let Element::Return { value, ..} = &ele {
-            if returnable { last = interpret_expr(*value.clone(), varlist, deferlist)? }
-            else { last = interpret_expr(ele, varlist, deferlist)?; }
-            if add_set {
-                deferlist.execute_and_clear(varlist)?;
-                varlist.pop_set();
-            }
+            if returnable { last = interpret_expr(*value.clone(), i_data)? }
+            else { last = interpret_expr(ele, i_data)?; }
+            pop!();
             return Ok(last)
         } else {
-            last = interpret_expr(ele, varlist, deferlist)?;
+            last = interpret_expr(ele, i_data)?;
             if let Variable::Return(value) = last {
-                if add_set {
-                    deferlist.execute_and_clear(varlist)?;
-                    varlist.pop_set();
-                }
+                pop!();
                 return if returnable {Ok(*value)} else {Ok(Variable::Return(value))}
             }
         }
     }
-    if add_set {
-        deferlist.execute_and_clear(varlist)?;
-        varlist.pop_set();
-    }
+    pop!();
     Ok(last)
 }
 
 pub fn interpret_asts(input: Vec<Element>) -> Result<i32, ZyxtError> {
-    let mut varlist = Heap::<Variable>::default_variable();
-    let mut deferlist = DeferStack::new();
+    let mut i_data = InterpreterData::<Variable>::default_variable();
     let mut last = Variable::Null;
     for ele in &input {
-        if let Element::Return { value, position, ..} = ele {
-            let return_val = interpret_expr(*value.clone(), &mut varlist, &mut deferlist)?;
-            return if let Variable::I32(v) = return_val {
-                deferlist.execute_and_clear(&mut varlist)?;
-                Ok(v)
-            } else {
-                Err(ZyxtError::from_pos(position).error_4_2(return_val))
+        if let Element::Return { value, position, raw, ..} = ele {
+            let mut return_val = interpret_expr(*value.clone(), &mut i_data)?;
+            let res = i_data.pop_frame()?;
+            if let Some(res) = res {
+                return_val = res;
+            }
+            return if let Variable::I32(v) = return_val { Ok(v) } else {
+                Err(ZyxtError::from_pos_and_raw(position, raw).error_4_2(return_val))
             }
         } else {
-            last = interpret_expr(ele.clone(), &mut varlist, &mut deferlist)?;
-            if let Variable::Return(value) = last {
-                deferlist.execute_and_clear(&mut varlist)?;
-                varlist.pop_set();
+            last = interpret_expr(ele.clone(), &mut i_data)?;
+            if let Variable::Return(mut value) = last {
+                let res = i_data.pop_frame()?;
+                if let Some(res) = res {
+                    value = Box::new(res);
+                }
                 return if let Variable::I32(v) = *value { Ok(v) } else {
-                    Err(ZyxtError::from_pos(ele.get_pos()).error_4_2(*value))
+                    Err(ZyxtError::from_pos_and_raw(ele.get_pos(), &ele.get_raw()).error_4_2(*value))
                 }
             }}
     }
-    deferlist.execute_and_clear(&mut varlist)?;
+    let res = i_data.pop_frame()?;
+    if let Some(res) = res {
+        last = res;
+    }
     return if let Variable::I32(v) = last {
         Ok(v)
     } else if let Variable::Null = last {
         Ok(0)
     } else {
-        Err(ZyxtError::from_pos(input.last().unwrap().get_pos()).error_4_2(last))
+        let last_ele = input.last().unwrap();
+        Err(ZyxtError::from_pos_and_raw(last_ele.get_pos(), &last_ele.get_raw())
+            .error_4_2(last))
     }
 }

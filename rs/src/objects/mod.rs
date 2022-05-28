@@ -4,6 +4,5 @@ pub mod token_entries;
 pub mod typeobj;
 pub mod position;
 pub mod state_tracker;
-pub mod heap;
+pub mod interpreter_data;
 pub mod variable;
-pub mod deferstack;

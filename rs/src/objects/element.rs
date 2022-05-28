@@ -5,10 +5,9 @@ use crate::objects::token::{Flag, OprType};
 use crate::{gen_instructions, Token};
 use crate::errors::ZyxtError;
 use crate::interpreter::interpret_block;
-use crate::objects::deferstack::DeferStack;
 use crate::objects::variable::Variable;
 use crate::objects::typeobj::Type;
-use crate::objects::heap::Heap;
+use crate::objects::interpreter_data::{InterpreterData};
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
@@ -133,6 +132,18 @@ impl Display for Argument {
         )
     }
 }
+pub trait VecElementRaw {
+    fn get_raw(&self) -> String;
+}
+impl VecElementRaw for Vec<Element> {
+    fn get_raw(&self) -> String {
+        self.iter()
+            .map(|e| e.get_raw())
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
+}
+
 impl Element {
     pub fn get_pos(&self) -> &Position {
         match self {
@@ -159,7 +170,7 @@ impl Element {
     pub fn get_raw(&self) -> String {
         match self {
             Element::NullElement => "".to_string(),
-            Element::Token(t) => t.get_raw(),
+            Element::Token(t) => t.get_raw().trim().to_string(),
             Element::Variable { raw, .. } |
             Element::Literal { raw, .. } |
             Element::Comment { raw, .. } |
@@ -175,7 +186,7 @@ impl Element {
             Element::Procedure { raw, .. } |
             Element::Preprocess { raw, .. } |
             Element::Defer { raw, .. } |
-            Element::Class { raw, .. } => raw.clone()
+            Element::Class { raw, .. } => raw.clone().trim().to_string()
         }
     }
     pub fn get_name(&self) -> String {
@@ -191,7 +202,7 @@ impl Element {
         }} else {panic!("not variable")}
     }
     pub fn bin_op_return_type(type_: &OprType, type1: Type,
-                              type2: Type, position: &Position) -> Result<Type, ZyxtError> {
+                              type2: Type, position: &Position, raw: &String) -> Result<Type, ZyxtError> {
         if type_ == &OprType::TypeCast {
             return Ok(type2)
         }
@@ -199,49 +210,52 @@ impl Element {
             .bin_opr(type_, Variable::default(type2.clone())?) {
             Ok(v.get_type_obj())
         } else {
-            Err(ZyxtError::from_pos(position).error_4_0_0(type_.to_string(), type1.to_string(), type2.to_string()))
+            Err(ZyxtError::from_pos_and_raw(position, raw)
+                .error_4_0_0(type_.to_string(), type1.to_string(), type2.to_string()))
         }
     }
     pub fn un_op_return_type(type_: &OprType, opnd_type: Type,
-                             position: &Position) -> Result<Type, ZyxtError> {
+                             position: &Position, raw: &String) -> Result<Type, ZyxtError> {
         if let Some(v) = Variable::default(opnd_type.clone())?.un_opr(type_) {
             Ok(v.get_type_obj())
         } else {
-            Err(ZyxtError::from_pos(position).error_4_0_1(type_.to_string(), opnd_type.to_string()))
+            Err(ZyxtError::from_pos_and_raw(position, raw)
+                .error_4_0_1(type_.to_string(), opnd_type.to_string()))
         }
     }
-    pub fn block_type(content: &mut [Element], typelist: &mut Heap<Type>, add_set: bool) -> Result<Type, ZyxtError> {
+    pub fn block_type(content: &mut [Element], typelist: &mut InterpreterData<Type>, add_set: bool) -> Result<(Type, Option<Type>), ZyxtError> {
         let mut last = Type::null();
-        if add_set {typelist.add_set();}
+        let mut return_type = None;
+        if add_set {typelist.add_frame(None);}
         for ele in content.iter_mut() {
             last = ele.eval_type(typelist)?;
+            if let Type::Return (value) = last.clone() {
+                if return_type.clone().is_none() {
+                    return_type = Some(*value);
+                } else if last != return_type.clone().unwrap() {
+                    return Err(ZyxtError::from_pos_and_raw(ele.get_pos(), &ele.get_raw())
+                        .error_4_t(last, return_type.unwrap()))
+                }
+            }
         }
-        if add_set {typelist.pop_set();}
-        Ok(last)
+        if return_type.is_none() {
+            return_type = Some(Type::null());
+        }
+        if add_set {
+            if last != return_type.clone().unwrap() {
+                let last_ele = content.last().unwrap();
+                return Err(ZyxtError::from_pos_and_raw(last_ele.get_pos(), &last_ele.get_raw())
+                    .error_4_t(last, return_type.unwrap()))
+            }
+            typelist.pop_frame();
+        }
+        Ok((last, if add_set {None} else {return_type}))
     }
-    pub fn call_return_type(called: &mut Element, args: &mut [Element], typelist: &mut Heap<Type>) -> Result<Type, ZyxtError> {
+    pub fn call_return_type(called: &mut Element, args: &mut [Element], typelist: &mut InterpreterData<Type>) -> Result<Type, ZyxtError> {
         if let Element::Variable {ref parent, ref name, ..} = *called {
             if name == &"println".to_string() && parent.get_name() == *"std" {
                 return Ok(Type::null())
             }
-        }
-        if let Element::Procedure{is_fn, args: proc_args, content, position, ..} = called {
-            let mut fn_typelist: Heap<Type> = Heap::<Type>::default_type();
-            for (cursor, Argument {name, default, ..}) in proc_args.iter_mut().enumerate() {
-                let mut input_arg = if args.len() > cursor {Ok(args.get(cursor).unwrap().clone())}
-                else {default.clone().ok_or_else(|| ZyxtError::from_pos(position).error_2_3(name.clone()))}?;
-                fn_typelist.declare_val(name, &input_arg.eval_type(typelist)?);
-                if args.len() > cursor {*args.get_mut(cursor).unwrap() = input_arg;}
-                else {*default = Some(input_arg)}
-            }
-            let proc_varlist = if *is_fn {&mut fn_typelist} else {
-                typelist.add_set();
-                for (k, v) in fn_typelist.0[0].iter() {typelist.declare_val(k, v);}
-                typelist
-            };
-            let res = Element::block_type(content, proc_varlist, true)?;
-            proc_varlist.pop_set();
-            return Ok(res)
         }
         if let Type::Instance {name, type_args, ..} = called.eval_type(typelist)? {
             if name == *"proc" || name == *"fn" {return Ok(type_args[1].clone())}
@@ -259,12 +273,12 @@ impl Element {
                              "#call".to_string()))
         }*/
     }
-    pub fn eval_type(&mut self, typelist: &mut Heap<Type>) -> Result<Type, ZyxtError> {
+    pub fn eval_type(&mut self, typelist: &mut InterpreterData<Type>) -> Result<Type, ZyxtError> {
         match self {
             Element::Literal {type_, ..} => Ok(type_.clone()),
-            Element::Variable {name, position, ..} =>
-                typelist.get_val(name, position),
-            Element::Block {content, ..} => Element::block_type(content, typelist, true),
+            Element::Variable {name, position, raw, ..} =>
+                typelist.get_val(name, position, raw),
+            Element::Block {content, ..} => Ok(Element::block_type(content, typelist, true)?.0),
             Element::Call {called, args, ..} =>
                 Element::call_return_type(called, args, typelist),
             Element::Declare {position, variable, content,
@@ -302,26 +316,30 @@ impl Element {
                 };
                 Ok(content_type)
             },
-            Element::If {conditions, ..} => Element::block_type(&mut conditions[0].if_true, typelist, true), // TODO consider all returns
-            Element::BinaryOpr {type_, operand1, operand2, position, ..} => {
+            Element::If {conditions, ..} => Ok(Element::block_type(&mut conditions[0].if_true, typelist, true)?.0), // TODO consider all returns
+            Element::BinaryOpr {type_, operand1, operand2, position, raw, ..} => {
                 let type1 = operand1.eval_type(typelist)?;
                 let type2 = operand2.eval_type(typelist)?;
                 if type_ == &OprType::TypeCast && type2 == Type::from_str("type") {
                     return Ok(Type::from_str(&*operand2.get_name()));
                 }
-                Element::bin_op_return_type(type_, type1, type2, position)
+                Element::bin_op_return_type(type_, type1, type2, position, raw)
             },
-            Element::UnaryOpr {type_, operand, position, ..} => {
+            Element::UnaryOpr {type_, operand, position, raw, ..} => {
                 let opnd_type = operand.eval_type(typelist)?;
-                Element::un_op_return_type(type_, opnd_type, position)
+                Element::un_op_return_type(type_, opnd_type, position, raw)
             },
-            Element::Procedure {is_fn, return_type, content, args, ..} => {
-                typelist.add_set();
+            Element::Procedure {is_fn, return_type, content, args, position, raw, ..} => {
+                typelist.add_frame(None);
                 for arg in args {
                     typelist.declare_val(&arg.name, &arg.type_);
                 }
-                let res =  Element::block_type(content, typelist, false)?;
+                let (res, block_return_type) =  Element::block_type(content, typelist, false)?;
                 if return_type == &Type::null() {*return_type = res;}
+                else if *return_type != block_return_type.clone().unwrap() {
+                    return Err(ZyxtError::from_pos_and_raw(position, raw)
+                        .error_4_t(return_type.clone(), block_return_type.unwrap()))
+                }
                 Ok(Type::Instance {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),
                     type_args: vec![Type::null(), return_type.clone()],
@@ -330,29 +348,27 @@ impl Element {
                 })
             }, // TODO angle bracket thingy when it is implemented
             Element::Preprocess {content, ..} => {
-                let mut pre_typelist = Heap::<Type>::default_type();
-                let mut varlist = Heap::<Variable>::default_variable();
-                let mut deferlist = DeferStack::new();
+                let mut pre_typelist = InterpreterData::<Type>::default_type();
+                let mut i_data = InterpreterData::<Variable>::default_variable();
                 let pre_instructions = gen_instructions(content.clone(), &mut pre_typelist)?;
-                let pre_value = interpret_block(pre_instructions, &mut varlist,
-                                                &mut deferlist,true, false)?;
+                let pre_value = interpret_block(pre_instructions, &mut i_data,
+                                                true, false)?;
                 *self = pre_value.as_element();
                 self.eval_type(typelist)
             },
-            Element::Defer {content, ..} => {
-                *content = gen_instructions(content.clone(), typelist)?;
-                Ok(Type::null())
-            },
-            Element::Set {position, variable, content, ..} => {
+            Element::Defer {content, ..} => // TODO check block return against call stack
+                Ok(Element::block_type(content, typelist, false)?.0),
+            Element::Set {position, variable, content, raw, ..} => {
                 let content_type = content.eval_type(typelist)?;
-                let var_type = typelist.get_val(&variable.get_name(), position)?;
+                let var_type = typelist.get_val(&variable.get_name(), position, raw)?;
                 if content_type != var_type {
-                    Err(ZyxtError::from_pos(position).error_4_3(variable.get_name(),
-                                                            var_type, content_type))
+                    Err(ZyxtError::from_pos_and_raw(position, raw)
+                        .error_4_3(variable.get_name(),
+                                   var_type, content_type))
                 } else {Ok(var_type)}
             },
             Element::Class {content, inst_attrs, args, is_struct, ..} => {
-                typelist.add_set();
+                typelist.add_frame(None);
                 let class_attrs = HashMap::new();
                 for expr in content.iter_mut() {
                     expr.eval_type(typelist)?;
@@ -365,7 +381,7 @@ impl Element {
                 if args.is_some() && class_attrs.contains_key("#init") {
                     todo!("raise error here")
                 }
-                typelist.pop_set();
+                typelist.pop_frame();
                 Ok(Type::Definition {
                     name: if *is_struct { "struct" } else { "class" }.to_string(),
                     generics: vec![],
@@ -377,8 +393,8 @@ impl Element {
             Element::Delete {..} |
             Element::Comment {..} |
             Element::Return {..} => Ok(Type::null()),
-            Element::Token(Token{position, ..}) =>
-                Err(ZyxtError::from_pos(position).error_2_1_0(self.get_raw()))
+            Element::Token(Token{position, value, ..}) =>
+                Err(ZyxtError::from_pos_and_raw(position, value).error_2_1_0(self.get_raw()))
         }
     }
 }

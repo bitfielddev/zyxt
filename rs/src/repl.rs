@@ -7,16 +7,14 @@ use rustyline::Editor;
 use rustyline::error::ReadlineError;
 use crate::{compile, ZyxtError};
 use crate::interpreter::interpret_expr;
-use crate::objects::deferstack::DeferStack;
 use crate::objects::typeobj::Type;
 use crate::objects::variable::Variable;
-use crate::objects::heap::Heap;
+use crate::objects::interpreter_data::InterpreterData;
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
-    let mut typelist = Heap::<Type>::default_type();
-    let mut varlist = Heap::<Variable>::default_variable();
-    let mut deferlist = DeferStack::new();
+    let mut typelist = InterpreterData::<Type>::default_type();
+    let mut varlist = InterpreterData::<Variable>::default_variable();
     let mut rl = Editor::<()>::new();
     let mut history_path = home_dir().unwrap();
     history_path.push(".zyxt_history");
@@ -36,7 +34,7 @@ pub fn repl(verbosity: u8) {
                 rl.add_history_entry(&input);
                 if input == *";exit" {break;}
                 if input == *";vars" {
-                    println!("{}", varlist);
+                    println!("{}", varlist.heap_to_string());
                     continue;
                 }
                 let instructions = match compile(input, &filename, &mut typelist, verbosity) {
@@ -48,9 +46,9 @@ pub fn repl(verbosity: u8) {
                 if verbosity >= 2 {println!("{}", Yellow.bold().paint("\nInterpreting"));}
                 for (i, instr) in instructions.into_iter().enumerate() {
                     match {
-                        if verbosity == 0 {interpret_expr(instr, &mut varlist, &mut deferlist)} else {
+                        if verbosity == 0 {interpret_expr(instr, &mut varlist)} else {
                             let interpret_start = Instant::now();
-                            let result = interpret_expr(instr, &mut varlist, &mut deferlist);
+                            let result = interpret_expr(instr, &mut varlist);
                             let interpret_time = interpret_start.elapsed().as_micros();
                             println!("{}", White.dimmed().paint(format!("{}µs", interpret_time)));
                             result
