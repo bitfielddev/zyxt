@@ -94,10 +94,10 @@ a := pre {
 ter.out a;
 
 // classes (WIP)
-Point1 := class {
+/*Point1 := class {
     #init := fn|x: i32, y: i32| {
         #.x = x;
         #.y = y;
     }
 };
-Point1 2, 3;
+Point1 2, 3;*/

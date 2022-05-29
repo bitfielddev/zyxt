@@ -7,7 +7,7 @@ use crate::objects::position::Position;
 use crate::objects::typeobj::Type;
 use crate::objects::value::Value;
 
-const PRIM_NAMES: [&str; 23] = ["str", "bool",
+const PRIM_NAMES: [&str; 22] = ["str", "bool",
     "i8", "i16", "i32", "i64", "i128", "isize", "ibig",
     "u8", "u16", "u32", "u64", "u128", "usize", "ubig",
     "f16", "f32", "f64",
