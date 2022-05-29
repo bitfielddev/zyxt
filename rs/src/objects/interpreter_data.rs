@@ -7,10 +7,10 @@ use crate::objects::position::Position;
 use crate::objects::typeobj::Type;
 use crate::objects::value::Value;
 
-const PRIM_NAMES: [&str; 21] = ["str",
+const PRIM_NAMES: [&str; 23] = ["str", "bool",
     "i8", "i16", "i32", "i64", "i128", "isize", "ibig",
     "u8", "u16", "u32", "u64", "u128", "usize", "ubig",
-    "f32", "f64", "bool",
+    "f16", "f32", "f64",
     "#null", "#any", "type"];
 
 pub struct FrameData<T: Clone> {

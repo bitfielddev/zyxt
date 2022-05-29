@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
+use half::f16;
 use num::{BigInt, BigUint};
 use crate::{Element, ZyxtError};
 use crate::objects::element::Argument;
@@ -23,6 +24,7 @@ pub enum Value {
     U128(u128),
     Usize(usize),
     Ubig(BigUint),
+    F16(f16),
     F32(f32),
     F64(f64),
     Str(String),
@@ -59,6 +61,7 @@ impl Display for Value {
             Value::U128(v) => v.to_string(),
             Value::Usize(v) => v.to_string(),
             Value::Ubig(v) => v.to_string(),
+            Value::F16(v) => v.to_string(),
             Value::F32(v) => v.to_string(),
             Value::F64(v) => v.to_string(),
             Value::Str(v) => v.clone(),
@@ -773,6 +776,7 @@ impl Value {
                 "u128" => Value::U128(content.parse::<u128>().unwrap()),
                 "usize" => Value::Usize(content.parse::<usize>().unwrap()),
                 "ubig" => Value::Ubig(content.parse::<BigUint>().unwrap()),
+                "f16" => Value::F16(content.parse::<f16>().unwrap()),
                 "f32" => Value::F32(content.parse::<f32>().unwrap()),
                 "f64" => Value::F64(content.parse::<f64>().unwrap()),
                 "str" => Value::Str(content),
@@ -798,6 +802,7 @@ impl Value {
             Value::U128(..) => Type::from_str("u128"),
             Value::Usize(..) => Type::from_str("usize"),
             Value::Ubig(..) => Type::from_str("ubig"),
+            Value::F16(..) => Type::from_str("f16"),
             Value::F32(..) => Type::from_str("f32"),
             Value::F64(..) => Type::from_str("f64"),
             Value::Str(..) => Type::from_str("str"),
@@ -844,6 +849,7 @@ impl Value {
             Value::U128(v) => to_literal!(v),
             Value::Usize(v) => to_literal!(v),
             Value::Ubig(v) => to_literal!(v),
+            Value::F16(v) => to_literal!(v),
             Value::F32(v) => to_literal!(v),
             Value::F64(v) => to_literal!(v),
             Value::Str(v) => to_literal!(v),
