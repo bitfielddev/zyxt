@@ -331,10 +331,15 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                             "true" | "false" => "bool",
                             "null" => "#null",
                             "inf" | "undef" => "#num",
-                            _ => panic!("{}", selected.value)
+                            _ => unreachable!("{}", selected.value)
                         }
                     } else if selected.type_ == TokenType::LiteralNumber{
-                        if selected.value.contains('.') {"f64"} else {"i32"}
+                        if selected.value.contains('.') {"f64"}
+                        else if selected.value.parse::<i32>().is_ok() {"i32"}
+                        else if selected.value.parse::<i64>().is_ok() {"i64"}
+                        else if selected.value.parse::<i128>().is_ok() {"i128"}
+                        else if selected.value.parse::<u128>().is_ok() {"u128"}
+                        else {"f64"}
                     } else {"str"}),
                     content: selected.value.clone()
                 }
@@ -727,8 +732,15 @@ pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
     Ok(new_elements)
 }
 
-fn parse_unparen_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
-    println!("{:#?}", elements);
+fn parse_unparen_calls(mut elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
+    while let Some(Element::Token(Token{type_: TokenType::UnaryOpr(_, Side::Left), ..})) = elements.get(0) {
+        elements[1] = parse_un_oprs(elements[..2].to_vec())?[0].clone();
+        elements.remove(0);
+    }
+    while let Some(Element::Token(Token{type_: TokenType::UnaryOpr(_, Side::Right), ..})) = elements.get(1) {
+        elements[1] = parse_un_oprs(elements[..2].to_vec())?[0].clone();
+        elements.remove(0);
+    }
     Ok(vec![Element::Call {
         position: elements[0].get_pos().clone(),
         raw: elements.iter()

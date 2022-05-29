@@ -7,9 +7,9 @@ use crate::objects::position::Position;
 use crate::objects::typeobj::Type;
 use crate::objects::variable::Variable;
 
-const PRIM_NAMES: [&str; 19] = ["str",
-    "i8", "i16", "i32", "i64", "i128", "isize",
-    "u8", "u16", "u32", "u64", "u128", "usize",
+const PRIM_NAMES: [&str; 21] = ["str",
+    "i8", "i16", "i32", "i64", "i128", "isize", "ibig",
+    "u8", "u16", "u32", "u64", "u128", "usize", "ubig",
     "f32", "f64", "bool",
     "#null", "#any", "type"];
 

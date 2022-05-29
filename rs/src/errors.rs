@@ -1,3 +1,4 @@
+use backtrace::Backtrace;
 use std::process::exit;
 use ansi_term::Color::{Black, Red, Yellow};
 use ansi_term::Style;
@@ -49,11 +50,11 @@ impl PositionForZyxtError {
     // TODO call stack thing
     /* 0. Internal errors, have to do with the compiler-interpreter itself */
     /// Rust error
-    pub fn error_0_0(self, error: String) -> ZyxtError {
+    pub fn error_0_0(self, error: String, backtrace: Backtrace) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "0.0",
-            message: format!("Internal error: \n{}\n\nThis shouldn't happen! Open an issue on our Github repo page: [TODO]", error)
+            message: format!("Internal error: \n{}\n{:?}\n\nThis shouldn't happen! Open an issue on our Github repo page: [TODO]", error, backtrace)
         }
     }
 

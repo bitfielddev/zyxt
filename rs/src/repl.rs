@@ -2,6 +2,7 @@ use std::io;
 use std::io::Write;
 use std::time::Instant;
 use ansi_term::Color::{Cyan, Green, White, Yellow};
+use backtrace::Backtrace;
 use dirs::home_dir;
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
@@ -66,7 +67,7 @@ pub fn repl(verbosity: u8) {
                 println!("{}", Cyan.paint("`;exit` to exit"));
             }
             Err(err) => {
-                ZyxtError::no_pos().error_0_0(err.to_string());
+                ZyxtError::no_pos().error_0_0(err.to_string(), Backtrace::new());
             }
         }
 

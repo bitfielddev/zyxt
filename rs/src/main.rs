@@ -6,6 +6,7 @@ mod instructor;
 mod interpreter;
 mod repl;
 
+use backtrace::Backtrace;
 use std::fs::File;
 use std::io::Read;
 use std::panic;
@@ -97,7 +98,7 @@ fn main() {
     let verbose = if cfg!(debug_assertions) {2u8} else {args.verbose};
 
     panic::set_hook(Box::new(|a| {
-        ZyxtError::no_pos().error_0_0(a.to_string()).print_noexit();
+        ZyxtError::no_pos().error_0_0(a.to_string(), Backtrace::new()).print_noexit();
     }));
 
     match args.subcmd {
