@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 use crate::{Type, ZyxtError};
 use crate::objects::element::{Argument, Element};
-use crate::objects::variable::Variable;
+use crate::objects::value::Value;
 use crate::objects::interpreter_data::{FrameData, InterpreterData};
 
 
-pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Variable>) -> Result<Variable, ZyxtError> {
+pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Value>) -> Result<Value, ZyxtError> {
     match input {
         Element::Token(..) | Element::Comment {..} | Element::Preprocess {..} => panic!(),
-        Element::NullElement => Ok(Variable::Null),
+        Element::NullElement => Ok(Value::Null),
         Element::UnaryOpr {type_, operand, position, raw, ..} =>
             if let Some(v) = interpret_expr(*operand.clone(), i_data)?.un_opr(&type_)
                 {Ok(v)} else {
@@ -37,7 +37,7 @@ pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Variable>) ->
             var
         },
         Element::Literal {type_, content, ..} => {
-            Ok(Variable::from_type_content(type_, content))
+            Ok(Value::from_type_content(type_, content))
         },
         Element::Call {called, args: input_args, position, raw, ..} => {
             if let Element::Variable {ref parent, ref name, ..} = *called {
@@ -48,11 +48,11 @@ pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Variable>) ->
                         .into_iter()
                         .map(|v| v.to_string())
                         .collect::<Vec<String>>().join(" "));
-                    return Ok(Variable::Null)
+                    return Ok(Value::Null)
                 }
             }
             let to_call = interpret_expr(*called, i_data)?;
-            if let Variable::Proc {is_fn, args, content, ..} = to_call {
+            if let Value::Proc {is_fn, args, content, ..} = to_call {
                 let mut processed_args = HashMap::new();
                 for (cursor, Argument {name, default, ..}) in args.into_iter().enumerate() {
                     let input_arg = if input_args.len() > cursor {input_args.get(cursor).unwrap().clone()}
@@ -60,7 +60,7 @@ pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Variable>) ->
                     processed_args.insert(name, interpret_expr(input_arg, i_data)?);
                 }
 
-                let mut fn_i_data = InterpreterData::<Variable>::default_variable();
+                let mut fn_i_data = InterpreterData::<Value>::default_variable();
                 let fn_i_data=  if is_fn {
                     &mut fn_i_data
                 } else {
@@ -87,26 +87,26 @@ pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Variable>) ->
             for cond in conditions {
                 if cond.condition == Element::NullElement {
                     return interpret_block(cond.if_true, i_data, false, true)
-                } else if let Variable::Bool(true) = interpret_expr(cond.condition, i_data)? {
+                } else if let Value::Bool(true) = interpret_expr(cond.condition, i_data)? {
                     return interpret_block(cond.if_true, i_data, false, true)
                 }
             }
-            Ok(Variable::Null)
+            Ok(Value::Null)
         },
         Element::Block {content, ..} => interpret_block(content, i_data, true, true),
         Element::Delete {names, position, raw, ..} => {
             for name in names {i_data.delete_val(&name, &position, &raw)?;}
-            Ok(Variable::Null)
+            Ok(Value::Null)
         },
-        Element::Return { value, ..} => Ok(Variable::Return(Box::new(interpret_expr(*value, i_data)?))),
-        Element::Procedure {is_fn, args, return_type, content, ..} => Ok(Variable::Proc {
+        Element::Return { value, ..} => Ok(Value::Return(Box::new(interpret_expr(*value, i_data)?))),
+        Element::Procedure {is_fn, args, return_type, content, ..} => Ok(Value::Proc {
             is_fn, args, return_type, content
         }),
         Element::Defer {content, ..} => {
             i_data.add_defer(content);
-            Ok(Variable::Null)
+            Ok(Value::Null)
         },
-        Element::Class {class_attrs, inst_attrs, is_struct, ..} => Ok(Variable::Type(Type::Definition {
+        Element::Class {class_attrs, inst_attrs, is_struct, ..} => Ok(Value::Type(Type::Definition {
             name: if is_struct {"struct"} else {"class"}.to_string(),
             generics: vec![],
             class_attrs, inst_attrs
@@ -114,9 +114,9 @@ pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Variable>) ->
     }
 }
 
-pub fn interpret_block(input: Vec<Element>, i_data: &mut InterpreterData<Variable>,
-                       returnable: bool, add_frame: bool) -> Result<Variable, ZyxtError> {
-    let mut last = Variable::Null;
+pub fn interpret_block(input: Vec<Element>, i_data: &mut InterpreterData<Value>,
+                       returnable: bool, add_frame: bool) -> Result<Value, ZyxtError> {
+    let mut last = Value::Null;
 
     macro_rules! pop {
         () => {
@@ -140,9 +140,9 @@ pub fn interpret_block(input: Vec<Element>, i_data: &mut InterpreterData<Variabl
             return Ok(last)
         } else {
             last = interpret_expr(ele, i_data)?;
-            if let Variable::Return(value) = last {
+            if let Value::Return(value) = last {
                 pop!();
-                return if returnable {Ok(*value)} else {Ok(Variable::Return(value))}
+                return if returnable {Ok(*value)} else {Ok(Value::Return(value))}
             }
         }
     }
@@ -151,8 +151,8 @@ pub fn interpret_block(input: Vec<Element>, i_data: &mut InterpreterData<Variabl
 }
 
 pub fn interpret_asts(input: Vec<Element>) -> Result<i32, ZyxtError> {
-    let mut i_data = InterpreterData::<Variable>::default_variable();
-    let mut last = Variable::Null;
+    let mut i_data = InterpreterData::<Value>::default_variable();
+    let mut last = Value::Null;
     for ele in &input {
         if let Element::Return { value, position, raw, ..} = ele {
             let mut return_val = interpret_expr(*value.clone(), &mut i_data)?;
@@ -160,17 +160,17 @@ pub fn interpret_asts(input: Vec<Element>) -> Result<i32, ZyxtError> {
             if let Some(res) = res {
                 return_val = res;
             }
-            return if let Variable::I32(v) = return_val { Ok(v) } else {
+            return if let Value::I32(v) = return_val { Ok(v) } else {
                 Err(ZyxtError::from_pos_and_raw(position, raw).error_4_2(return_val))
             }
         } else {
             last = interpret_expr(ele.clone(), &mut i_data)?;
-            if let Variable::Return(mut value) = last {
+            if let Value::Return(mut value) = last {
                 let res = i_data.pop_frame()?;
                 if let Some(res) = res {
                     value = Box::new(res);
                 }
-                return if let Variable::I32(v) = *value { Ok(v) } else {
+                return if let Value::I32(v) = *value { Ok(v) } else {
                     Err(ZyxtError::from_pos_and_raw(ele.get_pos(), &ele.get_raw()).error_4_2(*value))
                 }
             }}
@@ -179,9 +179,9 @@ pub fn interpret_asts(input: Vec<Element>) -> Result<i32, ZyxtError> {
     if let Some(res) = res {
         last = res;
     }
-    return if let Variable::I32(v) = last {
+    return if let Value::I32(v) = last {
         Ok(v)
-    } else if let Variable::Null = last {
+    } else if let Value::Null = last {
         Ok(0)
     } else {
         let last_ele = input.last().unwrap();

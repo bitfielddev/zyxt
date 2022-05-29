@@ -3,7 +3,7 @@ use std::process::exit;
 use ansi_term::Color::{Black, Red, Yellow};
 use ansi_term::Style;
 use crate::{Element, Token, Type};
-use crate::objects::variable::Variable;
+use crate::objects::value::Value;
 use crate::objects::position::Position;
 use crate::objects::token::Keyword;
 
@@ -310,7 +310,7 @@ impl PositionForZyxtError {
         }
     }
     /// Type has no attribute (interpreter)
-    pub fn error_3_1_1(self, parent: Variable, attribute: String) -> ZyxtError {
+    pub fn error_3_1_1(self, parent: Value, attribute: String) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "3.1.1",
@@ -337,7 +337,7 @@ impl PositionForZyxtError {
     }
 
     /// Binary operation unsuccessful
-    pub fn error_4_1_0(self, operator: String, value1: Variable, value2: Variable) -> ZyxtError {
+    pub fn error_4_1_0(self, operator: String, value1: Value, value2: Value) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.1.0",
@@ -346,7 +346,7 @@ impl PositionForZyxtError {
         }
     }
     /// Unary operation unsuccessful
-    pub fn error_4_1_1(self, operator: String, value: Variable) -> ZyxtError {
+    pub fn error_4_1_1(self, operator: String, value: Value) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.1.1",
@@ -356,7 +356,7 @@ impl PositionForZyxtError {
     }
 
     /// Non-i32 script return value
-    pub fn error_4_2(self, value: Variable) -> ZyxtError {
+    pub fn error_4_2(self, value: Value) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.2",

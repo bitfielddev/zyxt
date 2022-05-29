@@ -5,7 +5,7 @@ use crate::errors::ZyxtError;
 use crate::interpreter::interpret_block;
 use crate::objects::position::Position;
 use crate::objects::typeobj::Type;
-use crate::objects::variable::Variable;
+use crate::objects::value::Value;
 
 const PRIM_NAMES: [&str; 21] = ["str",
     "i8", "i16", "i32", "i64", "i128", "isize", "ibig",
@@ -24,7 +24,7 @@ pub struct InterpreterData<T: Clone> {
     pub frame_data: Vec<Option<FrameData<T>>>
 }
 
-impl InterpreterData<Variable> {
+impl InterpreterData<Value> {
     pub fn heap_to_string(&self) -> String {
         self.heap.iter()
             .map(|hmap| hmap.iter()
@@ -34,12 +34,12 @@ impl InterpreterData<Variable> {
             .collect::<Vec<String>>()
             .join("\n-------\n")
     }
-    pub fn pop_frame(&mut self) -> Result<Option<Variable>, ZyxtError> {
+    pub fn pop_frame(&mut self) -> Result<Option<Value>, ZyxtError> {
         self.heap.pop();
         self.frame_data.pop();
 
         for content in self.defer.last().unwrap().clone() {
-            if let Variable::Return(v) = interpret_block(content, self, false, false)? {
+            if let Value::Return(v) = interpret_block(content, self, false, false)? {
                 self.defer.pop();
                 return Ok(Some(*v))
             }
@@ -58,14 +58,14 @@ impl InterpreterData<Type> {
 }
 
 impl <T: Clone + Display> InterpreterData<T> {
-    pub fn default_variable() -> InterpreterData<Variable> {
+    pub fn default_variable() -> InterpreterData<Value> {
         let mut v = InterpreterData {
             heap: vec![HashMap::new()],
             defer: vec![vec![]],
             frame_data: vec![]
         };
         for t in PRIM_NAMES {
-            v.heap[0].insert(t.to_string(), Variable::Type(Type::Instance {
+            v.heap[0].insert(t.to_string(), Value::Type(Type::Instance {
                 name: t.to_string(),
                 type_args: vec![],
                 inst_attrs: Default::default(),

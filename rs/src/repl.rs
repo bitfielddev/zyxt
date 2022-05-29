@@ -9,13 +9,13 @@ use rustyline::error::ReadlineError;
 use crate::{compile, ZyxtError};
 use crate::interpreter::interpret_expr;
 use crate::objects::typeobj::Type;
-use crate::objects::variable::Variable;
+use crate::objects::value::Value;
 use crate::objects::interpreter_data::InterpreterData;
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
     let mut typelist = InterpreterData::<Type>::default_type();
-    let mut varlist = InterpreterData::<Variable>::default_variable();
+    let mut varlist = InterpreterData::<Value>::default_variable();
     let mut rl = Editor::<()>::new();
     let mut history_path = home_dir().unwrap();
     history_path.push(".zyxt_history");
@@ -55,7 +55,7 @@ pub fn repl(verbosity: u8) {
                             result
                         }} {
                         Ok(result) => {
-                            if result != Variable::Null && i == instr_len-1 {
+                            if result != Value::Null && i == instr_len-1 {
                                 println!("{}{}", out_symbol, Yellow.paint(result.to_string()))
                             }
                         },

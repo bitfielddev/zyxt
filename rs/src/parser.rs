@@ -339,7 +339,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                         else if selected.value.parse::<i64>().is_ok() {"i64"}
                         else if selected.value.parse::<i128>().is_ok() {"i128"}
                         else if selected.value.parse::<u128>().is_ok() {"u128"}
-                        else {"f64"}
+                        else {"ibig"}
                     } else {"str"}),
                     content: selected.value.clone()
                 }
