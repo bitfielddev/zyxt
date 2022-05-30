@@ -6,6 +6,7 @@ use crate::{gen_instructions, Token};
 use crate::errors::ZyxtError;
 use crate::interpreter::interpret_block;
 use crate::objects::value::Value;
+use crate::objects::value::utils::OprError;
 use crate::objects::typeobj::Type;
 use crate::objects::interpreter_data::{InterpreterData};
 
@@ -206,21 +207,21 @@ impl Element {
         if type_ == &OprType::TypeCast {
             return Ok(type2)
         }
-        if let Some(v) = Value::default(type1.clone())?
+        match Value::default(type1.clone())? // TODO
             .bin_opr(type_, Value::default(type2.clone())?) {
-            Ok(v.get_type_obj())
-        } else {
-            Err(ZyxtError::from_pos_and_raw(position, raw)
-                .error_4_0_0(type_.to_string(), type1.to_string(), type2.to_string()))
+            Ok(v) => Ok(v.get_type_obj()),
+            Err(OprError::NoImplForOpr) => Err(ZyxtError::from_pos_and_raw(position, raw)
+                .error_4_0_0(type_.to_string(), type1.to_string(), type2.to_string())),
+            Err(OprError::TypecastError(ty)) => Ok(ty)
         }
     }
     pub fn un_op_return_type(type_: &OprType, opnd_type: Type,
                              position: &Position, raw: &String) -> Result<Type, ZyxtError> {
-        if let Some(v) = Value::default(opnd_type.clone())?.un_opr(type_) {
-            Ok(v.get_type_obj())
-        } else {
-            Err(ZyxtError::from_pos_and_raw(position, raw)
-                .error_4_0_1(type_.to_string(), opnd_type.to_string()))
+        match Value::default(opnd_type.clone())?.un_opr(type_) {
+            Ok(v) => Ok(v.get_type_obj()),
+            Err(OprError::NoImplForOpr) => Err(ZyxtError::from_pos_and_raw(position, raw)
+                .error_4_0_1(type_.to_string(), opnd_type.to_string())),
+            Err(OprError::TypecastError(ty)) => Ok(ty)
         }
     }
     pub fn block_type(content: &mut [Element], typelist: &mut InterpreterData<Type>, add_set: bool) -> Result<(Type, Option<Type>), ZyxtError> {

@@ -1,3 +1,5 @@
+use num::bigint::ToBigInt;
+use num::ToPrimitive;
 use crate::objects::value::typecast::typecast;
 use crate::objects::value::utils::OprError;
 use crate::objects::value::Value;
@@ -5,26 +7,42 @@ use crate::Type;
 
 macro_rules! typecast_mul {
     ($e:ident, $t:ident, $s:literal, $x:ident, $y:ident) => {
-        Ok(Value::$e($x * typecast($y, Value::Type(Type::from_str($s)))?.$t().unwrap()))
+        Ok(Value::$e($x * typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap()))
     };
 }
 
-fn mul_str(x: String, y: Value) -> Result<Value, OprError> {
+fn mul_str(x: String, y: Value) -> Result<Value, OprError> { // TODO check usize::MAX to see if need to split, refactor too
     match y {
+        Value::I8(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
+        else {Ok(Value::Str(x.repeat(y as usize)))},
+        Value::I16(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
+        else {Ok(Value::Str(x.repeat(y as usize)))},
+        Value::I32(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
+        else {Ok(Value::Str(x.repeat(y as usize)))},
+        Value::I64(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
+        else {Ok(Value::Str(x.repeat(y as usize)))},
+        Value::I128(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
+        else {Ok(Value::Str(x.repeat(y as usize)))},
+        Value::Isize(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
+        else {Ok(Value::Str(x.repeat(y as usize)))},
+        Value::Ibig(y) => if y < 0.to_bigint().unwrap() {Err(OprError::TypecastError(Type::from_str("str")))}
+            else {Ok(Value::Str(x.repeat(y.to_usize().unwrap())))},
         Value::U8(y) => Ok(Value::Str(x.repeat(y as usize))),
         Value::U16(y) => Ok(Value::Str(x.repeat(y as usize))),
         Value::U32(y) => Ok(Value::Str(x.repeat(y as usize))),
         Value::U64(y) => Ok(Value::Str(x.repeat(y as usize))),
-        Value::U128(y) => Ok(Value::Str(x.repeat(y as usize))), // TODO check usize::MAX to see if need to split
+        Value::U128(y) => Ok(Value::Str(x.repeat(y as usize))),
+        Value::Usize(y) => Ok(Value::Str(x.repeat(y as usize))),
+        Value::Ubig(y) => Ok(Value::Str(x.repeat(y.to_usize().unwrap()))),
         _ => Err(OprError::NoImplForOpr),
     }
 }
 
-fn mul(x: Value, y: Value) -> Result<Value, OprError> {
+pub fn mul(x: &Value, y: Value) -> Result<Value, OprError> {
     if let Value::Str(x) = x {
-        return mul_str(x, y);
+        return mul_str(x.clone(), y);
     } else if let Value::Str(y) = y {
-        return mul_str(y, x);
+        return mul_str(y, x.clone());
     }
     match x {
         Value::I8(x) => typecast_mul!(I8, as_i8, "i8", x, y),

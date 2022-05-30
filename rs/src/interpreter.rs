@@ -10,14 +10,14 @@ pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Value>) -> Re
         Element::Token(..) | Element::Comment {..} | Element::Preprocess {..} => panic!(),
         Element::NullElement => Ok(Value::Null),
         Element::UnaryOpr {type_, operand, position, raw, ..} =>
-            if let Some(v) = interpret_expr(*operand.clone(), i_data)?.un_opr(&type_)
+            if let Ok(v) = interpret_expr(*operand.clone(), i_data)?.un_opr(&type_)
                 {Ok(v)} else {
                     Err(ZyxtError::from_pos_and_raw(&position, &raw)
                         .error_4_1_1(type_.to_string(),
                                      interpret_expr(*operand, i_data)?))
                 },
         Element::BinaryOpr {type_, operand1, operand2, position, raw, ..} =>
-            if let Some(v) = interpret_expr(*operand1.clone(), i_data)?
+            if let Ok(v) = interpret_expr(*operand1.clone(), i_data)?
                 .bin_opr(&type_, interpret_expr(*operand2.clone(), i_data)?)
                 {Ok(v)} else {
                     Err(ZyxtError::from_pos_and_raw(&position, &raw)
@@ -76,7 +76,7 @@ pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Value>) -> Re
                 let res = interpret_block(content, fn_i_data, true, false);
                 fn_i_data.pop_frame()?;
                 res
-            } else if let Some(v) = to_call.call(input_args.into_iter()
+            } else if let Ok(v) = to_call.call(input_args.into_iter()
                 .map(|a| interpret_expr(a, i_data))
                 .collect::<Result<Vec<_>, _>>()?) {Ok(v)} else {
                 Err(ZyxtError::from_pos_and_raw(&position, &raw)

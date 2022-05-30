@@ -1,13 +1,15 @@
 mod add;
-mod utils;
+pub(crate) mod utils;
 mod typecast;
 mod sub;
 mod mul;
 mod div;
+mod modulo;
+mod pow;
 
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
+use std::ops::{Neg};
 use enum_as_inner::EnumAsInner;
 use half::f16;
 use num::{BigInt, BigUint};
@@ -15,6 +17,7 @@ use crate::{Element, ZyxtError};
 use crate::objects::element::Argument;
 use crate::objects::token::OprType;
 use crate::objects::typeobj::Type;
+use crate::objects::value::utils::OprError;
 
 #[derive(Clone, PartialEq, EnumAsInner)]
 pub enum Value {
@@ -88,10 +91,10 @@ impl Display for Value {
 }
 
 impl Value {
-    pub fn call(&self, args: Vec<Value>) -> Option<Value> {
+    pub fn call(&self, args: Vec<Value>) -> Result<Value, OprError> {
         if args.len() == 1 {
         macro_rules! mult {
-            () => {self.bin_opr(&OprType::AstMult, args.get(0)?.clone())}
+            () => {self.bin_opr(&OprType::AstMult, args.get(0).unwrap().clone())}
         }
             match self {
                 Value::I8(_) => mult!(),
@@ -114,309 +117,52 @@ impl Value {
                 Value::Return(v) => v.call(args),
                 Value::Type(_v) => todo!(),
                 Value::ClassInstance {type_: _, ..} => todo!(),
-                _ => None
+                _ => Err(OprError::NoImplForOpr)
             }
-        } else {None}
+        } else {Err(OprError::NoImplForOpr)}
     }
-    pub fn un_opr(&self, type_: &OprType) -> Option<Value> {
+    pub fn un_opr(&self, type_: &OprType) -> Result<Value, OprError> {
         if let Value::Return(v) = self {return v.un_opr(type_)}
         macro_rules! case {
             ($opr: expr => $($var_type: ident),*) => {
                 match *self {
-                    $(Value::$var_type(v) => Some(Value::$var_type($opr(v))),)*
-                    _ => None
+                    $(Value::$var_type(v) => Ok(Value::$var_type($opr(v))),)*
+                    _ => Err(OprError::NoImplForOpr)
                 }
             };
             ($($var_type: ident),*) => {
                 match *self {
-                    $(Value::$var_type(v) => Some(Value::$var_type(v)),)*
-                    _ => None
+                    $(Value::$var_type(v) => Ok(Value::$var_type(v)),)*
+                    _ => Err(OprError::NoImplForOpr)
                 }
             }
         }
         match type_ {
             OprType::MinusSign => case!(Neg::neg => I8, I16, I32, I64, I128, Isize, F32, F64),
             OprType::PlusSign => case!(I8, I16, I32, I64, I128, Isize, F32, F64),
-            _ => None
+            _ => Err(OprError::NoImplForOpr)
         }
     }
-    pub fn bin_opr(&self, type_: &OprType, other: Value) -> Option<Value> {
+    pub fn bin_opr(&self, type_: &OprType, other: Value) -> Result<Value, OprError> {
         if let Value::Return(v) = self {return v.bin_opr(type_, other)}
-        macro_rules! case {
-            ($opr: expr => $((
-                $var_type1: ident => $(($var_type2: ident => $return_type: ident, $rs_type: ty)),*
-            )),*) => {
-                match *self {
-                    $(Value::$var_type1(v1) => match other {
-                        $(Value::$var_type2(v2) => Some(Value::$return_type($opr(v1 as $rs_type, v2 as $rs_type) as $rs_type)),)*
-                        _ => None
-                    },)*
-                    _ => None
-                }
-            }
-        }
-        macro_rules! case_arith {
-            ($opr: expr) => {
-                case!($opr =>
-                    (I8 =>
-                        (I8 => I8, i8),
-                        (I16 => I16, i16),
-                        (I32 => I32, i32),
-                        (I64 => I64, i64),
-                        (I128 => I128, i128),
-                        (Isize => Isize, isize),
-                        (U8 => I8, i8),
-                        (U16 => I16, i16),
-                        (U32 => I32, i32),
-                        (U64 => I64, i64),
-                        (U128 => I128, i128),
-                        (Usize => Isize, isize),
-                        (F32 => F32, f32),
-                        (F64 => F64, f64)),
-                    (I16 =>
-                        (I8 => I16, i16),
-                        (I16 => I16, i16),
-                        (I32 => I32, i32),
-                        (I64 => I64, i64),
-                        (I128 => I128, i128),
-                        (Isize => Isize, isize),
-                        (U8 => I16, i16),
-                        (U16 => I16, i16),
-                        (U32 => I32, i32),
-                        (U64 => I64, i64),
-                        (U128 => I128, i128),
-                        (Usize => Isize, isize),
-                        (F32 => F32, f32),
-                        (F64 => F64, f64)),
-                    (I32 =>
-                        (I8 => I32, i32),
-                        (I16 => I32, i32),
-                        (I32 => I32, i32),
-                        (I64 => I64, i64),
-                        (I128 => I128, i128),
-                        (Isize => Isize, isize),
-                        (U8 => I32, i32),
-                        (U16 => I32, i32),
-                        (U32 => I32, i32),
-                        (U64 => I64, i64),
-                        (U128 => I128, i128),
-                        (Usize => Isize, isize),
-                        (F32 => F32, f32),
-                        (F64 => F64, f64)),
-                    (I64 =>
-                        (I8 => I64, i64),
-                        (I16 => I64, i64),
-                        (I32 => I64, i64),
-                        (I64 => I64, i64),
-                        (I128 => I128, i128),
-                        (Isize => I64, i64),
-                        (U8 => I64, i64),
-                        (U16 => I64, i64),
-                        (U32 => I64, i64),
-                        (U64 => I64, i64),
-                        (U128 => I128, i128),
-                        (Usize => I64, i64),
-                        (F32 => F64, f64),
-                        (F64 => F64, f64)),
-                    (I128 =>
-                        (I8 => I128, i128),
-                        (I16 => I128, i128),
-                        (I32 => I128, i128),
-                        (I64 => I128, i128),
-                        (I128 => I128, i128),
-                        (Isize => I128, i128),
-                        (U8 => I128, i128),
-                        (U16 => I128, i128),
-                        (U32 => I128, i128),
-                        (U64 => I128, i128),
-                        (U128 => I128, i128),
-                        (Usize => I128, i128),
-                        (F32 => F64, f64),
-                        (F64 => F64, f64)),
-                    (Isize =>
-                        (I8 => Isize, isize),
-                        (I16 => Isize, isize),
-                        (I32 => Isize, isize),
-                        (I64 => I64, i64),
-                        (I128 => I128, i128),
-                        (Isize => Isize, isize),
-                        (U8 => Isize, isize),
-                        (U16 => Isize, isize),
-                        (U32 => Isize, isize),
-                        (U64 => I64, i64),
-                        (U128 => I128, i128),
-                        (Usize => Isize, isize),
-                        (F32 => F32, f32),
-                        (F64 => F64, f64)),
-                    (U8 =>
-                        (I8 => I8, i8),
-                        (I16 => I16, i16),
-                        (I32 => I32, i32),
-                        (I64 => I64, i64),
-                        (I128 => I128, i128),
-                        (Isize => Isize, isize),
-                        (U8 => U8, u8),
-                        (U16 => U16, u16),
-                        (U32 => U32, u32),
-                        (U64 => U64, u64),
-                        (U128 => U128, u128),
-                        (Usize => Usize, usize),
-                        (F32 => F32, f32),
-                        (F64 => F64, f64)),
-                    (U16 =>
-                        (I8 => I16, i16),
-                        (I16 => I16, i16),
-                        (I32 => I32, i32),
-                        (I64 => I64, i64),
-                        (I128 => I128, i128),
-                        (Isize => Isize, isize),
-                        (U8 => U16, u16),
-                        (U16 => U16, u16),
-                        (U32 => U32, u32),
-                        (U64 => U64, u64),
-                        (U128 => U128, u128),
-                        (Usize => Usize, usize),
-                        (F32 => F32, f32),
-                        (F64 => F64, f64)),
-                    (U32 =>
-                        (I8 => I32, i32),
-                        (I16 => I32, i32),
-                        (I32 => I32, i32),
-                        (I64 => I64, i64),
-                        (I128 => I128, i128),
-                        (Isize => Isize, isize),
-                        (U8 => U32, u32),
-                        (U16 => U32, u32),
-                        (U32 => U32, u32),
-                        (U64 => U64, u64),
-                        (U128 => U128, u128),
-                        (Usize => Usize, usize),
-                        (F32 => F32, f32),
-                        (F64 => F64, f64)),
-                    (U64 =>
-                        (I8 => I64, i64),
-                        (I16 => I64, i64),
-                        (I32 => I64, i64),
-                        (I64 => I64, i64),
-                        (I128 => I128, i128),
-                        (Isize => I64, i64),
-                        (U8 => U64, u64),
-                        (U16 => U64, u64),
-                        (U32 => U64, u64),
-                        (U64 => U64, u64),
-                        (U128 => U128, u128),
-                        (Usize => U64, u64),
-                        (F32 => F64, f64),
-                        (F64 => F64, f64)),
-                    (U128 =>
-                        (I8 => I128, i128),
-                        (I16 => I128, i128),
-                        (I32 => I128, i128),
-                        (I64 => I128, i128),
-                        (I128 => I128, i128),
-                        (Isize => I128, i128),
-                        (U8 => U128, u128),
-                        (U16 => U128, u128),
-                        (U32 => U128, u128),
-                        (U64 => U128, u128),
-                        (U128 => U128, u128),
-                        (Usize => U128, u128),
-                        (F32 => F64, f64),
-                        (F64 => F64, f64)),
-                    (Usize =>
-                        (I8 => Isize, isize),
-                        (I16 => Isize, isize),
-                        (I32 => Isize, isize),
-                        (I64 => I64, i64),
-                        (I128 => I128, i128),
-                        (Isize => Isize, isize),
-                        (U8 => Usize, usize),
-                        (U16 => Usize, usize),
-                        (U32 => Usize, usize),
-                        (U64 => U64, u64),
-                        (U128 => U128, u128),
-                        (Usize => Usize, usize),
-                        (F32 => F32, f32),
-                        (F64 => F64, f64)),
-                    (F32 =>
-                        (I8 => F32, f32),
-                        (I16 => F32, f32),
-                        (I32 => F32, f32),
-                        (I64 => F64, f64),
-                        (I128 => F64, f64),
-                        (Isize => F32, f32),
-                        (U8 => F32, f32),
-                        (U16 => F32, f32),
-                        (U32 => F32, f32),
-                        (U64 => F64, f64),
-                        (U128 => F64, f64),
-                        (Usize => F32, f32),
-                        (F32 => F32, f32),
-                        (F64 => F64, f64)),
-                    (F64 =>
-                        (I8 => F64, f64),
-                        (I16 => F64, f64),
-                        (I32 => F64, f64),
-                        (I64 => F64, f64),
-                        (I128 => F64, f64),
-                        (Isize => F64, f64),
-                        (U8 => F64, f64),
-                        (U16 => F64, f64),
-                        (U32 => F64, f64),
-                        (U64 => F64, f64),
-                        (U128 => F64, f64),
-                        (Usize => F64, f64),
-                        (F32 => F64, f64),
-                        (F64 => F64, f64))
-                    )
-            }
-        }
         macro_rules! concatenate {
             ($v1: ident, $v2: ident) => {
                 String::from($v1.to_string()+&*$v2.to_string())
             };
             ($v1: ident, $v2: ident => $e: ident, $t: ty) => {
                 if let Ok(r2) = ($v1.to_string()+&*$v2.to_string()).parse::<$t>()
-                    {Some(Value::$e(r2))} else {None}
-            }
-        }
-        macro_rules! typecast_int {
-            ($($from_num: ident),* => $enum_type: ident, $rs_type: ty) => {
-                match self.clone() {
-                    Value::$enum_type(..) => Some(self.clone()),
-                    $(Value::$from_num(v) => Some(Value::$enum_type(v as $rs_type)),)*
-                    Value::Str(v) => if let Ok(r) = v.parse::<$rs_type>()
-                        {Some(Value::$enum_type(r))} else {None},
-                    Value::Bool(v) => Some(Value::$enum_type(if v {1} else {0} as $rs_type)),
-                    Value::Null => Some(Value::$enum_type(0 as $rs_type)),
-                    _ => None
-                }
+                    {Ok(Value::$e(r2))} else {Err(OprError::NoImplForOpr)}
             }
         }
         match type_ {
-            OprType::Plus => case_arith!(Add::add),
-            OprType::Minus => case_arith!(Sub::sub),
+            OprType::Plus => add::add(self, other),
+            OprType::Minus => sub::sub(self, other),
             OprType::AstMult | 
             OprType::DotMult | 
-            OprType::CrossMult => {
-                if let Value::Str(v1) = self.clone() {
-                    if let Value::I32(v2) = other {
-                        Some(Value::Str(v1.repeat(v2.try_into().ok()?)))
-                    } else {case_arith!(Mul::mul)}
-                } else if let Value::I32(v1) = self.clone() {
-                    if let Value::Str(v2) = other {
-                        Some(Value::Str(v2.repeat(v1.try_into().ok()?)))
-                    } else {case_arith!(Mul::mul)}
-                } else {case_arith!(Mul::mul)}
-            }, // TODO implement for all number types
+            OprType::CrossMult => mul::mul(self, other),
             OprType::Div |
-            OprType::FractDiv => {
-                if other == Value::I32(0) {
-                    todo!("implement undefined type thing")
-                }
-                case_arith!(Div::div)
-            },
-            OprType::Modulo => case_arith!(Rem::rem),
+            OprType::FractDiv => div::div(self, other),
+            OprType::Modulo => modulo::modulo(self, other),
             OprType::Concat => match self.clone() {
                 Value::I8(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => I8, i8),
@@ -433,8 +179,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => Isize, isize),
                     Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::I16(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => I16, i16),
@@ -451,8 +197,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => Isize, isize),
                     Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::I32(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => I32, i32),
@@ -469,8 +215,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => Isize, isize),
                     Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::I64(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => I64, i64),
@@ -487,8 +233,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => I64, i64),
                     Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::I128(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => I128, i128),
@@ -505,8 +251,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => I128, i128),
                     Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::Isize(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => Isize, isize),
@@ -523,8 +269,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => Isize, isize),
                     Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::U8(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => I8, i8),
@@ -541,8 +287,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => Usize, usize),
                     Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::U16(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => I16, i16),
@@ -559,8 +305,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => Usize, usize),
                     Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::U32(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => I32, i32),
@@ -577,8 +323,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => Usize, usize),
                     Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::U64(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => I64, i64),
@@ -595,8 +341,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => U64, u64),
                     Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::U128(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => I128, i128),
@@ -613,8 +359,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => U128, u128),
                     Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::Usize(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => Isize, isize),
@@ -631,8 +377,8 @@ impl Value {
                     Value::Usize(v2) => concatenate!(v1, v2 => Usize, usize),
                     Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
                     Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::F32(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => F32, f32),
@@ -647,8 +393,8 @@ impl Value {
                     Value::U64(v2) => concatenate!(v1, v2 => F32, f32),
                     Value::U128(v2) => concatenate!(v1, v2 => F32, f32),
                     Value::Usize(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::F64(v1) => match other {
                     Value::I8(v2) => concatenate!(v1, v2 => F64, f64),
@@ -663,80 +409,36 @@ impl Value {
                     Value::U64(v2) => concatenate!(v1, v2 => F64, f64),
                     Value::U128(v2) => concatenate!(v1, v2 => F64, f64),
                     Value::Usize(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::Str(v1) => match other {
-                    Value::I8(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::I16(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::I32(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::I64(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::I128(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::Isize(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::U8(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::U16(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::U32(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::U64(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::U128(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::Usize(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::F32(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::F64(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    Value::Bool(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::I8(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::I16(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::I32(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::I64(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::I128(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::Isize(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::U8(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::U16(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::U32(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::U64(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::U128(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::Usize(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::F32(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::F64(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    Value::Bool(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
                 Value::Bool(v1) => match other {
-                    Value::Str(v2) => Some(Value::Str(concatenate!(v1, v2))),
-                    _ => None
+                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
+                    _ => Err(OprError::NoImplForOpr)
                 },
-                _ => None
+                _ => Err(OprError::NoImplForOpr)
             },
-            OprType::TypeCast => match other {
-                Value::Type(t) => match &*t.to_string() {
-                    "i8" => typecast_int!(I16, I32, I64, I128, Isize, U8,
-                        U16, U32, U64, U128, Usize, F32, F64 => I8, i8),
-                    "i16" => typecast_int!(I8, I32, I64, I128, Isize, U8,
-                        U16, U32, U64, U128, Usize, F32, F64 => I16, i16),
-                    "i32" => typecast_int!(I8, I16, I64, I128, Isize, U8,
-                        U16, U32, U64, U128, Usize, F32, F64 => I32, i32),
-                    "i64" => typecast_int!(I8, I16, I32, I128, Isize, U8,
-                        U16, U32, U64, U128, Usize, F32, F64 => I64, i64),
-                    "i128" => typecast_int!(I8, I16, I32, I64, Isize, U8,
-                        U16, U32, U64, U128, Usize, F32, F64 => I128, i128),
-                    "isize" => typecast_int!(I8, I16, I32, I64, I128, U8,
-                        U16, U32, U64, U128, Usize, F32, F64 => Isize, isize),
-                    "u8" => typecast_int!(I8, I16, I32, I64, I128, Isize,
-                        U16, U32, U64, U128, Usize, F32, F64 => U8, u8),
-                    "u16" => typecast_int!(I8, I16, I32, I64, I128, Isize, U8,
-                        U32, U64, U128, Usize, F32, F64 => U16, u16),
-                    "u32" => typecast_int!(I8, I16, I32, I64, I128, Isize, U8,
-                        U16, U64, U128, Usize, F32, F64 => U32, u32),
-                    "u64" => typecast_int!(I8, I16, I32, I64, I128, Isize, U8,
-                        U16, U32, U128, Usize, F32, F64 => U64, u64),
-                    "u128" => typecast_int!(I8, I16, I32, I64, I128, Isize, U8,
-                        U16, U32, U64, Usize, F32, F64 => U128, u128),
-                    "usize" => typecast_int!(I8, I16, I32, I64, I128, Isize, U8,
-                        U16, U32, U64, U128, F32, F64 => Usize, usize),
-                    "f32" => typecast_int!(I8, I16, I32, I64, I128, Isize, U8,
-                        U16, U32, U64, U128, Usize, F64 => F32, f32),
-                    "f64" => typecast_int!(I8, I16, I32, I64, I128, Isize, U8,
-                        U16, U32, U64, U128, Usize, F32 => F64, f64),
-                    "str" => Some(Value::Str(self.to_string())),
-                    "bool" => match self.clone() {
-                        Value::I32(v) => Some(Value::Bool(v != 0)),
-                        Value::F64(v) => Some(Value::Bool(v != 0.0)),
-                        Value::Str(v) => Some(Value::Bool(!v.is_empty())),
-                        Value::Bool(..) => Some(self.clone()),
-                        Value::Type(..) => Some(Value::Bool(true)),
-                        Value::Null => Some(Value::Bool(false)),
-                        _ => None
-                    }
-                    "type" => Some(self.get_type()),
-                    _ => None
-                },
-                _ => None
-            }
-            _ => None
+            OprType::TypeCast => typecast::typecast(self, other),
+            _ => Err(OprError::NoImplForOpr)
         }
     }
     pub fn default(type_: Type) -> Result<Self, ZyxtError> {

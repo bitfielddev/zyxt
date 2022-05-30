@@ -5,11 +5,11 @@ use crate::Type;
 
 macro_rules! typecast_add {
     ($e:ident, $t:ident, $s:literal, $x:ident, $y:ident) => {
-        Ok(Value::$e($x + typecast($y, Value::Type(Type::from_str($s)))?.$t().unwrap()))
+        Ok(Value::$e($x + typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap()))
     };
 }
 
-fn add(x: Value, y: Value) -> Result<Value, OprError> {
+pub fn add(x: &Value, y: Value) -> Result<Value, OprError> {
     match x {
         Value::I8(x) => typecast_add!(I8, as_i8, "i8", x, y),
         Value::I16(x) => typecast_add!(I16, as_i16, "i16", x, y),

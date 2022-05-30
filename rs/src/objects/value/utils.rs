@@ -1,14 +1,6 @@
-macro_rules! as_type {
-    ($t:ident, $v:expr) => (
-        if let Ok(value) = $v {
-            value
-        } else {
-            return Err(Error::TypecastError);
-        }
-    )
-}
+use crate::Type;
 
 pub enum OprError {
-    TypecastError,
+    TypecastError(Type),
     NoImplForOpr
 }
