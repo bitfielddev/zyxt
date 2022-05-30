@@ -1,4 +1,3 @@
-use num::bigint::ToBigInt;
 use num::ToPrimitive;
 use crate::objects::value::typecast::typecast;
 use crate::objects::value::utils::OprError;
@@ -11,30 +10,35 @@ macro_rules! typecast_mul {
     };
 }
 
+macro_rules! mul_str_internal {
+    ($x:ident, $y:expr) => {
+        Ok(Value::Str($x.repeat($y as usize)))
+    }
+}
+macro_rules! mul_str_internal_signed {
+    ($x:ident, $y:expr) => {
+        if $y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
+        else {Ok(Value::Str($x.repeat($y as usize)))}
+    }
+}
+
 fn mul_str(x: String, y: Value) -> Result<Value, OprError> { // TODO check usize::MAX to see if need to split, refactor too
     match y {
-        Value::I8(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
-        else {Ok(Value::Str(x.repeat(y as usize)))},
-        Value::I16(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
-        else {Ok(Value::Str(x.repeat(y as usize)))},
-        Value::I32(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
-        else {Ok(Value::Str(x.repeat(y as usize)))},
-        Value::I64(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
-        else {Ok(Value::Str(x.repeat(y as usize)))},
-        Value::I128(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
-        else {Ok(Value::Str(x.repeat(y as usize)))},
-        Value::Isize(y) => if y < 0 {Err(OprError::TypecastError(Type::from_str("str")))}
-        else {Ok(Value::Str(x.repeat(y as usize)))},
-        Value::Ibig(y) => if y < 0.to_bigint().unwrap() {Err(OprError::TypecastError(Type::from_str("str")))}
-            else {Ok(Value::Str(x.repeat(y.to_usize().unwrap())))},
-        Value::U8(y) => Ok(Value::Str(x.repeat(y as usize))),
-        Value::U16(y) => Ok(Value::Str(x.repeat(y as usize))),
-        Value::U32(y) => Ok(Value::Str(x.repeat(y as usize))),
-        Value::U64(y) => Ok(Value::Str(x.repeat(y as usize))),
-        Value::U128(y) => Ok(Value::Str(x.repeat(y as usize))),
-        Value::Usize(y) => Ok(Value::Str(x.repeat(y as usize))),
-        Value::Ubig(y) => Ok(Value::Str(x.repeat(y.to_usize().unwrap()))),
-        _ => Err(OprError::NoImplForOpr),
+        Value::I8(y) => mul_str_internal_signed!(x, y),
+        Value::I16(y) => mul_str_internal_signed!(x, y),
+        Value::I32(y) => mul_str_internal_signed!(x, y),
+        Value::I64(y) => mul_str_internal_signed!(x, y),
+        Value::I128(y) => mul_str_internal_signed!(x, y),
+        Value::Isize(y) => mul_str_internal_signed!(x, y),
+        Value::Ibig(y) => mul_str_internal_signed!(x, y.to_i128().unwrap()),
+        Value::U8(y) => mul_str_internal!(x, y),
+        Value::U16(y) => mul_str_internal!(x, y),
+        Value::U32(y) => mul_str_internal!(x, y),
+        Value::U64(y) => mul_str_internal!(x, y),
+        Value::U128(y) => mul_str_internal!(x, y),
+        Value::Usize(y) => mul_str_internal!(x, y),
+        Value::Ubig(y) => mul_str_internal!(x, y.to_u128().unwrap()),
+        _ => Err(OprError::NoImplForOpr)
     }
 }
 
