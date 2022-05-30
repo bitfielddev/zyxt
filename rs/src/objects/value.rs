@@ -1,6 +1,14 @@
+mod add;
+mod utils;
+mod typecast;
+mod sub;
+mod mul;
+mod div;
+
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
+use enum_as_inner::EnumAsInner;
 use half::f16;
 use num::{BigInt, BigUint};
 use crate::{Element, ZyxtError};
@@ -8,7 +16,7 @@ use crate::objects::element::Argument;
 use crate::objects::token::OprType;
 use crate::objects::typeobj::Type;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, EnumAsInner)]
 pub enum Value {
     I8(i8),
     I16(i16),
