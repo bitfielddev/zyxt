@@ -11,7 +11,7 @@ x = 2 * 4 / 3.0;
 ter.out x;
 
 // concatenation
-pub y := 1 ~ 2 ~ 3;
+pub y := (1 ~ 2 ~ 3)@i32;
 ter.out "Concatenating numbers", y;
 
 // assignment
