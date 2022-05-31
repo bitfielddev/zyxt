@@ -1,11 +1,13 @@
 mod add;
-pub(crate) mod utils;
+pub mod utils;
 mod typecast;
 mod sub;
 mod mul;
 mod div;
 mod modulo;
 mod pow;
+mod concat;
+mod unary;
 
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
@@ -123,37 +125,15 @@ impl Value {
     }
     pub fn un_opr(&self, type_: &OprType) -> Result<Value, OprError> {
         if let Value::Return(v) = self {return v.un_opr(type_)}
-        macro_rules! case {
-            ($opr: expr => $($var_type: ident),*) => {
-                match *self {
-                    $(Value::$var_type(v) => Ok(Value::$var_type($opr(v))),)*
-                    _ => Err(OprError::NoImplForOpr)
-                }
-            };
-            ($($var_type: ident),*) => {
-                match *self {
-                    $(Value::$var_type(v) => Ok(Value::$var_type(v)),)*
-                    _ => Err(OprError::NoImplForOpr)
-                }
-            }
-        }
         match type_ {
-            OprType::MinusSign => case!(Neg::neg => I8, I16, I32, I64, I128, Isize, F32, F64),
-            OprType::PlusSign => case!(I8, I16, I32, I64, I128, Isize, F32, F64),
+            OprType::MinusSign => unary::un_minus(self),
+            OprType::PlusSign => unary::un_plus(self),
+            OprType::Not => unary::un_not(self),
             _ => Err(OprError::NoImplForOpr)
         }
     }
     pub fn bin_opr(&self, type_: &OprType, other: Value) -> Result<Value, OprError> {
         if let Value::Return(v) = self {return v.bin_opr(type_, other)}
-        macro_rules! concatenate {
-            ($v1: ident, $v2: ident) => {
-                String::from($v1.to_string()+&*$v2.to_string())
-            };
-            ($v1: ident, $v2: ident => $e: ident, $t: ty) => {
-                if let Ok(r2) = ($v1.to_string()+&*$v2.to_string()).parse::<$t>()
-                    {Ok(Value::$e(r2))} else {Err(OprError::NoImplForOpr)}
-            }
-        }
         match type_ {
             OprType::Plus => add::add(self, other),
             OprType::Minus => sub::sub(self, other),
@@ -163,280 +143,17 @@ impl Value {
             OprType::Div |
             OprType::FractDiv => div::div(self, other),
             OprType::Modulo => modulo::modulo(self, other),
-            OprType::Concat => match self.clone() {
-                Value::I8(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => I8, i8),
-                    Value::I16(v2) => concatenate!(v1, v2 => I16, i16),
-                    Value::I32(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::I64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::U8(v2) => concatenate!(v1, v2 => I8, i8),
-                    Value::U16(v2) => concatenate!(v1, v2 => I16, i16),
-                    Value::U32(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::U64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::U128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::I16(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => I16, i16),
-                    Value::I16(v2) => concatenate!(v1, v2 => I16, i16),
-                    Value::I32(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::I64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::U8(v2) => concatenate!(v1, v2 => I16, i16),
-                    Value::U16(v2) => concatenate!(v1, v2 => I16, i16),
-                    Value::U32(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::U64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::U128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::I32(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::I16(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::I32(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::I64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::U8(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::U16(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::U32(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::U64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::U128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::I64(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I16(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I32(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::U8(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::U16(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::U32(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::U64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::U128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::I128(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::I16(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::I32(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::I64(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::U8(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::U16(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::U32(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::U64(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::U128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::Isize(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::I16(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::I32(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::I64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::U8(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::U16(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::U32(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::U64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::U128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::U8(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => I8, i8),
-                    Value::I16(v2) => concatenate!(v1, v2 => I16, i16),
-                    Value::I32(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::I64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::U8(v2) => concatenate!(v1, v2 => U8, u8),
-                    Value::U16(v2) => concatenate!(v1, v2 => U16, u16),
-                    Value::U32(v2) => concatenate!(v1, v2 => U32, u32),
-                    Value::U64(v2) => concatenate!(v1, v2 => U64, u64),
-                    Value::U128(v2) => concatenate!(v1, v2 => U128, u128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => Usize, usize),
-                    Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::U16(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => I16, i16),
-                    Value::I16(v2) => concatenate!(v1, v2 => I16, i16),
-                    Value::I32(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::I64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::U8(v2) => concatenate!(v1, v2 => U16, u16),
-                    Value::U16(v2) => concatenate!(v1, v2 => U16, u16),
-                    Value::U32(v2) => concatenate!(v1, v2 => U32, u32),
-                    Value::U64(v2) => concatenate!(v1, v2 => U64, u64),
-                    Value::U128(v2) => concatenate!(v1, v2 => U128, u128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => Usize, usize),
-                    Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::U32(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::I16(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::I32(v2) => concatenate!(v1, v2 => I32, i32),
-                    Value::I64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::U8(v2) => concatenate!(v1, v2 => U32, u32),
-                    Value::U16(v2) => concatenate!(v1, v2 => U32, u32),
-                    Value::U32(v2) => concatenate!(v1, v2 => U32, u32),
-                    Value::U64(v2) => concatenate!(v1, v2 => U64, u64),
-                    Value::U128(v2) => concatenate!(v1, v2 => U128, u128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => Usize, usize),
-                    Value::F32(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::U64(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I16(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I32(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::U8(v2) => concatenate!(v1, v2 => U64, u64),
-                    Value::U16(v2) => concatenate!(v1, v2 => U64, u64),
-                    Value::U32(v2) => concatenate!(v1, v2 => U64, u64),
-                    Value::U64(v2) => concatenate!(v1, v2 => U64, u64),
-                    Value::U128(v2) => concatenate!(v1, v2 => U128, u128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => U64, u64),
-                    Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::U128(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::I16(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::I32(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::I64(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::U8(v2) => concatenate!(v1, v2 => U128, u128),
-                    Value::U16(v2) => concatenate!(v1, v2 => U128, u128),
-                    Value::U32(v2) => concatenate!(v1, v2 => U128, u128),
-                    Value::U64(v2) => concatenate!(v1, v2 => U128, u128),
-                    Value::U128(v2) => concatenate!(v1, v2 => U128, u128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => U128, u128),
-                    Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::Usize(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::I16(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::I32(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::I64(v2) => concatenate!(v1, v2 => I64, i64),
-                    Value::I128(v2) => concatenate!(v1, v2 => I128, i128),
-                    Value::Isize(v2) => concatenate!(v1, v2 => Isize, isize),
-                    Value::U8(v2) => concatenate!(v1, v2 => Usize, usize),
-                    Value::U16(v2) => concatenate!(v1, v2 => Usize, usize),
-                    Value::U32(v2) => concatenate!(v1, v2 => Usize, usize),
-                    Value::U64(v2) => concatenate!(v1, v2 => U64, u64),
-                    Value::U128(v2) => concatenate!(v1, v2 => U128, u128),
-                    Value::Usize(v2) => concatenate!(v1, v2 => Usize, usize),
-                    Value::F32(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::F64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::F32(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::I16(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::I32(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::I64(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::I128(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::Isize(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::U8(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::U16(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::U32(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::U64(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::U128(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::Usize(v2) => concatenate!(v1, v2 => F32, f32),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::F64(v1) => match other {
-                    Value::I8(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::I16(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::I32(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::I64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::I128(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Isize(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::U8(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::U16(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::U32(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::U64(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::U128(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Usize(v2) => concatenate!(v1, v2 => F64, f64),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::Str(v1) => match other {
-                    Value::I8(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::I16(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::I32(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::I64(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::I128(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::Isize(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::U8(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::U16(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::U32(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::U64(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::U128(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::Usize(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::F32(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::F64(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    Value::Bool(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                Value::Bool(v1) => match other {
-                    Value::Str(v2) => Ok(Value::Str(concatenate!(v1, v2))),
-                    _ => Err(OprError::NoImplForOpr)
-                },
-                _ => Err(OprError::NoImplForOpr)
-            },
+
+            OprType::Eq => todo!(),
+            OprType::Noteq => todo!(),
+            OprType::Lt => todo!(),
+            OprType::Lteq => todo!(),
+            OprType::Gt => todo!(),
+            OprType::Gteq => todo!(),
+            OprType::Iseq => todo!(),
+            OprType::Isnteq => todo!(),
+
+            OprType::Concat => concat::concat(self, other),
             OprType::TypeCast => typecast::typecast(self, other),
             _ => Err(OprError::NoImplForOpr)
         }

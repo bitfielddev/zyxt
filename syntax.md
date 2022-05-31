@@ -10,17 +10,14 @@ comment */
 
 ## Printing to console
 ```
-#import std;
-std.println("hello world");
-// in the future it will be:
-std.ter.println("hello world");
+ter.out "Hello World";
 ```
 
 ## Declaring variables
 ```
-int x := 0; // declares it
+x: i32 := 0; // declares it
 x = 1; // modifies it
-x := 0 // type inference
+x := 0; // type inference
 === Flags ===
 x := 0; // exists within file/class and within package
 priv x := 0; // only exists within class (in a class), within file (in a file)
