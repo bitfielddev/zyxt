@@ -247,15 +247,12 @@ impl Element {
                 }
             }
         }
-        if return_type.is_none() {
-            return_type = Some(Type::null());
-        }
+        if let Some(return_type) = return_type.clone() {if last != return_type {
+            let last_ele = content.last().unwrap();
+            return Err(ZyxtError::from_pos_and_raw(last_ele.get_pos(), &last_ele.get_raw())
+                .error_4_t(last, return_type))
+        }}
         if add_set {
-            if last != return_type.clone().unwrap() {
-                let last_ele = content.last().unwrap();
-                return Err(ZyxtError::from_pos_and_raw(last_ele.get_pos(), &last_ele.get_raw())
-                    .error_4_t(last, return_type.unwrap()))
-            }
             typelist.pop_frame();
         }
         Ok((last, if add_set {None} else {return_type}))
