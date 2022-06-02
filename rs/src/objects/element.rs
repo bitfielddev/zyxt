@@ -252,7 +252,7 @@ impl Element {
         }
         Ok((last, if add_set {None} else {return_type}))
     }
-    pub fn call_return_type(called: &mut Element, args: &mut [Element], typelist: &mut InterpreterData<Type>) -> Result<Type, ZyxtError> {
+    pub fn call_return_type(called: &mut Element, _args: &mut [Element], typelist: &mut InterpreterData<Type>) -> Result<Type, ZyxtError> {
         if let Element::Variable {ref parent, ref name, ..} = *called {
             if name == &"out".to_string() && parent.get_name() == *"ter" {
                 return Ok(Type::null())

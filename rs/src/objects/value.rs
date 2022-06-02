@@ -8,10 +8,12 @@ mod modulo;
 mod pow;
 mod concat;
 mod unary;
+mod eq;
+mod lt;
+mod gt;
 
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::ops::{Neg};
 use enum_as_inner::EnumAsInner;
 use half::f16;
 use num::{BigInt, BigUint};
@@ -144,14 +146,18 @@ impl Value {
             OprType::FractDiv => div::div(self, other),
             OprType::Modulo => modulo::modulo(self, other),
 
-            OprType::Eq => todo!(),
-            OprType::Noteq => todo!(),
-            OprType::Lt => todo!(),
-            OprType::Lteq => todo!(),
-            OprType::Gt => todo!(),
-            OprType::Gteq => todo!(),
-            OprType::Iseq => todo!(),
-            OprType::Isnteq => todo!(),
+            OprType::Eq => eq::eq(self, other),
+            OprType::Noteq => eq::noteq(self, other),
+            OprType::Lt => lt::lt(self, other),
+            OprType::Lteq => lt::lteq(self, other),
+            OprType::Gt => gt::gt(self, other),
+            OprType::Gteq => gt::gteq(self, other),
+            OprType::Iseq => eq::iseq(self, other),
+            OprType::Isnteq => eq::isnteq(self, other),
+
+            OprType::And => unreachable!(),
+            OprType::Or => unreachable!(),
+            OprType::Xor => todo!(),
 
             OprType::Concat => concat::concat(self, other),
             OprType::TypeCast => typecast::typecast(self, other),

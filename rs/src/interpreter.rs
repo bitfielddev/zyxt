@@ -17,6 +17,7 @@ pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Value>) -> Re
                                      interpret_expr(*operand, i_data)?))
                 },
         Element::BinaryOpr {type_, operand1, operand2, position, raw, ..} =>
+            // TODO And and Or special handling
             if let Ok(v) = interpret_expr(*operand1.clone(), i_data)?
                 .bin_opr(&type_, interpret_expr(*operand2.clone(), i_data)?)
                 {Ok(v)} else {

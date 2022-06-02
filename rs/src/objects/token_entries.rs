@@ -509,7 +509,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: "==",
-            type_: TokenType::AssignmentOpr(OprType::Eq),
+            type_: TokenType::NormalOpr(OprType::Eq),
             combination: &[
                 Pattern::Token(TokenType::AssignmentOpr(OprType::Null)),
                 Pattern::Token(TokenType::AssignmentOpr(OprType::Null))
@@ -519,7 +519,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: "<=",
-            type_: TokenType::AssignmentOpr(OprType::Lteq),
+            type_: TokenType::NormalOpr(OprType::Lteq),
             combination: &[
                 Pattern::Token(TokenType::NormalOpr(OprType::Lt)),
                 Pattern::Token(TokenType::AssignmentOpr(OprType::Null))
@@ -529,7 +529,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: ">=",
-            type_: TokenType::AssignmentOpr(OprType::Gteq),
+            type_: TokenType::NormalOpr(OprType::Gteq),
             combination: &[
                 Pattern::Token(TokenType::NormalOpr(OprType::Gt)),
                 Pattern::Token(TokenType::AssignmentOpr(OprType::Null))
@@ -539,7 +539,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: "!=",
-            type_: TokenType::AssignmentOpr(OprType::Noteq),
+            type_: TokenType::NormalOpr(OprType::Noteq),
             combination: &[
                 Pattern::Token(TokenType::UnaryOpr(OprType::Not, Side::Left)),
                 Pattern::Token(TokenType::AssignmentOpr(OprType::Null))
@@ -549,7 +549,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: "===",
-            type_: TokenType::AssignmentOpr(OprType::Iseq),
+            type_: TokenType::NormalOpr(OprType::Iseq),
             combination: &[
                 Pattern::Token(TokenType::NormalOpr(OprType::Eq)),
                 Pattern::Token(TokenType::AssignmentOpr(OprType::Null))
@@ -559,7 +559,7 @@ pub fn compound_token_entries_1() -> Vec<CompoundTokenEntry<'static>> {
         },
         CompoundTokenEntry{
             value: "!==",
-            type_: TokenType::AssignmentOpr(OprType::Isnteq),
+            type_: TokenType::NormalOpr(OprType::Isnteq),
             combination: &[
                 Pattern::Token(TokenType::NormalOpr(OprType::Noteq)),
                 Pattern::Token(TokenType::AssignmentOpr(OprType::Null))
