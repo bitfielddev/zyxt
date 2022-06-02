@@ -1,0 +1,46 @@
+// declaring a var
+a := 3;
+b := 4.0;
+
+// get type of var
+ter.out a, " is type ", a@type;
+ter.out b, " is type ", b@type;
+
+// +-*/%
+ter.out (a + b);
+ter.out (a - b);
+ter.out (a * b);
+ter.out (a / b);
+ter.out (a % b);
+
+// reassignment
+a = 4;
+ter.out "a is now ", a;
+
+// assignment operators
+a += 2;
+ter.out "and is now ", a;
+
+// Concatenating
+string := 2 ~ 3;
+string ~= " is 2 and 3 together";
+ter.out string;
+
+// comparison
+ter.out (a == b);
+ter.out (a != b);
+ter.out (a < b);
+ter.out (a > b);
+ter.out (a <= b);
+ter.out (a >= b);
+
+// logic operators
+ter.out (true && false);
+ter.out (true || false);
+ter.out (true ^^ false);
+
+/* number types other than i32 and f64 include:
+ * f16, f32
+ * u8, u16, u32, u64, u128, usize, ubig
+ * i8, i16, i64, i128, isize, ibig
+ */

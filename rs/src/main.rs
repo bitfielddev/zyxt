@@ -10,6 +10,7 @@ use backtrace::Backtrace;
 use std::fs::File;
 use std::io::Read;
 use std::panic;
+use std::process::exit;
 use std::time::Instant;
 use ansi_term::Color::{White, Yellow};
 use clap::Parser;
@@ -60,8 +61,8 @@ fn compile(input: String, filename: &str, typelist: &mut InterpreterData<Type>,
     Ok(out)
 }
 
-fn interpret(input: Vec<Element>, verbosity: u8) -> Result<(), ZyxtError>{
-    if verbosity == 0 {interpret_asts(input)?; return Ok(())}
+fn interpret(input: Vec<Element>, verbosity: u8) -> Result<i32, ZyxtError>{
+    if verbosity == 0 {return interpret_asts(input)}
     if verbosity >= 2 {println!("{}", Yellow.bold().paint("\nInterpreting"));}
     let interpret_start = Instant::now();
     let exit_code = interpret_asts(input)?;
@@ -69,7 +70,7 @@ fn interpret(input: Vec<Element>, verbosity: u8) -> Result<(), ZyxtError>{
     println!("\nExited with code {}", exit_code);
     println!("{}", Yellow.bold().paint("\nStats"));
     println!("{}", Yellow.paint(format!("Interpreting time: {}µs", interpret_time)));
-    Ok(())
+    Ok(exit_code)
 }
 
 #[derive(Parser)]
@@ -116,11 +117,13 @@ fn main() {
                 Err(_) => { ZyxtError::no_pos().error_1_1(filename.clone()).print() }
             };
             let mut typelist = InterpreterData::<Type>::default_type();
-            interpret(compile(content, filename, &mut typelist,verbose).unwrap_or_else(|e| {
+            let exit_code = interpret(compile(content, filename, &mut typelist,verbose)
+                                          .unwrap_or_else(|e| {
                 e.print()
             }), verbose).unwrap_or_else(|e| {
                 e.print()
             });
+            exit(exit_code);
         },
         // TODO Compile, Interpret
         Subcmd::Repl => {

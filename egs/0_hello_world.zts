@@ -1,0 +1,5 @@
+// prints Hello World
+ter.out "Hello World";
+/* additional multiline comment
+ * because why not
+ */

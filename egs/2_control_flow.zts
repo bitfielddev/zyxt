@@ -1,0 +1,11 @@
+// if stmts
+is_math_ok := if 4 < 3 {
+    ter.out "maths is broken!"; false
+} elif 2 + 2 == 4 {
+    ter.out "maths is ok!"; true
+} else {
+    ter.out "maths is broken!"; false
+};
+ter.out is_math_ok;
+
+// coming soon: for loops, while loops, match-of stmts
