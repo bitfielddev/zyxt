@@ -206,7 +206,14 @@ impl Element {
                               type2: Type, position: &Position, raw: &String) -> Result<Type, ZyxtError> {
         if type_ == &OprType::TypeCast {
             return Ok(type2)
-        }
+        } else if [
+            OprType::Eq, OprType::Noteq,
+            OprType::Lt, OprType::Lteq,
+            OprType::Gt, OprType::Gteq,
+            OprType::Iseq, OprType::Eq,
+            OprType::And, OprType::Or, OprType::Xor
+        ].contains(type_) {return Ok(Type::from_str("bool"))}
+
         match Value::default(type1.clone())? // TODO
             .bin_opr(type_, Value::default(type2.clone())?) {
             Ok(v) => Ok(v.get_type_obj()),
@@ -217,6 +224,7 @@ impl Element {
     }
     pub fn un_op_return_type(type_: &OprType, opnd_type: Type,
                              position: &Position, raw: &String) -> Result<Type, ZyxtError> {
+        if type_ == &OprType::Not {return Ok(Type::from_str("bool"))}
         match Value::default(opnd_type.clone())?.un_opr(type_) {
             Ok(v) => Ok(v.get_type_obj()),
             Err(OprError::NoImplForOpr) => Err(ZyxtError::from_pos_and_raw(position, raw)

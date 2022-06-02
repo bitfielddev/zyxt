@@ -1,30 +1,34 @@
 use std::collections::HashMap;
 use crate::{Type, ZyxtError};
 use crate::objects::element::{Argument, Element};
-use crate::objects::value::Value;
+use crate::objects::value::{logic, Value};
 use crate::objects::interpreter_data::{FrameData, InterpreterData};
+use crate::objects::token::OprType;
 
 
 pub fn interpret_expr(input: Element, i_data: &mut InterpreterData<Value>) -> Result<Value, ZyxtError> {
     match input {
-        Element::Token(..) | Element::Comment {..} | Element::Preprocess {..} => panic!(),
+        Element::Token(..) | Element::Comment { .. } | Element::Preprocess { .. } => panic!(),
         Element::NullElement => Ok(Value::Null),
-        Element::UnaryOpr {type_, operand, position, raw, ..} =>
+        Element::UnaryOpr { type_, operand, position, raw, .. } =>
             if let Ok(v) = interpret_expr(*operand.clone(), i_data)?.un_opr(&type_)
-                {Ok(v)} else {
-                    Err(ZyxtError::from_pos_and_raw(&position, &raw)
-                        .error_4_1_1(type_.to_string(),
-                                     interpret_expr(*operand, i_data)?))
-                },
-        Element::BinaryOpr {type_, operand1, operand2, position, raw, ..} =>
-            // TODO And and Or special handling
-            if let Ok(v) = interpret_expr(*operand1.clone(), i_data)?
-                .bin_opr(&type_, interpret_expr(*operand2.clone(), i_data)?)
-                {Ok(v)} else {
-                    Err(ZyxtError::from_pos_and_raw(&position, &raw)
-                        .error_4_1_0(type_.to_string(),
-                                 interpret_expr(*operand1, i_data)?,
-                                 interpret_expr(*operand2, i_data)?))
+            { Ok(v) } else {
+                Err(ZyxtError::from_pos_and_raw(&position, &raw)
+                    .error_4_1_1(type_.to_string(),
+                                 interpret_expr(*operand, i_data)?))
+            },
+        Element::BinaryOpr { type_, operand1, operand2, position, raw, .. } =>
+        // TODO And and Or special handling
+            if let Ok(v) = match type_ {
+                OprType::And => Ok(logic::and(*operand1.clone(), *operand2.clone(), i_data)?),
+                OprType::Or => Ok(logic::or(*operand1.clone(), *operand2.clone(), i_data)?),
+                _ => interpret_expr(* operand1.clone(), i_data)?
+                    .bin_opr(&type_, interpret_expr(*operand2.clone(), i_data)?)
+            } {Ok(v)} else {
+                Err(ZyxtError::from_pos_and_raw(&position, &raw)
+                    .error_4_1_0(type_.to_string(),
+                             interpret_expr(*operand1, i_data)?,
+                             interpret_expr(*operand2, i_data)?))
             },
         Element::Variable {name, position, raw, ..} => i_data.get_val(&name, &position, &raw),
         Element::Declare {variable, content, ..} => {

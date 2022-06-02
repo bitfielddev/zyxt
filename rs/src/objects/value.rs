@@ -11,6 +11,7 @@ mod unary;
 mod eq;
 mod lt;
 mod gt;
+pub mod logic;
 
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
@@ -157,7 +158,7 @@ impl Value {
 
             OprType::And => unreachable!(),
             OprType::Or => unreachable!(),
-            OprType::Xor => todo!(),
+            OprType::Xor => logic::xor(self, &other),
 
             OprType::Concat => concat::concat(self, other),
             OprType::TypeCast => typecast::typecast(self, other),
