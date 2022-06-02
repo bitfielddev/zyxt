@@ -95,7 +95,7 @@ struct Run {
 
 fn main() {
     let args = Args::parse();
-    let verbose = if cfg!(debug_assertions) {2u8} else {args.verbose};
+    let verbose = args.verbose;
 
     panic::set_hook(Box::new(|a| {
         ZyxtError::no_pos().error_0_0(a.to_string(), Backtrace::new()).print_noexit();
