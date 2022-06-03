@@ -257,7 +257,10 @@ impl Element {
         }
         Ok((last, if add_set {None} else {return_type}))
     }
-    pub fn call_return_type(called: &mut Element, _args: &mut [Element], typelist: &mut InterpreterData<Type>) -> Result<Type, ZyxtError> {
+    pub fn call_return_type(called: &mut Element, args: &mut [Element], typelist: &mut InterpreterData<Type>) -> Result<Type, ZyxtError> {
+        for arg in args {
+            arg.eval_type(typelist)?;
+        }
         if let Element::Variable {ref parent, ref name, ..} = *called {
             if name == &"out".to_string() && parent.get_name() == *"ter" {
                 return Ok(Type::null())
@@ -341,10 +344,12 @@ impl Element {
                     typelist.declare_val(&arg.name, &arg.type_);
                 }
                 let (res, block_return_type) =  Element::block_type(content, typelist, false)?;
-                if return_type == &Type::null() {*return_type = res;}
-                else if *return_type != block_return_type.clone().unwrap() {
-                    return Err(ZyxtError::from_pos_and_raw(position, raw)
-                        .error_4_t(return_type.clone(), block_return_type.unwrap()))
+                if return_type == &Type::null() || block_return_type.is_none() {*return_type = res;}
+                else if let Some(block_return_type) = block_return_type {
+                    if *return_type == block_return_type {
+                        return Err(ZyxtError::from_pos_and_raw(position, raw)
+                            .error_4_t(return_type.clone(), block_return_type))
+                    }
                 }
                 Ok(Type::Instance {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),

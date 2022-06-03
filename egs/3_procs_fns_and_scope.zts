@@ -1,5 +1,6 @@
 a := 1;
 b := 2;
+ter.out a, b;
 
 // scoping
 {
@@ -12,7 +13,7 @@ ter.out a, b;
 
 // procs and fns
 f := proc {
-    ter.out "In a proc, a = ", a;
+    ter.out "In a proc, a =", a;
 };
 g := fn {
     ter.out "In a fn, can't access a"
@@ -29,8 +30,8 @@ ter.out i 3;
 
 // default arguments
 j := |j: str: "default"| ter.out j;
-ter.out j();
-ter.out j("not default");
+j();
+j("not default");
 
 // preprocessing
 ter.out pre {
@@ -43,4 +44,4 @@ defer {
     ter.out "This will be printed after everything else";
 };
 
-ter.out "a";
+ter.out "This will be printed first, then...";

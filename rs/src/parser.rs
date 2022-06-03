@@ -412,8 +412,9 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                 } else {cursor -= 1; vec![]};
 
                 check_and_update_cursor!(cursor, selected, elements);
-                let return_type = if let Element::Token(Token{type_: TokenType::Colon, ..}) = selected {
+                let return_type = if let Element::Token(Token{type_: TokenType::Colon, value, ..}) = selected {
                     let mut catcher = vec![];
+                    raw = format!("{}{}", raw, value);
                     loop {
                         check_and_update_cursor!(cursor, selected, elements);
                         raw = format!("{}{}", raw, selected.get_raw());
@@ -428,13 +429,13 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                             implementation: None
                         }
                     } else {todo!("throw error here")}
-                } else { Type::null()};
+                } else {Type::null()};
 
                 if let Element::Block{content, ..} = selected {
                     new_elements.push(Element::Procedure {
                         position, is_fn, args,
                         return_type,
-                        raw: format!("{}{}", raw, selected.get_raw()),
+                        raw,
                         content: content.clone()
                     });
                 } else {

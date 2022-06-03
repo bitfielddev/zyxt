@@ -186,7 +186,7 @@ impl Value {
                 "f64" => Value::F64(0.0),
                 "str" => Value::Str("".to_string()),
                 "bool" => Value::Bool(false),
-                "#null" => Value::Null,
+                "#null" | "#any" => Value::Null, // TODO move #any somewhere else
                 "type" => Value::Type(Type::null()),
                 _ => panic!("{:#?}", type_)
             }),

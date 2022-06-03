@@ -33,6 +33,7 @@ pub fn repl(verbosity: u8) {
         match input {
             Ok(input) => {
                 rl.add_history_entry(&input);
+                rl.save_history(history_path.to_str().unwrap()).unwrap();
                 if input == *";exit" {break;}
                 if input == *";vars" {
                     println!("{}", varlist.heap_to_string());
