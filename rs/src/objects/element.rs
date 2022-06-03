@@ -282,6 +282,9 @@ impl Element {
                              "#call".to_string()))
         }*/
     }
+    pub fn is_pattern(&self) -> bool {
+        matches!(self, Element::Variable {..})
+    }
     pub fn eval_type(&mut self, typelist: &mut InterpreterData<Type>) -> Result<Type, ZyxtError> {
         match self {
             Element::Literal {type_, ..} => Ok(type_.clone()),
@@ -292,6 +295,10 @@ impl Element {
                 Element::call_return_type(called, args, typelist),
             Element::Declare {position, variable, content,
                 flags, type_, raw} => {
+                if !variable.is_pattern() {
+                    return Err(ZyxtError::from_element(&**variable)
+                        .error_2_2(*variable.clone()))
+                }
                 let content_type = content.eval_type(typelist)?;
                 if *type_ == Type::null() {
                     typelist.declare_val(&variable.get_name(), &content_type);
@@ -370,6 +377,10 @@ impl Element {
             Element::Defer {content, ..} => // TODO check block return against call stack
                 Ok(Element::block_type(content, typelist, false)?.0),
             Element::Set {position, variable, content, raw, ..} => {
+                if !variable.is_pattern() {
+                    return Err(ZyxtError::from_element(&**variable)
+                        .error_2_2(*variable.clone()))
+                }
                 let content_type = content.eval_type(typelist)?;
                 let var_type = typelist.get_val(&variable.get_name(), position, raw)?;
                 if content_type != var_type {

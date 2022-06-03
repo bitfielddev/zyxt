@@ -7,12 +7,14 @@ use num::bigint::{ToBigInt, ToBigUint};
 
 macro_rules! typecast_mod {
     ($e:ident, $t:ident, $s:literal, $x:ident, $y:ident, $zero:expr) => {{
-        let n = typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap().clone();
-        if n == $zero {
-            // TODO undef / indet handling, but for now,
-            return Ok(Value::$e($x.clone()));
-        }
-        Ok(Value::$e($x % n))
+        if $y.is_num() {
+            let n = typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap().clone();
+            if n == $zero {
+                // TODO undef / indet handling, but for now,
+                return Ok(Value::$e($x.clone()));
+            }
+            Ok(Value::$e($x % n))
+        } else {Err(OprError::NoImplForOpr)}
     }};
 }
 

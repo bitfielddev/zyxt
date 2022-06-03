@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::collections::HashMap;
 use crate::objects::token::{TokenCategory, TokenType, get_order, Side, OprType, Keyword};
 use crate::objects::element::{Argument, Condition, Element, VecElementRaw};
@@ -496,8 +497,8 @@ fn parse_un_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                 if i == elements.len()-1 {
                     return Err(ZyxtError::from_element(ele).error_2_1_4(ele.get_raw()))
                 }
-                let operand = parse_expr(elements[i+1..].to_vec())?;
-                return Ok(elements[..i].iter().cloned()
+                let operand = parse_un_oprs(elements[i+1..].to_vec())?[0].clone();
+                return parse_un_oprs(elements[..i].iter().cloned()
                     .chain(vec![Element::UnaryOpr {
                         position: position.clone(),
                         type_: *opr_type,
@@ -508,8 +509,8 @@ fn parse_un_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                 if i == 0 {
                     return Err(ZyxtError::from_element(ele).error_2_1_4(ele.get_raw()))
                 }
-                let operand = parse_expr(elements[..i].to_vec())?;
-                return Ok(vec![Element::UnaryOpr {
+                let operand = parse_un_oprs(elements[..i].to_vec())?[0].clone();
+                return parse_un_oprs(vec![Element::UnaryOpr {
                     position: position.clone(),
                     type_: *opr_type,
                     raw: format!("{}{}", operand.get_raw(), ele.get_raw()),
@@ -733,15 +734,38 @@ pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
     Ok(new_elements)
 }
 
-fn parse_unparen_calls(mut elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
-    while let Some(Element::Token(Token{type_: TokenType::UnaryOpr(_, Side::Left), ..})) = elements.get(0) {
-        elements[1] = parse_un_oprs(elements[..2].to_vec())?[0].clone();
-        elements.remove(0);
+fn parse_unparen_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
+    let comma_pos = elements.iter()
+        .position(|e| matches!(e, Element::Token(Token{type_: TokenType::Comma, ..})))
+        .unwrap_or(elements.len());
+    let right_un_pos = elements.iter().enumerate()
+        .take_while(|(i, _)| *i < comma_pos)
+        .collect::<Vec<_>>().iter()
+        .rposition(|(_, e)| matches!(e, Element::Token(Token{type_: TokenType::UnaryOpr(_, Side::Right), ..})));
+    if let Some(right_un_pos) = right_un_pos {
+        if right_un_pos + 1 != comma_pos {
+            let min_index = min(right_un_pos+1, elements.len());
+            return parse_unparen_calls(parse_un_oprs(elements[..min_index].to_vec())?
+                .into_iter()
+                .chain(elements[min_index..].iter().cloned())
+                .collect())
+        }
     }
-    while let Some(Element::Token(Token{type_: TokenType::UnaryOpr(_, Side::Right), ..})) = elements.get(1) {
-        elements[1] = parse_un_oprs(elements[..2].to_vec())?[0].clone();
-        elements.remove(0);
+    let left_un_pos = elements.iter().enumerate()
+        .take_while(|(i, _)| *i < comma_pos)
+        .collect::<Vec<_>>().iter()
+        .rposition(|(_, e)| matches!(e, Element::Token(Token{type_: TokenType::UnaryOpr(_, Side::Left), ..})));
+    if let Some(left_un_pos) = left_un_pos {
+        if left_un_pos < comma_pos {
+            let min_index = min(left_un_pos+2, elements.len());
+            return parse_unparen_calls(parse_un_oprs(elements[..min_index].to_vec())?
+                .into_iter()
+                .chain(elements[min_index..].iter().cloned())
+                .collect())
+        }
     }
+
+    if elements.len() == 1 || comma_pos == elements.len() {return Ok(elements)}
     Ok(vec![Element::Call {
         position: elements[0].get_pos().clone(),
         raw: elements.iter()

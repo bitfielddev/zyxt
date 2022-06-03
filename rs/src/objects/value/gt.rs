@@ -48,6 +48,12 @@ pub fn gt(x: &Value, y: Value) -> Result<Value, OprError> {
         Value::F16(x) => typecast_gt!(as_f16, "f16", x, y),
         Value::F32(x) => typecast_gt!(as_f32, "f32", x, y),
         Value::F64(x) => typecast_gt!(as_f64, "f64", x, y),
+        Value::Bool(x) => typecast_gt!(as_bool, "bool", x, y),
+        Value::Str(x) => if let Value::Str(y) = y {
+            Ok(Value::Bool(x < &y))
+        } else {
+            Err(OprError::NoImplForOpr)
+        },
         _ => Err(OprError::NoImplForOpr),
     }
 }

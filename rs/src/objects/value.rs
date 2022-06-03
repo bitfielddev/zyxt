@@ -165,6 +165,26 @@ impl Value {
             _ => Err(OprError::NoImplForOpr)
         }
     }
+    pub fn is_num(&self) -> bool {
+        matches!(self, Value::I8(_) |
+            Value::I16(_) |
+            Value::I32(_) |
+            Value::I64(_) |
+            Value::I128(_) |
+            Value::Isize(_) |
+            Value::Ibig(_) |
+            Value::U8(_) |
+            Value::U16(_) |
+            Value::U32(_) |
+            Value::U64(_) |
+            Value::U128(_) |
+            Value::Usize(_) |
+            Value::Ubig(_) |
+            Value::F16(_) |
+            Value::F32(_) |
+            Value::F64(_) |
+            Value::Bool(_))
+    }
     pub fn default(type_: Type) -> Result<Self, ZyxtError> {
         match type_.clone() {
             Type::Instance {name, ..} => Ok(match &*name {

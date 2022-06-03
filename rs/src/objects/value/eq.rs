@@ -5,12 +5,12 @@ use crate::Type;
 
 macro_rules! typecast_eq {
     ($t:ident, $s:literal, $x:ident, $y:ident) => {
-        Ok(Value::Bool($x == typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap()))
+        $y.is_num() && $x == typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap()
     };
 }
 
 pub fn eq(x: &Value, y: Value) -> Result<Value, OprError> {
-    match x {
+    Ok(Value::Bool(match x {
         Value::I8(x) => typecast_eq!(as_i8, "i8", x, y),
         Value::I16(x) => typecast_eq!(as_i16, "i16", x, y),
         Value::I32(x) => typecast_eq!(as_i32, "i32", x, y),
@@ -28,8 +28,9 @@ pub fn eq(x: &Value, y: Value) -> Result<Value, OprError> {
         Value::F16(x) => typecast_eq!(as_f16, "f16", x, y),
         Value::F32(x) => typecast_eq!(as_f32, "f32", x, y),
         Value::F64(x) => typecast_eq!(as_f64, "f64", x, y),
-        _ => Err(OprError::NoImplForOpr)
-    }
+        Value::Bool(x) => typecast_eq!(as_bool, "bool", x, y),
+        _ => *iseq(x, y)?.as_bool().unwrap()
+    }))
 }
 
 pub fn noteq(x: &Value, y: Value) -> Result<Value, OprError> {

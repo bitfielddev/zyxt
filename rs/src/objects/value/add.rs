@@ -5,7 +5,9 @@ use crate::Type;
 
 macro_rules! typecast_add {
     ($e:ident, $t:ident, $s:literal, $x:ident, $y:ident) => {
-        Ok(Value::$e($x + typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap()))
+        if $y.is_num() {
+            Ok(Value::$e($x + typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap()))
+        } else {Err(OprError::NoImplForOpr)}
     };
 }
 

@@ -273,12 +273,12 @@ impl PositionForZyxtError {
         }
     }
 
-    /// assignment without variable name
-    pub fn error_2_2(self) -> ZyxtError {
+    /// expected pattern, got something else
+    pub fn error_2_2(self, ele: Element) -> ZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.2",
-            message: "Assignment without variable name".to_string()
+            message: format!("Expected pattern, got `{}`", ele.get_raw())
         }
     }
 
