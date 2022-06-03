@@ -1,0 +1,46 @@
+a := 1;
+b := 2;
+
+// scoping
+{
+    a = 3;
+    b := 4;
+    ter.out a, b;
+};
+
+ter.out a, b;
+
+// procs and fns
+f := proc {
+    ter.out "In a proc, a = ", a;
+};
+g := fn {
+    ter.out "In a fn, can't access a"
+};
+f(); g();
+
+// procs and fns can return values and accept arguments
+h := fn|x: i32|: i32 {x+1};
+ter.out h 3;
+
+// for procs you don't need `proc`
+i := |x: i32| x + 1;
+ter.out i 3;
+
+// default arguments
+j := |j: str: "default"| ter.out j;
+ter.out j();
+ter.out j("not default");
+
+// preprocessing
+ter.out pre {
+    ter.out "This will be printed before everything else";
+    3 + 4
+};
+
+// defer
+defer {
+    ter.out "This will be printed after everything else";
+};
+
+ter.out "a";

@@ -9,3 +9,6 @@ is_math_ok := if 4 < 3 {
 ter.out is_math_ok;
 
 // coming soon: for loops, while loops, match-of stmts
+
+// You can also do top-level return (has to be i32)
+ret 1

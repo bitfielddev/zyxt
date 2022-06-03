@@ -3,8 +3,8 @@ a := 3;
 b := 4.0;
 
 // get type of var
-ter.out a, " is type ", a@type;
-ter.out b, " is type ", b@type;
+ter.out a, "is type", a@type;
+ter.out b, "is type", b@type;
 
 // +-*/%
 ter.out (a + b);
@@ -15,11 +15,11 @@ ter.out (a % b);
 
 // reassignment
 a = 4;
-ter.out "a is now ", a;
+ter.out "a is now", a;
 
 // assignment operators
 a += 2;
-ter.out "and is now ", a;
+ter.out "and is now", a;
 
 // Concatenating
 string := 2 ~ 3;
@@ -47,3 +47,6 @@ ter.out (true ^^ false);
 
  // variable deletion
  del a;
+
+ // str multiplication
+ ter.out("a"*5);
