@@ -342,7 +342,9 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                         else if selected.value.parse::<u128>().is_ok() {"u128"}
                         else {"ibig"}
                     } else {"str"}),
-                    content: selected.value.clone()
+                    content: if selected.type_ == TokenType::LiteralString {
+                        selected.value[1..selected.value.len()-1].to_string()
+                    } else {selected.value.clone()}
                 }
             }
             TokenType::CloseParen => {
@@ -765,7 +767,7 @@ fn parse_unparen_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
         }
     }
 
-    if elements.len() == 1 || comma_pos == elements.len() {return Ok(elements)}
+    if elements.len() == 1 {return Ok(elements)}
     Ok(vec![Element::Call {
         position: elements[0].get_pos().clone(),
         raw: elements.iter()
@@ -828,12 +830,6 @@ pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError
             TokenType::MultilineCommentStart,
             TokenType::MultilineCommentEnd].contains(&token.type_) {
             return Err(ZyxtError::from_token(token).error_2_1_10(token.value.clone()))
-        }
-    }
-    // remove quotes around LiteralStrings
-    for token in input.iter_mut() {
-        if token.type_ == TokenType::LiteralString {
-            token.value = token.value[1..token.value.len()-1].to_string()
         }
     }
 

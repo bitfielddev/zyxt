@@ -57,7 +57,7 @@ pub fn repl(verbosity: u8) {
                         }} {
                         Ok(result) => {
                             if result != Value::Null && i == instr_len-1 {
-                                println!("{}{}", out_symbol, Yellow.paint(result.to_string()))
+                                println!("{}{}", out_symbol, Yellow.paint(format!("{:?}", result)))
                             }
                         },
                         Err(e) => { e.print_noexit(); }

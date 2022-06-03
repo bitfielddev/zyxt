@@ -14,7 +14,7 @@ mod gt;
 pub mod logic;
 
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use enum_as_inner::EnumAsInner;
 use half::f16;
 use num::{BigInt, BigUint};
@@ -60,6 +60,37 @@ pub enum Value {
     Return(Box<Value>)
 }
 
+impl Debug for Value {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if let Value::Return(v) = self {return Debug::fmt(&v, f)}
+        write!(f, "{}", match self {
+            Value::I8(v) => format!("{}@i8", v),
+            Value::I16(v) => format!("{}@i16", v),
+            Value::I32(v) => format!("{}@i32", v),
+            Value::I64(v) => format!("{}@i64", v),
+            Value::I128(v) => format!("{}@i128", v),
+            Value::Isize(v) => format!("{}@isize", v),
+            Value::Ibig(v) => format!("{}@ibig", v),
+            Value::U8(v) => format!("{}@u8", v),
+            Value::U16(v) => format!("{}@u16", v),
+            Value::U32(v) => format!("{}@u32", v),
+            Value::U64(v) => format!("{}@u64", v),
+            Value::U128(v) => format!("{}@u128", v),
+            Value::Usize(v) => format!("{}@usize", v),
+            Value::Ubig(v) => format!("{}@ubig", v),
+            Value::F16(v) => format!("{}@f16", v),
+            Value::F32(v) => format!("{}@f32", v),
+            Value::F64(v) => format!("{}@f64", v),
+            Value::Str(v) => format!("\"{}\"", v),
+            Value::Bool(_) |
+            Value::Type(_) |
+            Value::ClassInstance {..} |
+            Value::Proc {..} |
+            Value::Null => self.to_string(),
+            Value::Return(_) => unreachable!()
+        })
+    }
+}
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
