@@ -1,7 +1,7 @@
 use std::io;
 use std::io::Write;
 use std::time::Instant;
-use ansi_term::Color::{Cyan, Green, White, Yellow};
+use ansi_term::Color::{Cyan, Green, Red, White, Yellow};
 use backtrace::Backtrace;
 use dirs::home_dir;
 use rustyline::Editor;
@@ -25,20 +25,27 @@ pub fn repl(verbosity: u8) {
     let out_symbol = Green.bold().paint("[>> ");
     println!("{}", Yellow.bold().paint(format!("Zyxt Repl (v{})", env!("CARGO_PKG_VERSION"))));
     println!("{}", Cyan.paint("`;exit` to exit"));
-    println!("{}", Cyan.paint("`;vars` to show variables"));
+    println!("{}", Cyan.paint("`;help` for more commands"));
     loop {
         print!("{} ", in_symbol);
         io::stdout().flush().unwrap();
         let input = rl.readline(&*in_symbol.to_string());
         match input {
             Ok(input) => {
+                if input == *";exit" {break;}
                 rl.add_history_entry(&input);
                 rl.save_history(history_path.to_str().unwrap()).unwrap();
-                if input == *";exit" {break;}
-                if input == *";vars" {
-                    println!("{}", varlist.heap_to_string());
-                    continue;
-                }
+                if input.starts_with(';') {match &*input {
+                    ";vars" => println!("{}", varlist.heap_to_string()),
+                    ";exit" => unreachable!(),
+                    ";help" => {
+                        println!("{}", Yellow.bold().paint("All commands start wih `;`"));
+                        println!("{}", Cyan.paint("help\tView this help page"));
+                        println!("{}", Cyan.paint("exit\tExit the repl"));
+                        println!("{}", Cyan.paint("vars\tView all variables"))
+                    },
+                    _ => println!("{}", Red.bold().paint("Invalid command"))
+                }; continue;}
                 let instructions = match compile(input, &filename, &mut typelist, verbosity) {
                     Ok(v) => v,
                     Err(e) => {e.print_noexit(); continue}
