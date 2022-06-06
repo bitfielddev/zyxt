@@ -1,6 +1,6 @@
 # zyxtlang
 
-A language aimed for versatility, portability and backwards-compatitability.
+A language aimed for versatility, portability and backwards-compatibility.
 
 Still WIP though. Stay tuned :)
 
