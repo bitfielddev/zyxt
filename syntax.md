@@ -211,24 +211,27 @@ x ^^ y; // xor
 !x; // not
 
 === Null & error handling ===
-x? // becomes #U<x, null>
+x? // null type
 x?.y; // null if x or y is null
 x ?: y; // y if x is null
 x!!; // non-null assertion
 
-{...} ?! e :| {...}; // calls proc/fn if error in first block
-x !: y; // y if error in x;
+x!? // errorable type
+x !?: |e| {...}; // calls proc/fn if error in x
+x!!; // non-error assertion
 
 === Misc ===
-x istype y; // x is of type y
-x !istype y; // x is not of type y
 x >< y; // swap x and y
 x ~ y; // concatenation
 x @ y; // typecast
 &x; // get reference of x
+&>x; // get pointer of x
 \x; // dereference x
-**x; // spread syntax
-x..y // range syntax
+..x; // spread syntax
+x |> y // equivalent to y(x)
+x |> y(z) // equivalent to y(x, z)
+x << y // insertion opr
+x >> y // extraction opr
 
 === Parsing order ===
 -1. ()
@@ -257,6 +260,7 @@ x..y // range syntax
 ```
 === Conditional ===
 if <cond> {...} elif <cond> {...} else {...}
+if! ...
 // returns a value
 
 match <var>
