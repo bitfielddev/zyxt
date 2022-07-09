@@ -369,7 +369,7 @@ impl Element {
                 let mut pre_typelist = InterpreterData::<Type>::default_type();
                 let mut i_data = InterpreterData::<Value>::default_variable();
                 let pre_instructions = gen_instructions(content.to_owned(), &mut pre_typelist)?;
-                let pre_value = interpret_block(pre_instructions, &mut i_data,
+                let pre_value = interpret_block(&pre_instructions, &mut i_data,
                                                 true, false)?;
                 *self = pre_value.as_element();
                 self.eval_type(typelist)

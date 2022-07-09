@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Position {
     pub filename: String,
     pub line: u32,

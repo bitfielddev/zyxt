@@ -55,9 +55,9 @@ pub fn repl(verbosity: u8) {
                 if verbosity >= 2 {println!("{}", Yellow.bold().paint("\nInterpreting"));}
                 for (i, instr) in instructions.into_iter().enumerate() {
                     match {
-                        if verbosity == 0 {interpret_expr(instr, &mut varlist)} else {
+                        if verbosity == 0 {interpret_expr(&instr, &mut varlist)} else {
                             let interpret_start = Instant::now();
-                            let result = interpret_expr(instr, &mut varlist);
+                            let result = interpret_expr(&instr, &mut varlist);
                             let interpret_time = interpret_start.elapsed().as_micros();
                             println!("{}", White.dimmed().paint(format!("{}µs", interpret_time)));
                             result

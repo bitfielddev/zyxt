@@ -127,14 +127,14 @@ impl Display for OprType {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[allow(dead_code)]
 pub enum Flag {Hoi, Pub, Priv, Prot, Const, Inst}
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Keyword {If, Else, Elif, Do, While, For, Delete, Return, Proc, Fn, Pre, Defer, Class, Struct}
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Side { Left, Right }
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(dead_code)]
 pub enum TokenType {
     CommentStart, // //

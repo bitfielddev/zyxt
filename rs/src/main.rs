@@ -61,7 +61,7 @@ fn compile(input: String, filename: &str, typelist: &mut InterpreterData<Type>,
     Ok(out)
 }
 
-fn interpret(input: Vec<Element>, verbosity: u8) -> Result<i32, ZyxtError>{
+fn interpret(input: &Vec<Element>, verbosity: u8) -> Result<i32, ZyxtError>{
     if verbosity == 0 {return interpret_asts(input)}
     if verbosity >= 2 {println!("{}", Yellow.bold().paint("\nInterpreting"));}
     let interpret_start = Instant::now();
@@ -117,7 +117,7 @@ fn main() {
                 Err(_) => { ZyxtError::no_pos().error_1_1(filename.to_owned()).print() }
             };
             let mut typelist = InterpreterData::<Type>::default_type();
-            let exit_code = interpret(compile(content, filename, &mut typelist,verbose)
+            let exit_code = interpret(&compile(content, filename, &mut typelist,verbose)
                                           .unwrap_or_else(|e| {
                 e.print()
             }), verbose).unwrap_or_else(|e| {

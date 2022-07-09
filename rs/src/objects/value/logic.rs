@@ -4,7 +4,7 @@ use crate::objects::value::typecast::typecast;
 use crate::objects::value::utils::OprError;
 use crate::objects::value::Value;
 
-pub fn and(x: Element, y: Element, i_data: &mut InterpreterData<Value>) -> Result<Value, ZyxtError> {
+pub fn and(x: &Element, y: &Element, i_data: &mut InterpreterData<Value>) -> Result<Value, ZyxtError> {
     let lhs = interpret_expr(x, i_data)?;
     let lhsb = typecast(&lhs, Value::Type(Type::from_str("bool"))).unwrap();
     if !lhsb.as_bool().unwrap() {
@@ -15,7 +15,7 @@ pub fn and(x: Element, y: Element, i_data: &mut InterpreterData<Value>) -> Resul
     Ok(Value::Bool(*rhsb.as_bool().unwrap()))
 }
 
-pub fn or(x: Element, y: Element, i_data: &mut InterpreterData<Value>) -> Result<Value, ZyxtError> {
+pub fn or(x: &Element, y: &Element, i_data: &mut InterpreterData<Value>) -> Result<Value, ZyxtError> {
     let lhs = interpret_expr(x, i_data)?;
     let lhsb = typecast(&lhs, Value::Type(Type::from_str("bool"))).unwrap();
     if *lhsb.as_bool().unwrap() {

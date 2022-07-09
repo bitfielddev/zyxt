@@ -39,7 +39,8 @@ impl InterpreterData<Value> {
         self.frame_data.pop();
 
         for content in self.defer.last().unwrap().clone() {
-            if let Value::Return(v) = interpret_block(content, self, false, false)? {
+            if let Value::Return(v) = interpret_block(&content,
+                                                      self, false, false)? {
                 self.defer.pop();
                 return Ok(Some(*v))
             }
