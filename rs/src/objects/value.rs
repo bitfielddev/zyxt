@@ -111,7 +111,7 @@ impl Display for Value {
             Value::F16(v) => v.to_string(),
             Value::F32(v) => v.to_string(),
             Value::F64(v) => v.to_string(),
-            Value::Str(v) => v.clone(),
+            Value::Str(v) => v.to_owned(),
             Value::Bool(v) => v.to_string(),
             Value::Type(v) |
             Value::ClassInstance {type_: v, ..} => format!("<{}>", v),
@@ -130,7 +130,7 @@ impl Value {
     pub fn call(&self, args: Vec<Value>) -> Result<Value, OprError> {
         if args.len() == 1 {
         macro_rules! mult {
-            () => {self.bin_opr(&OprType::AstMult, args.get(0).unwrap().clone())}
+            () => {self.bin_opr(&OprType::AstMult, args.get(0).unwrap().to_owned())}
         }
             match self {
                 Value::I8(_) => mult!(),
@@ -217,7 +217,7 @@ impl Value {
             Value::Bool(_))
     }
     pub fn default(type_: Type) -> Result<Self, ZyxtError> {
-        match type_.clone() {
+        match type_.to_owned() {
             Type::Instance {name, ..} => Ok(match &*name {
                 "i8" => Value::I8(0),
                 "i16" => Value::I16(0),
@@ -237,7 +237,7 @@ impl Value {
                 "f64" => Value::F64(0.0),
                 "str" => Value::Str("".to_string()),
                 "bool" => Value::Bool(false),
-                "#null" | "#any" => Value::Null, // TODO move #any somewhere else
+                "_null" | "_any" => Value::Null, // TODO move _any somewhere else
                 "type" => Value::Type(Type::null()),
                 _ => panic!("{:#?}", type_)
             }),
@@ -296,11 +296,11 @@ impl Value {
             Value::Proc {is_fn, return_type, ..} =>
                 Type::Instance {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),
-                    type_args: vec![Type::null(), return_type.clone()],
+                    type_args: vec![Type::null(), return_type.to_owned()],
                     inst_attrs: Default::default(),
                     implementation: None
                 }, // TODO angle bracket thingy when it is implemented
-            Value::ClassInstance{type_, ..} => type_.clone(),
+            Value::ClassInstance{type_, ..} => type_.to_owned(),
             Value::Null => Type::null(),
             Value::Return(v) => v.get_type_obj()
         }
@@ -344,9 +344,9 @@ impl Value {
                 position: Default::default(),
                 raw: "".to_string(),
                 is_fn: *is_fn,
-                args: args.clone(),
-                return_type: return_type.clone(),
-                content: content.clone()
+                args: args.to_owned(),
+                return_type: return_type.to_owned(),
+                content: content.to_owned()
             },
             Value::Null => Element::NullElement,
             Value::Return(v) => Element::Return {

@@ -30,13 +30,13 @@ impl ZyxtError {
             + &*Red.bold().paint(format!(" {}", self.message)).to_string());
     }
     pub fn from_pos_and_raw(pos: &Position, raw: &String) -> PositionForZyxtError {
-        PositionForZyxtError {position: vec![(pos.clone(), raw.clone().trim().to_string())]}
+        PositionForZyxtError {position: vec![(pos.to_owned(), raw.to_owned().trim().to_string())]}
     }
     pub fn from_element(element: &Element) -> PositionForZyxtError {
-        PositionForZyxtError {position: vec![(element.get_pos().clone(), element.get_raw().trim().to_string())]}
+        PositionForZyxtError {position: vec![(element.get_pos().to_owned(), element.get_raw().trim().to_string())]}
     }
     pub fn from_token(token: &Token) -> PositionForZyxtError {
-        PositionForZyxtError {position: vec![(token.position.clone(), token.value.clone().trim().to_string())]}
+        PositionForZyxtError {position: vec![(token.position.to_owned(), token.value.to_owned().trim().to_string())]}
     }
     pub fn no_pos() -> PositionForZyxtError {
         PositionForZyxtError {position: vec![]}

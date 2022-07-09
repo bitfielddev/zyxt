@@ -26,7 +26,7 @@ fn catch_between(opening: TokenType, closing: TokenType,
         TokenType::OpenAngleBracket => '<',
         _ => '?'
     };
-    let paren_pos = elements[*cursor].get_pos().clone();
+    let paren_pos = elements[*cursor].get_pos().to_owned();
     loop {
         *cursor += 1;
         if *cursor >= elements.len() {
@@ -44,7 +44,7 @@ fn catch_between(opening: TokenType, closing: TokenType,
             else if catcher_selected.type_ == closing {paren_level -= 1;}
             else if catcher_selected.type_ == opening {paren_level += 1;}
         }
-        catcher.push(catcher_selected.clone())
+        catcher.push(catcher_selected.to_owned())
     }
     Ok(catcher)
 }
@@ -61,17 +61,17 @@ fn base_split<T: Clone>(parser_fn: &dyn Fn(Vec<Element>) -> Result<T, ZyxtError>
                 if !ignore_empty && catcher.is_empty() {
                     todo!()
                 } else if catcher.is_empty() {
-                    out.push(default_val.clone().unwrap())
+                    out.push(default_val.to_owned().unwrap())
                 } else if !catcher.is_empty() {
-                    out.push(parser_fn(catcher.clone())?);
+                    out.push(parser_fn(catcher.to_owned())?);
                 }
                 catcher.clear();
             } else {
                 if type_ == opening {paren_level += 1;}
                 else if type_ == closing {paren_level -= 1;}
-                catcher.push(element.clone());
+                catcher.push(element.to_owned());
             }
-        } else {catcher.push(element.clone());}
+        } else {catcher.push(element.to_owned());}
     }
     if paren_level != 0 {
         return Err(ZyxtError::from_pos_and_raw(&Default::default(), &"".to_string())
@@ -89,7 +89,7 @@ fn base_split<T: Clone>(parser_fn: &dyn Fn(Vec<Element>) -> Result<T, ZyxtError>
     } else if catcher.is_empty() {
         out.push(default_val.unwrap())
     } else if !catcher.is_empty() {
-        out.push(parser_fn(catcher.clone())?);
+        out.push(parser_fn(catcher.to_owned())?);
     }
     Ok(out)
 }
@@ -107,12 +107,12 @@ fn get_arguments(cursor: &mut usize, elements: &[Element], raw: &mut String) -> 
         .collect::<Vec<String>>().join(""), elements[*cursor].get_raw());
     base_split(&|raw_arg| {
         let parts = split_between(TokenType::Colon, TokenType::Null, TokenType::Null,
-                                  raw_arg.clone(), true)?;
-        let name = if let Some(Element::Variable{name, ..}) = parts.get(0) {name.clone()} else {
+                                  raw_arg.to_owned(), true)?;
+        let name = if let Some(Element::Variable{name, ..}) = parts.get(0) {name.to_owned()} else {
             return Err(ZyxtError::from_pos_and_raw(parts.get(0).unwrap().get_pos(), &raw_arg.get_raw())
                 .error_2_1_15(",".to_string()))
         };
-        let type_ = if let Some(t) = parts.get(1) {t.clone()} else {Element::NullElement};
+        let type_ = if let Some(t) = parts.get(1) {t.to_owned()} else {Element::NullElement};
         let default = parts.get(2).cloned();
         if parts.len() > 3 {
             return Err(ZyxtError::from_pos_and_raw(parts.get(3).unwrap().get_pos(), &raw_arg.get_raw())
@@ -144,23 +144,23 @@ fn parse_parens(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                                                            TokenType::CloseParen,
                                                            &elements, &mut cursor)?;
                         new_elements.push(parse_expr(paren_contents)?);
-                    } else {new_elements.push(Element::Token(selected.clone()))} // or else it's function args
-                } else {new_elements.push(Element::Token(selected.clone()))}
+                    } else {new_elements.push(Element::Token(selected.to_owned()))} // or else it's function args
+                } else {new_elements.push(Element::Token(selected.to_owned()))}
             } else if selected.type_ == TokenType::OpenCurlyParen { // blocks, {
                 let raw = selected.get_raw();
                 let paren_contents = catch_between(TokenType::OpenCurlyParen,
                                                    TokenType::CloseCurlyParen,
                                                    &elements, &mut cursor)?;
                 new_elements.push(Element::Block {
-                    position: selected.position.clone(),
+                    position: selected.position.to_owned(),
                     raw: format!("{}{}{}", raw, paren_contents.iter()
                         .map(|e| e.get_raw())
                         .collect::<Vec<String>>().join(""),
                         elements[cursor].get_raw()),
                     content: parse_block(paren_contents)?
                 });
-            } else {new_elements.push(Element::Token(selected.clone()))}
-        } else {new_elements.push(selected.clone())}
+            } else {new_elements.push(Element::Token(selected.to_owned()))}
+        } else {new_elements.push(selected.to_owned())}
         cursor += 1;
     }
 
@@ -185,35 +185,35 @@ fn parse_preprocess_and_defer(elements: Vec<Element>) -> Result<Vec<Element>, Zy
             if let Element::Block {content, raw: block_raw, ..} = selected {
                 if is_pre {
                     new_elements.push(Element::Preprocess {
-                        position: position.clone(),
+                        position: position.to_owned(),
                         raw: format!("{}{}", raw, block_raw),
-                        content: content.clone()
+                        content: content.to_owned()
                     })
                 } else {
                     new_elements.push(Element::Defer {
-                        position: position.clone(),
+                        position: position.to_owned(),
                         raw: format!("{}{}", raw, block_raw),
-                        content: content.clone()
+                        content: content.to_owned()
                     })
                 }
             } else {
                 let content = parse_expr(elements[cursor..].to_vec())?;
                 if is_pre {
                     new_elements.push(Element::Preprocess {
-                        position: position.clone(),
+                        position: position.to_owned(),
                         raw: format!("{}{}", raw, content.get_raw()),
                         content: vec![content]
                     });
                 } else {
                     new_elements.push(Element::Defer {
-                        position: position.clone(),
+                        position: position.to_owned(),
                         raw: format!("{}{}", raw, content.get_raw()),
                         content: vec![content]
                     })
                 }
                 break
             }
-        } else {new_elements.push(selected.clone())}
+        } else {new_elements.push(selected.to_owned())}
         cursor += 1;
     }
     Ok(new_elements)
@@ -242,14 +242,14 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>) -> Result<Vec<Elemen
             }
             let mut content = vec![];
             if let Element::Block {content: block_content, raw: block_raw, ..} = selected {
-                content = block_content.clone();
+                content = block_content.to_owned();
                 raw = format!("{}{}", raw, block_raw);
             } else if keyword == &Keyword::Class {
                 return Err(ZyxtError::from_pos_and_raw(
                     selected.get_pos(), &format!("{}{}", raw, &selected.get_raw())).error_2_1_18(keyword))
             }
             new_elements.push(Element::Class {
-                position: position.clone(),
+                position: position.to_owned(),
                 raw,
                 is_struct: keyword == &Keyword::Struct,
                 class_attrs: Default::default(),
@@ -257,7 +257,7 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>) -> Result<Vec<Elemen
                 content,
                 args,
             })
-        } else {new_elements.push(selected.clone())}} else {new_elements.push(selected.clone())}
+        } else {new_elements.push(selected.to_owned())}} else {new_elements.push(selected.to_owned())}
         cursor += 1;
     }
     Ok(new_elements)
@@ -284,25 +284,25 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                 let next_element = &elements[cursor+1];
                 if let Element::Token(next_element) = next_element {
                     if next_element.type_ != TokenType::Variable {
-                        return Err(ZyxtError::from_token(next_element).error_2_1_0(next_element.value.clone()))
+                        return Err(ZyxtError::from_token(next_element).error_2_1_0(next_element.value.to_owned()))
                     }} else if let Element::Literal{content, ..} = next_element {
-                    return Err(ZyxtError::from_element(next_element).error_2_1_0(content.clone()))
+                    return Err(ZyxtError::from_element(next_element).error_2_1_0(content.to_owned()))
                 }
                 if let (Element::Token(prev_element), Element::Token(next_element)) = (prev_element, next_element) {
                     if !prev_element.categories.contains(&TokenCategory::ValueEnd) {
                         return Err(ZyxtError::from_token(selected).error_2_1_0(String::from("."))) //could be enum but thats for later
                     }
                     catcher = Element::Variable{
-                        position: next_element.position.clone(),
-                        name: next_element.value.clone(),
+                        position: next_element.position.to_owned(),
+                        name: next_element.value.to_owned(),
                         raw: format!("{}{}{}", catcher.get_raw(), selected.get_raw(), next_element.get_raw()),
                         parent: Box::new(catcher)
                     };
                     cursor += 1;
                 } else if let Element::Token(next_element) = next_element {
                     catcher = Element::Variable{
-                        position: next_element.position.clone(),
-                        name: next_element.value.clone(),
+                        position: next_element.position.to_owned(),
+                        name: next_element.value.to_owned(),
                         raw: format!("{}{}{}", catcher.get_raw(), selected.get_raw(), next_element.get_raw()),
                         parent: Box::new(catcher)
                     };
@@ -312,10 +312,10 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
 
             }
             TokenType::Variable => {
-                if catcher != Element::NullElement {new_elements.push(catcher.clone());}
+                if catcher != Element::NullElement {new_elements.push(catcher.to_owned());}
                 catcher = Element::Variable {
-                    position: selected.position.clone(),
-                    name: selected.value.clone(),
+                    position: selected.position.to_owned(),
+                    name: selected.value.to_owned(),
                     raw: selected.get_raw(),
                     parent: Box::new(Element::NullElement)
                 }
@@ -323,15 +323,15 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
             TokenType::LiteralNumber |
             TokenType::LiteralMisc |
             TokenType::LiteralString => {
-                if catcher != Element::NullElement {new_elements.push(catcher.clone());}
+                if catcher != Element::NullElement {new_elements.push(catcher.to_owned());}
                 catcher = Element::Literal {
-                    position: selected.position.clone(),
+                    position: selected.position.to_owned(),
                     raw: selected.get_raw(),
                     type_: Type::from_str(if selected.type_ == TokenType::LiteralMisc {
                         match &*selected.value {
                             "true" | "false" => "bool",
-                            "null" => "#null",
-                            "inf" | "undef" => "#num",
+                            "null" => "_null",
+                            "inf" | "undef" => "_num",
                             _ => unreachable!("{}", selected.value)
                         }
                     } else if selected.type_ == TokenType::LiteralNumber{
@@ -344,7 +344,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                     } else {"str"}),
                     content: if selected.type_ == TokenType::LiteralString {
                         selected.value[1..selected.value.len()-1].to_string()
-                    } else {selected.value.clone()}
+                    } else {selected.value.to_owned()}
                 }
             }
             TokenType::CloseParen => {
@@ -367,20 +367,20 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                                                        contents,
                                                        false)?;
                 catcher = Element::Call {
-                    position: selected.position.clone(),
+                    position: selected.position.to_owned(),
                     raw: format!("{}{}", catcher.get_raw(), raw),
                     called: Box::new(catcher),
                     args, kwargs: HashMap::new()
                 }
             }
             _ => {
-                if catcher != Element::NullElement {new_elements.push(catcher.clone());}
+                if catcher != Element::NullElement {new_elements.push(catcher.to_owned());}
                 catcher = Element::NullElement;
-                new_elements.push(Element::Token(selected.clone()));
+                new_elements.push(Element::Token(selected.to_owned()));
             }
         }} else {
-            if catcher != Element::NullElement {new_elements.push(catcher.clone());}
-            catcher = selected.clone()
+            if catcher != Element::NullElement {new_elements.push(catcher.to_owned());}
+            catcher = selected.to_owned()
         }
         cursor += 1;
     }
@@ -400,11 +400,11 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
             if [TokenType::Keyword(Keyword::Proc),
                 TokenType::Keyword(Keyword::Fn),
                 TokenType::Bar].contains(type_) {
-                let position = selected.get_pos().clone();
+                let position = selected.get_pos().to_owned();
                 let is_fn= if type_ != &TokenType::Bar {
                     type_ == &TokenType::Keyword(Keyword::Fn)
                 } else {false};
-                let mut raw = selected.get_raw().clone();
+                let mut raw = selected.get_raw().to_owned();
                 if type_ != &TokenType::Bar {
                     check_and_update_cursor!(cursor, selected, elements);
                     raw = format!("{}{}", raw, selected.get_raw());
@@ -422,7 +422,7 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                         check_and_update_cursor!(cursor, selected, elements);
                         raw = format!("{}{}", raw, selected.get_raw());
                         if let Element::Block{..} = selected {break;}
-                        catcher.push(selected.clone());
+                        catcher.push(selected.to_owned());
                     }
                     if let Element::Variable {name, ..} = parse_expr(catcher)? {
                         Type::Instance {
@@ -439,7 +439,7 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                         position, is_fn, args,
                         return_type,
                         raw,
-                        content: content.clone()
+                        content: content.to_owned()
                     });
                 } else {
                     let content = parse_expr(elements[cursor..].to_vec())?;
@@ -452,7 +452,7 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                     return Ok(new_elements);
                 }
 
-            } else {new_elements.push(selected.clone())}} else {new_elements.push(selected.clone())}
+            } else {new_elements.push(selected.to_owned())}} else {new_elements.push(selected.to_owned())}
         cursor += 1;
     }
     Ok(new_elements)
@@ -465,23 +465,23 @@ fn parse_assignment_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtErr
             if i == 0 || i == elements.len()-1 {
                 return Err(ZyxtError::from_element(ele).error_2_1_3(ele.get_raw()))
             }
-            let variable = parse_expr(vec![elements[i-1].clone()])?;
+            let variable = parse_expr(vec![elements[i-1].to_owned()])?;
             let content = if opr_type == &OprType::Null {
                 parse_expr(elements[i+1..].to_vec())?
             } else {
                 let operand2 = parse_expr(elements[i+1..].to_vec())?;
                 Element::BinaryOpr {
-                    position: position.clone(),
+                    position: position.to_owned(),
                     type_: *opr_type,
                     raw: operand2.get_raw(),
-                    operand1: Box::new(variable.clone()),
+                    operand1: Box::new(variable.to_owned()),
                     operand2: Box::new(operand2)
                 }
             };
 
             return Ok(elements[..i-1].iter().cloned()
                 .chain(vec![Element::Set {
-                    position: position.clone(),
+                    position: position.to_owned(),
                     raw: format!("{}{}{}", variable.get_raw(), ele.get_raw(), content.get_raw()),
                     variable: Box::new(variable),
                     content: Box::new(content)
@@ -499,10 +499,10 @@ fn parse_un_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                 if i == elements.len()-1 {
                     return Err(ZyxtError::from_element(ele).error_2_1_4(ele.get_raw()))
                 }
-                let operand = parse_un_oprs(elements[i+1..].to_vec())?[0].clone();
+                let operand = parse_un_oprs(elements[i+1..].to_vec())?[0].to_owned();
                 return parse_un_oprs(elements[..i].iter().cloned()
                     .chain(vec![Element::UnaryOpr {
-                        position: position.clone(),
+                        position: position.to_owned(),
                         type_: *opr_type,
                         raw: format!("{}{}", ele.get_raw(), operand.get_raw()),
                         operand: Box::new(operand)
@@ -511,9 +511,9 @@ fn parse_un_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                 if i == 0 {
                     return Err(ZyxtError::from_element(ele).error_2_1_4(ele.get_raw()))
                 }
-                let operand = parse_un_oprs(elements[..i].to_vec())?[0].clone();
+                let operand = parse_un_oprs(elements[..i].to_vec())?[0].to_owned();
                 return parse_un_oprs(vec![Element::UnaryOpr {
-                    position: position.clone(),
+                    position: position.to_owned(),
                     type_: *opr_type,
                     raw: format!("{}{}", operand.get_raw(), ele.get_raw()),
                     operand: Box::new(operand)
@@ -534,7 +534,7 @@ fn parse_normal_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
     for (i, ele) in elements.iter().enumerate() {
         if let Element::Token(Token{type_: TokenType::NormalOpr(opr_type), value, .. }) = ele {
             if i == 0 || i == elements.len()-1 {
-                return Err(ZyxtError::from_element(ele).error_2_1_3(value.clone()))
+                return Err(ZyxtError::from_element(ele).error_2_1_3(value.to_owned()))
             }
             if get_order(opr_type) >= highest_order {
                 highest_order_index = i;
@@ -547,7 +547,7 @@ fn parse_normal_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
         let operand1 = parse_expr(elements[..highest_order_index].to_vec())?;
         let operand2 = parse_expr(elements[highest_order_index+1..].to_vec())?;
         vec![Element::BinaryOpr {
-            position: position.clone(),
+            position: position.to_owned(),
             type_: *opr_type,
             raw: format!("{}{}{}", operand1.get_raw(), elements[highest_order_index].get_raw(), operand2.get_raw()),
             operand1: Box::new(operand1),
@@ -567,17 +567,17 @@ fn parse_delete_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
             let mut varnames = vec![];
             for var in vars_to_delete.iter() {
                 if let Element::Variable {name, ..} = var {
-                    varnames.push(name.clone());
+                    varnames.push(name.to_owned());
                 }
                 else if let Element::UnaryOpr {type_: OprType::Deref, raw, ..} = var {
-                    return Err(ZyxtError::from_element(var).error_2_1_12(raw.clone()))
+                    return Err(ZyxtError::from_element(var).error_2_1_12(raw.to_owned()))
                 }
                 else {
                     return Err(ZyxtError::from_element(var).error_2_1_11(var.get_raw()))
                 }
             }
             new_elements.push(Element::Delete {
-                position: ele.get_pos().clone(),
+                position: ele.get_pos().to_owned(),
                 raw: format!("{}{}", ele.get_raw(), elements[i+1..].iter()
                     .map(|e| e.get_raw())
                     .collect::<Vec<String>>().join("")),
@@ -585,7 +585,7 @@ fn parse_delete_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
             });
             return Ok(new_elements)
         }
-        new_elements.push(ele.clone());
+        new_elements.push(ele.to_owned());
     }
     Ok(elements)
 }
@@ -597,13 +597,13 @@ fn parse_return_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
         if let Element::Token(Token { type_: TokenType::Keyword(Keyword::Return), whitespace, value, .. }) = ele {
             let return_val = parse_expr(elements[i+1..].to_vec())?;
             new_elements.push(Element::Return {
-                position: ele.get_pos().clone(),
+                position: ele.get_pos().to_owned(),
                 raw: format!("{}{}{}", whitespace, value, return_val.get_raw()),
                 value: Box::new(return_val)
             });
             return Ok(new_elements)
         }
-        new_elements.push(ele.clone());
+        new_elements.push(ele.to_owned());
     }
     Ok(elements)
 }
@@ -640,15 +640,15 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
             for _ in 0..flags.len()+1 {new_elements.pop();}
             let content = parse_expr(elements[cursor+1..].to_vec())?;
             new_elements.push(Element::Declare {
-                position: position.clone(),
+                position: position.to_owned(),
                 raw: format!("{}{}", raw, content.get_raw()),
-                variable: Box::new(parse_expr(vec![declared_var.clone()])?),
+                variable: Box::new(parse_expr(vec![declared_var.to_owned()])?),
                 content: Box::new(content),
                 flags,
                 type_: Type::null() // TODO type later
             });
             break;
-        } else {new_elements.push(selected.clone())}
+        } else {new_elements.push(selected.to_owned())}
         cursor += 1;
     }
     Ok(new_elements)
@@ -664,7 +664,7 @@ pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
         if let Element::Token(Token{type_: TokenType::Keyword(kwd),
                                   position, ..}) = selected { match kwd {
             Keyword::If => {
-                let start_pos = position.clone();
+                let start_pos = position.to_owned();
                 let mut conditions: Vec<Condition> = vec![];
                 let mut prev_catcher_kwd = "";
                 let mut raw = String::new();
@@ -694,14 +694,14 @@ pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
                     } else if let Element::Block {raw: block_raw, ..} = catcher_selected {
                         raw = format!("{}{}", raw, block_raw);
                         check_and_update_cursor!(cursor, catcher_selected, elements);
-                        catcher_selected.clone()
+                        catcher_selected.to_owned()
                     } else {
-                        let mut catcher = vec![elements[cursor].clone()];
+                        let mut catcher = vec![elements[cursor].to_owned()];
                         loop {
                             check_and_update_cursor!(cursor, catcher_selected, elements);
                             raw = format!("{}{}", raw, catcher_selected.get_raw());
                             if let Element::Block {..} = catcher_selected {break}
-                            else {catcher.push(catcher_selected.clone());}
+                            else {catcher.push(catcher_selected.to_owned());}
                         };
                         parse_expr(catcher)?
                     };
@@ -710,7 +710,7 @@ pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
                     if let Element::Block {content, ..} = catcher_selected {
                         conditions.push(Condition {
                             condition,
-                            if_true: content.clone()
+                            if_true: content.to_owned()
                         })
                     } else {
                         return Err(ZyxtError::from_element(selected).error_2_1_8(catcher_selected.get_raw()))
@@ -729,8 +729,8 @@ pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
                 return Err(ZyxtError::from_element(selected)
                     .error_2_1_9(if kwd == &Keyword::Elif {"elif"} else {"else"}.to_string()))
             },
-            _ => new_elements.push(selected.clone())
-        }} else {new_elements.push(selected.clone());}
+            _ => new_elements.push(selected.to_owned())
+        }} else {new_elements.push(selected.to_owned());}
         cursor += 1;
     }
     Ok(new_elements)
@@ -769,11 +769,11 @@ fn parse_unparen_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
 
     if elements.len() == 1 {return Ok(elements)}
     Ok(vec![Element::Call {
-        position: elements[0].get_pos().clone(),
+        position: elements[0].get_pos().to_owned(),
         raw: elements.iter()
             .map(|e| e.get_raw())
             .collect::<Vec<String>>().join(""),
-        called: Box::new(elements[0].clone()),
+        called: Box::new(elements[0].to_owned()),
         args: split_between(TokenType::Comma,
                             TokenType::Null, TokenType::Null,
                             elements[1..].to_vec(),
@@ -804,7 +804,7 @@ fn parse_expr(mut elements: Vec<Element>) -> Result<Element, ZyxtError> {
     if elements.len() > 1 {
         return Err(ZyxtError::from_element(&elements[1]).error_2_1_0(elements[1].get_raw()))
     }
-    Ok(elements.get(0).unwrap_or(&Element::NullElement).clone())
+    Ok(elements.get(0).unwrap_or(&Element::NullElement).to_owned())
 }
 
 fn parse_block(input: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
@@ -821,15 +821,15 @@ pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError
     for token in input.iter() {
         if token.type_ == TokenType::Comment {
             comments.push(Element::Comment {
-                position: token.position.clone(),
+                position: token.position.to_owned(),
                 raw: token.get_raw(),
-                content: token.value.clone()
+                content: token.value.to_owned()
             })
         } else if [TokenType::CommentStart,
             TokenType::CommentEnd,
             TokenType::MultilineCommentStart,
             TokenType::MultilineCommentEnd].contains(&token.type_) {
-            return Err(ZyxtError::from_token(token).error_2_1_10(token.value.clone()))
+            return Err(ZyxtError::from_token(token).error_2_1_10(token.value.to_owned()))
         }
     }
 

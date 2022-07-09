@@ -19,7 +19,7 @@ fn lex_stage1(input: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
                 out.push(Token{
                     value: c.to_string(),
                     type_: entry.type_,
-                    position: pos.clone(),
+                    position: pos.to_owned(),
                     categories: entry.categories,
                     ..Default::default()
                 });
@@ -32,7 +32,7 @@ fn lex_stage1(input: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
             out.push(Token{
                 value: c.to_string(),
                 type_: TokenType::Null,
-                position: pos.clone(),
+                position: pos.to_owned(),
                 ..Default::default()
             });
             pos.next(&c);
@@ -109,7 +109,7 @@ fn lex_stage2(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError>{
 
     let token_entries = compound_token_entries_1();
     for t in input {
-        out.push(t.clone());
+        out.push(t.to_owned());
         for entry in token_entries.iter() {
             let (Pattern::Value(token_type, ..)
             | Pattern::Token(token_type)
@@ -121,7 +121,7 @@ fn lex_stage2(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError>{
                     t.value == *value
                 } else { true }
             } { if let Some(count) = is_match(entry.combination, &out) {
-                    let pos = out.get(out.len() - count).unwrap().position.clone();
+                    let pos = out.get(out.len() - count).unwrap().position.to_owned();
                     let value = out.drain(out.len() - count..)
                         .map(|t| t.value).collect();
                     out.push(Token {
@@ -144,7 +144,7 @@ fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError>{
 
     let token_entries = compound_token_entries_2();
     for t in input {
-        out.push(t.clone());
+        out.push(t.to_owned());
         for entry in token_entries.iter() {
             let (Pattern::Value(token_type, ..)
             | Pattern::Token(token_type)
@@ -157,7 +157,7 @@ fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError>{
                 } else { true }
             } { if entry.literal {
                 if let Some(count) = is_literal_match(&out, entry) {
-                    let pos = out.get(out.len() - count).unwrap().position.clone();
+                    let pos = out.get(out.len() - count).unwrap().position.to_owned();
                     let value = out.drain(out.len() - count..)
                         .map(|t| t.value).collect();
                     out.push(Token {
@@ -168,7 +168,7 @@ fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError>{
                         ..Default::default()
                     });
                 }} else if let Some(count) = is_match(entry.combination, &out) {
-                    let pos = out.get(out.len() - count).unwrap().position.clone();
+                    let pos = out.get(out.len() - count).unwrap().position.to_owned();
                     let value = out.drain(out.len() - count..)
                         .map(|t| t.value).collect();
                     out.push(Token {
@@ -192,7 +192,7 @@ fn lex_stage4(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError> {
     let mut type_list = token_entries.iter().map(|e| e.from);
     for (i, t) in input.iter().enumerate() {
         if !type_list.any(|a| a == t.type_) {
-            out.push(t.clone());
+            out.push(t.to_owned());
             continue;
         }
         let token_entry = token_entries.iter().find(|e| e.from == t.type_).unwrap();
@@ -210,10 +210,10 @@ fn lex_stage4(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError> {
                 || !next_token.unwrap().categories.contains(&TokenCategory::ValueStart)/*)*/)) {
             out.push(Token{
                 type_: token_entry.type_,
-                ..t.clone()
+                ..t.to_owned()
             })
         } else {
-            out.push(t.clone())
+            out.push(t.to_owned())
         }
 
     }
@@ -227,7 +227,7 @@ fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
 
     for mut t in input {
         if t.type_ != TokenType::Whitespace {
-            t.whitespace = whitespace_stack.clone();
+            t.whitespace = whitespace_stack.to_owned();
             whitespace_stack = "".to_string();
             out.push(t);
         }
@@ -242,7 +242,7 @@ fn check_no_unknown_tokens(input: &[Token]) -> Result<(), ZyxtError> {
     for token in input.iter() {
         if token.type_ == TokenType::Null {
             return Err(ZyxtError::from_pos_and_raw(&token.position, &token.value)
-                .error_2_1_1(token.value.clone()))
+                .error_2_1_1(token.value.to_owned()))
         }
     }
     Ok(())

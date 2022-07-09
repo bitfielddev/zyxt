@@ -513,7 +513,7 @@ pub fn typecast(x: &Value, y: Value) -> Result<Value, OprError> {
         Value::Type(y) => match y {
             Type::Instance { name, .. } => if name == "type" {
                 Ok(x.get_type())
-            } else { match x.clone() {
+            } else { match x.to_owned() {
                 Value::Str(s) => typecast_str(s, name),
                 Value::Bool(b) => typecast_bool(b, name),
                 Value::I8(x) => typecast_i8(x, name),

@@ -110,11 +110,11 @@ fn main() {
                 Ok(mut file) => {
                     file.read_to_string(&mut content).unwrap_or_else(|e| {
                         if e.to_string() == *"Is a directory (os error 21)" {
-                            ZyxtError::no_pos().error_1_2(filename.clone()).print()
+                            ZyxtError::no_pos().error_1_2(filename.to_owned()).print()
                         } else {panic!("{}", e.to_string())}
                     });
                 },
-                Err(_) => { ZyxtError::no_pos().error_1_1(filename.clone()).print() }
+                Err(_) => { ZyxtError::no_pos().error_1_1(filename.to_owned()).print() }
             };
             let mut typelist = InterpreterData::<Type>::default_type();
             let exit_code = interpret(compile(content, filename, &mut typelist,verbose)

@@ -11,7 +11,7 @@ const PRIM_NAMES: [&str; 22] = ["str", "bool",
     "i8", "i16", "i32", "i64", "i128", "isize", "ibig",
     "u8", "u16", "u32", "u64", "u128", "usize", "ubig",
     "f16", "f32", "f64",
-    "#null", "#any", "type"];
+    "_null", "_any", "type"];
 
 pub struct FrameData<T: Clone> {
     pub position: Position,
@@ -98,23 +98,23 @@ impl <T: Clone + Display> InterpreterData<T> {
         self.frame_data.push(frame_data);
     }
     pub fn declare_val(&mut self, name: &str, value: &T) {
-        self.heap.last_mut().unwrap().insert(name.to_string(), value.clone());
+        self.heap.last_mut().unwrap().insert(name.to_string(), value.to_owned());
     }
     pub fn set_val(&mut self, name: &String, value: &T, position: &Position, raw: &String) -> Result<(), ZyxtError>{
         for set in self.heap.iter_mut().rev() {
-            if set.contains_key(name) {set.insert(name.clone(), value.clone()); return Ok(())}
+            if set.contains_key(name) {set.insert(name.to_owned(), value.to_owned()); return Ok(())}
         }
-        Err(ZyxtError::from_pos_and_raw(position, raw).error_3_0(name.clone()))
+        Err(ZyxtError::from_pos_and_raw(position, raw).error_3_0(name.to_owned()))
     }
     pub fn get_val(&mut self, name: &String, position: &Position, raw: &String) -> Result<T, ZyxtError> {
         for set in self.heap.iter().rev() {
-            if set.contains_key(name) {return Ok(set.get(name).unwrap().clone())}
+            if set.contains_key(name) {return Ok(set.get(name).unwrap().to_owned())}
         }
-        Err(ZyxtError::from_pos_and_raw(position, raw).error_3_0(name.clone()))
+        Err(ZyxtError::from_pos_and_raw(position, raw).error_3_0(name.to_owned()))
     }
     pub fn delete_val(&mut self, name: &String, position: &Position, raw: &String) -> Result<T, ZyxtError> {
         if let Some(v) = self.heap.last_mut().unwrap().remove(name) {Ok(v)}
-        else {Err(ZyxtError::from_pos_and_raw(position, raw).error_3_0(name.clone()))}
+        else {Err(ZyxtError::from_pos_and_raw(position, raw).error_3_0(name.to_owned()))}
     }
     pub fn add_defer(&mut self, content: Vec<Element>) {
         self.defer.last_mut().unwrap().push(content);

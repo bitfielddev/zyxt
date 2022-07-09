@@ -8,10 +8,10 @@ use num::bigint::{ToBigInt, ToBigUint};
 macro_rules! typecast_mod {
     ($e:ident, $t:ident, $s:literal, $x:ident, $y:ident, $zero:expr) => {{
         if $y.is_num() {
-            let n = typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap().clone();
+            let n = typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap().to_owned();
             if n == $zero {
                 // TODO undef / indet handling, but for now,
-                return Ok(Value::$e($x.clone()));
+                return Ok(Value::$e($x.to_owned()));
             }
             Ok(Value::$e($x % n))
         } else {Err(OprError::NoImplForOpr)}

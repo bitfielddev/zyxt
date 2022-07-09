@@ -187,16 +187,16 @@ impl Element {
             Element::Procedure { raw, .. } |
             Element::Preprocess { raw, .. } |
             Element::Defer { raw, .. } |
-            Element::Class { raw, .. } => raw.clone()
+            Element::Class { raw, .. } => raw.to_owned()
         }
     }
     pub fn get_name(&self) -> String {
-        if let Element::Variable {name: type1, ..} = self {type1.clone()} else {panic!("not variable")}
+        if let Element::Variable {name: type1, ..} = self {type1.to_owned()} else {panic!("not variable")}
     }
     pub fn as_type(&self) -> Type {
         if let Element::Variable {name: type1, ..} = self {
             Type::Instance {
-            name: type1.clone(),
+            name: type1.to_owned(),
             type_args: vec![],
             inst_attrs: Default::default(),
             implementation: None
@@ -214,8 +214,8 @@ impl Element {
             OprType::And, OprType::Or, OprType::Xor
         ].contains(type_) {return Ok(Type::from_str("bool"))}
 
-        match Value::default(type1.clone())? // TODO
-            .bin_opr(type_, Value::default(type2.clone())?) {
+        match Value::default(type1.to_owned())? // TODO
+            .bin_opr(type_, Value::default(type2.to_owned())?) {
             Ok(v) => Ok(v.get_type_obj()),
             Err(OprError::NoImplForOpr) => Err(ZyxtError::from_pos_and_raw(position, raw)
                 .error_4_0_0(type_.to_string(), type1.to_string(), type2.to_string())),
@@ -225,7 +225,7 @@ impl Element {
     pub fn un_op_return_type(type_: &OprType, opnd_type: Type,
                              position: &Position, raw: &String) -> Result<Type, ZyxtError> {
         if type_ == &OprType::Not {return Ok(Type::from_str("bool"))}
-        match Value::default(opnd_type.clone())?.un_opr(type_) {
+        match Value::default(opnd_type.to_owned())?.un_opr(type_) {
             Ok(v) => Ok(v.get_type_obj()),
             Err(OprError::NoImplForOpr) => Err(ZyxtError::from_pos_and_raw(position, raw)
                 .error_4_0_1(type_.to_string(), opnd_type.to_string())),
@@ -238,16 +238,16 @@ impl Element {
         if add_set {typelist.add_frame(None);}
         for ele in content.iter_mut() {
             last = ele.eval_type(typelist)?;
-            if let Type::Return (value) = last.clone() {
-                if return_type.clone().is_none() {
+            if let Type::Return (value) = last.to_owned() {
+                if return_type.to_owned().is_none() {
                     return_type = Some(*value);
-                } else if last != return_type.clone().unwrap() {
+                } else if last != return_type.to_owned().unwrap() {
                     return Err(ZyxtError::from_pos_and_raw(ele.get_pos(), &ele.get_raw())
                         .error_4_t(last, return_type.unwrap()))
                 }
             }
         }
-        if let Some(return_type) = return_type.clone() {if last != return_type {
+        if let Some(return_type) = return_type.to_owned() {if last != return_type {
             let last_ele = content.last().unwrap();
             return Err(ZyxtError::from_pos_and_raw(last_ele.get_pos(), &last_ele.get_raw())
                 .error_4_t(last, return_type))
@@ -267,7 +267,7 @@ impl Element {
             }
         }
         if let Type::Instance {name, type_args, ..} = called.eval_type(typelist)? {
-            if name == *"proc" || name == *"fn" {return Ok(type_args[1].clone())}
+            if name == *"proc" || name == *"fn" {return Ok(type_args[1].to_owned())}
         } // TODO type checking for args when arrays are implemented
         Ok(Type::null())
         /*if let Some(v) = Variable::default(called.eval_type(typelist)?, typelist)?.call(
@@ -277,9 +277,9 @@ impl Element {
             Ok(v.get_type_obj())
         } else {
             Err(ZyxtError::from_pos(called.get_pos())
-                .error_3_1_0(called.clone(),
+                .error_3_1_0(called.to_owned(),
                              called.eval_type(typelist)?,
-                             "#call".to_string()))
+                             "_call".to_string()))
         }*/
     }
     pub fn is_pattern(&self) -> bool {
@@ -287,7 +287,7 @@ impl Element {
     }
     pub fn eval_type(&mut self, typelist: &mut InterpreterData<Type>) -> Result<Type, ZyxtError> {
         match self {
-            Element::Literal {type_, ..} => Ok(type_.clone()),
+            Element::Literal {type_, ..} => Ok(type_.to_owned()),
             Element::Variable {name, position, raw, ..} =>
                 typelist.get_val(name, position, raw),
             Element::Block {content, ..} => Ok(Element::block_type(content, typelist, true)?.0),
@@ -297,36 +297,36 @@ impl Element {
                 flags, type_, raw} => {
                 if !variable.is_pattern() {
                     return Err(ZyxtError::from_element(&**variable)
-                        .error_2_2(*variable.clone()))
+                        .error_2_2(*variable.to_owned()))
                 }
                 let content_type = content.eval_type(typelist)?;
                 if *type_ == Type::null() {
                     typelist.declare_val(&variable.get_name(), &content_type);
                     *self = Element::Declare {
-                        type_: content_type.clone(),
-                        content: content.clone(),
-                        variable: variable.clone(),
-                        position: position.clone(),
-                        raw: raw.clone(),
-                        flags: flags.clone()
+                        type_: content_type.to_owned(),
+                        content: content.to_owned(),
+                        variable: variable.to_owned(),
+                        position: position.to_owned(),
+                        raw: raw.to_owned(),
+                        flags: flags.to_owned()
                     };
                 } else {
                     typelist.declare_val(&variable.get_name(), type_);
                     if content_type != *type_ {
                         let new_content = Element::BinaryOpr {
-                            position: position.clone(),
-                            raw: raw.clone(),
+                            position: position.to_owned(),
+                            raw: raw.to_owned(),
                             type_: OprType::TypeCast,
-                            operand1: content.clone(),
+                            operand1: content.to_owned(),
                             operand2: Box::new(type_.as_element())
                         };
                         *self = Element::Declare {
-                            type_: type_.clone(),
+                            type_: type_.to_owned(),
                             content: Box::new(new_content),
-                            variable: variable.clone(),
-                            position: position.clone(),
-                            raw: raw.clone(),
-                            flags: flags.clone()
+                            variable: variable.to_owned(),
+                            position: position.to_owned(),
+                            raw: raw.to_owned(),
+                            flags: flags.to_owned()
                         };
                     }
                 };
@@ -355,12 +355,12 @@ impl Element {
                 else if let Some(block_return_type) = block_return_type {
                     if *return_type == block_return_type {
                         return Err(ZyxtError::from_pos_and_raw(position, raw)
-                            .error_4_t(return_type.clone(), block_return_type))
+                            .error_4_t(return_type.to_owned(), block_return_type))
                     }
                 }
                 Ok(Type::Instance {
                     name: if *is_fn {"fn"} else {"proc"}.to_string(),
-                    type_args: vec![Type::null(), return_type.clone()],
+                    type_args: vec![Type::null(), return_type.to_owned()],
                     inst_attrs: Default::default(),
                     implementation: None
                 })
@@ -368,7 +368,7 @@ impl Element {
             Element::Preprocess {content, ..} => {
                 let mut pre_typelist = InterpreterData::<Type>::default_type();
                 let mut i_data = InterpreterData::<Value>::default_variable();
-                let pre_instructions = gen_instructions(content.clone(), &mut pre_typelist)?;
+                let pre_instructions = gen_instructions(content.to_owned(), &mut pre_typelist)?;
                 let pre_value = interpret_block(pre_instructions, &mut i_data,
                                                 true, false)?;
                 *self = pre_value.as_element();
@@ -379,7 +379,7 @@ impl Element {
             Element::Set {position, variable, content, raw, ..} => {
                 if !variable.is_pattern() {
                     return Err(ZyxtError::from_element(&**variable)
-                        .error_2_2(*variable.clone()))
+                        .error_2_2(*variable.to_owned()))
                 }
                 let content_type = content.eval_type(typelist)?;
                 let var_type = typelist.get_val(&variable.get_name(), position, raw)?;
@@ -397,10 +397,10 @@ impl Element {
                     if let Element::Declare {variable, content, flags, ..} = expr {
                         content.eval_type(typelist)?;
                         if flags.contains(&Flag::Inst) && args != &None {todo!("raise error here")}
-                        if flags.contains(&Flag::Inst) {inst_attrs.insert(variable.get_name(), *content.clone());}
+                        if flags.contains(&Flag::Inst) {inst_attrs.insert(variable.get_name(), *content.to_owned());}
                     }
                 }
-                if args.is_some() && class_attrs.contains_key("#init") {
+                if args.is_some() && class_attrs.contains_key("_init") {
                     todo!("raise error here")
                 }
                 typelist.pop_frame();
@@ -408,7 +408,7 @@ impl Element {
                     name: if *is_struct { "struct" } else { "class" }.to_string(),
                     generics: vec![],
                     class_attrs,
-                    inst_attrs: inst_attrs.clone()
+                    inst_attrs: inst_attrs.to_owned()
                 })
             }
             Element::NullElement |

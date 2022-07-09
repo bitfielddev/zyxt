@@ -46,9 +46,9 @@ fn mul_str(x: String, y: Value) -> Result<Value, OprError> { // TODO check usize
 
 pub fn mul(x: &Value, y: Value) -> Result<Value, OprError> {
     if let Value::Str(x) = x {
-        return mul_str(x.clone(), y);
+        return mul_str(x.to_owned(), y);
     } else if let Value::Str(y) = y {
-        return mul_str(y, x.clone());
+        return mul_str(y, x.to_owned());
     }
     match x {
         Value::I8(x) => typecast_mul!(I8, as_i8, "i8", x, y),

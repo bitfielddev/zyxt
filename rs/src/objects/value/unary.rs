@@ -21,13 +21,13 @@ pub fn un_plus(x: &Value) -> Result<Value, OprError> {
         Value::Ubig(_) |
         Value::F16(_) |
         Value::F32(_) |
-        Value::F64(_) => Ok(x.clone()),
+        Value::F64(_) => Ok(x.to_owned()),
         _ => Err(OprError::NoImplForOpr),
     }
 }
 
 pub fn un_minus(x: &Value) -> Result<Value, OprError> {
-    match x.clone() {
+    match x.to_owned() {
         Value::I8(x) => Ok(Value::I8(-x)),
         Value::I16(x) => Ok(Value::I16(-x)),
         Value::I32(x) => Ok(Value::I32(-x)),
@@ -43,7 +43,7 @@ pub fn un_minus(x: &Value) -> Result<Value, OprError> {
 }
 
 pub fn un_not(x: &Value) -> Result<Value, OprError> {
-    match x.clone() {
+    match x.to_owned() {
         Value::Bool(x) => Ok(Value::Bool(!x)),
         _ => un_not(&typecast(x, Value::Type(Type::from_str("bool")))?),
     }

@@ -23,7 +23,7 @@ macro_rules! typecast_lt {
             Value::Ubig(_) |
             Value::F16(_) |
             Value::F32(_) |
-            Value::F64(_) => typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap().clone(),
+            Value::F64(_) => typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap().to_owned(),
             _ => return Err(OprError::NoImplForOpr),
         }))
     };
@@ -59,5 +59,5 @@ pub fn lt(x: &Value, y: Value) -> Result<Value, OprError> {
 }
 
 pub fn lteq(x: &Value, y: Value) -> Result<Value, OprError> {
-    Ok(Value::Bool(*lt(x, y.clone())?.as_bool().unwrap() || *eq(x, y)?.as_bool().unwrap()))
+    Ok(Value::Bool(*lt(x, y.to_owned())?.as_bool().unwrap() || *eq(x, y)?.as_bool().unwrap()))
 }
