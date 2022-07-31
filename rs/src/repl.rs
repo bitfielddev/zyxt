@@ -15,7 +15,7 @@ use crate::objects::interpreter_data::InterpreterData;
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
     let mut typelist = InterpreterData::<Type>::default_type();
-    let mut varlist = InterpreterData::<Value>::default_variable();
+    let mut varlist = InterpreterData::<Value>::default_variable(Some(|s| println!("{}", s)));
     let mut rl = Editor::<()>::new();
     let mut history_path = home_dir().unwrap();
     history_path.push(".zyxt_history");

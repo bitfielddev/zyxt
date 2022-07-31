@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::fmt::{Display};
-use crate::{Element};
+use std::fmt::Display;
+use crate::Element;
 use crate::errors::ZyxtError;
 use crate::interpreter::interpret_block;
 use crate::objects::position::Position;
@@ -21,7 +21,8 @@ pub struct FrameData<T: Clone> {
 pub struct InterpreterData<T: Clone> {
     pub heap: Vec<HashMap<String, T>>,
     pub defer: Vec<Vec<Vec<Element>>>,
-    pub frame_data: Vec<Option<FrameData<T>>>
+    pub frame_data: Vec<Option<FrameData<T>>>,
+    pub out: Option<fn(String)>
 }
 
 impl InterpreterData<Value> {
@@ -59,11 +60,12 @@ impl InterpreterData<Type> {
 }
 
 impl <T: Clone + Display> InterpreterData<T> {
-    pub fn default_variable() -> InterpreterData<Value> {
+    pub fn default_variable(out: Option<fn(String)>) -> InterpreterData<Value> {
         let mut v = InterpreterData {
             heap: vec![HashMap::new()],
             defer: vec![vec![]],
-            frame_data: vec![]
+            frame_data: vec![],
+            out
         };
         for t in PRIM_NAMES {
             v.heap[0].insert(t.to_string(), Value::Type(Type::Instance {
@@ -80,7 +82,8 @@ impl <T: Clone + Display> InterpreterData<T> {
         let mut v = InterpreterData {
             heap: vec![HashMap::new()],
             defer: vec![vec![]],
-            frame_data: vec![]
+            frame_data: vec![],
+            out: None
         };
         for t in PRIM_NAMES {
             v.heap[0].insert(t.to_string(), Type::Instance {

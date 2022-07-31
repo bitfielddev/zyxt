@@ -46,12 +46,17 @@ pub fn interpret_expr(input: &Element, i_data: &mut InterpreterData<Value>) -> R
         Element::Call {called, args: input_args, position, raw, ..} => {
             if let Element::Variable {parent, name, ..} = called.as_ref() {
                 if *name == "out" && parent.get_name() == *"ter" {
-                    println!("{}", input_args.iter().
+                    let s = format!("{}", input_args.iter().
                         map(|arg| interpret_expr(arg, i_data))
                         .collect::<Result<Vec<_>, _>>()?
                         .into_iter()
                         .map(|v| v.to_string())
                         .collect::<Vec<String>>().join(" "));
+                    if let Some(out) = i_data.out {
+                        out(s);
+                    } else {
+                        println!("{}", s);
+                    }
                     return Ok(Value::Null)
                 }
             }
@@ -65,7 +70,7 @@ pub fn interpret_expr(input: &Element, i_data: &mut InterpreterData<Value>) -> R
                     processed_args.insert(name, interpret_expr(input_arg, i_data)?);
                 }
 
-                let mut fn_i_data = InterpreterData::<Value>::default_variable();
+                let mut fn_i_data = InterpreterData::<Value>::default_variable(i_data.out.to_owned());
                 let fn_i_data=  if is_fn {
                     &mut fn_i_data
                 } else {
@@ -160,7 +165,7 @@ pub fn interpret_block(input: &Vec<Element>, i_data: &mut InterpreterData<Value>
 }
 
 pub fn interpret_asts(input: &Vec<Element>) -> Result<i32, ZyxtError> {
-    let mut i_data = InterpreterData::<Value>::default_variable();
+    let mut i_data = InterpreterData::<Value>::default_variable(Some(|s| {println!("{}", s)}));
     let mut last = Value::Null;
     for ele in input {
         if let Element::Return { value, position, raw, ..} = ele {
