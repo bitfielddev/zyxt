@@ -6,26 +6,31 @@ use crate::Type;
 
 macro_rules! typecast_lt {
     ($t:ident, $s:literal, $x:ident, $y:ident) => {
-        Ok(Value::Bool($x < &match $y {
-            Value::I8(_) |
-            Value::I16(_) |
-            Value::I32(_) |
-            Value::I64(_) |
-            Value::I128(_) |
-            Value::Isize(_) |
-            Value::Ibig(_) |
-            Value::U8(_) |
-            Value::U16(_) |
-            Value::U32(_) |
-            Value::U64(_) |
-            Value::U128(_) |
-            Value::Usize(_) |
-            Value::Ubig(_) |
-            Value::F16(_) |
-            Value::F32(_) |
-            Value::F64(_) => typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap().to_owned(),
-            _ => return Err(OprError::NoImplForOpr),
-        }))
+        Ok(Value::Bool(
+            $x < &match $y {
+                Value::I8(_)
+                | Value::I16(_)
+                | Value::I32(_)
+                | Value::I64(_)
+                | Value::I128(_)
+                | Value::Isize(_)
+                | Value::Ibig(_)
+                | Value::U8(_)
+                | Value::U16(_)
+                | Value::U32(_)
+                | Value::U64(_)
+                | Value::U128(_)
+                | Value::Usize(_)
+                | Value::Ubig(_)
+                | Value::F16(_)
+                | Value::F32(_)
+                | Value::F64(_) => typecast(&$y, Value::Type(Type::from_str($s)))?
+                    .$t()
+                    .unwrap()
+                    .to_owned(),
+                _ => return Err(OprError::NoImplForOpr),
+            },
+        ))
     };
 }
 
@@ -49,15 +54,19 @@ pub fn lt(x: &Value, y: Value) -> Result<Value, OprError> {
         Value::F32(x) => typecast_lt!(as_f32, "f32", x, y),
         Value::F64(x) => typecast_lt!(as_f64, "f64", x, y),
         Value::Bool(x) => typecast_lt!(as_bool, "bool", x, y),
-        Value::Str(x) => if let Value::Str(y) = y {
-            Ok(Value::Bool(x < &y))
-        } else {
-            Err(OprError::NoImplForOpr)
-        },
+        Value::Str(x) => {
+            if let Value::Str(y) = y {
+                Ok(Value::Bool(x < &y))
+            } else {
+                Err(OprError::NoImplForOpr)
+            }
+        }
         _ => Err(OprError::NoImplForOpr),
     }
 }
 
 pub fn lteq(x: &Value, y: Value) -> Result<Value, OprError> {
-    Ok(Value::Bool(*lt(x, y.to_owned())?.as_bool().unwrap() || *eq(x, y)?.as_bool().unwrap()))
+    Ok(Value::Bool(
+        *lt(x, y.to_owned())?.as_bool().unwrap() || *eq(x, y)?.as_bool().unwrap(),
+    ))
 }

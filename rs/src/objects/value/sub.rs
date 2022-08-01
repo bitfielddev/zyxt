@@ -6,8 +6,14 @@ use crate::Type;
 macro_rules! typecast_sub {
     ($e:ident, $t:ident, $s:literal, $x:ident, $y:ident) => {
         if $y.is_num() {
-            Ok(Value::$e($x - typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap()))
-        } else {Err(OprError::NoImplForOpr)}
+            Ok(Value::$e(
+                $x - typecast(&$y, Value::Type(Type::from_str($s)))?
+                    .$t()
+                    .unwrap(),
+            ))
+        } else {
+            Err(OprError::NoImplForOpr)
+        }
     };
 }
 
@@ -30,6 +36,6 @@ pub fn sub(x: &Value, y: Value) -> Result<Value, OprError> {
         Value::F16(x) => typecast_sub!(F16, as_f16, "f16", x, y),
         Value::F32(x) => typecast_sub!(F32, as_f32, "f32", x, y),
         Value::F64(x) => typecast_sub!(F64, as_f64, "f64", x, y),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }

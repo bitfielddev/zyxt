@@ -34,6 +34,8 @@ impl Position {
         if *c == '\n' {
             self.line += 1;
             self.column = 1;
-        } else {self.column += 1}
+        } else {
+            self.column += 1
+        }
     }
 }

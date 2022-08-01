@@ -1,28 +1,28 @@
 mod add;
-pub mod utils;
-mod typecast;
-mod sub;
-mod mul;
-mod div;
-mod modulo;
-mod pow;
 mod concat;
-mod unary;
+mod div;
 mod eq;
-mod lt;
 mod gt;
 pub mod logic;
+mod lt;
+mod modulo;
+mod mul;
+mod pow;
+mod sub;
+mod typecast;
+mod unary;
+pub mod utils;
 
-use std::collections::HashMap;
-use std::fmt::{Debug, Display, Formatter};
-use enum_as_inner::EnumAsInner;
-use half::f16;
-use num::{BigInt, BigUint};
-use crate::{Element, ZyxtError};
 use crate::objects::element::Argument;
 use crate::objects::token::OprType;
 use crate::objects::typeobj::Type;
 use crate::objects::value::utils::OprError;
+use crate::{Element, ZyxtError};
+use enum_as_inner::EnumAsInner;
+use half::f16;
+use num::{BigInt, BigUint};
+use std::collections::HashMap;
+use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Clone, PartialEq, EnumAsInner)]
 pub enum Value {
@@ -46,92 +46,112 @@ pub enum Value {
     Str(String),
     Bool(bool),
     Type(Type),
-    Proc{
+    Proc {
         is_fn: bool,
         args: Vec<Argument>,
         return_type: Type,
-        content: Vec<Element>
+        content: Vec<Element>,
     },
-    ClassInstance{
+    ClassInstance {
         type_: Type,
         attrs: HashMap<String, Value>,
     },
     Null,
-    Return(Box<Value>)
+    Return(Box<Value>),
 }
 
 impl Debug for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        if let Value::Return(v) = self {return Debug::fmt(&v, f)}
-        write!(f, "{}", match self {
-            Value::I8(v) => format!("{}@i8", v),
-            Value::I16(v) => format!("{}@i16", v),
-            Value::I32(v) => format!("{}@i32", v),
-            Value::I64(v) => format!("{}@i64", v),
-            Value::I128(v) => format!("{}@i128", v),
-            Value::Isize(v) => format!("{}@isize", v),
-            Value::Ibig(v) => format!("{}@ibig", v),
-            Value::U8(v) => format!("{}@u8", v),
-            Value::U16(v) => format!("{}@u16", v),
-            Value::U32(v) => format!("{}@u32", v),
-            Value::U64(v) => format!("{}@u64", v),
-            Value::U128(v) => format!("{}@u128", v),
-            Value::Usize(v) => format!("{}@usize", v),
-            Value::Ubig(v) => format!("{}@ubig", v),
-            Value::F16(v) => format!("{}@f16", v),
-            Value::F32(v) => format!("{}@f32", v),
-            Value::F64(v) => format!("{}@f64", v),
-            Value::Str(v) => format!("\"{}\"", v),
-            Value::Bool(_) |
-            Value::Type(_) |
-            Value::ClassInstance {..} |
-            Value::Proc {..} |
-            Value::Null => self.to_string(),
-            Value::Return(_) => unreachable!()
-        })
+        if let Value::Return(v) = self {
+            return Debug::fmt(&v, f);
+        }
+        write!(
+            f,
+            "{}",
+            match self {
+                Value::I8(v) => format!("{}@i8", v),
+                Value::I16(v) => format!("{}@i16", v),
+                Value::I32(v) => format!("{}@i32", v),
+                Value::I64(v) => format!("{}@i64", v),
+                Value::I128(v) => format!("{}@i128", v),
+                Value::Isize(v) => format!("{}@isize", v),
+                Value::Ibig(v) => format!("{}@ibig", v),
+                Value::U8(v) => format!("{}@u8", v),
+                Value::U16(v) => format!("{}@u16", v),
+                Value::U32(v) => format!("{}@u32", v),
+                Value::U64(v) => format!("{}@u64", v),
+                Value::U128(v) => format!("{}@u128", v),
+                Value::Usize(v) => format!("{}@usize", v),
+                Value::Ubig(v) => format!("{}@ubig", v),
+                Value::F16(v) => format!("{}@f16", v),
+                Value::F32(v) => format!("{}@f32", v),
+                Value::F64(v) => format!("{}@f64", v),
+                Value::Str(v) => format!("\"{}\"", v),
+                Value::Bool(_)
+                | Value::Type(_)
+                | Value::ClassInstance { .. }
+                | Value::Proc { .. }
+                | Value::Null => self.to_string(),
+                Value::Return(_) => unreachable!(),
+            }
+        )
     }
 }
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Value::I8(v) => v.to_string(),
-            Value::I16(v) => v.to_string(),
-            Value::I32(v) => v.to_string(),
-            Value::I64(v) => v.to_string(),
-            Value::I128(v) => v.to_string(),
-            Value::Isize(v) => v.to_string(),
-            Value::Ibig(v) => v.to_string(),
-            Value::U8(v) => v.to_string(),
-            Value::U16(v) => v.to_string(),
-            Value::U32(v) => v.to_string(),
-            Value::U64(v) => v.to_string(),
-            Value::U128(v) => v.to_string(),
-            Value::Usize(v) => v.to_string(),
-            Value::Ubig(v) => v.to_string(),
-            Value::F16(v) => v.to_string(),
-            Value::F32(v) => v.to_string(),
-            Value::F64(v) => v.to_string(),
-            Value::Str(v) => v.to_owned(),
-            Value::Bool(v) => v.to_string(),
-            Value::Type(v) |
-            Value::ClassInstance {type_: v, ..} => format!("<{}>", v),
-            Value::Proc{is_fn, args, return_type, ..} =>
-                format!("{}|{}|: {}",
-                    if *is_fn {"fn"} else {"proc"},
-                    args.iter().map(|a| a.to_string()).collect::<Vec<String>>().join(","),
-                        return_type),
-            Value::Null => "null".to_string(),
-            Value::Return(v) => v.to_string()
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Value::I8(v) => v.to_string(),
+                Value::I16(v) => v.to_string(),
+                Value::I32(v) => v.to_string(),
+                Value::I64(v) => v.to_string(),
+                Value::I128(v) => v.to_string(),
+                Value::Isize(v) => v.to_string(),
+                Value::Ibig(v) => v.to_string(),
+                Value::U8(v) => v.to_string(),
+                Value::U16(v) => v.to_string(),
+                Value::U32(v) => v.to_string(),
+                Value::U64(v) => v.to_string(),
+                Value::U128(v) => v.to_string(),
+                Value::Usize(v) => v.to_string(),
+                Value::Ubig(v) => v.to_string(),
+                Value::F16(v) => v.to_string(),
+                Value::F32(v) => v.to_string(),
+                Value::F64(v) => v.to_string(),
+                Value::Str(v) => v.to_owned(),
+                Value::Bool(v) => v.to_string(),
+                Value::Type(v) | Value::ClassInstance { type_: v, .. } => format!("<{}>", v),
+                Value::Proc {
+                    is_fn,
+                    args,
+                    return_type,
+                    ..
+                } => format!(
+                    "{}|{}|: {}",
+                    if *is_fn { "fn" } else { "proc" },
+                    args.iter()
+                        .map(|a| a.to_string())
+                        .collect::<Vec<String>>()
+                        .join(","),
+                    return_type
+                ),
+                Value::Null => "null".to_string(),
+                Value::Return(v) => v.to_string(),
+            }
+        )
     }
 }
 
 impl Value {
     pub fn call(&self, args: Vec<Value>) -> Result<Value, OprError> {
         if args.len() == 1 {
-        macro_rules! mult {
-            () => {self.bin_opr(&OprType::AstMult, args.get(0).unwrap().to_owned())}
-        }
+            macro_rules! mult {
+                () => {
+                    self.bin_opr(&OprType::AstMult, args.get(0).unwrap().to_owned())
+                };
+            }
             match self {
                 Value::I8(_) => mult!(),
                 Value::I16(_) => mult!(),
@@ -149,33 +169,36 @@ impl Value {
                 Value::Ubig(_) => mult!(),
                 Value::F32(_) => mult!(),
                 Value::F64(_) => mult!(),
-                Value::Proc{..} => panic!(),
+                Value::Proc { .. } => panic!(),
                 Value::Return(v) => v.call(args),
                 Value::Type(_v) => todo!(),
-                Value::ClassInstance {type_: _, ..} => todo!(),
-                _ => Err(OprError::NoImplForOpr)
+                Value::ClassInstance { type_: _, .. } => todo!(),
+                _ => Err(OprError::NoImplForOpr),
             }
-        } else {Err(OprError::NoImplForOpr)}
+        } else {
+            Err(OprError::NoImplForOpr)
+        }
     }
     pub fn un_opr(&self, type_: &OprType) -> Result<Value, OprError> {
-        if let Value::Return(v) = self {return v.un_opr(type_)}
+        if let Value::Return(v) = self {
+            return v.un_opr(type_);
+        }
         match type_ {
             OprType::MinusSign => unary::un_minus(self),
             OprType::PlusSign => unary::un_plus(self),
             OprType::Not => unary::un_not(self),
-            _ => Err(OprError::NoImplForOpr)
+            _ => Err(OprError::NoImplForOpr),
         }
     }
     pub fn bin_opr(&self, type_: &OprType, other: Value) -> Result<Value, OprError> {
-        if let Value::Return(v) = self {return v.bin_opr(type_, other)}
+        if let Value::Return(v) = self {
+            return v.bin_opr(type_, other);
+        }
         match type_ {
             OprType::Plus => add::add(self, other),
             OprType::Minus => sub::sub(self, other),
-            OprType::AstMult | 
-            OprType::DotMult | 
-            OprType::CrossMult => mul::mul(self, other),
-            OprType::Div |
-            OprType::FractDiv => div::div(self, other),
+            OprType::AstMult | OprType::DotMult | OprType::CrossMult => mul::mul(self, other),
+            OprType::Div | OprType::FractDiv => div::div(self, other),
             OprType::Modulo => modulo::modulo(self, other),
 
             OprType::Eq => eq::eq(self, other),
@@ -193,32 +216,35 @@ impl Value {
 
             OprType::Concat => concat::concat(self, other),
             OprType::TypeCast => typecast::typecast(self, other),
-            _ => Err(OprError::NoImplForOpr)
+            _ => Err(OprError::NoImplForOpr),
         }
     }
     pub fn is_num(&self) -> bool {
-        matches!(self, Value::I8(_) |
-            Value::I16(_) |
-            Value::I32(_) |
-            Value::I64(_) |
-            Value::I128(_) |
-            Value::Isize(_) |
-            Value::Ibig(_) |
-            Value::U8(_) |
-            Value::U16(_) |
-            Value::U32(_) |
-            Value::U64(_) |
-            Value::U128(_) |
-            Value::Usize(_) |
-            Value::Ubig(_) |
-            Value::F16(_) |
-            Value::F32(_) |
-            Value::F64(_) |
-            Value::Bool(_))
+        matches!(
+            self,
+            Value::I8(_)
+                | Value::I16(_)
+                | Value::I32(_)
+                | Value::I64(_)
+                | Value::I128(_)
+                | Value::Isize(_)
+                | Value::Ibig(_)
+                | Value::U8(_)
+                | Value::U16(_)
+                | Value::U32(_)
+                | Value::U64(_)
+                | Value::U128(_)
+                | Value::Usize(_)
+                | Value::Ubig(_)
+                | Value::F16(_)
+                | Value::F32(_)
+                | Value::F64(_)
+                | Value::Bool(_)
+        )
     }
     pub fn default(type_: Type) -> Result<Self, ZyxtError> {
         match type_.to_owned() {
-            Type::Instance {name, ..} => Ok(match &*name {
+            Type::Instance { name, .. } => Ok(match &*name {
                 "i8" => Value::I8(0),
                 "i16" => Value::I16(0),
                 "i32" => Value::I32(0),
@@ -239,14 +265,14 @@ impl Value {
                 "bool" => Value::Bool(false),
                 "_null" | "_any" => Value::Null, // TODO move _any somewhere else
                 "type" => Value::Type(Type::null()),
-                _ => panic!("{:#?}", type_)
+                _ => panic!("{:#?}", type_),
             }),
-            _ => panic!()
+            _ => panic!(),
         }
     }
     pub fn from_type_content(type_: Type, content: String) -> Value {
         match type_ {
-            Type::Instance {name, ..} => match &*name {
+            Type::Instance { name, .. } => match &*name {
                 "i8" => Value::I8(content.parse::<i8>().unwrap()),
                 "i16" => Value::I16(content.parse::<i16>().unwrap()),
                 "i32" => Value::I32(content.parse::<i32>().unwrap()),
@@ -266,9 +292,9 @@ impl Value {
                 "f64" => Value::F64(content.parse::<f64>().unwrap()),
                 "str" => Value::Str(content),
                 "bool" => Value::Bool(&*content == "true"),
-                _ => panic!()
-            }
-            _ => panic!()
+                _ => panic!(),
+            },
+            _ => panic!(),
         }
     }
     pub fn get_type_obj(&self) -> Type {
@@ -293,16 +319,17 @@ impl Value {
             Value::Str(..) => Type::from_str("str"),
             Value::Bool(..) => Type::from_str("bool"),
             Value::Type(..) => Type::from_str("type"),
-            Value::Proc {is_fn, return_type, ..} =>
-                Type::Instance {
-                    name: if *is_fn {"fn"} else {"proc"}.to_string(),
-                    type_args: vec![Type::null(), return_type.to_owned()],
-                    inst_attrs: Default::default(),
-                    implementation: None
-                }, // TODO angle bracket thingy when it is implemented
-            Value::ClassInstance{type_, ..} => type_.to_owned(),
+            Value::Proc {
+                is_fn, return_type, ..
+            } => Type::Instance {
+                name: if *is_fn { "fn" } else { "proc" }.to_string(),
+                type_args: vec![Type::null(), return_type.to_owned()],
+                inst_attrs: Default::default(),
+                implementation: None,
+            }, // TODO angle bracket thingy when it is implemented
+            Value::ClassInstance { type_, .. } => type_.to_owned(),
             Value::Null => Type::null(),
-            Value::Return(v) => v.get_type_obj()
+            Value::Return(v) => v.get_type_obj(),
         }
     }
     pub fn get_type(&self) -> Value {
@@ -315,9 +342,9 @@ impl Value {
                     position: Default::default(),
                     raw: $v.to_string(),
                     type_: self.get_type_obj(),
-                    content: $v.to_string()
+                    content: $v.to_string(),
                 }
-            }
+            };
         }
         match self {
             Value::I8(v) => to_literal!(v),
@@ -340,21 +367,26 @@ impl Value {
             Value::Str(v) => to_literal!(v),
             Value::Bool(v) => to_literal!(v),
             Value::Type(v) => to_literal!(v),
-            Value::Proc {is_fn, args, return_type, content} => Element::Procedure {
+            Value::Proc {
+                is_fn,
+                args,
+                return_type,
+                content,
+            } => Element::Procedure {
                 position: Default::default(),
                 raw: "".to_string(),
                 is_fn: *is_fn,
                 args: args.to_owned(),
                 return_type: return_type.to_owned(),
-                content: content.to_owned()
+                content: content.to_owned(),
             },
             Value::Null => Element::NullElement,
             Value::Return(v) => Element::Return {
                 position: Default::default(),
                 raw: "".to_string(),
-                value: Box::new(v.as_element())
+                value: Box::new(v.as_element()),
             },
-            Value::ClassInstance{..} => todo!()
+            Value::ClassInstance { .. } => todo!(),
         }
     }
 }

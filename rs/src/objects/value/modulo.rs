@@ -37,6 +37,6 @@ pub fn modulo(x: &Value, y: Value) -> Result<Value, OprError> {
         Value::F16(x) => typecast_mod!(F16, as_f16, "f16", x, y, f16::from_f64(0.0)),
         Value::F32(x) => typecast_mod!(F32, as_f32, "f32", x, y, 0.0),
         Value::F64(x) => typecast_mod!(F64, as_f64, "f64", x, y, 0.0),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }

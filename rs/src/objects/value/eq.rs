@@ -5,7 +5,11 @@ use crate::Type;
 
 macro_rules! typecast_eq {
     ($t:ident, $s:literal, $x:ident, $y:ident) => {
-        $y.is_num() && $x == typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap()
+        $y.is_num()
+            && $x
+                == typecast(&$y, Value::Type(Type::from_str($s)))?
+                    .$t()
+                    .unwrap()
     };
 }
 
@@ -29,7 +33,7 @@ pub fn eq(x: &Value, y: Value) -> Result<Value, OprError> {
         Value::F32(x) => typecast_eq!(as_f32, "f32", x, y),
         Value::F64(x) => typecast_eq!(as_f64, "f64", x, y),
         Value::Bool(x) => typecast_eq!(as_bool, "bool", x, y),
-        _ => *iseq(x, y)?.as_bool().unwrap()
+        _ => *iseq(x, y)?.as_bool().unwrap(),
     }))
 }
 

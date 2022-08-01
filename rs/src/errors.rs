@@ -1,17 +1,17 @@
-use backtrace::Backtrace;
-use std::process::exit;
-use ansi_term::Color::{Black, Red, Yellow};
-use ansi_term::Style;
-use crate::{Element, Token, Type};
-use crate::objects::value::Value;
 use crate::objects::position::Position;
 use crate::objects::token::Keyword;
+use crate::objects::value::Value;
+use crate::{Element, Token, Type};
+use ansi_term::Color::{Black, Red, Yellow};
+use ansi_term::Style;
+use backtrace::Backtrace;
+use std::process::exit;
 
 #[derive(Clone)]
 pub struct ZyxtError {
     pub position: Vec<(Position, String)>,
     pub code: &'static str,
-    pub message: String
+    pub message: String,
 }
 impl ZyxtError {
     pub fn print(&self) -> ! {
@@ -20,30 +20,48 @@ impl ZyxtError {
     }
     pub fn print_noexit(&self) {
         for (pos, raw) in &self.position {
-            println!("{}{}", Style::new().on(Red).bold().paint(
-                format!(" {} ", pos)
-            ), Style::new().bold().paint(
-                format!(" {} ", raw)
-            ));
+            println!(
+                "{}{}",
+                Style::new().on(Red).bold().paint(format!(" {} ", pos)),
+                Style::new().bold().paint(format!(" {} ", raw))
+            );
         }
-        println!("{}", Black.on(Yellow).paint(format!(" Error {} ", self.code)).to_string()
-            + &*Red.bold().paint(format!(" {}", self.message)).to_string());
+        println!(
+            "{}",
+            Black
+                .on(Yellow)
+                .paint(format!(" Error {} ", self.code))
+                .to_string()
+                + &*Red.bold().paint(format!(" {}", self.message)).to_string()
+        );
     }
     pub fn from_pos_and_raw(pos: &Position, raw: &String) -> PositionForZyxtError {
-        PositionForZyxtError {position: vec![(pos.to_owned(), raw.to_owned().trim().to_string())]}
+        PositionForZyxtError {
+            position: vec![(pos.to_owned(), raw.to_owned().trim().to_string())],
+        }
     }
     pub fn from_element(element: &Element) -> PositionForZyxtError {
-        PositionForZyxtError {position: vec![(element.get_pos().to_owned(), element.get_raw().trim().to_string())]}
+        PositionForZyxtError {
+            position: vec![(
+                element.get_pos().to_owned(),
+                element.get_raw().trim().to_string(),
+            )],
+        }
     }
     pub fn from_token(token: &Token) -> PositionForZyxtError {
-        PositionForZyxtError {position: vec![(token.position.to_owned(), token.value.to_owned().trim().to_string())]}
+        PositionForZyxtError {
+            position: vec![(
+                token.position.to_owned(),
+                token.value.to_owned().trim().to_string(),
+            )],
+        }
     }
     pub fn no_pos() -> PositionForZyxtError {
-        PositionForZyxtError {position: vec![]}
+        PositionForZyxtError { position: vec![] }
     }
 }
 pub struct PositionForZyxtError {
-    position: Vec<(Position, String)>
+    position: Vec<(Position, String)>,
 }
 #[allow(dead_code)]
 impl PositionForZyxtError {
@@ -63,7 +81,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "0.1",
-            message: "No file given".to_string()
+            message: "No file given".to_string(),
         }
     }
 
@@ -73,7 +91,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "1.0",
-            message: format!("File `{}` does not exist", filename)
+            message: format!("File `{}` does not exist", filename),
         }
     }
 
@@ -82,7 +100,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "1.1",
-            message: format!("File `{}` cannot be opened", filename)
+            message: format!("File `{}` cannot be opened", filename),
         }
     }
 
@@ -90,7 +108,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "1.2",
-            message: format!("Directory given (Got `{}`)", dirname)
+            message: format!("Directory given (Got `{}`)", dirname),
         }
     }
 
@@ -100,7 +118,10 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.0.0",
-            message: format!("Parentheses `{}` and `{}` not closed properly; try swapping them", paren1, paren2)
+            message: format!(
+                "Parentheses `{}` and `{}` not closed properly; try swapping them",
+                paren1, paren2
+            ),
         }
     }
     /// parentheses not closed properly (not closed)
@@ -108,7 +129,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.0.1",
-            message: format!("Parenthesis `{}` not closed", paren)
+            message: format!("Parenthesis `{}` not closed", paren),
         }
     }
     /// parentheses not closed properly (not opened)
@@ -116,7 +137,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.0.2",
-            message: format!("Parenthesis `{}` not opened", paren)
+            message: format!("Parenthesis `{}` not opened", paren),
         }
     }
 
@@ -125,7 +146,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.0",
-            message: format!("Unexpected ident `{}`", ident)
+            message: format!("Unexpected ident `{}`", ident),
         }
     }
     /// unexpected ident (lexer didnt recognise)
@@ -133,7 +154,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.1",
-            message: format!("Ident `{}` not recognised by lexer", ident)
+            message: format!("Ident `{}` not recognised by lexer", ident),
         }
     }
     /// unexpected ident (dot at end of expression)
@@ -141,7 +162,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.2",
-            message: "Stray `.` at end of expression".to_string()
+            message: "Stray `.` at end of expression".to_string(),
         }
     }
     /// unexpected ident (binary operator at start/end of expression)
@@ -149,7 +170,10 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.3",
-            message: format!("Stray `{}` binary operator at start/end of expression", ident)
+            message: format!(
+                "Stray `{}` binary operator at start/end of expression",
+                ident
+            ),
         }
     }
     /// unexpected ident (unary operator at start/end of expression)
@@ -157,7 +181,10 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.4",
-            message: format!("Stray `{}` unary operator at start/end of expression", ident)
+            message: format!(
+                "Stray `{}` unary operator at start/end of expression",
+                ident
+            ),
         }
     }
     /// unexpected ident (declaration expr at start/end of expression)
@@ -165,7 +192,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.5",
-            message: "Stray `:=` at start/end of expression".to_string()
+            message: "Stray `:=` at start/end of expression".to_string(),
         }
     }
     /// unexpected ident (non-flag between first flag and declared variable)
@@ -173,7 +200,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.6",
-            message: format!("Stray `{}` between first flag and declared variable", ident)
+            message: format!("Stray `{}` between first flag and declared variable", ident),
         }
     }
     /// unexpected ident ('else/elif'  found after 'else' keyword)
@@ -181,7 +208,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.7",
-            message: format!("`{}` detected after `else` keyword", ident)
+            message: format!("`{}` detected after `else` keyword", ident),
         }
     }
     /// unexpected ident (block expected, not ident)
@@ -189,7 +216,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.8",
-            message: format!("Block expected, not `{}`", ident)
+            message: format!("Block expected, not `{}`", ident),
         }
     }
     /// unexpected ident ('else/elif' found without 'if' keyword)
@@ -197,7 +224,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.9",
-            message: format!("Stray `{}` without starting `if`", ident)
+            message: format!("Stray `{}` without starting `if`", ident),
         }
     }
     /// unexpected ident (stray comment start / end)
@@ -205,7 +232,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.10",
-            message: format!("Stray unclosed/unopened `{}`", ident)
+            message: format!("Stray unclosed/unopened `{}`", ident),
         }
     }
     /// unexpected ident (must be variable)
@@ -213,7 +240,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.11",
-            message: format!("Only variables can be deleted (Got `{}`)", ident)
+            message: format!("Only variables can be deleted (Got `{}`)", ident),
         }
     }
     /// unexpected ident (cannot delete dereferenced variable)
@@ -221,7 +248,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.12",
-            message: format!("Cannot delete dereferenced variable (Got `{}`)", ident)
+            message: format!("Cannot delete dereferenced variable (Got `{}`)", ident),
         }
     }
     /// unexpected ident (bar not closed)
@@ -229,7 +256,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.13",
-            message: "Opening bar not closed".to_string()
+            message: "Opening bar not closed".to_string(),
         }
     }
     /// unexpected ident (Extra values past default value)
@@ -237,7 +264,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.14",
-            message: format!("Extra values past default value (Got `{}`)", ident)
+            message: format!("Extra values past default value (Got `{}`)", ident),
         }
     }
     /// unexpected ident (Variable name isn't variable)
@@ -245,7 +272,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.15",
-            message: format!("Variable name isn't variable (Got `{}`)", ident)
+            message: format!("Variable name isn't variable (Got `{}`)", ident),
         }
     }
     /// unexpected ident (pre keyword at end of expression)
@@ -253,7 +280,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.16",
-            message: "`pre` at end of line".to_string()
+            message: "`pre` at end of line".to_string(),
         }
     }
     /// unexpected ident (parameters with class keyword)
@@ -261,7 +288,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.17",
-            message: "Parameters found after `class` keyword".to_string()
+            message: "Parameters found after `class` keyword".to_string(),
         }
     }
     /// unexpected ident (parameters with class keyword)
@@ -269,7 +296,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.1.18",
-            message: format!("Block expected after `{:?}`", kwd)
+            message: format!("Block expected after `{:?}`", kwd),
         }
     }
 
@@ -278,7 +305,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.2",
-            message: format!("Expected pattern, got `{}`", ele.get_raw())
+            message: format!("Expected pattern, got `{}`", ele.get_raw()),
         }
     }
 
@@ -287,7 +314,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "2.3",
-            message: format!("Unfilled argument `{}`", arg)
+            message: format!("Unfilled argument `{}`", arg),
         }
     }
 
@@ -297,7 +324,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "3.0",
-            message: format!("Undefined variable `{}`", varname)
+            message: format!("Undefined variable `{}`", varname),
         }
     }
 
@@ -306,7 +333,12 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "3.1.0",
-            message: format!("`{}` (type `{}`) has no attribute `{}`", parent.get_raw().trim(), parent_type, attribute)
+            message: format!(
+                "`{}` (type `{}`) has no attribute `{}`",
+                parent.get_raw().trim(),
+                parent_type,
+                attribute
+            ),
         }
     }
     /// Type has no attribute (interpreter)
@@ -314,7 +346,12 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "3.1.1",
-            message: format!("`{}` (type `{}`) has no attribute `{}`", parent, parent.get_type_obj(), attribute)
+            message: format!(
+                "`{}` (type `{}`) has no attribute `{}`",
+                parent,
+                parent.get_type_obj(),
+                attribute
+            ),
         }
     }
 
@@ -324,7 +361,10 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.0.0",
-            message: format!("Operator {} not implemented for types `{}`, `{}`", operator, type1, type2)
+            message: format!(
+                "Operator {} not implemented for types `{}`, `{}`",
+                operator, type1, type2
+            ),
         }
     }
     /// Unary operator not implemented for type
@@ -332,7 +372,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.0.1",
-            message: format!("Operator {} not implemented for type `{}`", operator, type_)
+            message: format!("Operator {} not implemented for type `{}`", operator, type_),
         }
     }
 
@@ -341,8 +381,14 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.1.0",
-            message: format!("Operator {} unsuccessful on `{}` (type `{}`), `{}` (type `{}`)",
-                             operator, value1, value1.get_type_obj(), value2, value2.get_type_obj())
+            message: format!(
+                "Operator {} unsuccessful on `{}` (type `{}`), `{}` (type `{}`)",
+                operator,
+                value1,
+                value1.get_type_obj(),
+                value2,
+                value2.get_type_obj()
+            ),
         }
     }
     /// Unary operation unsuccessful
@@ -350,8 +396,12 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.1.1",
-            message: format!("Operator {} unsuccessful on `{}` (type `{}`)",
-                             operator, value, value.get_type_obj())
+            message: format!(
+                "Operator {} unsuccessful on `{}` (type `{}`)",
+                operator,
+                value,
+                value.get_type_obj()
+            ),
         }
     }
 
@@ -360,7 +410,7 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.2",
-            message: format!("Non-i32 script return value detected (Got `{}`)", value)
+            message: format!("Non-i32 script return value detected (Got `{}`)", value),
         }
     }
 
@@ -369,8 +419,10 @@ impl PositionForZyxtError {
         ZyxtError {
             position: self.position,
             code: "4.3",
-            message: format!("Value of type `{}` assigned to variable `{}` of type `{}`",
-                value_type, variable, var_type)
+            message: format!(
+                "Value of type `{}` assigned to variable `{}` of type `{}`",
+                value_type, variable, var_type
+            ),
         }
     }
 

@@ -1,9 +1,9 @@
-use half::f16;
-use num::bigint::{BigInt, BigUint, ToBigUint};
-use num::{FromPrimitive, ToPrimitive};
 use crate::objects::value::utils::OprError;
 use crate::objects::value::Value;
 use crate::Type;
+use half::f16;
+use num::bigint::{BigInt, BigUint, ToBigUint};
+use num::{FromPrimitive, ToPrimitive};
 
 // TODO refactor this entire file
 
@@ -14,7 +14,7 @@ macro_rules! typecast_str_to_num {
         } else {
             Err(OprError::TypecastError(Type::from_str($st)))
         }
-    }
+    };
 }
 
 fn typecast_str(x: String, y: String) -> Result<Value, OprError> {
@@ -39,7 +39,7 @@ fn typecast_str(x: String, y: String) -> Result<Value, OprError> {
         "f16" => typecast_str_to_num!(F16, f16, x, "f16"),
         "f32" => typecast_str_to_num!(F32, f32, x, "f32"),
         "f64" => typecast_str_to_num!(F64, f64, x, "f64"),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -65,7 +65,7 @@ fn typecast_bool(x: bool, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from(x as u8))),
         "f32" => Ok(Value::F32(x as u8 as f32)),
         "f64" => Ok(Value::F64(x as u8 as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -76,7 +76,7 @@ macro_rules! simple_num_to_num {
         } else {
             Err(OprError::TypecastError(Type::from_str($st)))
         }
-    }
+    };
 }
 
 fn typecast_i8(x: i8, y: String) -> Result<Value, OprError> {
@@ -101,7 +101,7 @@ fn typecast_i8(x: i8, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -127,7 +127,7 @@ fn typecast_i16(x: i16, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -153,7 +153,7 @@ fn typecast_i32(x: i32, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -179,7 +179,7 @@ fn typecast_i64(x: i64, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -205,7 +205,7 @@ fn typecast_i128(x: i128, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -231,12 +231,12 @@ fn typecast_isize(x: isize, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
-
-fn typecast_ibig(x: BigInt, y: String) -> Result<Value, OprError> { // TODO option thingies
+fn typecast_ibig(x: BigInt, y: String) -> Result<Value, OprError> {
+    // TODO option thingies
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0.into())),
@@ -258,7 +258,7 @@ fn typecast_ibig(x: BigInt, y: String) -> Result<Value, OprError> { // TODO opti
         "f16" => Ok(Value::F16(f16::from_f64(x.to_f64().unwrap()))),
         "f32" => Ok(Value::F32(x.to_f32().unwrap())),
         "f64" => Ok(Value::F64(x.to_f64().unwrap())),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -284,7 +284,7 @@ fn typecast_u8(x: u8, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -310,7 +310,7 @@ fn typecast_u16(x: u16, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -336,7 +336,7 @@ fn typecast_u32(x: u32, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -362,7 +362,7 @@ fn typecast_u64(x: u64, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -388,7 +388,7 @@ fn typecast_u128(x: u128, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -414,11 +414,12 @@ fn typecast_usize(x: usize, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
-fn typecast_ubig(x: BigUint, y: String) -> Result<Value, OprError> { // TODO same here
+fn typecast_ubig(x: BigUint, y: String) -> Result<Value, OprError> {
+    // TODO same here
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0.to_biguint().unwrap())),
@@ -440,7 +441,7 @@ fn typecast_ubig(x: BigUint, y: String) -> Result<Value, OprError> { // TODO sam
         "f16" => Ok(Value::F16(f16::from_f64(x.to_f64().unwrap()))),
         "f32" => Ok(Value::F32(x.to_f32().unwrap())),
         "f64" => Ok(Value::F64(x.to_f64().unwrap())),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -452,7 +453,7 @@ fn typecast_f16(x: f16, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(x)),
         "f32" => Ok(Value::F32(x.to_f32())),
         "f64" => Ok(Value::F64(x.to_f64())),
-        _ => typecast_f64(x.to_f64(), y)
+        _ => typecast_f64(x.to_f64(), y),
     }
 }
 
@@ -478,7 +479,7 @@ fn typecast_f32(x: f32, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
@@ -504,41 +505,45 @@ fn typecast_f64(x: f64, y: String) -> Result<Value, OprError> {
         "f16" => Ok(Value::F16(f16::from_f64(x as f64))),
         "f32" => Ok(Value::F32(x as f32)),
         "f64" => Ok(Value::F64(x as f64)),
-        _ => Err(OprError::NoImplForOpr)
+        _ => Err(OprError::NoImplForOpr),
     }
 }
 
 pub fn typecast(x: &Value, y: Value) -> Result<Value, OprError> {
     match y {
         Value::Type(y) => match y {
-            Type::Instance { name, .. } => if name == "type" {
-                Ok(x.get_type())
-            } else { match x.to_owned() {
-                Value::Str(s) => typecast_str(s, name),
-                Value::Bool(b) => typecast_bool(b, name),
-                Value::I8(x) => typecast_i8(x, name),
-                Value::I16(x) => typecast_i16(x, name),
-                Value::I32(x) => typecast_i32(x, name),
-                Value::I64(x) => typecast_i64(x, name),
-                Value::I128(x) => typecast_i128(x, name),
-                Value::Isize(x) => typecast_isize(x, name),
-                Value::Ibig(x) => typecast_ibig(x, name),
-                Value::U8(x) => typecast_u8(x, name),
-                Value::U16(x) => typecast_u16(x, name),
-                Value::U32(x) => typecast_u32(x, name),
-                Value::U64(x) => typecast_u64(x, name),
-                Value::U128(x) => typecast_u128(x, name),
-                Value::Usize(x) => typecast_usize(x, name),
-                Value::Ubig(x) => typecast_ubig(x, name),
-                Value::F16(x) => typecast_f16(x, name),
-                Value::F32(x) => typecast_f32(x, name),
-                Value::F64(x) => typecast_f64(x, name),
-                Value::Type(_) => Ok(Value::Type(Type::from_str("type"))),
-                _ => Err(OprError::NoImplForOpr)
-            }},
+            Type::Instance { name, .. } => {
+                if name == "type" {
+                    Ok(x.get_type())
+                } else {
+                    match x.to_owned() {
+                        Value::Str(s) => typecast_str(s, name),
+                        Value::Bool(b) => typecast_bool(b, name),
+                        Value::I8(x) => typecast_i8(x, name),
+                        Value::I16(x) => typecast_i16(x, name),
+                        Value::I32(x) => typecast_i32(x, name),
+                        Value::I64(x) => typecast_i64(x, name),
+                        Value::I128(x) => typecast_i128(x, name),
+                        Value::Isize(x) => typecast_isize(x, name),
+                        Value::Ibig(x) => typecast_ibig(x, name),
+                        Value::U8(x) => typecast_u8(x, name),
+                        Value::U16(x) => typecast_u16(x, name),
+                        Value::U32(x) => typecast_u32(x, name),
+                        Value::U64(x) => typecast_u64(x, name),
+                        Value::U128(x) => typecast_u128(x, name),
+                        Value::Usize(x) => typecast_usize(x, name),
+                        Value::Ubig(x) => typecast_ubig(x, name),
+                        Value::F16(x) => typecast_f16(x, name),
+                        Value::F32(x) => typecast_f32(x, name),
+                        Value::F64(x) => typecast_f64(x, name),
+                        Value::Type(_) => Ok(Value::Type(Type::from_str("type"))),
+                        _ => Err(OprError::NoImplForOpr),
+                    }
+                }
+            }
             Type::Return(y) => typecast(x, Value::Type(*y)),
-            _ => Err(OprError::NoImplForOpr)
-        }
-        _ => Err(OprError::NoImplForOpr)
+            _ => Err(OprError::NoImplForOpr),
+        },
+        _ => Err(OprError::NoImplForOpr),
     }
 }

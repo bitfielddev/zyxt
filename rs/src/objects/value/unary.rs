@@ -5,23 +5,23 @@ use crate::Type;
 
 pub fn un_plus(x: &Value) -> Result<Value, OprError> {
     match x {
-        Value::I8(_) |
-        Value::I16(_) |
-        Value::I32(_) |
-        Value::I64(_) |
-        Value::I128(_) |
-        Value::Isize(_) |
-        Value::Ibig(_) |
-        Value::U8(_) |
-        Value::U16(_) |
-        Value::U32(_) |
-        Value::U64(_) |
-        Value::U128(_) |
-        Value::Usize(_) |
-        Value::Ubig(_) |
-        Value::F16(_) |
-        Value::F32(_) |
-        Value::F64(_) => Ok(x.to_owned()),
+        Value::I8(_)
+        | Value::I16(_)
+        | Value::I32(_)
+        | Value::I64(_)
+        | Value::I128(_)
+        | Value::Isize(_)
+        | Value::Ibig(_)
+        | Value::U8(_)
+        | Value::U16(_)
+        | Value::U32(_)
+        | Value::U64(_)
+        | Value::U128(_)
+        | Value::Usize(_)
+        | Value::Ubig(_)
+        | Value::F16(_)
+        | Value::F32(_)
+        | Value::F64(_) => Ok(x.to_owned()),
         _ => Err(OprError::NoImplForOpr),
     }
 }
