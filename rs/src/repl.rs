@@ -15,7 +15,7 @@ pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
     let mut typelist = InterpreterData::default_type(StdIoPrint);
     let mut varlist = InterpreterData::default_variable(StdIoPrint);
-    let mut rl = Editor::<()>::new();
+    let mut rl = Editor::<()>::new().unwrap();
     let mut history_path = home_dir().unwrap();
     history_path.push(".zyxt_history");
     rl.load_history(history_path.to_str().unwrap())
