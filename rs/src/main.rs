@@ -1,29 +1,12 @@
-mod errors;
-mod instructor;
-mod interpreter;
-mod lexer;
-mod objects;
-mod parser;
-mod repl;
-
-use crate::errors::ZyxtError;
-use crate::instructor::gen_instructions;
-use crate::interpreter::interpret_asts;
-use crate::lexer::lex;
-use crate::objects::element::Element;
-use crate::objects::interpreter_data::{InterpreterData, Print, StdIoPrint};
-use crate::objects::token::Token;
-use crate::objects::typeobj::Type;
-use crate::objects::value::Value;
-use crate::parser::parse_token_list;
-use ansi_term::Color::{White, Yellow};
+use zyxt::errors::ZyxtError;
+use zyxt::objects::interpreter_data::{InterpreterData, StdIoPrint};
 use backtrace::Backtrace;
 use clap::Parser;
 use std::fs::File;
 use std::io::Read;
 use std::panic;
 use std::process::exit;
-use std::time::Instant;
+use zyxt::repl;
 
 #[derive(Parser)]
 #[clap(version, about, long_about = None)]

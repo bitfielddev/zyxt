@@ -1,7 +1,7 @@
 use crate::objects::position::Position;
-use crate::objects::token::Keyword;
+use crate::objects::token::{Keyword, Token};
 use crate::objects::value::Value;
-use crate::{Element, Token, Type};
+use crate::{Element, Type};
 use ansi_term::Color::{Black, Red, Yellow};
 use ansi_term::Style;
 use backtrace::Backtrace;

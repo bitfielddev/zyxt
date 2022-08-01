@@ -1,8 +1,7 @@
 use crate::interpreter::interpret_expr;
 use crate::objects::interpreter_data::{InterpreterData, StdIoPrint};
-use crate::objects::typeobj::Type;
 use crate::objects::value::Value;
-use crate::ZyxtError;
+use crate::{compile, ZyxtError};
 use ansi_term::Color::{Cyan, Green, Red, White, Yellow};
 use backtrace::Backtrace;
 use dirs::home_dir;
@@ -11,7 +10,6 @@ use rustyline::Editor;
 use std::io;
 use std::io::Write;
 use std::time::Instant;
-use zyxt::compile;
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();

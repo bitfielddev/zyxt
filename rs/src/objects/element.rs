@@ -2,11 +2,11 @@ use crate::errors::ZyxtError;
 use crate::interpreter::interpret_block;
 use crate::objects::interpreter_data::{InterpreterData, Print, StdIoPrint};
 use crate::objects::position::Position;
-use crate::objects::token::{Flag, OprType};
+use crate::objects::token::{Flag, OprType, Token};
 use crate::objects::typeobj::Type;
 use crate::objects::value::utils::OprError;
 use crate::objects::value::Value;
-use crate::{gen_instructions, Token};
+use crate::gen_instructions;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 

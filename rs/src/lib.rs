@@ -1,3 +1,11 @@
+pub mod errors;
+pub mod instructor;
+pub mod interpreter;
+pub mod lexer;
+pub mod objects;
+pub mod parser;
+pub mod repl;
+
 use ansi_term::Color::{White, Yellow};
 use std::time::Instant;
 use crate::errors::ZyxtError;

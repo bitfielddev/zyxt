@@ -1,10 +1,10 @@
 use crate::objects::position::Position;
-use crate::objects::token::{Side, TokenCategory, TokenType};
+use crate::objects::token::{Side, Token, TokenCategory, TokenType};
 use crate::objects::token_entries::{
     compound_token_entries_1, compound_token_entries_2, side_dependent_token_entries,
     singular_token_entries, CompoundTokenEntry, Pattern,
 };
-use crate::{Token, ZyxtError};
+use crate::errors::ZyxtError;
 use regex::Regex;
 
 fn lex_stage1(input: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {

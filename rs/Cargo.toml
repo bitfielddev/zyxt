@@ -5,6 +5,13 @@ edition = "2021"
 authors = ["7d"]
 description = "Toolset for Zyxtlang."
 
+[[bin]]
+name = "zyxt"
+path = "src/main.rs"
+
+[lib]
+name = "zyxt"
+path = "src/lib.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
