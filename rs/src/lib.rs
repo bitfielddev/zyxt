@@ -22,67 +22,64 @@ pub fn compile<O: Print>(
     input: String,
     filename: &str,
     typelist: &mut InterpreterData<Type, O>,
-    verbosity: u8,
+    verbosity: u8
 ) -> Result<Vec<Element>, ZyxtError> {
     if verbosity == 0 {
         return gen_instructions(parse_token_list(lex(input, filename)?)?, typelist);
     }
 
     if verbosity >= 2 {
-        println!("{}", Yellow.bold().paint("Lexing"));
+        typelist.out.eprintln(Yellow.bold().paint("Lexing"));
     }
     let lex_start = Instant::now();
     let lexed = lex(input, filename)?;
     let lex_time = lex_start.elapsed().as_micros();
     if verbosity >= 2 {
         for token in lexed.iter() {
-            println!("{}", White.dimmed().paint(format!("{:#?}", token)));
+            typelist.out.eprintln(White.dimmed().paint(format!("{:#?}", token)));
         }
     }
 
     if verbosity >= 2 {
-        println!("{}", Yellow.bold().paint("\nParsing"));
+        typelist.out.eprintln(Yellow.bold().paint("\nParsing"));
     }
     let parse_start = Instant::now();
     let parsed = parse_token_list(lexed)?;
     let parse_time = parse_start.elapsed().as_micros();
     if verbosity >= 2 {
         for ele in parsed.iter() {
-            println!("{}", White.dimmed().paint(format!("{:#?}", ele)));
+            typelist.out.eprintln(White.dimmed().paint(format!("{:#?}", ele)));
         }
     }
 
     if verbosity >= 2 {
-        println!("{}", Yellow.bold().paint("\nGenerating instructions"));
+        typelist.out.eprintln(Yellow.bold().paint("\nGenerating instructions"));
     }
     let check_start = Instant::now();
-    let out = gen_instructions(parsed, typelist)?;
+    let instructions = gen_instructions(parsed, typelist)?;
     let check_time = check_start.elapsed().as_micros();
     if verbosity >= 2 {
-        for ele in out.iter() {
-            println!("{}", White.dimmed().paint(format!("{:#?}", ele)));
+        for ele in instructions.iter() {
+            typelist.out.eprintln(White.dimmed().paint(format!("{:#?}", ele)));
         }
     }
 
-    println!("{}", Yellow.bold().paint("\nStats"));
-    println!("{}", Yellow.paint(format!("Lexing time: {}µs", lex_time)));
-    println!(
-        "{}",
+    typelist.out.eprintln(Yellow.bold().paint("\nStats"));
+    typelist.out.eprintln(Yellow.paint(format!("Lexing time: {}µs", lex_time)));
+    typelist.out.eprintln(
         Yellow.paint(format!("Parsing time: {}µs", parse_time))
     );
-    println!(
-        "{}",
+    typelist.out.eprintln(
         Yellow.paint(format!("Instruction generation time: {}µs", check_time))
     );
-    println!(
-        "{}",
+    typelist.out.eprintln(
         Yellow.paint(format!(
             "Total time: {}µs\n",
             lex_time + parse_time + check_time
         ))
     );
 
-    Ok(out)
+    Ok(instructions)
 }
 
 pub fn interpret<O: Print>(
@@ -94,15 +91,14 @@ pub fn interpret<O: Print>(
         return interpret_asts(input, i_data);
     }
     if verbosity >= 2 {
-        println!("{}", Yellow.bold().paint("\nInterpreting"));
+        i_data.out.eprintln(Yellow.bold().paint("\nInterpreting"));
     }
     let interpret_start = Instant::now();
     let exit_code = interpret_asts(input, i_data)?;
     let interpret_time = interpret_start.elapsed().as_micros();
-    println!("\nExited with code {}", exit_code);
-    println!("{}", Yellow.bold().paint("\nStats"));
-    println!(
-        "{}",
+    i_data.out.eprintln(format!("\nExited with code {}", exit_code));
+    i_data.out.eprintln(Yellow.bold().paint("\nStats"));
+    i_data.out.eprintln(
         Yellow.paint(format!("Interpreting time: {}µs", interpret_time))
     );
     Ok(exit_code)

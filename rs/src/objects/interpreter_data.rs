@@ -13,17 +13,25 @@ const PRIM_NAMES: [&str; 22] = [
 ];
 
 pub trait Print: Clone {
-    fn println(&mut self, s: String);
-    fn print(&mut self, s: String);
+    fn println(&mut self, s: impl Display);
+    fn print(&mut self, s: impl Display);
+    fn eprintln(&mut self, s: impl Display);
+    fn eprint(&mut self, s: impl Display);
 }
 #[derive(Clone)]
 pub struct StdIoPrint;
 impl Print for StdIoPrint {
-    fn println(&mut self, s: String) {
+    fn println(&mut self, s: impl Display) {
         println!("{}", s)
     }
-    fn print(&mut self, s: String) {
+    fn print(&mut self, s: impl Display) {
         print!("{}", s)
+    }
+    fn eprintln(&mut self, s: impl Display) {
+        eprintln!("{}", s)
+    }
+    fn eprint(&mut self, s: impl Display) {
+        eprint!("{}", s)
     }
 }
 
@@ -88,12 +96,12 @@ impl<O: Print> InterpreterData<Value, O> {
 }
 
 impl<O: Print> InterpreterData<Type, O> {
-    pub fn default_type() -> InterpreterData<Type, StdIoPrint> {
+    pub fn default_type(out: O) -> InterpreterData<Type, O> {
         let mut v = InterpreterData {
             heap: vec![HashMap::new()],
             defer: vec![vec![]],
             frame_data: vec![],
-            out: StdIoPrint,
+            out,
         };
         for t in PRIM_NAMES {
             v.heap[0].insert(

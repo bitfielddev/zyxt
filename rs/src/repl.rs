@@ -13,7 +13,7 @@ use std::time::Instant;
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
-    let mut typelist = InterpreterData::<_, StdIoPrint>::default_type();
+    let mut typelist = InterpreterData::default_type(StdIoPrint);
     let mut varlist = InterpreterData::default_variable(StdIoPrint);
     let mut rl = Editor::<()>::new();
     let mut history_path = home_dir().unwrap();

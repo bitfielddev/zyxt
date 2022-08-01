@@ -1,7 +1,7 @@
 use crate::errors::ZyxtError;
 use crate::gen_instructions;
 use crate::interpreter::interpret_block;
-use crate::objects::interpreter_data::{InterpreterData, Print, StdIoPrint};
+use crate::objects::interpreter_data::{InterpreterData, Print};
 use crate::objects::position::Position;
 use crate::objects::token::{Flag, OprType, Token};
 use crate::objects::typeobj::Type;
@@ -475,8 +475,8 @@ impl Element {
                 })
             } // TODO angle bracket thingy when it is implemented
             Element::Preprocess { content, .. } => {
-                let mut pre_typelist = InterpreterData::<_, StdIoPrint>::default_type();
-                let mut i_data = InterpreterData::default_variable(StdIoPrint);
+                let mut pre_typelist = InterpreterData::default_type(typelist.out.to_owned());
+                let mut i_data = InterpreterData::default_variable(typelist.out.to_owned());
                 let pre_instructions = gen_instructions(content.to_owned(), &mut pre_typelist)?;
                 let pre_value = interpret_block(&pre_instructions, &mut i_data, true, false)?;
                 *self = pre_value.as_element();

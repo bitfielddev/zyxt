@@ -53,7 +53,7 @@ fn main() {
                 }
                 Err(_) => ZyxtError::error_1_1(filename.to_owned()).print_exit(&mut StdIoPrint),
             };
-            let mut typelist = InterpreterData::<_, StdIoPrint>::default_type();
+            let mut typelist = InterpreterData::default_type(StdIoPrint);
             let mut i_data = InterpreterData::default_variable(StdIoPrint);
             let exit_code = zyxt::interpret(
                 &zyxt::compile(content, filename, &mut typelist, verbose)
