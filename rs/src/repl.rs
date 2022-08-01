@@ -59,7 +59,7 @@ pub fn repl(verbosity: u8) {
                 let instructions = match compile(input, &filename, &mut typelist, verbosity) {
                     Ok(v) => v,
                     Err(e) => {
-                        e.print_noexit();
+                        e.print(&mut StdIoPrint);
                         continue;
                     }
                 };
@@ -86,7 +86,7 @@ pub fn repl(verbosity: u8) {
                             }
                         }
                         Err(e) => {
-                            e.print_noexit();
+                            e.print(&mut StdIoPrint);
                         }
                     }
                 }
@@ -95,7 +95,7 @@ pub fn repl(verbosity: u8) {
                 println!("{}", Cyan.paint("`;exit` to exit"));
             }
             Err(err) => {
-                ZyxtError::no_pos().error_0_0(err.to_string(), Backtrace::new());
+                ZyxtError::error_0_0(err.to_string(), Backtrace::new());
             }
         }
     }

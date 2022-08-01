@@ -1,11 +1,11 @@
-use zyxt::errors::ZyxtError;
-use zyxt::objects::interpreter_data::{InterpreterData, StdIoPrint};
 use backtrace::Backtrace;
 use clap::Parser;
 use std::fs::File;
 use std::io::Read;
 use std::panic;
 use std::process::exit;
+use zyxt::errors::ZyxtError;
+use zyxt::objects::interpreter_data::{InterpreterData, StdIoPrint};
 use zyxt::repl;
 
 #[derive(Parser)]
@@ -34,9 +34,7 @@ fn main() {
     let verbose = args.verbose;
 
     panic::set_hook(Box::new(|a| {
-        ZyxtError::no_pos()
-            .error_0_0(a.to_string(), Backtrace::new())
-            .print_noexit();
+        ZyxtError::error_0_0(a.to_string(), Backtrace::new()).print(&mut StdIoPrint);
     }));
 
     match args.subcmd {
@@ -47,21 +45,23 @@ fn main() {
                 Ok(mut file) => {
                     file.read_to_string(&mut content).unwrap_or_else(|e| {
                         if e.to_string() == *"Is a directory (os error 21)" {
-                            ZyxtError::no_pos().error_1_2(filename.to_owned()).print()
+                            ZyxtError::error_1_2(filename.to_owned()).print_exit(&mut StdIoPrint)
                         } else {
                             panic!("{}", e.to_string())
                         }
                     });
                 }
-                Err(_) => ZyxtError::no_pos().error_1_1(filename.to_owned()).print(),
+                Err(_) => ZyxtError::error_1_1(filename.to_owned()).print_exit(&mut StdIoPrint),
             };
             let mut typelist = InterpreterData::<_, StdIoPrint>::default_type();
             let mut i_data = InterpreterData::default_variable(StdIoPrint);
             let exit_code = zyxt::interpret(
-                &zyxt::compile(content, filename, &mut typelist, verbose).unwrap_or_else(|e| e.print()),
-                &mut i_data, verbose,
+                &zyxt::compile(content, filename, &mut typelist, verbose)
+                    .unwrap_or_else(|e| e.print_exit(&mut StdIoPrint)),
+                &mut i_data,
+                verbose,
             )
-            .unwrap_or_else(|e| e.print());
+            .unwrap_or_else(|e| e.print_exit(&mut StdIoPrint));
             exit(exit_code);
         }
         // TODO Compile, Interpret

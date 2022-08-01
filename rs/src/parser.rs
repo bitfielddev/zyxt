@@ -1,17 +1,15 @@
+use crate::errors::ZyxtError;
 use crate::objects::element::{Argument, Condition, Element, VecElementRaw};
 use crate::objects::token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType};
 use crate::objects::typeobj::Type;
-use crate::errors::ZyxtError;
 use std::cmp::min;
 use std::collections::HashMap;
 
 macro_rules! check_and_update_cursor {
     ($cursor: ident, $selected: ident, $elements: ident) => {
         if $cursor == $elements.len() - 1 {
-            return Err(
-                ZyxtError::from_pos_and_raw($selected.get_pos(), &$selected.get_raw())
-                    .error_2_1_0($selected.get_raw()),
-            );
+            return Err(ZyxtError::error_2_1_0($selected.get_raw())
+                .with_pos_and_raw($selected.get_pos(), &$selected.get_raw()));
         }
         $cursor += 1;
         $selected = &$elements[$cursor];
@@ -38,15 +36,11 @@ fn catch_between(
         *cursor += 1;
         if *cursor >= elements.len() {
             return if opening == TokenType::Null {
-                Err(
-                    ZyxtError::from_pos_and_raw(&paren_pos, &elements[*cursor].get_raw())
-                        .error_2_1_0(elements[*cursor].get_raw()),
-                )
+                Err(ZyxtError::error_2_1_0(elements[*cursor].get_raw())
+                    .with_pos_and_raw(&paren_pos, &elements[*cursor].get_raw()))
             } else {
-                Err(
-                    ZyxtError::from_pos_and_raw(&paren_pos, &opening_char.to_string())
-                        .error_2_0_1(opening_char.to_string()),
-                )
+                Err(ZyxtError::error_2_0_1(opening_char.to_string())
+                    .with_pos_and_raw(&paren_pos, &opening_char.to_string()))
             };
         }
         let catcher_selected = &elements[*cursor];
@@ -100,18 +94,17 @@ fn base_split<T: Clone>(
         }
     }
     if paren_level != 0 {
-        return Err(
-            ZyxtError::from_pos_and_raw(&Default::default(), &"".to_string()).error_2_0_1(
-                match opening {
-                    TokenType::OpenParen => '(',
-                    TokenType::OpenSquareParen => '[',
-                    TokenType::OpenCurlyParen => '{',
-                    TokenType::OpenAngleBracket => '<',
-                    _ => '?',
-                }
-                .to_string(),
-            ),
-        ); // TODO
+        return Err(ZyxtError::error_2_0_1(
+            match opening {
+                TokenType::OpenParen => '(',
+                TokenType::OpenSquareParen => '[',
+                TokenType::OpenCurlyParen => '{',
+                TokenType::OpenAngleBracket => '<',
+                _ => '?',
+            }
+            .to_string(),
+        )
+        .with_pos_and_raw(&Default::default(), &"".to_string())); // TODO
     }
     if out.is_empty() && catcher.is_empty() {
         return Ok(vec![]);
@@ -172,11 +165,8 @@ fn get_arguments(
             let name = if let Some(Element::Variable { name, .. }) = parts.get(0) {
                 name.to_owned()
             } else {
-                return Err(ZyxtError::from_pos_and_raw(
-                    parts.get(0).unwrap().get_pos(),
-                    &raw_arg.get_raw(),
-                )
-                .error_2_1_15(",".to_string()));
+                return Err(ZyxtError::error_2_1_15(",".to_string())
+                    .with_pos_and_raw(parts.get(0).unwrap().get_pos(), &raw_arg.get_raw()));
             };
             let type_ = if let Some(t) = parts.get(1) {
                 t.to_owned()
@@ -185,11 +175,8 @@ fn get_arguments(
             };
             let default = parts.get(2).cloned();
             if parts.len() > 3 {
-                return Err(ZyxtError::from_pos_and_raw(
-                    parts.get(3).unwrap().get_pos(),
-                    &raw_arg.get_raw(),
-                )
-                .error_2_1_14(parts[3].get_raw()));
+                return Err(ZyxtError::error_2_1_14(parts[3].get_raw())
+                    .with_pos_and_raw(parts.get(3).unwrap().get_pos(), &raw_arg.get_raw()));
             }
             Ok(Argument {
                 name,
@@ -296,7 +283,7 @@ fn parse_preprocess_and_defer(elements: Vec<Element>) -> Result<Vec<Element>, Zy
         }) = selected
         {
             if cursor == elements.len() - 1 {
-                return Err(ZyxtError::from_pos_and_raw(position, value).error_2_1_16());
+                return Err(ZyxtError::error_2_1_16().with_pos_and_raw(position, value));
             }
             let raw = selected.get_raw();
             let is_pre = raw.trim() == "pre";
@@ -371,11 +358,8 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>) -> Result<Vec<Elemen
                 }) = selected
                 {
                     if keyword == &Keyword::Class {
-                        return Err(ZyxtError::from_pos_and_raw(
-                            position,
-                            &format!("class {}", value.trim()),
-                        )
-                        .error_2_1_17());
+                        return Err(ZyxtError::error_2_1_17()
+                            .with_pos_and_raw(position, &format!("class {}", value.trim())));
                     }
                     args = Some(get_arguments(&mut cursor, &elements, &mut raw)?);
                     check_and_update_cursor!(cursor, selected, elements);
@@ -390,11 +374,10 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>) -> Result<Vec<Elemen
                     content = block_content.to_owned();
                     raw = format!("{}{}", raw, block_raw);
                 } else if keyword == &Keyword::Class {
-                    return Err(ZyxtError::from_pos_and_raw(
+                    return Err(ZyxtError::error_2_1_18(keyword).with_pos_and_raw(
                         selected.get_pos(),
                         &format!("{}{}", raw, &selected.get_raw()),
-                    )
-                    .error_2_1_18(keyword));
+                    ));
                 }
                 new_elements.push(Element::Class {
                     position: position.to_owned(),
@@ -429,22 +412,22 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                 TokenType::DotOpr => {
                     // TODO rewrite this
                     if cursor == 0 {
-                        return Err(ZyxtError::from_element(&elements[cursor])
-                            .error_2_1_0(String::from("."))); // could be enum but thats for later
+                        return Err(ZyxtError::error_2_1_0(String::from("."))
+                            .with_element(&elements[cursor])); // could be enum but thats for later
                     } else if cursor == elements.len() - 1 {
-                        return Err(ZyxtError::from_element(&elements[cursor]).error_2_1_2());
+                        return Err(ZyxtError::error_2_1_2().with_element(&elements[cursor]));
                         // definitely at the wrong place
                     }
                     let prev_element = &elements[cursor - 1];
                     let next_element = &elements[cursor + 1];
                     if let Element::Token(next_element) = next_element {
                         if next_element.type_ != TokenType::Variable {
-                            return Err(ZyxtError::from_token(next_element)
-                                .error_2_1_0(next_element.value.to_owned()));
+                            return Err(ZyxtError::error_2_1_0(next_element.value.to_owned())
+                                .with_token(next_element));
                         }
                     } else if let Element::Literal { content, .. } = next_element {
                         return Err(
-                            ZyxtError::from_element(next_element).error_2_1_0(content.to_owned())
+                            ZyxtError::error_2_1_0(content.to_owned()).with_element(next_element)
                         );
                     }
                     if let (Element::Token(prev_element), Element::Token(next_element)) =
@@ -452,7 +435,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                     {
                         if !prev_element.categories.contains(&TokenCategory::ValueEnd) {
                             return Err(
-                                ZyxtError::from_token(selected).error_2_1_0(String::from("."))
+                                ZyxtError::error_2_1_0(String::from(".")).with_token(selected)
                             ); //could be enum but thats for later
                         }
                         catcher = Element::Variable {
@@ -480,7 +463,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                             parent: Box::new(catcher),
                         };
                     } else {
-                        return Err(ZyxtError::from_token(selected).error_2_1_0(String::from(".")));
+                        return Err(ZyxtError::error_2_1_0(String::from(".")).with_token(selected));
                         // definitely at the wrong place
                     }
                 }
@@ -534,11 +517,11 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                     }
                 }
                 TokenType::CloseParen => {
-                    return Err(ZyxtError::from_token(selected).error_2_0_2(')'.to_string()))
+                    return Err(ZyxtError::error_2_0_2(')'.to_string()).with_token(selected))
                 }
                 TokenType::OpenParen => {
                     if cursor == 0 {
-                        return Err(ZyxtError::from_token(selected).error_2_1_0(String::from("(")));
+                        return Err(ZyxtError::error_2_1_0(String::from("(")).with_token(selected));
                         // parens should have been settled in the first part
                     }
                     let mut raw = selected.get_raw();
@@ -709,7 +692,7 @@ fn parse_assignment_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtErr
         }) = ele
         {
             if i == 0 || i == elements.len() - 1 {
-                return Err(ZyxtError::from_element(ele).error_2_1_3(ele.get_raw()));
+                return Err(ZyxtError::error_2_1_3(ele.get_raw()).with_element(ele));
             }
             let variable = parse_expr(vec![elements[i - 1].to_owned()])?;
             let content = if opr_type == &OprType::Null {
@@ -758,7 +741,7 @@ fn parse_un_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
         {
             if opr_side == &Side::Left {
                 if i == elements.len() - 1 {
-                    return Err(ZyxtError::from_element(ele).error_2_1_4(ele.get_raw()));
+                    return Err(ZyxtError::error_2_1_4(ele.get_raw()).with_element(ele));
                 }
                 let operand = parse_un_oprs(elements[i + 1..].to_vec())?[0].to_owned();
                 return parse_un_oprs(
@@ -775,7 +758,7 @@ fn parse_un_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                 );
             } else if opr_side == &Side::Right {
                 if i == 0 {
-                    return Err(ZyxtError::from_element(ele).error_2_1_4(ele.get_raw()));
+                    return Err(ZyxtError::error_2_1_4(ele.get_raw()).with_element(ele));
                 }
                 let operand = parse_un_oprs(elements[..i].to_vec())?[0].to_owned();
                 return parse_un_oprs(
@@ -810,7 +793,7 @@ fn parse_normal_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
         }) = ele
         {
             if i == 0 || i == elements.len() - 1 {
-                return Err(ZyxtError::from_element(ele).error_2_1_3(value.to_owned()));
+                return Err(ZyxtError::error_2_1_3(value.to_owned()).with_element(ele));
             }
             if get_order(opr_type) >= highest_order {
                 highest_order_index = i;
@@ -872,9 +855,9 @@ fn parse_delete_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
                     ..
                 } = var
                 {
-                    return Err(ZyxtError::from_element(var).error_2_1_12(raw.to_owned()));
+                    return Err(ZyxtError::error_2_1_12(raw.to_owned()).with_element(var));
                 } else {
-                    return Err(ZyxtError::from_element(var).error_2_1_11(var.get_raw()));
+                    return Err(ZyxtError::error_2_1_11(var.get_raw()).with_element(var));
                 }
             }
             new_elements.push(Element::Delete {
@@ -945,7 +928,7 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
         }) = selected
         {
             if cursor == elements.len() - 1 || cursor == 0 {
-                return Err(ZyxtError::from_element(selected).error_2_1_5());
+                return Err(ZyxtError::error_2_1_5().with_element(selected));
             }
             let declared_var: &Element = &elements[cursor - 1];
             let mut raw = format!("{}{}{}", declared_var.get_raw(), whitespace, value);
@@ -964,7 +947,7 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
                         raw = format!("{}{}{}", whitespace, value, raw);
                         f.push(*flag);
                     } else {
-                        return Err(ZyxtError::from_element(ele).error_2_1_6(ele.get_raw()));
+                        return Err(ZyxtError::error_2_1_6(ele.get_raw()).with_element(ele));
                     }
                 }
                 f
@@ -1025,12 +1008,12 @@ pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
                                 Keyword::Elif if prev_catcher_kwd != "else" => "elif",
                                 Keyword::Else if prev_catcher_kwd != "else" => "else",
                                 Keyword::Elif if prev_catcher_kwd == "else" => {
-                                    return Err(ZyxtError::from_element(catcher_selected)
-                                        .error_2_1_7("elif".to_string()))
+                                    return Err(ZyxtError::error_2_1_7("elif".to_string())
+                                        .with_element(catcher_selected))
                                 }
                                 Keyword::Else if prev_catcher_kwd == "else" => {
-                                    return Err(ZyxtError::from_element(catcher_selected)
-                                        .error_2_1_7("else".to_string()))
+                                    return Err(ZyxtError::error_2_1_7("else".to_string())
+                                        .with_element(catcher_selected))
                                 }
                                 _ => break,
                             };
@@ -1067,8 +1050,8 @@ pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
                                 if_true: content.to_owned(),
                             })
                         } else {
-                            return Err(ZyxtError::from_element(selected)
-                                .error_2_1_8(catcher_selected.get_raw()));
+                            return Err(ZyxtError::error_2_1_8(catcher_selected.get_raw())
+                                .with_element(selected));
                         }
                         cursor += 1;
                         if cursor == elements.len() {
@@ -1083,14 +1066,15 @@ pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
                     cursor -= 1;
                 }
                 Keyword::Elif | Keyword::Else => {
-                    return Err(ZyxtError::from_element(selected).error_2_1_9(
+                    return Err(ZyxtError::error_2_1_9(
                         if kwd == &Keyword::Elif {
                             "elif"
                         } else {
                             "else"
                         }
                         .to_string(),
-                    ))
+                    )
+                    .with_element(selected))
                 }
                 _ => new_elements.push(selected.to_owned()),
             }
@@ -1210,7 +1194,7 @@ fn parse_expr(mut elements: Vec<Element>) -> Result<Element, ZyxtError> {
     }
     elements = parse_un_oprs(elements)?;
     if elements.len() > 1 {
-        return Err(ZyxtError::from_element(&elements[1]).error_2_1_0(elements[1].get_raw()));
+        return Err(ZyxtError::error_2_1_0(elements[1].get_raw()).with_element(&elements[1]));
     }
     Ok(elements.get(0).unwrap_or(&Element::NullElement).to_owned())
 }
@@ -1244,7 +1228,7 @@ pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError
         ]
         .contains(&token.type_)
         {
-            return Err(ZyxtError::from_token(token).error_2_1_10(token.value.to_owned()));
+            return Err(ZyxtError::error_2_1_10(token.value.to_owned()).with_token(token));
         }
     }
 

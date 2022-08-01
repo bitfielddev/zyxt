@@ -1,10 +1,10 @@
+use crate::errors::ZyxtError;
 use crate::objects::position::Position;
 use crate::objects::token::{Side, Token, TokenCategory, TokenType};
 use crate::objects::token_entries::{
     compound_token_entries_1, compound_token_entries_2, side_dependent_token_entries,
     singular_token_entries, CompoundTokenEntry, Pattern,
 };
-use crate::errors::ZyxtError;
 use regex::Regex;
 
 fn lex_stage1(input: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
@@ -288,8 +288,8 @@ fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
 fn check_no_unknown_tokens(input: &[Token]) -> Result<(), ZyxtError> {
     for token in input.iter() {
         if token.type_ == TokenType::Null {
-            return Err(ZyxtError::from_pos_and_raw(&token.position, &token.value)
-                .error_2_1_1(token.value.to_owned()));
+            return Err(ZyxtError::error_2_1_1(token.value.to_owned())
+                .with_pos_and_raw(&token.position, &token.value));
         }
     }
     Ok(())

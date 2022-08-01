@@ -1,4 +1,5 @@
 use crate::errors::ZyxtError;
+use crate::gen_instructions;
 use crate::interpreter::interpret_block;
 use crate::objects::interpreter_data::{InterpreterData, Print, StdIoPrint};
 use crate::objects::position::Position;
@@ -6,7 +7,6 @@ use crate::objects::token::{Flag, OprType, Token};
 use crate::objects::typeobj::Type;
 use crate::objects::value::utils::OprError;
 use crate::objects::value::Value;
-use crate::gen_instructions;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
@@ -251,8 +251,12 @@ impl Element {
             .bin_opr(type_, Value::default(type2.to_owned())?)
         {
             Ok(v) => Ok(v.get_type_obj()),
-            Err(OprError::NoImplForOpr) => Err(ZyxtError::from_pos_and_raw(position, raw)
-                .error_4_0_0(type_.to_string(), type1.to_string(), type2.to_string())),
+            Err(OprError::NoImplForOpr) => {
+                Err(
+                    ZyxtError::error_4_0_0(type_.to_string(), type1.to_string(), type2.to_string())
+                        .with_pos_and_raw(position, raw),
+                )
+            }
             Err(OprError::TypecastError(ty)) => Ok(ty),
         }
     }
@@ -267,8 +271,11 @@ impl Element {
         }
         match Value::default(opnd_type.to_owned())?.un_opr(type_) {
             Ok(v) => Ok(v.get_type_obj()),
-            Err(OprError::NoImplForOpr) => Err(ZyxtError::from_pos_and_raw(position, raw)
-                .error_4_0_1(type_.to_string(), opnd_type.to_string())),
+            Err(OprError::NoImplForOpr) => Err(ZyxtError::error_4_0_1(
+                type_.to_string(),
+                opnd_type.to_string(),
+            )
+            .with_pos_and_raw(position, raw)),
             Err(OprError::TypecastError(ty)) => Ok(ty),
         }
     }
@@ -288,18 +295,16 @@ impl Element {
                 if return_type.to_owned().is_none() {
                     return_type = Some(*value);
                 } else if last != return_type.to_owned().unwrap() {
-                    return Err(ZyxtError::from_pos_and_raw(ele.get_pos(), &ele.get_raw())
-                        .error_4_t(last, return_type.unwrap()));
+                    return Err(ZyxtError::error_4_t(last, return_type.unwrap())
+                        .with_pos_and_raw(ele.get_pos(), &ele.get_raw()));
                 }
             }
         }
         if let Some(return_type) = return_type.to_owned() {
             if last != return_type {
                 let last_ele = content.last().unwrap();
-                return Err(
-                    ZyxtError::from_pos_and_raw(last_ele.get_pos(), &last_ele.get_raw())
-                        .error_4_t(last, return_type),
-                );
+                return Err(ZyxtError::error_4_t(last, return_type)
+                    .with_pos_and_raw(last_ele.get_pos(), &last_ele.get_raw()));
             }
         }
         if add_set {
@@ -372,7 +377,9 @@ impl Element {
                 raw,
             } => {
                 if !variable.is_pattern() {
-                    return Err(ZyxtError::from_element(&**variable).error_2_2(*variable.to_owned()));
+                    return Err(
+                        ZyxtError::error_2_2(*variable.to_owned()).with_element(&**variable)
+                    );
                 }
                 let content_type = content.eval_type(typelist)?;
                 if *type_ == Type::null() {
@@ -453,8 +460,11 @@ impl Element {
                     *return_type = res;
                 } else if let Some(block_return_type) = block_return_type {
                     if *return_type == block_return_type {
-                        return Err(ZyxtError::from_pos_and_raw(position, raw)
-                            .error_4_t(return_type.to_owned(), block_return_type));
+                        return Err(ZyxtError::error_4_t(
+                            return_type.to_owned(),
+                            block_return_type,
+                        )
+                        .with_pos_and_raw(position, raw));
                     }
                 }
                 Ok(Type::Instance {
@@ -485,16 +495,17 @@ impl Element {
                 ..
             } => {
                 if !variable.is_pattern() {
-                    return Err(ZyxtError::from_element(&**variable).error_2_2(*variable.to_owned()));
+                    return Err(
+                        ZyxtError::error_2_2(*variable.to_owned()).with_element(&**variable)
+                    );
                 }
                 let content_type = content.eval_type(typelist)?;
                 let var_type = typelist.get_val(&variable.get_name(), position, raw)?;
                 if content_type != var_type {
-                    Err(ZyxtError::from_pos_and_raw(position, raw).error_4_3(
-                        variable.get_name(),
-                        var_type,
-                        content_type,
-                    ))
+                    Err(
+                        ZyxtError::error_4_3(variable.get_name(), var_type, content_type)
+                            .with_pos_and_raw(position, raw),
+                    )
                 } else {
                     Ok(var_type)
                 }
@@ -543,7 +554,7 @@ impl Element {
             | Element::Return { .. } => Ok(Type::null()),
             Element::Token(Token {
                 position, value, ..
-            }) => Err(ZyxtError::from_pos_and_raw(position, value).error_2_1_0(self.get_raw())),
+            }) => Err(ZyxtError::error_2_1_0(value.to_owned()).with_pos_and_raw(position, value)),
         }
     }
 }

@@ -141,7 +141,7 @@ impl<T: Clone + Display, O: Print> InterpreterData<T, O> {
                 return Ok(());
             }
         }
-        Err(ZyxtError::from_pos_and_raw(position, raw).error_3_0(name.to_owned()))
+        Err(ZyxtError::error_3_0(name.to_owned()).with_pos_and_raw(position, raw))
     }
     pub fn get_val(
         &mut self,
@@ -154,7 +154,7 @@ impl<T: Clone + Display, O: Print> InterpreterData<T, O> {
                 return Ok(set.get(name).unwrap().to_owned());
             }
         }
-        Err(ZyxtError::from_pos_and_raw(position, raw).error_3_0(name.to_owned()))
+        Err(ZyxtError::error_3_0(name.to_owned()).with_pos_and_raw(position, raw))
     }
     pub fn delete_val(
         &mut self,
@@ -165,7 +165,7 @@ impl<T: Clone + Display, O: Print> InterpreterData<T, O> {
         if let Some(v) = self.heap.last_mut().unwrap().remove(name) {
             Ok(v)
         } else {
-            Err(ZyxtError::from_pos_and_raw(position, raw).error_3_0(name.to_owned()))
+            Err(ZyxtError::error_3_0(name.to_owned()).with_pos_and_raw(position, raw))
         }
     }
     pub fn add_defer(&mut self, content: Vec<Element>) {

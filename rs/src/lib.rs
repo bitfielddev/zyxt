@@ -6,8 +6,6 @@ pub mod objects;
 pub mod parser;
 pub mod repl;
 
-use ansi_term::Color::{White, Yellow};
-use std::time::Instant;
 use crate::errors::ZyxtError;
 use crate::instructor::gen_instructions;
 use crate::interpreter::interpret_asts;
@@ -17,6 +15,8 @@ use crate::objects::interpreter_data::{InterpreterData, Print};
 use crate::objects::typeobj::Type;
 use crate::objects::value::Value;
 use crate::parser::parse_token_list;
+use ansi_term::Color::{White, Yellow};
+use std::time::Instant;
 
 pub fn compile<O: Print>(
     input: String,

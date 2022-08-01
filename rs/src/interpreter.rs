@@ -22,8 +22,10 @@ pub fn interpret_expr<O: Print>(
             if let Ok(v) = interpret_expr(operand, i_data)?.un_opr(type_) {
                 Ok(v)
             } else {
-                Err(ZyxtError::from_pos_and_raw(position, raw)
-                    .error_4_1_1(type_.to_string(), interpret_expr(operand, i_data)?))
+                Err(
+                    ZyxtError::error_4_1_1(type_.to_string(), interpret_expr(operand, i_data)?)
+                        .with_pos_and_raw(position, raw),
+                )
             }
         }
         Element::BinaryOpr {
@@ -42,11 +44,12 @@ pub fn interpret_expr<O: Print>(
             } {
                 Ok(v)
             } else {
-                Err(ZyxtError::from_pos_and_raw(position, raw).error_4_1_0(
+                Err(ZyxtError::error_4_1_0(
                     type_.to_string(),
                     interpret_expr(operand1, i_data)?,
                     interpret_expr(operand2, i_data)?,
-                ))
+                )
+                .with_pos_and_raw(position, raw))
             }
         }
         Element::Variable {
@@ -144,8 +147,8 @@ pub fn interpret_expr<O: Print>(
             ) {
                 Ok(v)
             } else {
-                Err(ZyxtError::from_pos_and_raw(position, raw)
-                    .error_3_1_1(to_call, "_call".to_string()))
+                Err(ZyxtError::error_3_1_1(to_call, "_call".to_string())
+                    .with_pos_and_raw(position, raw))
             }
         }
         Element::If { conditions, .. } => {
@@ -271,7 +274,7 @@ pub fn interpret_asts<O: Print>(
             return if let Value::I32(v) = return_val {
                 Ok(v)
             } else {
-                Err(ZyxtError::from_pos_and_raw(position, raw).error_4_2(return_val))
+                Err(ZyxtError::error_4_2(return_val).with_pos_and_raw(position, raw))
             };
         } else {
             last = interpret_expr(ele, i_data)?;
@@ -283,8 +286,8 @@ pub fn interpret_asts<O: Print>(
                 return if let Value::I32(v) = *value {
                     Ok(v)
                 } else {
-                    Err(ZyxtError::from_pos_and_raw(ele.get_pos(), &ele.get_raw())
-                        .error_4_2(*value))
+                    Err(ZyxtError::error_4_2(*value)
+                        .with_pos_and_raw(ele.get_pos(), &ele.get_raw()))
                 };
             }
         }
@@ -299,6 +302,6 @@ pub fn interpret_asts<O: Print>(
         Ok(0)
     } else {
         let last_ele = input.last().unwrap();
-        Err(ZyxtError::from_pos_and_raw(last_ele.get_pos(), &last_ele.get_raw()).error_4_2(last))
+        Err(ZyxtError::error_4_2(last).with_pos_and_raw(last_ele.get_pos(), &last_ele.get_raw()))
     };
 }
