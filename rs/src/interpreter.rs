@@ -110,12 +110,11 @@ pub fn interpret_expr<O: Print>(
             } = to_call
             {
                 let mut processed_args = HashMap::new();
-                for (cursor, Argument { name, default, .. }) in args.into_iter().enumerate() {
-                    let default = default.unwrap();
+                for (cursor, Argument { name, ref default, .. }) in args.into_iter().enumerate() {
                     let input_arg = if input_args.len() > cursor {
                         input_args.get(cursor).unwrap()
                     } else {
-                        &default
+                        default.as_ref().unwrap()
                     };
                     processed_args.insert(name, interpret_expr(input_arg, i_data)?);
                 }
