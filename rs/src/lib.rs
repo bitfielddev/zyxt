@@ -78,8 +78,8 @@ pub fn interpret(
     let exit_code = interpret_asts(input, i_data)?;
     let interpret_time = interpret_start.elapsed().as_micros();
     logger.debug(format!("\nExited with code {}", exit_code));
-    logger.debug(Yellow.bold().paint("\nStats"));
-    logger.debug(
+    logger.info(Yellow.bold().paint("\nStats"));
+    logger.info(
         Yellow.paint(format!("Interpreting time: {}µs", interpret_time))
     );
     Ok(exit_code)
