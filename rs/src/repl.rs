@@ -1,7 +1,7 @@
 use crate::interpreter::interpret_expr;
 use crate::objects::interpreter_data::{InterpreterData, StdIoPrint};
 use crate::objects::value::Value;
-use crate::{compile, ZyxtError};
+use crate::{compile, Logger, ZyxtError};
 use ansi_term::Color::{Cyan, Green, Red, White, Yellow};
 use backtrace::Backtrace;
 use dirs::home_dir;
@@ -15,6 +15,10 @@ pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
     let mut typelist = InterpreterData::default_type(StdIoPrint);
     let mut varlist = InterpreterData::default_variable(StdIoPrint);
+    let mut logger = Logger {
+        verbosity,
+        out: StdIoPrint
+    };
     let mut rl = Editor::<()>::new().unwrap();
     let mut history_path = home_dir().unwrap();
     history_path.push(".zyxt_history");
@@ -56,7 +60,7 @@ pub fn repl(verbosity: u8) {
                     };
                     continue;
                 }
-                let instructions = match compile(input, &filename, &mut typelist, verbosity) {
+                let instructions = match compile(input, &filename, &mut typelist, &mut logger) {
                     Ok(v) => v,
                     Err(e) => {
                         e.print(&mut StdIoPrint);

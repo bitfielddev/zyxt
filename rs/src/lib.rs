@@ -17,62 +17,45 @@ use crate::objects::value::Value;
 use crate::parser::parse_token_list;
 use ansi_term::Color::{White, Yellow};
 use std::time::Instant;
+use crate::objects::logger::Logger;
 
-pub fn compile<O: Print>(
+pub fn compile(
     input: String,
     filename: &str,
-    typelist: &mut InterpreterData<Type, O>,
-    verbosity: u8
+    typelist: &mut InterpreterData<Type, impl Print>,
+    logger: &mut Logger<impl Print>,
 ) -> Result<Vec<Element>, ZyxtError> {
-    if verbosity == 0 {
+    if logger.verbosity == 0 {
         return gen_instructions(parse_token_list(lex(input, filename)?)?, typelist);
     }
 
-    if verbosity >= 2 {
-        typelist.out.eprintln(Yellow.bold().paint("Lexing"));
-    }
+    logger.debug(Yellow.bold().paint("Lexing"));
     let lex_start = Instant::now();
     let lexed = lex(input, filename)?;
     let lex_time = lex_start.elapsed().as_micros();
-    if verbosity >= 2 {
-        for token in lexed.iter() {
-            typelist.out.eprintln(White.dimmed().paint(format!("{:#?}", token)));
-        }
-    }
+    logger.debug(White.dimmed().paint(format!("{:#?}", lexed)));
 
-    if verbosity >= 2 {
-        typelist.out.eprintln(Yellow.bold().paint("\nParsing"));
-    }
+    logger.debug(Yellow.bold().paint("\nParsing"));
     let parse_start = Instant::now();
     let parsed = parse_token_list(lexed)?;
     let parse_time = parse_start.elapsed().as_micros();
-    if verbosity >= 2 {
-        for ele in parsed.iter() {
-            typelist.out.eprintln(White.dimmed().paint(format!("{:#?}", ele)));
-        }
-    }
+    logger.debug(White.dimmed().paint(format!("{:#?}", parsed)));
 
-    if verbosity >= 2 {
-        typelist.out.eprintln(Yellow.bold().paint("\nGenerating instructions"));
-    }
+    logger.debug(Yellow.bold().paint("\nGenerating instructions"));
     let check_start = Instant::now();
     let instructions = gen_instructions(parsed, typelist)?;
     let check_time = check_start.elapsed().as_micros();
-    if verbosity >= 2 {
-        for ele in instructions.iter() {
-            typelist.out.eprintln(White.dimmed().paint(format!("{:#?}", ele)));
-        }
-    }
+    logger.debug(White.dimmed().paint(format!("{:#?}", instructions)));
 
-    typelist.out.eprintln(Yellow.bold().paint("\nStats"));
-    typelist.out.eprintln(Yellow.paint(format!("Lexing time: {}µs", lex_time)));
-    typelist.out.eprintln(
+    logger.info(Yellow.bold().paint("\nStats"));
+    logger.info(Yellow.paint(format!("Lexing time: {}µs", lex_time)));
+    logger.info(
         Yellow.paint(format!("Parsing time: {}µs", parse_time))
     );
-    typelist.out.eprintln(
+    logger.info(
         Yellow.paint(format!("Instruction generation time: {}µs", check_time))
     );
-    typelist.out.eprintln(
+    logger.info(
         Yellow.paint(format!(
             "Total time: {}µs\n",
             lex_time + parse_time + check_time
@@ -82,23 +65,21 @@ pub fn compile<O: Print>(
     Ok(instructions)
 }
 
-pub fn interpret<O: Print>(
+pub fn interpret(
     input: &Vec<Element>,
-    i_data: &mut InterpreterData<Value, O>,
-    verbosity: u8,
+    i_data: &mut InterpreterData<Value, impl Print>,
+    logger: &mut Logger<impl Print>
 ) -> Result<i32, ZyxtError> {
-    if verbosity == 0 {
+    if logger.verbosity == 0 {
         return interpret_asts(input, i_data);
     }
-    if verbosity >= 2 {
-        i_data.out.eprintln(Yellow.bold().paint("\nInterpreting"));
-    }
+    logger.debug(Yellow.bold().paint("\nInterpreting"));
     let interpret_start = Instant::now();
     let exit_code = interpret_asts(input, i_data)?;
     let interpret_time = interpret_start.elapsed().as_micros();
-    i_data.out.eprintln(format!("\nExited with code {}", exit_code));
-    i_data.out.eprintln(Yellow.bold().paint("\nStats"));
-    i_data.out.eprintln(
+    logger.debug(format!("\nExited with code {}", exit_code));
+    logger.debug(Yellow.bold().paint("\nStats"));
+    logger.debug(
         Yellow.paint(format!("Interpreting time: {}µs", interpret_time))
     );
     Ok(exit_code)

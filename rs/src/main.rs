@@ -6,6 +6,7 @@ use std::panic;
 use std::process::exit;
 use zyxt::errors::ZyxtError;
 use zyxt::objects::interpreter_data::{InterpreterData, StdIoPrint};
+use zyxt::objects::logger::Logger;
 use zyxt::repl;
 
 #[derive(Parser)]
@@ -32,6 +33,10 @@ struct Run {
 fn main() {
     let args = Args::parse();
     let verbose = args.verbose;
+    let mut logger = Logger {
+        verbosity: verbose,
+        out: StdIoPrint
+    };
 
     panic::set_hook(Box::new(|a| {
         ZyxtError::error_0_0(a.to_string(), Backtrace::new()).print(&mut StdIoPrint);
@@ -56,10 +61,10 @@ fn main() {
             let mut typelist = InterpreterData::default_type(StdIoPrint);
             let mut i_data = InterpreterData::default_variable(StdIoPrint);
             let exit_code = zyxt::interpret(
-                &zyxt::compile(content, filename, &mut typelist, verbose)
+                &zyxt::compile(content, filename, &mut typelist, &mut logger)
                     .unwrap_or_else(|e| e.print_exit(&mut StdIoPrint)),
                 &mut i_data,
-                verbose,
+                &mut logger,
             )
             .unwrap_or_else(|e| e.print_exit(&mut StdIoPrint));
             exit(exit_code);
