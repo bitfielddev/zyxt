@@ -10,19 +10,21 @@ pub struct Logger<'a, O: Print> {
 impl<O: Print> Logger<'_, O> {
     fn print(&mut self, msg: impl Display, min_verbosity: u8, prefix: &str, color: Style) {
         if self.verbosity >= min_verbosity {
-            self.out.eprintln(format!("{}{}", color.paint(prefix), msg));
+            self.out.eprintln(msg.to_string().split('\n')
+                .map(|s| format!("{} {}", color.paint(prefix), s))
+                .collect::<Vec<_>>().join("\n"));
         }
     }
     pub fn debug(&mut self, msg: impl Display) {
-        self.print(msg, 2, "[D] ", White.bold().dimmed());
+        self.print(msg, 2, "[D]", White.bold().dimmed());
     }
     pub fn info(&mut self, msg: impl Display) {
-        self.print(msg, 1, "[I] ", White.bold().dimmed());
+        self.print(msg, 1, "[I]", White.bold().dimmed());
     }
     pub fn warn(&mut self, msg: impl Display) {
-        self.print(msg, 0, "[W] ", Yellow.bold().dimmed());
+        self.print(msg, 0, "[W]", Yellow.bold().dimmed());
     }
     pub fn error(&mut self, msg: impl Display) {
-        self.print(msg, 0, "[E] ", Red.bold().dimmed());
+        self.print(msg, 0, "[E]", Red.bold().dimmed());
     }
 }
