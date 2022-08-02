@@ -35,7 +35,7 @@ fn main() {
     let verbose = args.verbose;
     let mut logger = Logger {
         verbosity: verbose,
-        out: StdIoPrint
+        out: &mut StdIoPrint
     };
 
     panic::set_hook(Box::new(|a| {
@@ -58,8 +58,10 @@ fn main() {
                 }
                 Err(_) => ZyxtError::error_1_1(filename.to_owned()).print_exit(&mut StdIoPrint),
             };
-            let mut typelist = InterpreterData::default_type(StdIoPrint);
-            let mut i_data = InterpreterData::default_variable(StdIoPrint);
+            let mut sip1 = StdIoPrint;
+            let mut sip2 = StdIoPrint;
+            let mut typelist = InterpreterData::default_type(&mut sip1);
+            let mut i_data = InterpreterData::default_variable(&mut sip2);
             let exit_code = zyxt::interpret(
                 &zyxt::compile(content, filename, &mut typelist, &mut logger)
                     .unwrap_or_else(|e| e.print_exit(&mut StdIoPrint)),

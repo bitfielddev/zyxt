@@ -13,11 +13,13 @@ use std::time::Instant;
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
-    let mut typelist = InterpreterData::default_type(StdIoPrint);
-    let mut varlist = InterpreterData::default_variable(StdIoPrint);
+    let mut sip1 = StdIoPrint;
+    let mut sip2 = StdIoPrint;
+    let mut typelist = InterpreterData::default_type(&mut sip1);
+    let mut varlist = InterpreterData::default_variable(&mut sip2);
     let mut logger = Logger {
         verbosity,
-        out: StdIoPrint
+        out: &mut StdIoPrint
     };
     let mut rl = Editor::<()>::new().unwrap();
     let mut history_path = home_dir().unwrap();

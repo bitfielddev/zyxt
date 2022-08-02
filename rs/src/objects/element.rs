@@ -475,9 +475,9 @@ impl Element {
                 })
             } // TODO angle bracket thingy when it is implemented
             Element::Preprocess { content, .. } => {
-                let mut pre_typelist = InterpreterData::default_type(typelist.out.to_owned());
-                let mut i_data = InterpreterData::default_variable(typelist.out.to_owned());
+                let mut pre_typelist = InterpreterData::default_type(typelist.out);
                 let pre_instructions = gen_instructions(content.to_owned(), &mut pre_typelist)?;
+                let mut i_data = InterpreterData::default_variable(typelist.out);
                 let pre_value = interpret_block(&pre_instructions, &mut i_data, true, false)?;
                 *self = pre_value.as_element();
                 self.eval_type(typelist)

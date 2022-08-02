@@ -3,11 +3,11 @@ use ansi_term::Color::{Red, White, Yellow};
 use ansi_term::Style;
 use crate::Print;
 
-pub struct Logger<O: Print> {
+pub struct Logger<'a, O: Print> {
     pub verbosity: u8,
-    pub out: O,
+    pub out: &'a mut O,
 }
-impl<O: Print> Logger<O> {
+impl<O: Print> Logger<'_, O> {
     fn print(&mut self, msg: impl Display, min_verbosity: u8, prefix: &str, color: Style) {
         if self.verbosity >= min_verbosity {
             self.out.eprintln(format!("{}{}", color.paint(prefix), msg));

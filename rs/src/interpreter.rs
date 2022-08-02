@@ -123,22 +123,23 @@ pub fn interpret_expr<O: Print>(
                     processed_args.insert(name, interpret_expr(input_arg, i_data)?);
                 }
 
-                let mut fn_i_data = InterpreterData::default_variable(i_data.out.to_owned());
-                let fn_i_data = if is_fn {
-                    &mut fn_i_data
+                if is_fn {
+                    let mut fn_i_data = InterpreterData::default_variable(i_data.out);
+                    fn_i_data.heap.last_mut().unwrap().extend(processed_args);
+                    let res = interpret_block(&content, &mut fn_i_data, true, false);
+                    fn_i_data.pop_frame()?;
+                    res
                 } else {
                     i_data.add_frame(Some(FrameData {
                         position: position.to_owned(),
                         raw_call: raw.to_owned(),
                         args: processed_args.to_owned(),
                     }));
-                    i_data
-                };
-                fn_i_data.heap.last_mut().unwrap().extend(processed_args);
-
-                let res = interpret_block(&content, fn_i_data, true, false);
-                fn_i_data.pop_frame()?;
-                res
+                    i_data.heap.last_mut().unwrap().extend(processed_args);
+                    let res = interpret_block(&content, i_data, true, false);
+                    i_data.pop_frame()?;
+                    res
+                }
             } else if let Ok(v) = to_call.call(
                 input_args
                     .iter()

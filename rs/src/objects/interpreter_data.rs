@@ -40,14 +40,14 @@ pub struct FrameData<T: Clone + Display> {
     pub raw_call: String,
     pub args: HashMap<String, T>,
 }
-pub struct InterpreterData<T: Clone + Display, O: Print> {
+pub struct InterpreterData<'a, T: Clone + Display, O: Print> {
     pub heap: Vec<HashMap<String, T>>,
     pub defer: Vec<Vec<Vec<Element>>>,
     pub frame_data: Vec<Option<FrameData<T>>>,
-    pub out: O,
+    pub out: &'a mut O,
 }
-impl<O: Print> InterpreterData<Value, O> {
-    pub fn default_variable(out: O) -> InterpreterData<Value, O> {
+impl<'a, O: Print> InterpreterData<'a, Value, O> {
+    pub fn default_variable(out: &'a mut O) -> InterpreterData<'a, Value, O> {
         let mut v = InterpreterData {
             heap: vec![HashMap::new()],
             defer: vec![vec![]],
@@ -95,8 +95,8 @@ impl<O: Print> InterpreterData<Value, O> {
     }
 }
 
-impl<O: Print> InterpreterData<Type, O> {
-    pub fn default_type(out: O) -> InterpreterData<Type, O> {
+impl<'a, O: Print> InterpreterData<'a, Type, O> {
+    pub fn default_type(out: &'a mut O) -> InterpreterData<'a, Type, O> {
         let mut v = InterpreterData {
             heap: vec![HashMap::new()],
             defer: vec![vec![]],
@@ -124,7 +124,7 @@ impl<O: Print> InterpreterData<Type, O> {
     }
 }
 
-impl<T: Clone + Display, O: Print> InterpreterData<T, O> {
+impl<T: Clone + Display, O: Print> InterpreterData<'_, T, O> {
     pub fn add_frame(&mut self, frame_data: Option<FrameData<T>>) {
         self.heap.push(HashMap::new());
         self.defer.push(vec![]);
