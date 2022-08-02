@@ -45,6 +45,6 @@ pub fn un_minus(x: &Value) -> Result<Value, OprError> {
 pub fn un_not(x: &Value) -> Result<Value, OprError> {
     match x.to_owned() {
         Value::Bool(x) => Ok(Value::Bool(!x)),
-        _ => un_not(&typecast(x, Value::Type(Type::from_str("bool")))?),
+        _ => un_not(&typecast(x, Value::Type(Type::from_name("bool")))?),
     }
 }

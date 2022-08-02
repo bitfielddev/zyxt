@@ -7,7 +7,7 @@ macro_rules! typecast_sub {
     ($e:ident, $t:ident, $s:literal, $x:ident, $y:ident) => {
         if $y.is_num() {
             Ok(Value::$e(
-                $x - typecast(&$y, Value::Type(Type::from_str($s)))?
+                $x - typecast(&$y, Value::Type(Type::from_name($s)))?
                     .$t()
                     .unwrap(),
             ))

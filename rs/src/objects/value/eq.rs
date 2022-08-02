@@ -7,7 +7,7 @@ macro_rules! typecast_eq {
     ($t:ident, $s:literal, $x:ident, $y:ident) => {
         $y.is_num()
             && $x
-                == typecast(&$y, Value::Type(Type::from_str($s)))?
+                == typecast(&$y, Value::Type(Type::from_name($s)))?
                     .$t()
                     .unwrap()
     };

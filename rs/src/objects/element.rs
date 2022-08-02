@@ -244,7 +244,7 @@ impl Element {
         ]
         .contains(type_)
         {
-            return Ok(Type::from_str("bool"));
+            return Ok(Type::from_name("bool"));
         }
 
         match Value::default(type1.to_owned())? // TODO
@@ -267,7 +267,7 @@ impl Element {
         raw: &String,
     ) -> Result<Type, ZyxtError> {
         if type_ == &OprType::Not {
-            return Ok(Type::from_str("bool"));
+            return Ok(Type::from_name("bool"));
         }
         match Value::default(opnd_type.to_owned())?.un_opr(type_) {
             Ok(v) => Ok(v.get_type_obj()),
@@ -427,8 +427,8 @@ impl Element {
             } => {
                 let type1 = operand1.eval_type(typelist)?;
                 let type2 = operand2.eval_type(typelist)?;
-                if type_ == &OprType::TypeCast && type2 == Type::from_str("type") {
-                    return Ok(Type::from_str(&*operand2.get_name()));
+                if type_ == &OprType::TypeCast && type2 == Type::from_name("type") {
+                    return Ok(Type::from_name(&*operand2.get_name()));
                 }
                 Element::bin_op_return_type(type_, type1, type2, position, raw)
             }

@@ -51,7 +51,7 @@ impl Display for Type {
     }
 }
 impl Type {
-    pub fn from_str(s: &str) -> Self {
+    pub fn from_name(s: &str) -> Self {
         Type::Instance {
             name: s.to_string(),
             type_args: vec![],
@@ -60,10 +60,10 @@ impl Type {
         }
     }
     pub fn null() -> Self {
-        Type::from_str("_null")
+        Type::from_name("_null")
     }
     pub fn any() -> Self {
-        Type::from_str("_any")
+        Type::from_name("_any")
     }
     pub fn as_element(&self) -> Element {
         match self {

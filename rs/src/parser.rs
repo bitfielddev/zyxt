@@ -413,7 +413,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                     // TODO rewrite this
                     if cursor == 0 {
                         return Err(ZyxtError::error_2_1_0(String::from("."))
-                            .with_element(&elements[cursor])); // could be enum but thats for later
+                            .with_element(&elements[cursor])); // could be enum but that's for later
                     } else if cursor == elements.len() - 1 {
                         return Err(ZyxtError::error_2_1_2().with_element(&elements[cursor]));
                         // definitely at the wrong place
@@ -436,7 +436,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                         if !prev_element.categories.contains(&TokenCategory::ValueEnd) {
                             return Err(
                                 ZyxtError::error_2_1_0(String::from(".")).with_token(selected)
-                            ); //could be enum but thats for later
+                            ); //could be enum but that's for later
                         }
                         catcher = Element::Variable {
                             position: next_element.position.to_owned(),
@@ -485,7 +485,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                     catcher = Element::Literal {
                         position: selected.position.to_owned(),
                         raw: selected.get_raw(),
-                        type_: Type::from_str(if selected.type_ == TokenType::LiteralMisc {
+                        type_: Type::from_name(if selected.type_ == TokenType::LiteralMisc {
                             match &*selected.value {
                                 "true" | "false" => "bool",
                                 "null" => "_null",

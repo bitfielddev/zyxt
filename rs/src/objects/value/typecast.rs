@@ -12,7 +12,7 @@ macro_rules! typecast_str_to_num {
         if let Ok(x) = $x.parse::<$t>() {
             Ok(Value::$e(x))
         } else {
-            Err(OprError::TypecastError(Type::from_str($st)))
+            Err(OprError::TypecastError(Type::from_name($st)))
         }
     };
 }
@@ -74,7 +74,7 @@ macro_rules! simple_num_to_num {
         if let Ok(x) = <$t>::try_from($x) {
             Ok(Value::$e(x))
         } else {
-            Err(OprError::TypecastError(Type::from_str($st)))
+            Err(OprError::TypecastError(Type::from_name($st)))
         }
     };
 }
@@ -536,7 +536,7 @@ pub fn typecast(x: &Value, y: Value) -> Result<Value, OprError> {
                         Value::F16(x) => typecast_f16(x, name),
                         Value::F32(x) => typecast_f32(x, name),
                         Value::F64(x) => typecast_f64(x, name),
-                        Value::Type(_) => Ok(Value::Type(Type::from_str("type"))),
+                        Value::Type(_) => Ok(Value::Type(Type::from_name("type"))),
                         _ => Err(OprError::NoImplForOpr),
                     }
                 }

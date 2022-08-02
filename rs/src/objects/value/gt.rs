@@ -24,7 +24,7 @@ macro_rules! typecast_gt {
                 | Value::Ubig(_)
                 | Value::F16(_)
                 | Value::F32(_)
-                | Value::F64(_) => typecast(&$y, Value::Type(Type::from_str($s)))?
+                | Value::F64(_) => typecast(&$y, Value::Type(Type::from_name($s)))?
                     .$t()
                     .unwrap()
                     .to_owned(),

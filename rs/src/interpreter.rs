@@ -89,17 +89,14 @@ pub fn interpret_expr<O: Print>(
         } => {
             if let Element::Variable { parent, name, .. } = called.as_ref() {
                 if *name == "out" && parent.get_name() == *"ter" {
-                    let s = format!(
-                        "{}",
-                        input_args
+                    let s = input_args
                             .iter()
                             .map(|arg| interpret_expr(arg, i_data))
                             .collect::<Result<Vec<_>, _>>()?
                             .into_iter()
                             .map(|v| v.to_string())
                             .collect::<Vec<String>>()
-                            .join(" ")
-                    );
+                            .join(" ");
                     i_data.out.println(s);
                     return Ok(Value::Null);
                 }

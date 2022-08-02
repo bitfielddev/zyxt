@@ -8,7 +8,7 @@ macro_rules! typecast_mul {
     ($e:ident, $t:ident, $s:literal, $x:ident, $y:ident) => {
         if $y.is_num() {
             Ok(Value::$e(
-                $x * typecast(&$y, Value::Type(Type::from_str($s)))?
+                $x * typecast(&$y, Value::Type(Type::from_name($s)))?
                     .$t()
                     .unwrap(),
             ))
@@ -26,7 +26,7 @@ macro_rules! mul_str_internal {
 macro_rules! mul_str_internal_signed {
     ($x:ident, $y:expr) => {
         if $y < 0 {
-            Err(OprError::TypecastError(Type::from_str("str")))
+            Err(OprError::TypecastError(Type::from_name("str")))
         } else {
             Ok(Value::Str($x.repeat($y as usize)))
         }

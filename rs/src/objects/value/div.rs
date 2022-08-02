@@ -8,7 +8,7 @@ use num::bigint::{ToBigInt, ToBigUint};
 macro_rules! typecast_div {
     ($e:ident, $t:ident, $s:literal, $x:ident, $y:ident, $zero:expr) => {{
         if $y.is_num() {
-            let n = typecast(&$y, Value::Type(Type::from_str($s)))?.$t().unwrap().to_owned();
+            let n = typecast(&$y, Value::Type(Type::from_name($s)))?.$t().unwrap().to_owned();
             if n == $zero {
                 // TODO undef / indet handling, but for now,
                 return Ok(Value::$e($x.to_owned()));

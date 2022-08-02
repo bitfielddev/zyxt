@@ -1,7 +1,7 @@
 use crate::objects::position::Position;
 use std::fmt::{Display, Formatter, Result};
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Token {
     pub value: String,
     pub type_: TokenType,
@@ -194,7 +194,7 @@ pub enum TokenType {
     Whitespace,
     Null,
 }
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum TokenCategory {
     Operator,
     Literal,
