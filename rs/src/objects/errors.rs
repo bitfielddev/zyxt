@@ -409,7 +409,7 @@ impl ZyxtError {
                                 *start = start_graphemes[0..index]
                                     .iter()
                                     .cloned()
-                                    .chain(vec!["\u{001b}[1;4;31m"])
+                                    .chain(vec!["\u{001b}[0;1;4;31m"])
                                     .chain(start_graphemes[index..].iter().cloned())
                                     .collect::<Vec<_>>()
                                     .join("");
@@ -418,7 +418,7 @@ impl ZyxtError {
                                 let end = contents.get_mut(end_pos.line as usize - 1).unwrap();
                                 let end_graphemes = end.graphemes(true).collect::<Vec<_>>();
                                 let index = end_pos.column as usize - 1
-                                    + if pos.line == end_pos.line { 9 } else { 0 };
+                                    + if pos.line == end_pos.line { 11 } else { 0 };
                                 *end = end_graphemes[0..index]
                                     .iter()
                                     .cloned()
