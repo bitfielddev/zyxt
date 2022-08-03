@@ -415,7 +415,6 @@ impl ZyxtError {
                                     .join("");
 
                                 let end_pos = pos.pos_after(raw);
-                                println!("{}", raw);
                                 let end = contents.get_mut(end_pos.line as usize - 1).unwrap();
                                 let end_graphemes = end.graphemes(true).collect::<Vec<_>>();
                                 let index = end_pos.column as usize - 1
