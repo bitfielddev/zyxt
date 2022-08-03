@@ -1,6 +1,6 @@
-use crate::errors::ZyxtError;
 use crate::gen_instructions;
 use crate::interpreter::interpret_block;
+use crate::objects::errors::ZyxtError;
 use crate::objects::interpreter_data::{InterpreterData, Print};
 use crate::objects::position::Position;
 use crate::objects::token::{Flag, OprType, Token};
@@ -199,6 +199,27 @@ impl Element {
             | Element::Preprocess { raw, .. }
             | Element::Defer { raw, .. }
             | Element::Class { raw, .. } => raw.to_owned(),
+        }
+    }
+    pub fn get_raw_mut(&mut self) -> Option<&mut String> {
+        match self {
+            Element::NullElement | Element::Token(_) => None,
+            Element::Variable { raw, .. }
+            | Element::Literal { raw, .. }
+            | Element::Comment { raw, .. }
+            | Element::Call { raw, .. }
+            | Element::UnaryOpr { raw, .. }
+            | Element::BinaryOpr { raw, .. }
+            | Element::Declare { raw, .. }
+            | Element::Set { raw, .. }
+            | Element::If { raw, .. }
+            | Element::Block { raw, .. }
+            | Element::Delete { raw, .. }
+            | Element::Return { raw, .. }
+            | Element::Procedure { raw, .. }
+            | Element::Preprocess { raw, .. }
+            | Element::Defer { raw, .. }
+            | Element::Class { raw, .. } => Some(raw),
         }
     }
     pub fn get_name(&self) -> String {

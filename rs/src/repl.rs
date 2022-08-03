@@ -19,7 +19,7 @@ pub fn repl(verbosity: u8) {
     let mut varlist = InterpreterData::default_variable(&mut sip2);
     let mut logger = Logger {
         verbosity,
-        out: &mut StdIoPrint
+        out: &mut StdIoPrint,
     };
     let mut rl = Editor::<()>::new().unwrap();
     let mut history_path = home_dir().unwrap();

@@ -1,5 +1,5 @@
-use crate::errors::ZyxtError;
 use crate::objects::element::{Argument, Condition, Element, VecElementRaw};
+use crate::objects::errors::ZyxtError;
 use crate::objects::token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType};
 use crate::objects::typeobj::Type;
 use std::cmp::min;
@@ -221,6 +221,14 @@ fn parse_parens(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                             &mut cursor,
                         )?;
                         new_elements.push(parse_expr(paren_contents)?);
+                        if let Some(raw) = new_elements.last_mut().unwrap().get_raw_mut() {
+                            *raw = format!(
+                                "{}{}{}",
+                                selected.get_raw(),
+                                raw,
+                                elements[cursor].get_raw()
+                            );
+                        }
                     } else {
                         new_elements.push(Element::Token(selected.to_owned()))
                     } // or else it's function args
@@ -549,7 +557,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                         false,
                     )?;
                     catcher = Element::Call {
-                        position: selected.position.to_owned(),
+                        position: catcher.get_pos().to_owned(),
                         raw: format!("{}{}", catcher.get_raw(), raw),
                         called: Box::new(catcher),
                         args,

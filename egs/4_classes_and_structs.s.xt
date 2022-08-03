@@ -1,11 +1,12 @@
 // Note: Classes are still WIP
 PointStruct := struct |a: i32, b: i32| {};
-ter.out PointStruct(2, 3);
+ter.out PointStruct(2, 3, true, (1+2));
 
 PointClass := class {
-    _init := fn |self, a: int, b: int| {
+    _new := fn |self, a: i32, b: i32|: PointClass {
         self.a = a;
         self.b = b;
+        self
     };
 };
 ter.out PointClass(1, 2);

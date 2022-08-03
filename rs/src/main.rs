@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::Read;
 use std::panic;
 use std::process::exit;
-use zyxt::errors::ZyxtError;
+use zyxt::objects::errors::ZyxtError;
 use zyxt::objects::interpreter_data::{InterpreterData, StdIoPrint};
 use zyxt::objects::logger::Logger;
 use zyxt::repl;
@@ -35,7 +35,7 @@ fn main() {
     let verbose = args.verbose;
     let mut logger = Logger {
         verbosity: verbose,
-        out: &mut StdIoPrint
+        out: &mut StdIoPrint,
     };
 
     panic::set_hook(Box::new(|a| {

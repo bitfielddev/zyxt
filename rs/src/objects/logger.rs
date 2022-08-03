@@ -1,7 +1,7 @@
-use std::fmt::Display;
+use crate::Print;
 use ansi_term::Color::{Red, White, Yellow};
 use ansi_term::Style;
-use crate::Print;
+use std::fmt::Display;
 
 pub struct Logger<'a, O: Print> {
     pub verbosity: u8,
@@ -10,9 +10,13 @@ pub struct Logger<'a, O: Print> {
 impl<O: Print> Logger<'_, O> {
     fn print(&mut self, msg: impl Display, min_verbosity: u8, prefix: &str, color: Style) {
         if self.verbosity >= min_verbosity {
-            self.out.eprintln(msg.to_string().split('\n')
-                .map(|s| format!("{} {}", color.paint(prefix), s))
-                .collect::<Vec<_>>().join("\n"));
+            self.out.eprintln(
+                msg.to_string()
+                    .split('\n')
+                    .map(|s| format!("{} {}", color.paint(prefix), s))
+                    .collect::<Vec<_>>()
+                    .join("\n"),
+            );
         }
     }
     pub fn debug(&mut self, msg: impl Display) {

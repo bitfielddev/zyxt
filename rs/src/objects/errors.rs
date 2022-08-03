@@ -2,10 +2,13 @@ use crate::objects::position::Position;
 use crate::objects::token::{Keyword, Token};
 use crate::objects::value::Value;
 use crate::{Element, Print, Type};
-use ansi_term::Color::{Black, Red, Yellow};
+use ansi_term::Color::{Black, Red, White, Yellow};
 use ansi_term::Style;
 use backtrace::Backtrace;
+use std::fs::File;
+use std::io::Read;
 use std::process::exit;
+use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Clone)]
 pub struct ZyxtError {
@@ -383,18 +386,74 @@ impl ZyxtError {
             message: format!("Block returns variable of type `{}` earlier on, but also returns variable of type `{}`", block_type, return_type)
         }
     }
+    pub fn get_surrounding_text(&self) -> String {
+        self.position
+            .iter()
+            .map(|(pos, raw)| {
+                format!(
+                    "{}\n{}",
+                    Style::new().on(Red).bold().paint(format!(" {} ", pos)),
+                    White
+                        .dimmed()
+                        .paint(if let Ok(mut file) = File::open(&pos.filename) {
+                            let mut contents = String::new();
+                            if file.read_to_string(&mut contents).is_ok() {
+                                let mut contents = contents
+                                    .split('\n')
+                                    .map(|s| s.to_string())
+                                    .collect::<Vec<_>>();
+
+                                let start = contents.get_mut(pos.line as usize - 1).unwrap();
+                                let start_graphemes = start.graphemes(true).collect::<Vec<_>>();
+                                let index = pos.column as usize - 1;
+                                *start = start_graphemes[0..index]
+                                    .iter()
+                                    .cloned()
+                                    .chain(vec!["\u{001b}[1;4;31m"])
+                                    .chain(start_graphemes[index..].iter().cloned())
+                                    .collect::<Vec<_>>()
+                                    .join("");
+
+                                let end_pos = pos.pos_after(raw);
+                                println!("{}", raw);
+                                let end = contents.get_mut(end_pos.line as usize - 1).unwrap();
+                                let end_graphemes = end.graphemes(true).collect::<Vec<_>>();
+                                let index = end_pos.column as usize - 1
+                                    + if pos.line == end_pos.line { 9 } else { 0 };
+                                *end = end_graphemes[0..index]
+                                    .iter()
+                                    .cloned()
+                                    .chain(vec!["\u{001b}[0;37;2m"])
+                                    .chain(end_graphemes[index..].iter().cloned())
+                                    .collect::<Vec<_>>()
+                                    .join("");
+
+                                contents
+                                    .into_iter()
+                                    .enumerate()
+                                    .filter(|(i, _)| {
+                                        pos.line - 3 <= *i as u32 && *i as u32 <= end_pos.line + 1
+                                    })
+                                    .map(|(_, s)| format!("  {}", s))
+                                    .collect::<Vec<_>>()
+                                    .join("\n")
+                            } else {
+                                raw.to_owned()
+                            }
+                        } else {
+                            raw.to_owned()
+                        })
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
     pub fn print_exit(self, out: &mut impl Print) -> ! {
         self.print(out);
         exit(1)
     }
     pub fn print(&self, out: &mut impl Print) {
-        for (pos, raw) in &self.position {
-            out.println(format!(
-                "{}{}",
-                Style::new().on(Red).bold().paint(format!(" {} ", pos)),
-                Style::new().bold().paint(format!(" {} ", raw))
-            ));
-        }
+        out.println(self.get_surrounding_text());
         out.println(
             Black
                 .on(Yellow)

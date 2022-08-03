@@ -1,5 +1,5 @@
-use crate::errors::ZyxtError;
 use crate::interpreter::interpret_block;
+use crate::objects::errors::ZyxtError;
 use crate::objects::position::Position;
 use crate::objects::typeobj::Type;
 use crate::objects::value::Value;

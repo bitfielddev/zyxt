@@ -1,4 +1,4 @@
-use crate::errors::ZyxtError;
+use crate::objects::errors::ZyxtError;
 use crate::objects::position::Position;
 use crate::objects::token::{Side, Token, TokenCategory, TokenType};
 use crate::objects::token_entries::{

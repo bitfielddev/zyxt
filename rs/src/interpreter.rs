@@ -90,13 +90,13 @@ pub fn interpret_expr<O: Print>(
             if let Element::Variable { parent, name, .. } = called.as_ref() {
                 if *name == "out" && parent.get_name() == *"ter" {
                     let s = input_args
-                            .iter()
-                            .map(|arg| interpret_expr(arg, i_data))
-                            .collect::<Result<Vec<_>, _>>()?
-                            .into_iter()
-                            .map(|v| v.to_string())
-                            .collect::<Vec<String>>()
-                            .join(" ");
+                        .iter()
+                        .map(|arg| interpret_expr(arg, i_data))
+                        .collect::<Result<Vec<_>, _>>()?
+                        .into_iter()
+                        .map(|v| v.to_string())
+                        .collect::<Vec<String>>()
+                        .join(" ");
                     i_data.out.println(s);
                     return Ok(Value::Null);
                 }
@@ -110,7 +110,13 @@ pub fn interpret_expr<O: Print>(
             } = to_call
             {
                 let mut processed_args = HashMap::new();
-                for (cursor, Argument { name, ref default, .. }) in args.into_iter().enumerate() {
+                for (
+                    cursor,
+                    Argument {
+                        name, ref default, ..
+                    },
+                ) in args.into_iter().enumerate()
+                {
                     let input_arg = if input_args.len() > cursor {
                         input_args.get(cursor).unwrap()
                     } else {

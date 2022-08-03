@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Display, Formatter};
+use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Position {
@@ -30,6 +31,17 @@ impl Debug for Position {
 }
 
 impl Position {
+    pub fn pos_after(&self, string: &str) -> Position {
+        Position {
+            filename: self.filename.to_owned(),
+            line: self.line + string.graphemes(true).filter(|c| *c == "\n").count() as u32,
+            column: if string.contains('\n') {
+                string.split('\n').last().unwrap().graphemes(true).count() as u32
+            } else {
+                self.column + string.graphemes(true).count() as u32
+            },
+        }
+    }
     pub fn next(&mut self, c: &char) {
         if *c == '\n' {
             self.line += 1;
