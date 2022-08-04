@@ -128,7 +128,7 @@ enum {
     inst A; // no value
     inst B := 3; // value
     inst C: struct |...|; // struct enum
-    inst C:D tu<...>; // tuple enum
+    inst D: tu<...>; // tuple enum
 }
 enum_.A; enum_.B; enum_.C(...); enum_.D(...) // instantiating enum
 

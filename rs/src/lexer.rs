@@ -1,11 +1,12 @@
 use crate::objects::errors::ZyxtError;
 use crate::objects::position::Position;
-use crate::objects::token::{Side, Token, TokenCategory, TokenType};
+use crate::objects::token::{Keyword, OprType, Side, Token, TokenCategory, TokenType};
 use crate::objects::token_entries::{
     compound_token_entries_1, compound_token_entries_2, side_dependent_token_entries,
     singular_token_entries, CompoundTokenEntry, Pattern,
 };
 use regex::Regex;
+use unicode_segmentation::UnicodeSegmentation;
 
 fn lex_stage1(input: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
     let mut out: Vec<Token> = vec![];
@@ -29,7 +30,7 @@ fn lex_stage1(input: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
                     categories: entry.categories,
                     ..Default::default()
                 });
-                pos.next(&c);
+                pos.next_char(c);
                 found = true;
                 break;
             }
@@ -41,7 +42,7 @@ fn lex_stage1(input: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
                 position: pos.to_owned(),
                 ..Default::default()
             });
-            pos.next(&c);
+            pos.next_char(c);
         }
     }
     Ok(out)
@@ -308,4 +309,361 @@ pub fn lex(preinput: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
     let out5 = lex_stage4(out4)?;
     check_no_unknown_tokens(&out5)?;
     Ok(out5)
+}
+
+trait Lexer {
+    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError>;
+}
+
+struct TextLiteralLexer;
+impl Lexer for TextLiteralLexer {
+    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+        iter.next().unwrap();
+        iter.next().unwrap();
+        let mut raw = "\"".to_string();
+        let pos = iter.peekable().peek().ok_or_else(|| todo!())?.1.to_owned();
+        while let Some((char, _)) = iter.next() {
+            if char == "\"" {
+                tokens.push(Token { // TODO auto-get categories and whitespace
+                    type_: TokenType::LiteralString,
+                    value: raw,
+                    position: pos,
+                    ..Default::default()
+                });
+                return Ok(Some(&MainLexer));
+            } else if char == "\\" {
+                if let Some((char, _)) = iter.next() {
+                    let new_str = match char {
+                        "\"" => "\"",
+                        "\\" => "\\",
+                        "n" => "\n",
+                        "r" => "\r",
+                        "t" => "\t", // TODO more escapes
+                        _ => {
+                            raw.push('\\');
+                            char
+                        },
+                    };
+                    raw.push_str(new_str);
+                } else { todo!() }
+            } else {
+                raw.push_str(char);
+            }
+        }
+        Ok(None)
+    }
+}
+
+struct WordLexer;
+impl Lexer for WordLexer {
+    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+        let mut raw = "".to_string();
+        let pos = iter.peekable().peek().unwrap().1.to_owned();
+        while let Some((char, _)) = iter.peekable().peek() {
+            if char.chars().all(|c| c.is_alphanumeric()) {
+                raw.push_str(char);
+                iter.next().unwrap();
+            } else {
+                tokens.push(Token { // TODO auto-get categories and whitespace
+                    type_: match raw.as_str() {
+                        "true" => TokenType::LiteralMisc,
+                        "false" => TokenType::LiteralMisc,
+                        "if" => TokenType::Keyword(Keyword::If),
+                        "else" => TokenType::Keyword(Keyword::Else),
+                        "elif" => TokenType::Keyword(Keyword::Elif),
+                        "do" => TokenType::Keyword(Keyword::Do),
+                        "while" => TokenType::Keyword(Keyword::While),
+                        "for" => TokenType::Keyword(Keyword::For),
+                        "del" => TokenType::Keyword(Keyword::Delete),
+                        "ret" => TokenType::Keyword(Keyword::Return),
+                        "proc" => TokenType::Keyword(Keyword::Proc),
+                        "fn" => TokenType::Keyword(Keyword::Fn),
+                        "pre" => TokenType::Keyword(Keyword::Pre),
+                        "defer" => TokenType::Keyword(Keyword::Defer),
+                        "class" => TokenType::Keyword(Keyword::Class),
+                        "struct" => TokenType::Keyword(Keyword::Struct),
+                        _ => TokenType::Variable,
+
+                    },
+                    value: raw,
+                    position: pos,
+                    ..Default::default()
+                });
+                return Ok(Some(&MainLexer));
+            }
+        }
+        Ok(None)
+    }
+}
+
+struct NumberLexer;
+impl Lexer for NumberLexer {
+    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+        let mut raw = "".to_string();
+        let pos = iter.peekable().peek().unwrap().1.to_owned();
+        let mut dotted = false;
+        while let Some((char, _)) = iter.peekable().peek() {
+            if char.chars().all(|c| c.is_ascii_digit()) {
+                raw.push_str(char);
+                iter.next().unwrap();
+            } else if *char == "." && !dotted {
+                dotted = true;
+                raw.push_str(char);
+                iter.next().unwrap();
+            } else {
+                tokens.push(Token { // TODO auto-get categories and whitespace
+                    type_: TokenType::LiteralNumber,
+                    value: raw,
+                    position: pos,
+                    ..Default::default()
+                });
+                return Ok(Some(&MainLexer));
+            }
+        }
+        Ok(None)
+    }
+}
+
+struct LineCommentLexer;
+impl Lexer for LineCommentLexer {
+    #[allow(clippy::while_let_on_iterator)]
+    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+        let mut raw = "".to_string();
+        while let Some((char, _)) = iter.next() {
+            raw.push_str(char);
+            if char == "\n" {
+                tokens.last_mut().unwrap().value.push_str(&raw);
+                return Ok(Some(&MainLexer));
+            }
+        }
+        Ok(None)
+    }
+}
+
+struct BlockCommentLexer;
+impl Lexer for BlockCommentLexer {
+    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+        let mut raw = "".to_string();
+        while let Some((char, _)) = iter.next() {
+            raw.push_str(char);
+            if char == "*" {
+                raw.push_str(char);
+                let (char, _) = iter.next().unwrap();
+                if char == "/" {
+                    tokens.last_mut().unwrap().value.push_str(&raw);
+                    return Ok(Some(&MainLexer));
+                } else {
+                    raw.push_str(char);
+                }
+            } else if char == "/" {
+                raw.push_str(char);
+                let (char, _) = iter.next().unwrap();
+                if char == "*" {
+                    tokens.last_mut().unwrap().value.push_str(&raw.clone());
+                    raw = "".to_string();
+                    BlockCommentLexer.lex(iter, tokens)?.unwrap();
+                } else {
+                    raw.push_str(char);
+                }
+            } else {
+                raw.push_str(char);
+            }
+        }
+        Ok(None)
+    }
+}
+
+struct WhitespaceLexer;
+impl Lexer for WhitespaceLexer {
+    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+        let mut raw = "".to_string();
+        let pos = iter.peekable().peek().unwrap().1.to_owned();
+        while let Some((char, _)) = iter.peekable().peek() {
+            if char.chars().all(|c| c.is_whitespace()) {
+                raw.push_str(char);
+                iter.next().unwrap();
+            } else {
+                tokens.push(Token { // TODO auto-get categories and whitespace
+                    type_: TokenType::Whitespace,
+                    value: raw,
+                    position: pos,
+                    ..Default::default()
+                });
+                return Ok(Some(&MainLexer));
+            }
+        }
+        Ok(None)
+    }
+}
+
+struct MainLexer;
+impl Lexer for MainLexer {
+    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+        while let Some((char, pos)) = iter.peekable().peek() {
+            if *char == "\"" {
+                return Ok(Some(&TextLiteralLexer));
+            } else if char.chars().all(|c| c.is_alphabetic()) {
+                return Ok(Some(&WordLexer));
+            } else if char.chars().all(|c| c.is_whitespace()) {
+                return Ok(Some(&WhitespaceLexer));
+            } else if char.chars().all(|c| c.is_ascii_digit()) {
+                return Ok(Some(&NumberLexer));
+            } else {
+                let raw = char.to_string();
+                let pos = pos.to_owned();
+                tokens.push(Token {
+                    type_: match iter.next().unwrap().0 {
+                        "+" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::AssignmentOpr(OprType::Plus)
+                            },
+                            Some(("+", _)) => {
+                                iter.next().unwrap();
+                                TokenType::UnaryOpr(OprType::Increment, Side::Right)
+                            },
+                            Some(("-", _)) => {
+                                iter.next().unwrap();
+                                TokenType::NormalOpr(OprType::PlusMinus)
+                            },
+                            _ => TokenType::NormalOpr(OprType::Plus)
+                        },
+                        "-" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::AssignmentOpr(OprType::Minus)
+                            },
+                            Some(("-", _)) => {
+                                iter.next().unwrap();
+                                TokenType::UnaryOpr(OprType::Decrement, Side::Right)
+                            },
+                            Some(("+", _)) => {
+                                iter.next().unwrap();
+                                TokenType::NormalOpr(OprType::MinusPlus)
+                            },
+                            _ => TokenType::NormalOpr(OprType::Minus),
+                        },
+                        "*" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::AssignmentOpr(OprType::AstMult)
+                            },
+                            Some(("/", _)) => todo!(),
+                            _ => TokenType::NormalOpr(OprType::AstMult),
+                        },
+                        "/" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::AssignmentOpr(OprType::FractDiv)
+                            },
+                            Some(("*", _)) => return Ok(Some(&BlockCommentLexer)),
+                            Some(("/", _)) => return Ok(Some(&LineCommentLexer)),
+                            _ => TokenType::NormalOpr(OprType::FractDiv),
+                        },
+                        "^" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::AssignmentOpr(OprType::Power)
+                            },
+                            _ => TokenType::NormalOpr(OprType::Power),
+                        },
+                        "%" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::AssignmentOpr(OprType::Modulo)
+                            },
+                            _ => TokenType::NormalOpr(OprType::Modulo),
+                        },
+                        "~" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::AssignmentOpr(OprType::Concat)
+                            },
+                            _ => TokenType::NormalOpr(OprType::Concat),
+                        },
+                        "@" => TokenType::NormalOpr(OprType::TypeCast),
+                        "=" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::NormalOpr(OprType::Eq)
+                            },
+                            _ => TokenType::AssignmentOpr(OprType::Null),
+                        },
+                        "!" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::NormalOpr(OprType::Noteq)
+                            },
+                            _ => TokenType::UnaryOpr(OprType::Not, Side::Left),
+                        },
+                        ">" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::NormalOpr(OprType::Gteq)
+                            },
+                            Some(("<", _)) => {
+                                iter.next().unwrap();
+                                TokenType::NormalOpr(OprType::Swap)
+                            }, // TODO insertion
+                            _ => TokenType::NormalOpr(OprType::Gt),
+                        },
+                        "<" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::NormalOpr(OprType::Lteq)
+                            },
+                            _ => TokenType::NormalOpr(OprType::Lt),
+                        },
+                        "&" => match iter.peekable().peek() {
+                            Some(("&", _)) => {
+                                iter.next().unwrap();
+                                TokenType::AssignmentOpr(OprType::And)
+                            }, // TODO pointer
+                            _ => TokenType::UnaryOpr(OprType::Ref, Side::Left),
+                        },
+                        "|" => match iter.peekable().peek() {
+                            Some(("|", _)) => {
+                                iter.next().unwrap();
+                                TokenType::AssignmentOpr(OprType::Or)
+                            }, // TODO |>
+                            _ => TokenType::Bar,
+                        },
+                        ":" => match iter.peekable().peek() {
+                            Some(("=", _)) => {
+                                iter.next().unwrap();
+                                TokenType::DeclarationOpr
+                            },
+                            _ => TokenType::Colon,
+                        },
+                        _ => todo!()
+                    },
+                    value: raw,
+                    position: pos,
+                    ..Default::default()
+                });
+            }
+        }
+        Ok(None)
+    }
+}
+
+pub fn new_lex(preinput: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
+    let mut iterator = {
+        let mut pos = Position {
+            filename: filename.to_string(),
+            ..Default::default()
+        };
+        preinput.graphemes(true).map(|c| {
+            let this_pos = pos.clone();
+            pos.next_str(c);
+            (c, this_pos)
+        }).collect::<Vec<_>>().into_iter().peekable()
+    };
+    let mut tokens = vec![];
+    let mut lexer: &'static dyn Lexer = &MainLexer;
+    while let Some(new_lexer) = lexer.lex(&mut iterator, &mut tokens)? {
+        lexer = new_lexer;
+    }
+    tokens = clean_whitespaces(tokens);
+    Ok(tokens)
 }
