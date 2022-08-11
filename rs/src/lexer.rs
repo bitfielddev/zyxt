@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use crate::objects::errors::ZyxtError;
 use crate::objects::position::Position;
 use crate::objects::token::{Keyword, OprType, Side, Token, TokenCategory, TokenType};
@@ -7,6 +8,13 @@ use crate::objects::token_entries::{
 };
 use regex::Regex;
 use unicode_segmentation::UnicodeSegmentation;
+
+lazy_static! {
+    static ref ALPHANUMERIC: Regex = Regex::new(r"^[a-zA-Z0-9_]+$").unwrap();
+    static ref NUMERIC: Regex = Regex::new(r"^[0-9]+$").unwrap();
+    static ref WHITESPACE: Regex = Regex::new(r"^\s+$").unwrap();
+    static ref ALPHABETIC: Regex = Regex::new(r"^[a-zA-Z_]+$").unwrap();
+}
 
 fn lex_stage1(input: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
     let mut out: Vec<Token> = vec![];
@@ -27,7 +35,6 @@ fn lex_stage1(input: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
                     value: c.to_string(),
                     type_: entry.type_,
                     position: pos.to_owned(),
-                    categories: entry.categories,
                     ..Default::default()
                 });
                 pos.next_char(c);
@@ -166,7 +173,6 @@ fn lex_stage2(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError> {
                         value,
                         type_: entry.type_,
                         position: pos,
-                        categories: entry.categories,
                         ..Default::default()
                     });
                 }
@@ -204,7 +210,6 @@ fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError> {
                             value,
                             type_: entry.type_,
                             position: pos,
-                            categories: entry.categories,
                             ..Default::default()
                         });
                     }
@@ -215,7 +220,6 @@ fn lex_stage3(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError> {
                         value,
                         type_: entry.type_,
                         position: pos,
-                        categories: entry.categories,
                         ..Default::default()
                     });
                 }
@@ -248,7 +252,7 @@ fn lex_stage4(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError> {
             && (*/prev_token == None
                 || !prev_token
                     .unwrap()
-                    .categories
+                    .type_.categories()
                     .contains(&TokenCategory::ValueEnd)/*)*/))
             || (token_entry.side == Side::Right
                 && (/*prev_token != None
@@ -256,7 +260,7 @@ fn lex_stage4(input: Vec<Token>) -> Result<Vec<Token>, ZyxtError> {
                 && (*/next_token == None
                     || !next_token
                         .unwrap()
-                        .categories
+                        .type_.categories()
                         .contains(&TokenCategory::ValueStart)/*)*/))
         {
             out.push(Token {
@@ -296,7 +300,7 @@ fn check_no_unknown_tokens(input: &[Token]) -> Result<(), ZyxtError> {
     Ok(())
 }
 
-pub fn lex(preinput: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
+pub fn old_lex(preinput: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
     if preinput.trim().is_empty() {
         return Ok(vec![]);
     };
@@ -311,19 +315,54 @@ pub fn lex(preinput: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
     Ok(out5)
 }
 
+#[derive(Clone)]
+pub struct Buffer<'a> {
+    content: Vec<(&'a str, Position)>,
+    cursor: usize,
+    started: bool
+}
+impl<'a> Iterator for Buffer<'a> {
+    type Item = (&'a str, Position);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.started {
+            self.cursor += 1;
+        } else {
+            self.started = true;
+        }
+        self.content.get(self.cursor).cloned()
+    }
+}
+impl<'a> Buffer<'a> {
+    pub fn new(input: &'a String, mut pos: Position) -> Self {
+        Self {
+            content: input.graphemes(true).map(|c| {
+                let this_pos = pos.clone();
+                pos.next_str(c);
+                (c, this_pos)
+                }).collect::<Vec<_>>(),
+            cursor: 0,
+            started: false
+        }
+    }
+    pub fn peek(&self) -> Option<(&str, Position)> {
+        self.content.get(if self.started {self.cursor+1} else {0}).cloned()
+    }
+}
+
 trait Lexer {
-    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError>;
+    fn lex(&self, iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError>;
 }
 
 struct TextLiteralLexer;
 impl Lexer for TextLiteralLexer {
-    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
-        iter.next().unwrap();
+    fn lex(&self, iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
         iter.next().unwrap();
         let mut raw = "\"".to_string();
-        let pos = iter.peekable().peek().ok_or_else(|| todo!())?.1.to_owned();
+        let pos = iter.peek().ok_or_else(|| todo!())?.1;
         while let Some((char, _)) = iter.next() {
             if char == "\"" {
+                raw.push('"');
                 tokens.push(Token { // TODO auto-get categories and whitespace
                     type_: TokenType::LiteralString,
                     value: raw,
@@ -356,11 +395,11 @@ impl Lexer for TextLiteralLexer {
 
 struct WordLexer;
 impl Lexer for WordLexer {
-    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+    fn lex(&self, iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
         let mut raw = "".to_string();
-        let pos = iter.peekable().peek().unwrap().1.to_owned();
-        while let Some((char, _)) = iter.peekable().peek() {
-            if char.chars().all(|c| c.is_alphanumeric()) {
+        let pos = iter.peek().unwrap().1;
+        while let Some((char, _)) = iter.peek() {
+            if ALPHANUMERIC.is_match(char) {
                 raw.push_str(char);
                 iter.next().unwrap();
             } else {
@@ -398,15 +437,15 @@ impl Lexer for WordLexer {
 
 struct NumberLexer;
 impl Lexer for NumberLexer {
-    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+    fn lex(&self, iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
         let mut raw = "".to_string();
-        let pos = iter.peekable().peek().unwrap().1.to_owned();
+        let pos = iter.peek().unwrap().1;
         let mut dotted = false;
-        while let Some((char, _)) = iter.peekable().peek() {
-            if char.chars().all(|c| c.is_ascii_digit()) {
+        while let Some((char, _)) = iter.peek() {
+            if NUMERIC.is_match(char) {
                 raw.push_str(char);
                 iter.next().unwrap();
-            } else if *char == "." && !dotted {
+            } else if char == "." && !dotted {
                 dotted = true;
                 raw.push_str(char);
                 iter.next().unwrap();
@@ -427,7 +466,7 @@ impl Lexer for NumberLexer {
 struct LineCommentLexer;
 impl Lexer for LineCommentLexer {
     #[allow(clippy::while_let_on_iterator)]
-    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+    fn lex(&self, iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
         let mut raw = "".to_string();
         while let Some((char, _)) = iter.next() {
             raw.push_str(char);
@@ -442,7 +481,7 @@ impl Lexer for LineCommentLexer {
 
 struct BlockCommentLexer;
 impl Lexer for BlockCommentLexer {
-    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+    fn lex(&self, iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
         let mut raw = "".to_string();
         while let Some((char, _)) = iter.next() {
             raw.push_str(char);
@@ -475,11 +514,16 @@ impl Lexer for BlockCommentLexer {
 
 struct WhitespaceLexer;
 impl Lexer for WhitespaceLexer {
-    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+    #[allow(clippy::while_let_on_iterator)]
+    fn lex(&self, iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
         let mut raw = "".to_string();
-        let pos = iter.peekable().peek().unwrap().1.to_owned();
-        while let Some((char, _)) = iter.peekable().peek() {
-            if char.chars().all(|c| c.is_whitespace()) {
+        let pos = if let Some((_, pos)) = iter.peek() {
+            pos
+        } else {
+            return Ok(None)
+        };
+        while let Some((char, _)) = iter.peek() {
+            if WHITESPACE.is_match(char) {
                 raw.push_str(char);
                 iter.next().unwrap();
             } else {
@@ -498,83 +542,110 @@ impl Lexer for WhitespaceLexer {
 
 struct MainLexer;
 impl Lexer for MainLexer {
-    fn lex(&self, iter: &mut dyn Iterator<Item=(&str, Position)>, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
-        while let Some((char, pos)) = iter.peekable().peek() {
-            if *char == "\"" {
+    fn lex(&self, iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<Option<&'static dyn Lexer>, ZyxtError> {
+        while let Some((char, pos)) = iter.to_owned().peek() {
+            if char == "\"" {
                 return Ok(Some(&TextLiteralLexer));
-            } else if char.chars().all(|c| c.is_alphabetic()) {
+            } else if ALPHABETIC.is_match(char) {
                 return Ok(Some(&WordLexer));
-            } else if char.chars().all(|c| c.is_whitespace()) {
+            } else if WHITESPACE.is_match(char) {
                 return Ok(Some(&WhitespaceLexer));
-            } else if char.chars().all(|c| c.is_ascii_digit()) {
+            } else if NUMERIC.is_match(char) {
                 return Ok(Some(&NumberLexer));
             } else {
-                let raw = char.to_string();
-                let pos = pos.to_owned();
+                let mut char = iter.next().unwrap().0.to_string();
                 tokens.push(Token {
-                    type_: match iter.next().unwrap().0 {
-                        "+" => match iter.peekable().peek() {
+                    type_: match char.as_str() {
+                        "+" => match iter.peek().as_mut() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
+                                char.push('=');
                                 TokenType::AssignmentOpr(OprType::Plus)
                             },
                             Some(("+", _)) => {
                                 iter.next().unwrap();
+                                char.push('+');
                                 TokenType::UnaryOpr(OprType::Increment, Side::Right)
                             },
                             Some(("-", _)) => {
                                 iter.next().unwrap();
+                                char.push('-');
                                 TokenType::NormalOpr(OprType::PlusMinus)
                             },
                             _ => TokenType::NormalOpr(OprType::Plus)
                         },
-                        "-" => match iter.peekable().peek() {
+                        "-" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
+                                char.push('=');
                                 TokenType::AssignmentOpr(OprType::Minus)
                             },
                             Some(("-", _)) => {
                                 iter.next().unwrap();
+                                char.push('-');
                                 TokenType::UnaryOpr(OprType::Decrement, Side::Right)
                             },
                             Some(("+", _)) => {
                                 iter.next().unwrap();
+                                char.push('+');
                                 TokenType::NormalOpr(OprType::MinusPlus)
                             },
                             _ => TokenType::NormalOpr(OprType::Minus),
                         },
-                        "*" => match iter.peekable().peek() {
+                        "*" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
+                                char.push('=');
                                 TokenType::AssignmentOpr(OprType::AstMult)
                             },
                             Some(("/", _)) => todo!(),
                             _ => TokenType::NormalOpr(OprType::AstMult),
                         },
-                        "/" => match iter.peekable().peek() {
+                        "/" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
+                                char.push('=');
                                 TokenType::AssignmentOpr(OprType::FractDiv)
                             },
-                            Some(("*", _)) => return Ok(Some(&BlockCommentLexer)),
-                            Some(("/", _)) => return Ok(Some(&LineCommentLexer)),
+                            Some(("*", _)) => {
+                                iter.next().unwrap();
+                                tokens.push(Token {
+                                    type_: TokenType::Comment,
+                                    value: "/*".to_string(),
+                                    position: pos,
+                                    ..Default::default()
+                                });
+                                return Ok(Some(&BlockCommentLexer))
+                            },
+                            Some(("/", _)) => {
+                                iter.next().unwrap();
+                                tokens.push(Token {
+                                    type_: TokenType::Comment,
+                                    value: "//".to_string(),
+                                    position: pos,
+                                    ..Default::default()
+                                });
+                                return Ok(Some(&LineCommentLexer))
+                            },
                             _ => TokenType::NormalOpr(OprType::FractDiv),
                         },
-                        "^" => match iter.peekable().peek() {
+                        "^" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
+                                char.push('=');
                                 TokenType::AssignmentOpr(OprType::Power)
                             },
                             _ => TokenType::NormalOpr(OprType::Power),
                         },
-                        "%" => match iter.peekable().peek() {
+                        "%" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
+                                char.push('=');
                                 TokenType::AssignmentOpr(OprType::Modulo)
                             },
                             _ => TokenType::NormalOpr(OprType::Modulo),
                         },
-                        "~" => match iter.peekable().peek() {
+                        "~" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
                                 TokenType::AssignmentOpr(OprType::Concat)
@@ -582,63 +653,82 @@ impl Lexer for MainLexer {
                             _ => TokenType::NormalOpr(OprType::Concat),
                         },
                         "@" => TokenType::NormalOpr(OprType::TypeCast),
-                        "=" => match iter.peekable().peek() {
+                        "=" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
+                                char.push('=');
                                 TokenType::NormalOpr(OprType::Eq)
                             },
                             _ => TokenType::AssignmentOpr(OprType::Null),
                         },
-                        "!" => match iter.peekable().peek() {
+                        "!" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
+                                char.push('=');
                                 TokenType::NormalOpr(OprType::Noteq)
                             },
                             _ => TokenType::UnaryOpr(OprType::Not, Side::Left),
                         },
-                        ">" => match iter.peekable().peek() {
+                        ">" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
+                                char.push('=');
                                 TokenType::NormalOpr(OprType::Gteq)
                             },
                             Some(("<", _)) => {
                                 iter.next().unwrap();
+                                char.push('<');
                                 TokenType::NormalOpr(OprType::Swap)
                             }, // TODO insertion
                             _ => TokenType::NormalOpr(OprType::Gt),
                         },
-                        "<" => match iter.peekable().peek() {
+                        "<" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
+                                char.push('=');
                                 TokenType::NormalOpr(OprType::Lteq)
                             },
                             _ => TokenType::NormalOpr(OprType::Lt),
                         },
-                        "&" => match iter.peekable().peek() {
+                        "&" => match iter.peek() {
                             Some(("&", _)) => {
                                 iter.next().unwrap();
+                                char.push('&');
                                 TokenType::AssignmentOpr(OprType::And)
                             }, // TODO pointer
                             _ => TokenType::UnaryOpr(OprType::Ref, Side::Left),
                         },
-                        "|" => match iter.peekable().peek() {
+                        "|" => match iter.peek() {
                             Some(("|", _)) => {
                                 iter.next().unwrap();
+                                char.push('|');
                                 TokenType::AssignmentOpr(OprType::Or)
                             }, // TODO |>
                             _ => TokenType::Bar,
                         },
-                        ":" => match iter.peekable().peek() {
+                        "." => TokenType::DotOpr,
+                        ":" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
+                                char.push('=');
                                 TokenType::DeclarationOpr
                             },
                             _ => TokenType::Colon,
                         },
-                        _ => todo!()
+                        ";" => TokenType::StatementEnd,
+                        "," => TokenType::Comma,
+                        "(" => TokenType::OpenParen,
+                        "[" => TokenType::OpenSquareParen,
+                        "{" => TokenType::OpenCurlyParen,
+                        ")" => TokenType::CloseParen,
+                        "]" => TokenType::CloseSquareParen,
+                        "}" => TokenType::CloseCurlyParen,
+                        _ => {
+                            return Err(ZyxtError::error_2_1_1(char.to_owned()).with_pos_and_raw(&pos, &char.to_string()))
+                        }
                     },
-                    value: raw,
-                    position: pos,
+                    value: char,
+                    position: pos.to_owned(),
                     ..Default::default()
                 });
             }
@@ -647,21 +737,20 @@ impl Lexer for MainLexer {
     }
 }
 
-pub fn new_lex(preinput: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
-    let mut iterator = {
-        let mut pos = Position {
-            filename: filename.to_string(),
-            ..Default::default()
-        };
-        preinput.graphemes(true).map(|c| {
-            let this_pos = pos.clone();
-            pos.next_str(c);
-            (c, this_pos)
-        }).collect::<Vec<_>>().into_iter().peekable()
+pub fn lex(preinput: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
+    if preinput.trim().is_empty() {
+        return Ok(vec![]);
     };
+    let input = preinput + "\n";
+
+    let pos = Position {
+        filename: filename.to_string(),
+        ..Default::default()
+    };
+    let mut iter = Buffer::new(&input, pos);
     let mut tokens = vec![];
     let mut lexer: &'static dyn Lexer = &MainLexer;
-    while let Some(new_lexer) = lexer.lex(&mut iterator, &mut tokens)? {
+    while let Some(new_lexer) = lexer.lex(&mut iter, &mut tokens)? {
         lexer = new_lexer;
     }
     tokens = clean_whitespaces(tokens);

@@ -6,7 +6,6 @@ pub struct Token {
     pub value: String,
     pub type_: TokenType,
     pub position: Position,
-    pub categories: &'static [TokenCategory],
     pub whitespace: String,
 }
 impl Default for Token {
@@ -17,7 +16,6 @@ impl Default for Token {
             position: Position {
                 ..Default::default()
             },
-            categories: &[],
             whitespace: "".to_string(),
         }
     }
@@ -194,6 +192,60 @@ pub enum TokenType {
     Whitespace,
     Null,
 }
+impl TokenType {
+    pub fn categories(&self) -> Vec<TokenCategory> {
+        match self {
+            TokenType::Variable => vec![TokenCategory::ValueStart, TokenCategory::ValueEnd],
+            TokenType::LiteralNumber => vec![
+                TokenCategory::Literal,
+                TokenCategory::ValueStart,
+                TokenCategory::ValueEnd,
+            ],
+            TokenType::OpenSquareParen
+            | TokenType::OpenCurlyParen
+            | TokenType::OpenParen
+            | TokenType::CloseSquareParen
+            | TokenType::CloseCurlyParen
+            | TokenType::CloseParen => vec![
+                TokenCategory::Parenthesis,
+                TokenCategory::OpenParen,
+                TokenCategory::ValueStart,
+            ],
+            TokenType::DotOpr => vec![TokenCategory::Operator],
+            TokenType::StatementEnd => vec![
+                TokenCategory::LiteralStringStart,
+                TokenCategory::LiteralStringEnd,
+            ],
+            TokenType::AssignmentOpr(..) => vec![TokenCategory::Operator],
+            TokenType::UnaryOpr(OprType::Not, ..)
+            | TokenType::UnaryOpr(OprType::Ref, ..)
+            | TokenType::UnaryOpr(OprType::Deref, ..) => vec![TokenCategory::Operator, TokenCategory::ValueStart],
+            TokenType::UnaryOpr(OprType::Increment, ..)
+            | TokenType::UnaryOpr(OprType::Decrement, ..) => vec![TokenCategory::Operator, TokenCategory::ValueEnd],
+            TokenType::NormalOpr(..) |
+            TokenType::DeclarationOpr => vec![TokenCategory::Operator],
+            TokenType::Bar => vec![
+                TokenCategory::Literal,
+                TokenCategory::ValueStart,
+                TokenCategory::ValueEnd,
+            ],
+            TokenType::Comment => vec![
+                TokenCategory::Literal,
+                TokenCategory::ValueStart,
+                TokenCategory::ValueEnd,
+            ],
+            TokenType::Keyword(..)
+            | TokenType::Flag(..) => vec![TokenCategory::ValueStart],
+            TokenType::LiteralMisc => vec![
+                TokenCategory::Literal,
+                TokenCategory::ValueStart,
+                TokenCategory::ValueEnd,
+            ],
+            TokenType::Null | TokenType::Comma => vec![],
+            _ => todo!("{:?}", self)
+        }
+    }
+}
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum TokenCategory {
     Operator,
@@ -202,7 +254,7 @@ pub enum TokenCategory {
     OpenParen,
     CloseParen,
     LiteralStringStart, //  marks the start of a literal string
-    LiteralStringEnd,   // marks the end of a literal string,
+    LiteralStringEnd,   // marks the end of a literal string
     ValueStart,
     ValueEnd,
 }

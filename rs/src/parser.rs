@@ -213,7 +213,7 @@ fn parse_parens(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                 }
                 if let Element::Token(prev_element) = prev_element {
                     // if selected is Token and is (
-                    if cursor == 0 || !prev_element.categories.contains(&TokenCategory::ValueEnd) {
+                    if cursor == 0 || !prev_element.type_.categories().contains(&TokenCategory::ValueEnd) {
                         let paren_contents = catch_between(
                             TokenType::OpenParen,
                             TokenType::CloseParen,
@@ -441,7 +441,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                     if let (Element::Token(prev_element), Element::Token(next_element)) =
                         (prev_element, next_element)
                     {
-                        if !prev_element.categories.contains(&TokenCategory::ValueEnd) {
+                        if !prev_element.type_.categories().contains(&TokenCategory::ValueEnd) {
                             return Err(
                                 ZyxtError::error_2_1_0(String::from(".")).with_token(selected)
                             ); //could be enum but that's for later
