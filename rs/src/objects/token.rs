@@ -219,11 +219,14 @@ impl TokenType {
             TokenType::AssignmentOpr(..) => vec![TokenCategory::Operator],
             TokenType::UnaryOpr(OprType::Not, ..)
             | TokenType::UnaryOpr(OprType::Ref, ..)
-            | TokenType::UnaryOpr(OprType::Deref, ..) => vec![TokenCategory::Operator, TokenCategory::ValueStart],
+            | TokenType::UnaryOpr(OprType::Deref, ..) => {
+                vec![TokenCategory::Operator, TokenCategory::ValueStart]
+            }
             TokenType::UnaryOpr(OprType::Increment, ..)
-            | TokenType::UnaryOpr(OprType::Decrement, ..) => vec![TokenCategory::Operator, TokenCategory::ValueEnd],
-            TokenType::NormalOpr(..) |
-            TokenType::DeclarationOpr => vec![TokenCategory::Operator],
+            | TokenType::UnaryOpr(OprType::Decrement, ..) => {
+                vec![TokenCategory::Operator, TokenCategory::ValueEnd]
+            }
+            TokenType::NormalOpr(..) | TokenType::DeclarationOpr => vec![TokenCategory::Operator],
             TokenType::Bar => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,
@@ -234,15 +237,14 @@ impl TokenType {
                 TokenCategory::ValueStart,
                 TokenCategory::ValueEnd,
             ],
-            TokenType::Keyword(..)
-            | TokenType::Flag(..) => vec![TokenCategory::ValueStart],
+            TokenType::Keyword(..) | TokenType::Flag(..) => vec![TokenCategory::ValueStart],
             TokenType::LiteralMisc => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,
                 TokenCategory::ValueEnd,
             ],
             TokenType::Null | TokenType::Comma => vec![],
-            _ => todo!("{:?}", self)
+            _ => todo!("{:?}", self),
         }
     }
 }

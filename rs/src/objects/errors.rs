@@ -431,7 +431,8 @@ impl ZyxtError {
                                     .into_iter()
                                     .enumerate()
                                     .filter(|(i, _)| {
-                                        pos.line as isize - 3 <= *i as isize && *i as u32 <= end_pos.line + 1
+                                        pos.line as isize - 3 <= *i as isize
+                                            && *i as u32 <= end_pos.line + 1
                                     })
                                     .map(|(_, s)| format!("  {}", s))
                                     .collect::<Vec<_>>()
