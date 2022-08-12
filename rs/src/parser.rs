@@ -162,7 +162,7 @@ fn get_arguments(
                 raw_arg.to_owned(),
                 true,
             )?;
-            let name = if let Some(Element::Variable { name, .. }) = parts.get(0) {
+            let name = if let Some(Element::Ident { name, .. }) = parts.get(0) {
                 name.to_owned()
             } else {
                 return Err(ZyxtError::error_2_1_15(",".to_string())
@@ -434,7 +434,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                     let prev_element = &elements[cursor - 1];
                     let next_element = &elements[cursor + 1];
                     if let Element::Token(next_element) = next_element {
-                        if next_element.type_ != TokenType::Variable {
+                        if next_element.type_ != TokenType::Ident {
                             return Err(ZyxtError::error_2_1_0(next_element.value.to_owned())
                                 .with_token(next_element));
                         }
@@ -455,7 +455,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                                 ZyxtError::error_2_1_0(String::from(".")).with_token(selected)
                             ); //could be enum but that's for later
                         }
-                        catcher = Element::Variable {
+                        catcher = Element::Ident {
                             position: next_element.position.to_owned(),
                             name: next_element.value.to_owned(),
                             raw: format!(
@@ -468,7 +468,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                         };
                         cursor += 1;
                     } else if let Element::Token(next_element) = next_element {
-                        catcher = Element::Variable {
+                        catcher = Element::Ident {
                             position: next_element.position.to_owned(),
                             name: next_element.value.to_owned(),
                             raw: format!(
@@ -484,11 +484,11 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                         // definitely at the wrong place
                     }
                 }
-                TokenType::Variable => {
+                TokenType::Ident => {
                     if catcher != Element::NullElement {
                         new_elements.push(catcher.to_owned());
                     }
-                    catcher = Element::Variable {
+                    catcher = Element::Ident {
                         position: selected.position.to_owned(),
                         name: selected.value.to_owned(),
                         raw: selected.get_raw(),
@@ -651,7 +651,7 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                         }
                         catcher.push(selected.to_owned());
                     }
-                    if let Element::Variable { name, .. } = parse_expr(catcher)? {
+                    if let Element::Ident { name, .. } = parse_expr(catcher)? {
                         Type::Instance {
                             name,
                             type_args: vec![],
@@ -751,12 +751,12 @@ fn parse_un_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     }
     for (i, ele) in elements.iter().enumerate().rev() {
         if let Element::Token(Token {
-            type_: TokenType::UnaryOpr(opr_type, opr_side),
+            type_: TokenType::UnaryOpr(opr_type),
             position,
             ..
         }) = ele
         {
-            if opr_side == &Side::Left {
+            if opr_type.side() == Side::Left {
                 if i == elements.len() - 1 {
                     return Err(ZyxtError::error_2_1_4(ele.get_raw()).with_element(ele));
                 }
@@ -773,7 +773,7 @@ fn parse_un_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                         }])
                         .collect::<Vec<Element>>(),
                 );
-            } else if opr_side == &Side::Right {
+            } else if opr_type.side() == Side::Right {
                 if i == 0 {
                     return Err(ZyxtError::error_2_1_4(ele.get_raw()).with_element(ele));
                 }
@@ -864,7 +864,7 @@ fn parse_delete_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
             )?;
             let mut varnames = vec![];
             for var in vars_to_delete.iter() {
-                if let Element::Variable { name, .. } = var {
+                if let Element::Ident { name, .. } = var {
                     varnames.push(name.to_owned());
                 } else if let Element::UnaryOpr {
                     type_: OprType::Deref,
@@ -1123,13 +1123,12 @@ fn parse_unparen_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
         .collect::<Vec<_>>()
         .iter()
         .rposition(|(_, e)| {
-            matches!(
-                e,
-                Element::Token(Token {
-                    type_: TokenType::UnaryOpr(_, Side::Right),
-                    ..
-                })
-            )
+            if let Element::Token(Token {
+                                      type_: TokenType::UnaryOpr(ty),
+                                      ..
+                                  }) = e {
+                ty.side() == Side::Right
+            } else {false}
         });
     if let Some(right_un_pos) = right_un_pos {
         if right_un_pos + 1 != comma_pos {
@@ -1149,13 +1148,12 @@ fn parse_unparen_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
         .collect::<Vec<_>>()
         .iter()
         .rposition(|(_, e)| {
-            matches!(
-                e,
-                Element::Token(Token {
-                    type_: TokenType::UnaryOpr(_, Side::Left),
-                    ..
-                })
-            )
+            if let Element::Token(Token {
+                                      type_: TokenType::UnaryOpr(ty),
+                                      ..
+                                  }) = e {
+                ty.side() == Side::Left
+            } else {false}
         });
     if let Some(left_un_pos) = left_un_pos {
         if left_un_pos < comma_pos {

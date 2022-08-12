@@ -123,6 +123,17 @@ impl Display for OprType {
         write!(f, "{:?}", self)
     }
 }
+impl OprType {
+    pub fn side(&self) -> Side {
+        match self {
+            OprType::Not | OprType::Ref | OprType::Deref | OprType::PlusSign | OprType::MinusSign => {
+                Side::Left
+            }
+            OprType::Increment | OprType::Decrement => Side::Right,
+            _ => unreachable!(),
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[allow(dead_code)]
@@ -164,7 +175,7 @@ pub enum TokenType {
     MultilineCommentStart,   // /*
     MultilineCommentEnd,     // */
     Flag(Flag),              // hoi, pub, priv, prot, const
-    UnaryOpr(OprType, Side), // \~, ++, ! etc
+    UnaryOpr(OprType), // \~, ++, ! etc
     AssignmentOpr(OprType),  // =, += etc
     NormalOpr(OprType), // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
     DotOpr,             // .
@@ -188,14 +199,14 @@ pub enum TokenType {
     Bar,                // |
     Keyword(Keyword),   // if, while etc
     Comment,
-    Variable,
+    Ident,
     Whitespace,
     Null,
 }
 impl TokenType {
     pub fn categories(&self) -> Vec<TokenCategory> {
         match self {
-            TokenType::Variable => vec![TokenCategory::ValueStart, TokenCategory::ValueEnd],
+            TokenType::Ident => vec![TokenCategory::ValueStart, TokenCategory::ValueEnd],
             TokenType::LiteralNumber => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,

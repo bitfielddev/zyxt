@@ -52,7 +52,7 @@ pub fn interpret_expr<O: Print>(
                 .with_pos_and_raw(position, raw))
             }
         }
-        Element::Variable {
+        Element::Ident {
             name,
             position,
             raw,
@@ -87,7 +87,7 @@ pub fn interpret_expr<O: Print>(
             raw,
             ..
         } => {
-            if let Element::Variable { parent, name, .. } = called.as_ref() {
+            if let Element::Ident { parent, name, .. } = called.as_ref() {
                 if *name == "out" && parent.get_name() == *"ter" {
                     let s = input_args
                         .iter()

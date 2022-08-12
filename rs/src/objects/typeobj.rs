@@ -67,7 +67,7 @@ impl Type {
     }
     pub fn as_element(&self) -> Element {
         match self {
-            Type::Instance { name, .. } => Element::Variable {
+            Type::Instance { name, .. } => Element::Ident {
                 position: Default::default(),
                 name: name.to_owned(), // TODO type args
                 raw: self.to_string(),

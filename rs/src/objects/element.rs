@@ -69,7 +69,7 @@ pub enum Element {
         type_: Type,
         content: String,
     },
-    Variable {
+    Ident {
         position: Position,
         raw: String,
         name: String,
@@ -161,7 +161,7 @@ impl Element {
         match self {
             Element::NullElement => panic!("null element"),
             Element::Token(Token { position, .. })
-            | Element::Variable { position, .. }
+            | Element::Ident { position, .. }
             | Element::Literal { position, .. }
             | Element::Comment { position, .. }
             | Element::Call { position, .. }
@@ -183,7 +183,7 @@ impl Element {
         match self {
             Element::NullElement => "".to_string(),
             Element::Token(t) => t.get_raw(),
-            Element::Variable { raw, .. }
+            Element::Ident { raw, .. }
             | Element::Literal { raw, .. }
             | Element::Comment { raw, .. }
             | Element::Call { raw, .. }
@@ -204,7 +204,7 @@ impl Element {
     pub fn get_raw_mut(&mut self) -> Option<&mut String> {
         match self {
             Element::NullElement | Element::Token(_) => None,
-            Element::Variable { raw, .. }
+            Element::Ident { raw, .. }
             | Element::Literal { raw, .. }
             | Element::Comment { raw, .. }
             | Element::Call { raw, .. }
@@ -223,14 +223,14 @@ impl Element {
         }
     }
     pub fn get_name(&self) -> String {
-        if let Element::Variable { name: type1, .. } = self {
+        if let Element::Ident { name: type1, .. } = self {
             type1.to_owned()
         } else {
             panic!("not variable")
         }
     }
     pub fn as_type(&self) -> Type {
-        if let Element::Variable { name: type1, .. } = self {
+        if let Element::Ident { name: type1, .. } = self {
             Type::Instance {
                 name: type1.to_owned(),
                 type_args: vec![],
@@ -341,7 +341,7 @@ impl Element {
         for arg in args {
             arg.eval_type(typelist)?;
         }
-        if let Element::Variable {
+        if let Element::Ident {
             ref parent,
             ref name,
             ..
@@ -373,7 +373,7 @@ impl Element {
         }*/
     }
     pub fn is_pattern(&self) -> bool {
-        matches!(self, Element::Variable { .. })
+        matches!(self, Element::Ident { .. })
     }
     pub fn eval_type<O: Print>(
         &mut self,
@@ -381,7 +381,7 @@ impl Element {
     ) -> Result<Type, ZyxtError> {
         match self {
             Element::Literal { type_, .. } => Ok(type_.to_owned()),
-            Element::Variable {
+            Element::Ident {
                 name,
                 position,
                 raw,
