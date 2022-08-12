@@ -90,7 +90,6 @@ impl Lexer for TextLiteralLexer {
             if char == "\"" {
                 raw.push('"');
                 tokens.push(Token {
-                    // TODO auto-get categories and whitespace
                     type_: TokenType::LiteralString,
                     value: raw,
                     position: pos,
@@ -137,7 +136,6 @@ impl Lexer for WordLexer {
                 iter.next().unwrap();
             } else {
                 tokens.push(Token {
-                    // TODO auto-get categories and whitespace
                     type_: match raw.as_str() {
                         "true" => TokenType::LiteralMisc,
                         "false" => TokenType::LiteralMisc,
@@ -188,7 +186,6 @@ impl Lexer for NumberLexer {
                 iter.next().unwrap();
             } else {
                 tokens.push(Token {
-                    // TODO auto-get categories and whitespace
                     type_: TokenType::LiteralNumber,
                     value: raw,
                     position: pos,
@@ -278,7 +275,6 @@ impl Lexer for WhitespaceLexer {
                 iter.next().unwrap();
             } else {
                 tokens.push(Token {
-                    // TODO auto-get categories and whitespace
                     type_: TokenType::Whitespace,
                     value: raw,
                     position: pos,

@@ -17,7 +17,6 @@ pub struct ZyxtError {
     pub message: String,
 }
 impl ZyxtError {
-    // TODO call stack thing
     /* 0. Internal errors, have to do with the compiler-interpreter itself */
     /// Rust error
     pub fn error_0_0(error: String, backtrace: Backtrace) -> Self {
