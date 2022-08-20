@@ -1,7 +1,6 @@
 pub mod element;
 pub mod errors;
 pub mod interpreter_data;
-pub mod logger;
 pub mod position;
 pub mod state_tracker;
 pub mod token;
