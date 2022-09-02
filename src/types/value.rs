@@ -13,10 +13,10 @@ mod typecast;
 mod unary;
 pub mod utils;
 
-use crate::objects::element::Argument;
-use crate::objects::token::OprType;
-use crate::objects::typeobj::Type;
-use crate::objects::value::utils::OprError;
+use crate::types::element::Argument;
+use crate::types::token::OprType;
+use crate::types::typeobj::Type;
+use crate::types::value::utils::OprError;
 use crate::{Element, ZyxtError};
 use enum_as_inner::EnumAsInner;
 use half::f16;

@@ -1,5 +1,5 @@
-use crate::objects::value::utils::OprError;
-use crate::objects::value::Value;
+use crate::types::value::utils::OprError;
+use crate::types::value::Value;
 use crate::Type;
 use half::f16;
 use num::bigint::{BigInt, BigUint, ToBigUint};

@@ -4,9 +4,10 @@ use std::fs::File;
 use std::io::Read;
 use std::panic;
 use std::process::exit;
-use zyxt::objects::errors::ZyxtError;
-use zyxt::objects::interpreter_data::{InterpreterData, StdIoPrint};
+use zyxt::types::errors::ZyxtError;
+use zyxt::types::frame_data::InterpreterData;
 use zyxt::repl;
+use zyxt::types::printer::StdIoPrint;
 
 #[derive(Parser)]
 #[clap(version, about, long_about = None)]

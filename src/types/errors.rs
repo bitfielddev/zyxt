@@ -1,7 +1,7 @@
-use crate::objects::position::Position;
-use crate::objects::token::{Keyword, Token};
-use crate::objects::value::Value;
-use crate::{Element, Print, Type};
+use crate::types::position::Position;
+use crate::types::token::{Keyword, Token};
+use crate::types::value::Value;
+use crate::{Element, Type};
 use ansi_term::Color::{Black, Red, White, Yellow};
 use ansi_term::Style;
 use backtrace::Backtrace;
@@ -9,6 +9,7 @@ use std::fs::File;
 use std::io::Read;
 use std::process::exit;
 use unicode_segmentation::UnicodeSegmentation;
+use crate::types::printer::Print;
 
 #[derive(Clone)]
 pub struct ZyxtError {

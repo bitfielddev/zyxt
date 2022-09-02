@@ -1,6 +1,6 @@
-use crate::objects::errors::ZyxtError;
-use crate::objects::position::Position;
-use crate::objects::token::{Keyword, OprType, Token, TokenType};
+use crate::types::errors::ZyxtError;
+use crate::types::position::Position;
+use crate::types::token::{Keyword, OprType, Token, TokenType};
 use lazy_static::lazy_static;
 use regex::Regex;
 use unicode_segmentation::UnicodeSegmentation;

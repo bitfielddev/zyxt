@@ -1,21 +1,22 @@
 pub mod instructor;
 pub mod interpreter;
 pub mod lexer;
-pub mod objects;
+pub mod types;
 pub mod parser;
 pub mod repl;
 
 use crate::instructor::gen_instructions;
 use crate::interpreter::interpret_asts;
 use crate::lexer::lex;
-use crate::objects::element::Element;
-use crate::objects::interpreter_data::{InterpreterData, Print};
-use crate::objects::typeobj::Type;
-use crate::objects::value::Value;
+use crate::types::element::Element;
+use crate::types::frame_data::InterpreterData;
+use crate::types::typeobj::Type;
+use crate::types::value::Value;
 use crate::parser::parse_token_list;
 use ansi_term::Color::{White, Yellow};
-use objects::errors::ZyxtError;
+use types::errors::ZyxtError;
 use std::time::Instant;
+use types::printer::Print;
 
 pub fn compile(
     input: String,

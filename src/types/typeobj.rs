@@ -1,4 +1,4 @@
-use crate::objects::element::Argument;
+use crate::types::element::Argument;
 use crate::Element;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display, Formatter};

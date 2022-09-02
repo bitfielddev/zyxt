@@ -1,6 +1,7 @@
-use crate::objects::element::Element;
-use crate::objects::interpreter_data::{InterpreterData, Print};
-use crate::objects::typeobj::Type;
+use crate::types::element::Element;
+use crate::types::frame_data::InterpreterData;
+use crate::types::printer::Print;
+use crate::types::typeobj::Type;
 use crate::ZyxtError;
 
 pub fn gen_instructions<O: Print>(

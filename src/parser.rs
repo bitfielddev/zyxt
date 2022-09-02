@@ -1,7 +1,7 @@
-use crate::objects::element::{Argument, Condition, Element, VecElementRaw};
-use crate::objects::errors::ZyxtError;
-use crate::objects::token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType};
-use crate::objects::typeobj::Type;
+use crate::types::element::{Argument, Condition, Element, VecElementRaw};
+use crate::types::errors::ZyxtError;
+use crate::types::token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType};
+use crate::types::typeobj::Type;
 use std::cmp::min;
 use std::collections::HashMap;
 
