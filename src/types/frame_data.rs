@@ -1,14 +1,10 @@
-use crate::interpreter::interpret_block;
-use crate::types::errors::ZyxtError;
-use crate::types::position::Position;
-use crate::types::typeobj::Type;
-use crate::types::value::Value;
-use crate::Element;
-use std::collections::HashMap;
-use std::fmt::Display;
-use ansi_term::Color::{Red, White, Yellow};
-use ansi_term::Style;
-use crate::types::printer::Print;
+use std::{collections::HashMap, fmt::Display};
+
+use crate::{
+    interpreter::interpret_block,
+    types::{errors::ZyxtError, position::Position, printer::Print, typeobj::Type, value::Value},
+    Element,
+};
 
 const PRIM_NAMES: [&str; 22] = [
     "str", "bool", "i8", "i16", "i32", "i64", "i128", "isize", "ibig", "u8", "u16", "u32", "u64",

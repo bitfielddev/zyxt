@@ -1,16 +1,16 @@
-use crate::interpreter::interpret_expr;
-use crate::types::frame_data::InterpreterData;
-use crate::types::value::Value;
-use crate::{compile, ZyxtError};
+use std::{io, io::Write, time::Instant};
+
 use ansi_term::Color::{Cyan, Green, Red, White, Yellow};
 use backtrace::Backtrace;
 use dirs::home_dir;
-use rustyline::error::ReadlineError;
-use rustyline::Editor;
-use std::io;
-use std::io::Write;
-use std::time::Instant;
-use crate::types::printer::StdIoPrint;
+use rustyline::{error::ReadlineError, Editor};
+
+use crate::{
+    compile,
+    interpreter::interpret_expr,
+    types::{frame_data::InterpreterData, printer::StdIoPrint, value::Value},
+    ZyxtError,
+};
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();

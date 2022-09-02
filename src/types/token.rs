@@ -1,5 +1,6 @@
-use crate::types::position::Position;
 use std::fmt::{Display, Formatter, Result};
+
+use crate::types::position::Position;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Token {
@@ -126,9 +127,11 @@ impl Display for OprType {
 impl OprType {
     pub fn side(&self) -> Side {
         match self {
-            OprType::Not | OprType::Ref | OprType::Deref | OprType::PlusSign | OprType::MinusSign => {
-                Side::Left
-            }
+            OprType::Not
+            | OprType::Ref
+            | OprType::Deref
+            | OprType::PlusSign
+            | OprType::MinusSign => Side::Left,
             OprType::Increment | OprType::Decrement => Side::Right,
             _ => unreachable!(),
         }
@@ -170,34 +173,34 @@ pub enum Side {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(dead_code)]
 pub enum TokenType {
-    CommentStart,            // //
-    CommentEnd,              // \n
-    MultilineCommentStart,   // /*
-    MultilineCommentEnd,     // */
-    Flag(Flag),              // hoi, pub, priv, prot, const
-    UnaryOpr(OprType), // \~, ++, ! etc
-    AssignmentOpr(OprType),  // =, += etc
-    NormalOpr(OprType), // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
-    DotOpr,             // .
-    DeclarationOpr,     // :=
-    LiteralMisc,        // true, null, etc
-    LiteralNumber,      // 3, 24, -34.5 etc
-    LiteralString,      // "abc" etc
-    StatementEnd,       // ;
-    OpenParen,          // (
-    CloseParen,         // )
-    OpenSquareParen,    // [
-    CloseSquareParen,   // ]
-    OpenCurlyParen,     // {
-    CloseCurlyParen,    // }
-    OpenAngleBracket,   // <
-    CloseAngleBracket,  // >
-    Comma,              // ,
-    Colon,              // :
-    Apostrophe,         // '
-    Quote,              // "
-    Bar,                // |
-    Keyword(Keyword),   // if, while etc
+    CommentStart,           // //
+    CommentEnd,             // \n
+    MultilineCommentStart,  // /*
+    MultilineCommentEnd,    // */
+    Flag(Flag),             // hoi, pub, priv, prot, const
+    UnaryOpr(OprType),      // \~, ++, ! etc
+    AssignmentOpr(OprType), // =, += etc
+    NormalOpr(OprType),     // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
+    DotOpr,                 // .
+    DeclarationOpr,         // :=
+    LiteralMisc,            // true, null, etc
+    LiteralNumber,          // 3, 24, -34.5 etc
+    LiteralString,          // "abc" etc
+    StatementEnd,           // ;
+    OpenParen,              // (
+    CloseParen,             // )
+    OpenSquareParen,        // [
+    CloseSquareParen,       // ]
+    OpenCurlyParen,         // {
+    CloseCurlyParen,        // }
+    OpenAngleBracket,       // <
+    CloseAngleBracket,      // >
+    Comma,                  // ,
+    Colon,                  // :
+    Apostrophe,             // '
+    Quote,                  // "
+    Bar,                    // |
+    Keyword(Keyword),       // if, while etc
     Comment,
     Ident,
     Whitespace,

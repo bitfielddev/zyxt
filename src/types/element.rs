@@ -1,15 +1,21 @@
-use crate::gen_instructions;
-use crate::interpreter::interpret_block;
-use crate::types::errors::ZyxtError;
-use crate::types::frame_data::InterpreterData;
-use crate::types::position::Position;
-use crate::types::token::{Flag, OprType, Token};
-use crate::types::typeobj::Type;
-use crate::types::value::utils::OprError;
-use crate::types::value::Value;
-use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
-use crate::types::printer::Print;
+use std::{
+    collections::HashMap,
+    fmt::{Display, Formatter},
+};
+
+use crate::{
+    gen_instructions,
+    interpreter::interpret_block,
+    types::{
+        errors::ZyxtError,
+        frame_data::InterpreterData,
+        position::Position,
+        printer::Print,
+        token::{Flag, OprType, Token},
+        typeobj::Type,
+        value::{utils::OprError, Value},
+    },
+};
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {

@@ -1,7 +1,7 @@
-use crate::types::value::typecast::typecast;
-use crate::types::value::utils::OprError;
-use crate::types::value::Value;
-use crate::Type;
+use crate::{
+    types::value::{typecast::typecast, utils::OprError, Value},
+    Type,
+};
 
 pub fn un_plus(x: &Value) -> Result<Value, OprError> {
     match x {

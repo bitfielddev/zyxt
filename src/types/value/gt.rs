@@ -1,8 +1,7 @@
-use crate::types::value::eq::eq;
-use crate::types::value::typecast::typecast;
-use crate::types::value::utils::OprError;
-use crate::types::value::Value;
-use crate::Type;
+use crate::{
+    types::value::{eq::eq, typecast::typecast, utils::OprError, Value},
+    Type,
+};
 
 macro_rules! typecast_gt {
     ($t:ident, $s:literal, $x:ident, $y:ident) => {

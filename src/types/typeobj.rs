@@ -1,7 +1,9 @@
-use crate::types::element::Argument;
-use crate::Element;
-use std::collections::HashMap;
-use std::fmt::{Debug, Display, Formatter};
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Display, Formatter},
+};
+
+use crate::{types::element::Argument, Element};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Type {

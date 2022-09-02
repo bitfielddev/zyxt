@@ -1,22 +1,22 @@
 pub mod instructor;
 pub mod interpreter;
 pub mod lexer;
-pub mod types;
 pub mod parser;
 pub mod repl;
+pub mod types;
 
-use crate::instructor::gen_instructions;
-use crate::interpreter::interpret_asts;
-use crate::lexer::lex;
-use crate::types::element::Element;
-use crate::types::frame_data::InterpreterData;
-use crate::types::typeobj::Type;
-use crate::types::value::Value;
-use crate::parser::parse_token_list;
-use ansi_term::Color::{White, Yellow};
-use types::errors::ZyxtError;
 use std::time::Instant;
-use types::printer::Print;
+
+use ansi_term::Color::{White, Yellow};
+use types::{errors::ZyxtError, printer::Print};
+
+use crate::{
+    instructor::gen_instructions,
+    interpreter::interpret_asts,
+    lexer::lex,
+    parser::parse_token_list,
+    types::{element::Element, frame_data::InterpreterData, typeobj::Type, value::Value},
+};
 
 pub fn compile(
     input: String,
@@ -31,24 +31,38 @@ pub fn compile(
     let lex_start = Instant::now();
     let lexed = lex(input, filename)?;
     let lex_time = lex_start.elapsed().as_micros();
-    typelist.out.debug(White.dimmed().paint(format!("{:#?}", lexed)));
+    typelist
+        .out
+        .debug(White.dimmed().paint(format!("{:#?}", lexed)));
 
     typelist.out.debug(Yellow.bold().paint("\nParsing"));
     let parse_start = Instant::now();
     let parsed = parse_token_list(lexed)?;
     let parse_time = parse_start.elapsed().as_micros();
-    typelist.out.debug(White.dimmed().paint(format!("{:#?}", parsed)));
+    typelist
+        .out
+        .debug(White.dimmed().paint(format!("{:#?}", parsed)));
 
-    typelist.out.debug(Yellow.bold().paint("\nGenerating instructions"));
+    typelist
+        .out
+        .debug(Yellow.bold().paint("\nGenerating instructions"));
     let check_start = Instant::now();
     let instructions = gen_instructions(parsed, typelist)?;
     let check_time = check_start.elapsed().as_micros();
-    typelist.out.debug(White.dimmed().paint(format!("{:#?}", instructions)));
+    typelist
+        .out
+        .debug(White.dimmed().paint(format!("{:#?}", instructions)));
 
     typelist.out.info(Yellow.bold().paint("\nStats"));
-    typelist.out.info(Yellow.paint(format!("Lexing time: {}µs", lex_time)));
-    typelist.out.info(Yellow.paint(format!("Parsing time: {}µs", parse_time)));
-    typelist.out.info(Yellow.paint(format!("Instruction generation time: {}µs", check_time)));
+    typelist
+        .out
+        .info(Yellow.paint(format!("Lexing time: {}µs", lex_time)));
+    typelist
+        .out
+        .info(Yellow.paint(format!("Parsing time: {}µs", parse_time)));
+    typelist
+        .out
+        .info(Yellow.paint(format!("Instruction generation time: {}µs", check_time)));
     typelist.out.info(Yellow.paint(format!(
         "Total time: {}µs\n",
         lex_time + parse_time + check_time
@@ -68,8 +82,12 @@ pub fn interpret(
     let interpret_start = Instant::now();
     let exit_code = interpret_asts(input, i_data)?;
     let interpret_time = interpret_start.elapsed().as_micros();
-    i_data.out.debug(format!("\nExited with code {}", exit_code));
+    i_data
+        .out
+        .debug(format!("\nExited with code {}", exit_code));
     i_data.out.info(Yellow.bold().paint("\nStats"));
-    i_data.out.info(Yellow.paint(format!("Interpreting time: {}µs", interpret_time)));
+    i_data
+        .out
+        .info(Yellow.paint(format!("Interpreting time: {}µs", interpret_time)));
     Ok(exit_code)
 }

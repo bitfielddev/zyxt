@@ -1,9 +1,11 @@
-use crate::types::element::{Argument, Condition, Element, VecElementRaw};
-use crate::types::errors::ZyxtError;
-use crate::types::token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType};
-use crate::types::typeobj::Type;
-use std::cmp::min;
-use std::collections::HashMap;
+use std::{cmp::min, collections::HashMap};
+
+use crate::types::{
+    element::{Argument, Condition, Element, VecElementRaw},
+    errors::ZyxtError,
+    token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
+    typeobj::Type,
+};
 
 macro_rules! check_and_update_cursor {
     ($cursor: ident, $selected: ident, $elements: ident) => {
@@ -1124,11 +1126,14 @@ fn parse_unparen_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
         .iter()
         .rposition(|(_, e)| {
             if let Element::Token(Token {
-                                      type_: TokenType::UnaryOpr(ty),
-                                      ..
-                                  }) = e {
+                type_: TokenType::UnaryOpr(ty),
+                ..
+            }) = e
+            {
                 ty.side() == Side::Right
-            } else {false}
+            } else {
+                false
+            }
         });
     if let Some(right_un_pos) = right_un_pos {
         if right_un_pos + 1 != comma_pos {
@@ -1149,11 +1154,14 @@ fn parse_unparen_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
         .iter()
         .rposition(|(_, e)| {
             if let Element::Token(Token {
-                                      type_: TokenType::UnaryOpr(ty),
-                                      ..
-                                  }) = e {
+                type_: TokenType::UnaryOpr(ty),
+                ..
+            }) = e
+            {
                 ty.side() == Side::Left
-            } else {false}
+            } else {
+                false
+            }
         });
     if let Some(left_un_pos) = left_un_pos {
         if left_un_pos < comma_pos {

@@ -1,9 +1,11 @@
-use crate::interpreter::interpret_expr;
-use crate::types::printer::Print;
-use crate::types::value::typecast::typecast;
-use crate::types::value::utils::OprError;
-use crate::types::value::Value;
-use crate::{Element, InterpreterData, Type, ZyxtError};
+use crate::{
+    interpreter::interpret_expr,
+    types::{
+        printer::Print,
+        value::{typecast::typecast, utils::OprError, Value},
+    },
+    Element, InterpreterData, Type, ZyxtError,
+};
 
 pub fn and<O: Print>(
     x: &Element,

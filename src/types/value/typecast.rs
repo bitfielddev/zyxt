@@ -1,9 +1,13 @@
-use crate::types::value::utils::OprError;
-use crate::types::value::Value;
-use crate::Type;
 use half::f16;
-use num::bigint::{BigInt, BigUint, ToBigUint};
-use num::{FromPrimitive, ToPrimitive};
+use num::{
+    bigint::{BigInt, BigUint, ToBigUint},
+    FromPrimitive, ToPrimitive,
+};
+
+use crate::{
+    types::value::{utils::OprError, Value},
+    Type,
+};
 
 // TODO refactor this entire file
 

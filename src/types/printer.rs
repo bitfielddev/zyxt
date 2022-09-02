@@ -1,6 +1,9 @@
 use std::fmt::Display;
-use ansi_term::Color::{Red, White, Yellow};
-use ansi_term::Style;
+
+use ansi_term::{
+    Color::{Red, White, Yellow},
+    Style,
+};
 
 pub trait Print: Clone {
     fn println(&mut self, s: impl Display);

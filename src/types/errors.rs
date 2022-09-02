@@ -1,15 +1,21 @@
-use crate::types::position::Position;
-use crate::types::token::{Keyword, Token};
-use crate::types::value::Value;
-use crate::{Element, Type};
-use ansi_term::Color::{Black, Red, White, Yellow};
-use ansi_term::Style;
+use std::{fs::File, io::Read, process::exit};
+
+use ansi_term::{
+    Color::{Black, Red, White, Yellow},
+    Style,
+};
 use backtrace::Backtrace;
-use std::fs::File;
-use std::io::Read;
-use std::process::exit;
 use unicode_segmentation::UnicodeSegmentation;
-use crate::types::printer::Print;
+
+use crate::{
+    types::{
+        position::Position,
+        printer::Print,
+        token::{Keyword, Token},
+        value::Value,
+    },
+    Element, Type,
+};
 
 #[derive(Clone)]
 pub struct ZyxtError {

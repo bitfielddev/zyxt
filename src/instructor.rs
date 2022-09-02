@@ -1,8 +1,7 @@
-use crate::types::element::Element;
-use crate::types::frame_data::InterpreterData;
-use crate::types::printer::Print;
-use crate::types::typeobj::Type;
-use crate::ZyxtError;
+use crate::{
+    types::{element::Element, frame_data::InterpreterData, printer::Print, typeobj::Type},
+    ZyxtError,
+};
 
 pub fn gen_instructions<O: Print>(
     mut input: Vec<Element>,

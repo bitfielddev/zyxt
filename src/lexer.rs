@@ -1,9 +1,12 @@
-use crate::types::errors::ZyxtError;
-use crate::types::position::Position;
-use crate::types::token::{Keyword, OprType, Token, TokenType};
 use lazy_static::lazy_static;
 use regex::Regex;
 use unicode_segmentation::UnicodeSegmentation;
+
+use crate::types::{
+    errors::ZyxtError,
+    position::Position,
+    token::{Keyword, OprType, Token, TokenType},
+};
 
 lazy_static! {
     static ref ALPHANUMERIC: Regex = Regex::new(r"^[a-zA-Z0-9_]+$").unwrap();

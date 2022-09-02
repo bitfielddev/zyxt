@@ -1,10 +1,15 @@
-use crate::types::element::{Argument, Element};
-use crate::types::frame_data::{FrameData, InterpreterData};
-use crate::types::token::OprType;
-use crate::types::value::{logic, Value};
-use crate::{Type, ZyxtError};
 use std::collections::HashMap;
-use crate::types::printer::Print;
+
+use crate::{
+    types::{
+        element::{Argument, Element},
+        frame_data::{FrameData, InterpreterData},
+        printer::Print,
+        token::OprType,
+        value::{logic, Value},
+    },
+    Type, ZyxtError,
+};
 
 pub fn interpret_expr<O: Print>(
     input: &Element,

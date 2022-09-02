@@ -1,13 +1,11 @@
+use std::{fs::File, io::Read, panic, process::exit};
+
 use backtrace::Backtrace;
 use clap::Parser;
-use std::fs::File;
-use std::io::Read;
-use std::panic;
-use std::process::exit;
-use zyxt::types::errors::ZyxtError;
-use zyxt::types::frame_data::InterpreterData;
-use zyxt::repl;
-use zyxt::types::printer::StdIoPrint;
+use zyxt::{
+    repl,
+    types::{errors::ZyxtError, frame_data::InterpreterData, printer::StdIoPrint},
+};
 
 #[derive(Parser)]
 #[clap(version, about, long_about = None)]
@@ -46,13 +44,16 @@ fn main() {
                 Ok(mut file) => {
                     file.read_to_string(&mut content).unwrap_or_else(|e| {
                         if e.to_string() == *"Is a directory (os error 21)" {
-                            ZyxtError::error_1_2(filename.to_owned()).print_exit(&mut StdIoPrint(verbose))
+                            ZyxtError::error_1_2(filename.to_owned())
+                                .print_exit(&mut StdIoPrint(verbose))
                         } else {
                             panic!("{}", e.to_string())
                         }
                     });
                 }
-                Err(_) => ZyxtError::error_1_1(filename.to_owned()).print_exit(&mut StdIoPrint(verbose)),
+                Err(_) => {
+                    ZyxtError::error_1_1(filename.to_owned()).print_exit(&mut StdIoPrint(verbose))
+                }
             };
             let mut sip1 = StdIoPrint(verbose);
             let mut sip2 = StdIoPrint(verbose);

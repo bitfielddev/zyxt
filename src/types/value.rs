@@ -13,16 +13,19 @@ mod typecast;
 mod unary;
 pub mod utils;
 
-use crate::types::element::Argument;
-use crate::types::token::OprType;
-use crate::types::typeobj::Type;
-use crate::types::value::utils::OprError;
-use crate::{Element, ZyxtError};
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Display, Formatter},
+};
+
 use enum_as_inner::EnumAsInner;
 use half::f16;
 use num::{BigInt, BigUint};
-use std::collections::HashMap;
-use std::fmt::{Debug, Display, Formatter};
+
+use crate::{
+    types::{element::Argument, token::OprType, typeobj::Type, value::utils::OprError},
+    Element, ZyxtError,
+};
 
 #[derive(Clone, PartialEq, EnumAsInner)]
 pub enum Value {

@@ -1,8 +1,9 @@
-use crate::types::value::typecast::typecast;
-use crate::types::value::utils::OprError;
-use crate::types::value::Value;
-use crate::Type;
 use num::ToPrimitive;
+
+use crate::{
+    types::value::{typecast::typecast, utils::OprError, Value},
+    Type,
+};
 
 macro_rules! typecast_mul {
     ($e:ident, $t:ident, $s:literal, $x:ident, $y:ident) => {

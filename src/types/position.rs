@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Display, Formatter};
+
 use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Clone, PartialEq, Eq)]
