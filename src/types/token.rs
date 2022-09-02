@@ -1,23 +1,25 @@
 use std::fmt::{Display, Formatter, Result};
 
+use smol_str::SmolStr;
+
 use crate::types::position::Position;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Token {
-    pub value: String,
+    pub value: SmolStr,
     pub type_: TokenType,
     pub position: Position,
-    pub whitespace: String,
+    pub whitespace: SmolStr,
 }
 impl Default for Token {
     fn default() -> Self {
         Token {
-            value: "".to_string(),
+            value: "".into(),
             type_: TokenType::Null,
             position: Position {
                 ..Default::default()
             },
-            whitespace: "".to_string(),
+            whitespace: "".into(),
         }
     }
 }

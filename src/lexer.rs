@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use regex::Regex;
+use smol_str::SmolStr;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::types::{
@@ -17,15 +18,15 @@ lazy_static! {
 
 fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
     let mut out: Vec<Token> = vec![];
-    let mut whitespace_stack = "".to_string();
+    let mut whitespace_stack: SmolStr = "".into();
 
     for mut t in input {
         if t.type_ != TokenType::Whitespace {
             t.whitespace = whitespace_stack.to_owned();
-            whitespace_stack = "".to_string();
+            whitespace_stack = "".into();
             out.push(t);
         } else {
-            whitespace_stack.push_str(&*t.value);
+            whitespace_stack = format!("{whitespace_stack}{}", t.value).into();
         }
     }
     out
@@ -94,7 +95,7 @@ impl Lexer for TextLiteralLexer {
                 raw.push('"');
                 tokens.push(Token {
                     type_: TokenType::LiteralString,
-                    value: raw,
+                    value: raw.into(),
                     position: pos,
                     ..Default::default()
                 });
@@ -158,7 +159,7 @@ impl Lexer for WordLexer {
                         "struct" => TokenType::Keyword(Keyword::Struct),
                         _ => TokenType::Ident,
                     },
-                    value: raw,
+                    value: raw.into(),
                     position: pos,
                     ..Default::default()
                 });
@@ -190,7 +191,7 @@ impl Lexer for NumberLexer {
             } else {
                 tokens.push(Token {
                     type_: TokenType::LiteralNumber,
-                    value: raw,
+                    value: raw.into(),
                     position: pos,
                     ..Default::default()
                 });
@@ -213,7 +214,7 @@ impl Lexer for LineCommentLexer {
         while let Some((char, _)) = iter.next() {
             raw.push_str(char);
             if char == "\n" {
-                tokens.last_mut().unwrap().value.push_str(&raw);
+                tokens.last_mut().unwrap().value = format!("{}{raw}", tokens.last().unwrap().value).into();
                 return Ok(Some(&MainLexer));
             }
         }
@@ -235,7 +236,7 @@ impl Lexer for BlockCommentLexer {
                 raw.push_str(char);
                 let (char, _) = iter.next().unwrap();
                 if char == "/" {
-                    tokens.last_mut().unwrap().value.push_str(&raw);
+                    tokens.last_mut().unwrap().value = format!("{}{raw}", tokens.last().unwrap().value).into();
                     return Ok(Some(&MainLexer));
                 } else {
                     raw.push_str(char);
@@ -244,7 +245,7 @@ impl Lexer for BlockCommentLexer {
                 raw.push_str(char);
                 let (char, _) = iter.next().unwrap();
                 if char == "*" {
-                    tokens.last_mut().unwrap().value.push_str(&raw.clone());
+                    tokens.last_mut().unwrap().value = format!("{}{raw}", tokens.last().unwrap().value).into();
                     raw = "".to_string();
                     BlockCommentLexer.lex(iter, tokens)?.unwrap();
                 } else {
@@ -279,7 +280,7 @@ impl Lexer for WhitespaceLexer {
             } else {
                 tokens.push(Token {
                     type_: TokenType::Whitespace,
-                    value: raw,
+                    value: raw.into(),
                     position: pos,
                     ..Default::default()
                 });
@@ -365,7 +366,7 @@ impl Lexer for MainLexer {
                                 iter.next().unwrap();
                                 tokens.push(Token {
                                     type_: TokenType::Comment,
-                                    value: "/*".to_string(),
+                                    value: "/*".into(),
                                     position: pos,
                                     ..Default::default()
                                 });
@@ -375,7 +376,7 @@ impl Lexer for MainLexer {
                                 iter.next().unwrap();
                                 tokens.push(Token {
                                     type_: TokenType::Comment,
-                                    value: "//".to_string(),
+                                    value: "//".into(),
                                     position: pos,
                                     ..Default::default()
                                 });
@@ -482,7 +483,7 @@ impl Lexer for MainLexer {
                                 .with_pos_and_raw(&pos, &char.to_string()))
                         }
                     },
-                    value: char,
+                    value: char.into(),
                     position: pos.to_owned(),
                     ..Default::default()
                 });

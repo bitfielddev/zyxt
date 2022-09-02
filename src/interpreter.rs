@@ -82,10 +82,7 @@ pub fn interpret_expr<O: Print>(
             i_data.set_val(&variable.get_name(), &var.to_owned()?, position, raw)?;
             var
         }
-        Element::Literal { type_, content, .. } => Ok(Value::from_type_content(
-            type_.to_owned(),
-            content.to_owned(),
-        )),
+        Element::Literal { content, .. } => Ok(content.to_owned()),
         Element::Call {
             called,
             args: input_args,
@@ -207,7 +204,7 @@ pub fn interpret_expr<O: Print>(
             is_struct,
             ..
         } => Ok(Value::Type(Type::Definition {
-            name: if *is_struct { "struct" } else { "class" }.to_string(),
+            name: if *is_struct { "struct" } else { "class" }.into(),
             generics: vec![],
             class_attrs: class_attrs.to_owned(),
             inst_attrs: inst_attrs.to_owned(),

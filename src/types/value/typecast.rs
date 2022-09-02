@@ -3,6 +3,7 @@ use num::{
     bigint::{BigInt, BigUint, ToBigUint},
     FromPrimitive, ToPrimitive,
 };
+use smol_str::SmolStr;
 
 use crate::{
     types::value::{utils::OprError, Value},
@@ -21,7 +22,7 @@ macro_rules! typecast_str_to_num {
     };
 }
 
-fn typecast_str(x: String, y: String) -> Result<Value, OprError> {
+fn typecast_str(x: String, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x)),
         "bool" => Ok(Value::Bool(!x.is_empty())),
@@ -47,7 +48,7 @@ fn typecast_str(x: String, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_bool(x: bool, y: String) -> Result<Value, OprError> {
+fn typecast_bool(x: bool, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x)),
@@ -83,7 +84,7 @@ macro_rules! simple_num_to_num {
     };
 }
 
-fn typecast_i8(x: i8, y: String) -> Result<Value, OprError> {
+fn typecast_i8(x: i8, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -109,7 +110,7 @@ fn typecast_i8(x: i8, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_i16(x: i16, y: String) -> Result<Value, OprError> {
+fn typecast_i16(x: i16, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -135,7 +136,7 @@ fn typecast_i16(x: i16, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_i32(x: i32, y: String) -> Result<Value, OprError> {
+fn typecast_i32(x: i32, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -161,7 +162,7 @@ fn typecast_i32(x: i32, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_i64(x: i64, y: String) -> Result<Value, OprError> {
+fn typecast_i64(x: i64, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -187,7 +188,7 @@ fn typecast_i64(x: i64, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_i128(x: i128, y: String) -> Result<Value, OprError> {
+fn typecast_i128(x: i128, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -213,7 +214,7 @@ fn typecast_i128(x: i128, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_isize(x: isize, y: String) -> Result<Value, OprError> {
+fn typecast_isize(x: isize, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -239,7 +240,7 @@ fn typecast_isize(x: isize, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_ibig(x: BigInt, y: String) -> Result<Value, OprError> {
+fn typecast_ibig(x: BigInt, y: SmolStr) -> Result<Value, OprError> {
     // TODO option thingies
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
@@ -266,7 +267,7 @@ fn typecast_ibig(x: BigInt, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_u8(x: u8, y: String) -> Result<Value, OprError> {
+fn typecast_u8(x: u8, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -292,7 +293,7 @@ fn typecast_u8(x: u8, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_u16(x: u16, y: String) -> Result<Value, OprError> {
+fn typecast_u16(x: u16, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -318,7 +319,7 @@ fn typecast_u16(x: u16, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_u32(x: u32, y: String) -> Result<Value, OprError> {
+fn typecast_u32(x: u32, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -344,7 +345,7 @@ fn typecast_u32(x: u32, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_u64(x: u64, y: String) -> Result<Value, OprError> {
+fn typecast_u64(x: u64, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -370,7 +371,7 @@ fn typecast_u64(x: u64, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_u128(x: u128, y: String) -> Result<Value, OprError> {
+fn typecast_u128(x: u128, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -396,7 +397,7 @@ fn typecast_u128(x: u128, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_usize(x: usize, y: String) -> Result<Value, OprError> {
+fn typecast_usize(x: usize, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0)),
@@ -422,7 +423,7 @@ fn typecast_usize(x: usize, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_ubig(x: BigUint, y: String) -> Result<Value, OprError> {
+fn typecast_ubig(x: BigUint, y: SmolStr) -> Result<Value, OprError> {
     // TODO same here
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
@@ -449,7 +450,7 @@ fn typecast_ubig(x: BigUint, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_f16(x: f16, y: String) -> Result<Value, OprError> {
+fn typecast_f16(x: f16, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != f16::from_f64(0.0))),
@@ -461,7 +462,7 @@ fn typecast_f16(x: f16, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_f32(x: f32, y: String) -> Result<Value, OprError> {
+fn typecast_f32(x: f32, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0.0)),
@@ -487,7 +488,7 @@ fn typecast_f32(x: f32, y: String) -> Result<Value, OprError> {
     }
 }
 
-fn typecast_f64(x: f64, y: String) -> Result<Value, OprError> {
+fn typecast_f64(x: f64, y: SmolStr) -> Result<Value, OprError> {
     match &*y {
         "str" => Ok(Value::Str(x.to_string())),
         "bool" => Ok(Value::Bool(x != 0.into())),

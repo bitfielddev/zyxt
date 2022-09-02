@@ -3,23 +3,25 @@ use std::{
     fmt::{Debug, Display, Formatter},
 };
 
+use smol_str::SmolStr;
+
 use crate::{types::element::Argument, Element};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Type {
     Instance {
         // str, bool, cpx<int> etc. Is of type Typedef
-        name: String,
+        name: SmolStr,
         type_args: Vec<Type>,
-        inst_attrs: HashMap<String, Element>,
+        inst_attrs: HashMap<SmolStr, Element>,
         implementation: Option<&'static Type>,
     },
     Definition {
         // class, struct, (anything that implements a Type). Is of type <type> (Typedef)
-        name: String, // TODO inheritance
+        name: SmolStr, // TODO inheritance
         generics: Vec<Argument>,
-        class_attrs: HashMap<String, Element>,
-        inst_attrs: HashMap<String, Element>,
+        class_attrs: HashMap<SmolStr, Element>,
+        inst_attrs: HashMap<SmolStr, Element>,
     },
     Return(Box<Type>),
 }
@@ -46,7 +48,7 @@ impl Display for Type {
                     } else {
                         name.to_string()
                     },
-                Type::Definition { name, .. } => name.to_owned(),
+                Type::Definition { name, .. } => name.to_owned().into(),
                 Type::Return(ty) => format!("{}", ty),
             }
         )
@@ -55,7 +57,7 @@ impl Display for Type {
 impl Type {
     pub fn from_name(s: &str) -> Self {
         Type::Instance {
-            name: s.to_string(),
+            name: s.into(),
             type_args: vec![],
             inst_attrs: Default::default(),
             implementation: None,
@@ -79,7 +81,7 @@ impl Type {
             Type::Return(ty) => ty.as_element(),
         }
     }
-    pub fn get_attrs(&self) -> HashMap<String, Element> {
+    pub fn get_attrs(&self) -> HashMap<SmolStr, Element> {
         match self {
             Type::Instance {
                 implementation,

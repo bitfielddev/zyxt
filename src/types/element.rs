@@ -3,6 +3,8 @@ use std::{
     fmt::{Display, Formatter},
 };
 
+use smol_str::SmolStr;
+
 use crate::{
     gen_instructions,
     interpreter::interpret_block,
@@ -24,7 +26,7 @@ pub struct Condition {
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct Argument {
-    pub name: String,
+    pub name: SmolStr,
     pub type_: Type,
     pub default: Option<Element>,
 }
@@ -34,14 +36,14 @@ pub enum Element {
     Comment {
         position: Position,
         raw: String,
-        content: String,
+        content: SmolStr,
     },
     Call {
         position: Position,
         raw: String,
         called: Box<Element>,
         args: Vec<Element>,
-        kwargs: HashMap<String, Element>,
+        kwargs: HashMap<SmolStr, Element>,
     },
     UnaryOpr {
         position: Position,
@@ -73,13 +75,12 @@ pub enum Element {
     Literal {
         position: Position,
         raw: String,
-        type_: Type,
-        content: String,
+        content: Value,
     },
     Ident {
         position: Position,
         raw: String,
-        name: String,
+        name: SmolStr,
         parent: Box<Element>,
     },
     If {
@@ -95,7 +96,7 @@ pub enum Element {
     Delete {
         position: Position,
         raw: String,
-        names: Vec<String>,
+        names: Vec<SmolStr>,
     },
     Return {
         position: Position,
@@ -124,8 +125,8 @@ pub enum Element {
         position: Position,
         raw: String,
         is_struct: bool,
-        class_attrs: HashMap<String, Element>,
-        inst_attrs: HashMap<String, Element>,
+        class_attrs: HashMap<SmolStr, Element>,
+        inst_attrs: HashMap<SmolStr, Element>,
         content: Vec<Element>,
         args: Option<Vec<Argument>>,
     },
@@ -229,7 +230,7 @@ impl Element {
             | Element::Class { raw, .. } => Some(raw),
         }
     }
-    pub fn get_name(&self) -> String {
+    pub fn get_name(&self) -> SmolStr {
         if let Element::Ident { name: type1, .. } = self {
             type1.to_owned()
         } else {
@@ -387,7 +388,7 @@ impl Element {
         typelist: &mut InterpreterData<Type, O>,
     ) -> Result<Type, ZyxtError> {
         match self {
-            Element::Literal { type_, .. } => Ok(type_.to_owned()),
+            Element::Literal { content, .. } => Ok(content.get_type_obj()),
             Element::Ident {
                 name,
                 position,
@@ -496,7 +497,7 @@ impl Element {
                     }
                 }
                 Ok(Type::Instance {
-                    name: if *is_fn { "fn" } else { "proc" }.to_string(),
+                    name: if *is_fn { "fn" } else { "proc" }.into(),
                     type_args: vec![Type::null(), return_type.to_owned()],
                     inst_attrs: Default::default(),
                     implementation: None,
@@ -570,7 +571,7 @@ impl Element {
                 }
                 typelist.pop_frame();
                 Ok(Type::Definition {
-                    name: if *is_struct { "struct" } else { "class" }.to_string(),
+                    name: if *is_struct { "struct" } else { "class" }.into(),
                     generics: vec![],
                     class_attrs,
                     inst_attrs: inst_attrs.to_owned(),
@@ -582,7 +583,7 @@ impl Element {
             | Element::Return { .. } => Ok(Type::null()),
             Element::Token(Token {
                 position, value, ..
-            }) => Err(ZyxtError::error_2_1_0(value.to_owned()).with_pos_and_raw(position, value)),
+            }) => Err(ZyxtError::error_2_1_0(value.to_owned()).with_pos_and_raw(position, &value.to_string())),
         }
     }
 }

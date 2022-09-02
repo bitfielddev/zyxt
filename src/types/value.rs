@@ -325,7 +325,7 @@ impl Value {
             Value::Proc {
                 is_fn, return_type, ..
             } => Type::Instance {
-                name: if *is_fn { "fn" } else { "proc" }.to_string(),
+                name: if *is_fn { "fn" } else { "proc" }.into(),
                 type_args: vec![Type::null(), return_type.to_owned()],
                 inst_attrs: Default::default(),
                 implementation: None,
@@ -339,57 +339,10 @@ impl Value {
         Value::Type(self.get_type_obj())
     }
     pub fn as_element(&self) -> Element {
-        macro_rules! to_literal {
-            ($v: ident) => {
-                Element::Literal {
-                    position: Default::default(),
-                    raw: $v.to_string(),
-                    type_: self.get_type_obj(),
-                    content: $v.to_string(),
-                }
-            };
-        }
-        match self {
-            Value::I8(v) => to_literal!(v),
-            Value::I16(v) => to_literal!(v),
-            Value::I32(v) => to_literal!(v),
-            Value::I64(v) => to_literal!(v),
-            Value::I128(v) => to_literal!(v),
-            Value::Isize(v) => to_literal!(v),
-            Value::Ibig(v) => to_literal!(v),
-            Value::U8(v) => to_literal!(v),
-            Value::U16(v) => to_literal!(v),
-            Value::U32(v) => to_literal!(v),
-            Value::U64(v) => to_literal!(v),
-            Value::U128(v) => to_literal!(v),
-            Value::Usize(v) => to_literal!(v),
-            Value::Ubig(v) => to_literal!(v),
-            Value::F16(v) => to_literal!(v),
-            Value::F32(v) => to_literal!(v),
-            Value::F64(v) => to_literal!(v),
-            Value::Str(v) => to_literal!(v),
-            Value::Bool(v) => to_literal!(v),
-            Value::Type(v) => to_literal!(v),
-            Value::Proc {
-                is_fn,
-                args,
-                return_type,
-                content,
-            } => Element::Procedure {
-                position: Default::default(),
-                raw: "".to_string(),
-                is_fn: *is_fn,
-                args: args.to_owned(),
-                return_type: return_type.to_owned(),
-                content: content.to_owned(),
-            },
-            Value::Null => Element::NullElement,
-            Value::Return(v) => Element::Return {
-                position: Default::default(),
-                raw: "".to_string(),
-                value: Box::new(v.as_element()),
-            },
-            Value::ClassInstance { .. } => todo!(),
+        Element::Literal {
+            position: Default::default(),
+            raw: self.to_string(),
+            content: self.to_owned()
         }
     }
 }

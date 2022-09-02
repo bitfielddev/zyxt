@@ -1,4 +1,5 @@
 use std::{cmp::min, collections::HashMap};
+use num::BigInt;
 
 use crate::types::{
     element::{Argument, Condition, Element, VecElementRaw},
@@ -6,6 +7,7 @@ use crate::types::{
     token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
     typeobj::Type,
 };
+use crate::Value;
 
 macro_rules! check_and_update_cursor {
     ($cursor: ident, $selected: ident, $elements: ident) => {
@@ -298,7 +300,7 @@ fn parse_preprocess_and_defer(elements: Vec<Element>) -> Result<Vec<Element>, Zy
         }) = selected
         {
             if cursor == elements.len() - 1 {
-                return Err(ZyxtError::error_2_1_16().with_pos_and_raw(position, value));
+                return Err(ZyxtError::error_2_1_16().with_pos_and_raw(position, &value.to_string()));
             }
             let raw = selected.get_raw();
             let is_pre = raw.trim() == "pre";
@@ -504,7 +506,35 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                     catcher = Element::Literal {
                         position: selected.position.to_owned(),
                         raw: selected.get_raw(),
-                        type_: Type::from_name(if selected.type_ == TokenType::LiteralMisc {
+                        content: match selected.type_ {
+                            TokenType::LiteralMisc => match &*selected.value {
+                                "true" => Value::Bool(true),
+                                "false" => Value::Bool(false),
+                                "unit" => todo!(),
+                                "inf" => Value::F64(f64::INFINITY),
+                                _ => unreachable!("{}", selected.value),
+                            },
+                            TokenType::LiteralNumber => {
+                                if selected.value.contains('.') {
+                                    Value::F64(selected.value.parse().unwrap()) // TODO Decimal
+                                } else if let Ok(val) = selected.value.parse::<i32>() {
+                                    Value::I32(val)
+                                } else if let Ok(val) = selected.value.parse::<i64>() {
+                                    Value::I64(val)
+                                } else if let Ok(val) = selected.value.parse::<i128>() {
+                                    Value::I128(val)
+                                } else if let Ok(val) = selected.value.parse::<u128>() {
+                                    Value::U128(val)
+                                } else if let Ok(val) = selected.value.parse::<BigInt>(){
+                                    Value::Ibig(val)
+                                } else {
+                                    unreachable!()
+                                }
+                            }
+                            TokenType::LiteralString => Value::Str(selected.value[1..selected.value.len() - 1].to_string()),
+                            type_ => unreachable!("{type_:?}")
+                        }
+                        /*type_: Type::from_name(if selected.type_ == TokenType::LiteralMisc {
                             match &*selected.value {
                                 "true" | "false" => "bool",
                                 "null" => "_null",
@@ -532,7 +562,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                             selected.value[1..selected.value.len() - 1].to_string()
                         } else {
                             selected.value.to_owned()
-                        },
+                        },*/
                     }
                 }
                 TokenType::CloseParen => {

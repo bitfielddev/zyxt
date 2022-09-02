@@ -1,5 +1,7 @@
 use std::{collections::HashMap, fmt::Display};
 
+use smol_str::SmolStr;
+
 use crate::{
     interpreter::interpret_block,
     types::{errors::ZyxtError, position::Position, printer::Print, typeobj::Type, value::Value},
@@ -14,10 +16,10 @@ const PRIM_NAMES: [&str; 22] = [
 pub struct FrameData<T: Clone + Display> {
     pub position: Position,
     pub raw_call: String,
-    pub args: HashMap<String, T>,
+    pub args: HashMap<SmolStr, T>,
 }
 pub struct InterpreterData<'a, T: Clone + Display, O: Print> {
-    pub heap: Vec<HashMap<String, T>>,
+    pub heap: Vec<HashMap<SmolStr, T>>,
     pub defer: Vec<Vec<Vec<Element>>>,
     pub frame_data: Vec<Option<FrameData<T>>>,
     pub out: &'a mut O,
@@ -32,9 +34,9 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
         };
         for t in PRIM_NAMES {
             v.heap[0].insert(
-                t.to_string(),
+                t.into(),
                 Value::Type(Type::Instance {
-                    name: t.to_string(),
+                    name: t.into(),
                     type_args: vec![],
                     inst_attrs: Default::default(),
                     implementation: None,
@@ -81,9 +83,9 @@ impl<'a, O: Print> InterpreterData<'a, Type, O> {
         };
         for t in PRIM_NAMES {
             v.heap[0].insert(
-                t.to_string(),
+                t.into(),
                 Type::Instance {
-                    name: "type".to_string(),
+                    name: "type".into(),
                     type_args: vec![],
                     inst_attrs: Default::default(),
                     implementation: None,
@@ -106,15 +108,15 @@ impl<T: Clone + Display, O: Print> InterpreterData<'_, T, O> {
         self.defer.push(vec![]);
         self.frame_data.push(frame_data);
     }
-    pub fn declare_val(&mut self, name: &str, value: &T) {
+    pub fn declare_val(&mut self, name: &SmolStr, value: &T) {
         self.heap
             .last_mut()
             .unwrap()
-            .insert(name.to_string(), value.to_owned());
+            .insert(name.to_owned(), value.to_owned());
     }
     pub fn set_val(
         &mut self,
-        name: &String,
+        name: &SmolStr,
         value: &T,
         position: &Position,
         raw: &String,
@@ -129,7 +131,7 @@ impl<T: Clone + Display, O: Print> InterpreterData<'_, T, O> {
     }
     pub fn get_val(
         &mut self,
-        name: &String,
+        name: &SmolStr,
         position: &Position,
         raw: &String,
     ) -> Result<T, ZyxtError> {
@@ -142,7 +144,7 @@ impl<T: Clone + Display, O: Print> InterpreterData<'_, T, O> {
     }
     pub fn delete_val(
         &mut self,
-        name: &String,
+        name: &SmolStr,
         position: &Position,
         raw: &String,
     ) -> Result<T, ZyxtError> {
