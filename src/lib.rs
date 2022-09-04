@@ -15,7 +15,7 @@ use crate::{
     interpreter::interpret_asts,
     lexer::lex,
     parser::parse_token_list,
-    types::{element::Element, frame_data::InterpreterData, typeobj::Type, value::Value},
+    types::{element::Element, interpreter_data::InterpreterData, typeobj::Type, value::Value},
 };
 
 pub fn compile(

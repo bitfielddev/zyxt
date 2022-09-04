@@ -10,7 +10,7 @@ use crate::{
     interpreter::interpret_block,
     types::{
         errors::ZyxtError,
-        frame_data::InterpreterData,
+        interpreter_data::InterpreterData,
         position::Position,
         printer::Print,
         token::{Flag, OprType, Token},

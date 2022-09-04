@@ -1,5 +1,5 @@
 use crate::{
-    types::{element::Element, frame_data::InterpreterData, printer::Print, typeobj::Type},
+    types::{element::Element, interpreter_data::InterpreterData, printer::Print, typeobj::Type},
     ZyxtError,
 };
 

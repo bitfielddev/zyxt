@@ -4,7 +4,7 @@ use backtrace::Backtrace;
 use clap::Parser;
 use zyxt::{
     repl,
-    types::{errors::ZyxtError, frame_data::InterpreterData, printer::StdIoPrint},
+    types::{errors::ZyxtError, interpreter_data::InterpreterData, printer::StdIoPrint},
 };
 
 #[derive(Parser)]

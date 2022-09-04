@@ -8,7 +8,7 @@ use rustyline::{error::ReadlineError, Editor};
 use crate::{
     compile,
     interpreter::interpret_expr,
-    types::{frame_data::InterpreterData, printer::StdIoPrint, value::Value},
+    types::{interpreter_data::InterpreterData, printer::StdIoPrint, value::Value},
     ZyxtError,
 };
 

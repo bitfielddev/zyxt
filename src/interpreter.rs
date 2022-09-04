@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     types::{
         element::{Argument, Element},
-        frame_data::{FrameData, InterpreterData},
+        interpreter_data::{FrameData, InterpreterData},
         printer::Print,
         token::OprType,
         value::{logic, Value},
