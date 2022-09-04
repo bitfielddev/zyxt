@@ -136,6 +136,7 @@ enum_.A; enum_.B; enum_.C(...); enum_.D(...) // instantiating enum
 T1 / T2: Union (special enum)
 _U<T1, T2, ...>: Union
 _A: Any
+```
 
 ## Operators
 ```
@@ -230,25 +231,23 @@ x << y // insertion opr
 x >> y // extraction opr
 
 === Parsing order ===
--1. ()
-0. foobar() foo.bar() foobar[] foo.bar ()
-1. ++ -- + - ! & \
-2. @
-3. ^
-4. lg rt
-5. ·
-6. * / /f /c /~ %
-7. × ÷ ÷f ÷c ÷~
-8. + - +- -+ ± ∓
+1. ()
+2. foobar() foo.bar() foobar[] foo.bar ()
+3. ++ -- + - ! & \
+4. @
+5. ^
+6. ·
+7. \* / %
+8. × ÷
+9. \+ - +- -+
 10. < > <= => == != === !== is isnt istype isnttype
-14. &&
-15. ^^
-16. ||
-17. ~
-19. ><
-20. all assignment operators
-21. :=
-22. if {}
+11. &&
+12. ^^
+13. ||
+14. ~
+15. all assignment operators
+16. :=
+17. if {}
 
 ```
 
