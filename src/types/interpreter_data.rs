@@ -8,10 +8,11 @@ use crate::{
         errors::ZyxtError,
         position::Position,
         printer::Print,
-        typeobj::{Type, Value},
+        typeobj::{Type},
     },
     Element,
 };
+use crate::types::value::Value;
 
 const PRIM_NAMES: [&str; 22] = [
     "str", "bool", "i8", "i16", "i32", "i64", "i128", "isize", "ibig", "u8", "u16", "u32", "u64",
@@ -40,11 +41,12 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
         for t in PRIM_NAMES {
             v.heap[0].insert(
                 t.into(),
-                Value::Type(Type::Instance {
+                Value::Type(Type::Definition {
+                    inst_name: Some("{builtin}".into()),
                     name: t.into(),
-                    type_args: vec![],
-                    inst_attrs: Default::default(),
-                    implementation: None,
+                    generics: vec![],
+                    inst_fields: Default::default(),
+                    implementations: Default::default(), // TODO
                 }),
             );
         }
@@ -78,8 +80,8 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
     }
 }
 
-impl<'a, O: Print> InterpreterData<'a, Type, O> {
-    pub fn default_type(out: &'a mut O) -> InterpreterData<'a, Type, O> {
+impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
+    pub fn default_type(out: &'a mut O) -> InterpreterData<'a, Type<Element>, O> {
         let mut v = InterpreterData {
             heap: vec![HashMap::new()],
             defer: vec![vec![]],
@@ -89,11 +91,12 @@ impl<'a, O: Print> InterpreterData<'a, Type, O> {
         for t in PRIM_NAMES {
             v.heap[0].insert(
                 t.into(),
-                Type::Instance {
+                Type::Definition {
+                    inst_name: Some("{builtin}".into()),
                     name: "type".into(),
-                    type_args: vec![],
-                    inst_attrs: Default::default(),
-                    implementation: None,
+                    generics: vec![],
+                    inst_fields: Default::default(),
+                    implementations: Default::default(), // TODO
                 },
             );
         }

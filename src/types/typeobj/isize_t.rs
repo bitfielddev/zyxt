@@ -53,8 +53,8 @@ const fn isize_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref ISIZE_T: Type = Type::Definition {
-        name: Some("isize".into()),
+    pub static ref ISIZE_T: Type<Value> = Type::Definition {
+        inst_name: Some("isize".into()),
         generics: vec![],
         implementations: isize_t(),
         inst_fields: HashMap::new(),

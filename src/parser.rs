@@ -9,8 +9,9 @@ use crate::{
         token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
         typeobj::Type,
     },
-    Value,
 };
+use crate::types::typeobj::unit_t::UNIT_T;
+use crate::types::value::Value;
 
 macro_rules! check_and_update_cursor {
     ($cursor: ident, $selected: ident, $elements: ident) => {
@@ -405,8 +406,8 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>) -> Result<Vec<Elemen
                     position: position.to_owned(),
                     raw,
                     is_struct: keyword == &Keyword::Struct,
-                    class_attrs: Default::default(),
-                    inst_attrs: Default::default(),
+                    implementations: Default::default(),
+                    inst_fields: Default::default(),
                     content,
                     args,
                 })
@@ -693,7 +694,7 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                         Type::Instance {
                             name,
                             type_args: vec![],
-                            inst_attrs: Default::default(),
+                            inst_fields: Default::default(),
                             implementation: None,
                         }
                     } else {

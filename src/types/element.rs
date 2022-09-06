@@ -15,11 +15,12 @@ use crate::{
         printer::Print,
         token::{Flag, OprType, Token},
         typeobj::{
-            bool_t::BOOL_T, str_t::STR_T, type_t::TYPE_T, unit_t::UNIT_T, utils::OprError, Type,
-            Value,
+            type_t::TYPE_T, unit_t::UNIT_T, Type,
         },
     },
 };
+use crate::types::typeobj::proc_t::PROC_T;
+use crate::types::value::Value;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
@@ -29,7 +30,7 @@ pub struct Condition {
 #[derive(Clone, PartialEq, Debug)]
 pub struct Argument {
     pub name: SmolStr,
-    pub type_: Type,
+    pub type_: Element,
     pub default: Option<Element>,
 }
 
@@ -66,7 +67,7 @@ pub enum Element {
         variable: Box<Element>, // variable
         content: Box<Element>,
         flags: Vec<Flag>,
-        type_: Type, // variable
+        type_: Box<Element>, // variable
     },
     Set {
         position: Position,
@@ -110,7 +111,7 @@ pub enum Element {
         raw: String,
         is_fn: bool,
         args: Vec<Argument>,
-        return_type: Type,
+        return_type: Box<Element>,
         content: Vec<Element>,
     },
     Preprocess {
@@ -127,8 +128,8 @@ pub enum Element {
         position: Position,
         raw: String,
         is_struct: bool,
-        class_attrs: HashMap<SmolStr, Element>,
-        inst_attrs: HashMap<SmolStr, Element>,
+        implementations: HashMap<SmolStr, Element>,
+        inst_fields: HashMap<SmolStr, (Element, Option<Box<Element>>)>,
         content: Vec<Element>,
         args: Option<Vec<Argument>>,
     },
@@ -239,83 +240,12 @@ impl Element {
             panic!("not variable")
         }
     }
-    pub fn as_type(&self) -> Type {
-        if let Element::Ident { name: type1, .. } = self {
-            Type::Instance {
-                name: type1.to_owned(),
-                type_args: vec![],
-                inst_attrs: Default::default(),
-                implementation: None,
-            }
-        } else {
-            panic!("not variable")
-        }
-    }
-    pub fn bin_op_return_type(
-        type_: &OprType,
-        type1: Type,
-        type2: Type,
-        position: &Position,
-        raw: &String,
-    ) -> Result<Type, ZyxtError> {
-        if type_ == &OprType::TypeCast {
-            return Ok(type2);
-        } else if [
-            OprType::Eq,
-            OprType::Noteq,
-            OprType::Lt,
-            OprType::Lteq,
-            OprType::Gt,
-            OprType::Gteq,
-            OprType::Iseq,
-            OprType::Eq,
-            OprType::And,
-            OprType::Or,
-            OprType::Xor,
-        ]
-        .contains(type_)
-        {
-            return Ok(BOOL_T.to_owned());
-        }
-
-        match Value::default(type1.to_owned())? // TODO
-            .bin_opr(type_, Value::default(type2.to_owned())?)
-        {
-            Ok(v) => Ok(v.get_type_obj()),
-            Err(OprError::NoImplForOpr) => {
-                Err(
-                    ZyxtError::error_4_0_0(type_.to_string(), type1.to_string(), type2.to_string())
-                        .with_pos_and_raw(position, raw),
-                )
-            }
-            Err(OprError::TypecastError(ty)) => Ok(ty),
-        }
-    }
-    pub fn un_op_return_type(
-        type_: &OprType,
-        opnd_type: Type,
-        position: &Position,
-        raw: &String,
-    ) -> Result<Type, ZyxtError> {
-        if type_ == &OprType::Not {
-            return Ok(BOOL_T.to_owned());
-        }
-        match Value::default(opnd_type.to_owned())?.un_opr(type_) {
-            Ok(v) => Ok(v.get_type_obj()),
-            Err(OprError::NoImplForOpr) => Err(ZyxtError::error_4_0_1(
-                type_.to_string(),
-                opnd_type.to_string(),
-            )
-            .with_pos_and_raw(position, raw)),
-            Err(OprError::TypecastError(ty)) => Ok(ty),
-        }
-    }
     pub fn block_type<O: Print>(
         content: &mut [Element],
-        typelist: &mut InterpreterData<Type, O>,
+        typelist: &mut InterpreterData<Type<Element>, O>,
         add_set: bool,
-    ) -> Result<(Type, Option<Type>), ZyxtError> {
-        let mut last = UNIT_T;
+    ) -> Result<(Type<Element>, Option<Type<Element>>), ZyxtError> {
+        let mut last = UNIT_T.to_owned();
         let mut return_type = None;
         if add_set {
             typelist.add_frame(None);
@@ -343,54 +273,15 @@ impl Element {
         }
         Ok((last, if add_set { None } else { return_type }))
     }
-    pub fn call_return_type<O: Print>(
-        called: &mut Element,
-        args: &mut [Element],
-        typelist: &mut InterpreterData<Type, O>,
-    ) -> Result<Type, ZyxtError> {
-        for arg in args {
-            arg.process(typelist)?;
-        }
-        if let Element::Ident {
-            ref parent,
-            ref name,
-            ..
-        } = *called
-        {
-            if name == &"out".to_string() && parent.get_name() == *"ter" {
-                return Ok(UNIT_T);
-            }
-        }
-        if let Type::Instance {
-            name, type_args, ..
-        } = called.process(typelist)?
-        {
-            if name == *"proc" || name == *"fn" {
-                return Ok(type_args[1].to_owned());
-            }
-        } // TODO type checking for args when arrays are implemented
-        Ok(UNIT_T)
-        /*if let Some(v) = Variable::default(called.eval_type(typelist)?, typelist)?.call(
-            args.iter_mut().map(|e| Variable::default(e.eval_type(typelist)?, typelist))
-                .collect::<Result<Vec<_>, _>>()?
-        ) { // TODO same as above
-            Ok(v.get_type_obj())
-        } else {
-            Err(ZyxtError::from_pos(called.get_pos())
-                .error_3_1_0(called.to_owned(),
-                             called.eval_type(typelist)?,
-                             "_call".to_string()))
-        }*/
-    }
     pub fn is_pattern(&self) -> bool {
         matches!(self, Element::Ident { .. })
     }
     pub fn process<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type, O>,
-    ) -> Result<Type, ZyxtError> {
+        typelist: &mut InterpreterData<Type<Element>, O>,
+    ) -> Result<Type<Element>, ZyxtError> {
         match self {
-            Element::Literal { content, .. } => Ok(content.get_type_obj()),
+            Element::Literal { content, .. } => Ok(content.get_type_obj().to_owned()),
             Element::Ident {
                 name,
                 position,
@@ -487,9 +378,9 @@ impl Element {
                     typelist.declare_val(&arg.name, &arg.type_);
                 }
                 let (res, block_return_type) = Element::block_type(content, typelist, false)?;
-                if return_type == &UNIT_T || block_return_type.is_none() {
+                /*if return_type == &UNIT_T || block_return_type.is_none() {
                     *return_type = res;
-                } else if let Some(block_return_type) = block_return_type {
+                } else*/ if let Some(block_return_type) = block_return_type {
                     if *return_type == block_return_type {
                         return Err(ZyxtError::error_4_t(
                             return_type.to_owned(),
@@ -500,9 +391,8 @@ impl Element {
                 }
                 Ok(Type::Instance {
                     name: if *is_fn { "fn" } else { "proc" }.into(),
-                    type_args: vec![UNIT_T, return_type.to_owned()],
-                    inst_attrs: Default::default(),
-                    implementation: None,
+                    type_args: vec![UNIT_T.to_owned(), return_type.to_owned()],
+                    implementation: Box::new(PROC_T.to_owned()),
                 })
             } // TODO angle bracket thingy when it is implemented
             Element::Preprocess { content, .. } => {
@@ -543,13 +433,13 @@ impl Element {
             }
             Element::Class {
                 content,
-                inst_attrs,
+                implementations,
+                inst_fields,
                 args,
                 is_struct,
                 ..
             } => {
                 typelist.add_frame(None);
-                let class_attrs = HashMap::new();
                 for expr in content.iter_mut() {
                     expr.process(typelist)?;
                     if let Element::Declare {
@@ -559,30 +449,33 @@ impl Element {
                         ..
                     } = expr
                     {
-                        content.process(typelist)?;
+                        let content_type = content.process(typelist)?;
                         if flags.contains(&Flag::Inst) && args != &None {
                             todo!("raise error here")
                         }
                         if flags.contains(&Flag::Inst) {
-                            inst_attrs.insert(variable.get_name(), *content.to_owned());
+                            inst_fields.insert(variable.get_name(), (content_type, Some(content.to_owned())));
                         }
                     }
                 }
-                if args.is_some() && class_attrs.contains_key("_init") {
+                if args.is_some() && implementations.contains_key("_init") {
                     todo!("raise error here")
                 }
                 typelist.pop_frame();
                 Ok(Type::Definition {
-                    name: if *is_struct { "struct" } else { "class" }.into(),
+                    inst_name: None,
+                    name: Some(if *is_struct { "struct" } else { "class" }.into()),
                     generics: vec![],
-                    class_attrs,
-                    inst_attrs: inst_attrs.to_owned(),
+                    implementations: implementations.to_owned(),
+                    inst_fields: inst_fields.to_owned().into_iter().map(|(k, (v1, v2))| {
+                        (k, (Box::new(v1), v2.map(|v| *v)))
+                    }).collect(),
                 })
             }
             Element::NullElement
             | Element::Delete { .. }
             | Element::Comment { .. }
-            | Element::Return { .. } => Ok(UNIT_T),
+            | Element::Return { .. } => Ok(UNIT_T.to_owned()),
             Element::Token(Token {
                 position, value, ..
             }) => Err(ZyxtError::error_2_1_0(value.to_owned())

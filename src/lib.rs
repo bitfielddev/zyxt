@@ -18,14 +18,15 @@ use crate::{
     types::{
         element::Element,
         interpreter_data::InterpreterData,
-        typeobj::{Type, Value},
+        typeobj::{Type},
     },
 };
+use crate::types::value::Value;
 
 pub fn compile(
     input: String,
     filename: &str,
-    typelist: &mut InterpreterData<Type, impl Print>,
+    typelist: &mut InterpreterData<Type<Element>, impl Print>,
 ) -> Result<Vec<Element>, ZyxtError> {
     if typelist.out.verbosity() == 0 {
         return gen_instructions(parse_token_list(lex(input, filename)?)?, typelist);

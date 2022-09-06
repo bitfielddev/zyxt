@@ -20,6 +20,7 @@ pub mod u8_t;
 pub mod ubig_t;
 pub mod unit_t;
 pub mod usize_t;
+pub mod proc_t;
 
 use std::{
     collections::HashMap,
@@ -31,33 +32,32 @@ use smol_str::SmolStr;
 use crate::{
     types::{
         element::Argument,
-        typeobj::{bool_t::BOOL_T, str_t::STR_T, type_t::TYPE_T, unit_t::UNIT_T},
-        value::Value,
+        typeobj::{type_t::TYPE_T, unit_t::UNIT_T},
     },
     Element,
 };
 
-#[derive(Clone, Debug)]
-pub enum Type {
+#[derive(Clone, PartialEq, Debug)]
+pub enum Type<T: Clone + PartialEq + Debug> {
     Instance {
         // str, bool, cpx<int> etc. Is of type Typedef
         name: Option<SmolStr>,
-        type_args: Vec<Type>,
-        fields: HashMap<SmolStr, Value>,
-        implementation: Box<Type>,
+        type_args: Vec<Type<T>>,
+        implementation: Box<Type<T>>,
     },
     Definition {
         // class, struct, (anything that implements a Type). Is of type <type> (Typedef)
-        name: Option<SmolStr>, // TODO inheritance
+        inst_name: Option<SmolStr>, // TODO inheritance
+        name: Option<SmolStr>,
         generics: Vec<Argument>,
-        implementations: HashMap<SmolStr, Value>,
-        inst_fields: HashMap<SmolStr, Option<Value>>,
+        implementations: HashMap<SmolStr, T>,
+        inst_fields: HashMap<SmolStr, (Box<Type<T>>, Option<T>)>,
     },
     Any,
-    Return(Box<Type>),
+    Return(Box<Type<T>>),
 }
 
-impl Display for Type {
+impl<T: Clone + PartialEq + Debug> Display for Type<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -86,7 +86,7 @@ impl Display for Type {
         )
     }
 }
-impl Type {
+impl<T: Clone + PartialEq + Debug> Type<T> {
     pub fn as_element(&self) -> Element {
         match self {
             Type::Instance { name, .. } => Element::Ident {
@@ -100,17 +100,7 @@ impl Type {
             Type::Return(ty) => ty.as_element(),
         }
     }
-    pub fn get_field(&self, attr: SmolStr) -> Option<&Value> {
-        match &self {
-            Type::Instance { fields, .. } => fields.get(&attr),
-            Type::Definition {
-                implementations, ..
-            } => implementations.get(&attr),
-            Type::Any => None,
-            Type::Return(ty) => ty.get_field(attr),
-        }
-    }
-    pub fn implementation(&self) -> &Type {
+    pub fn implementation(&self) -> &Type<T> {
         match &self {
             Type::Instance { implementation, .. } => implementation,
             Type::Definition { .. } => &TYPE_T,

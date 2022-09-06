@@ -9,6 +9,7 @@ use crate::{
     },
     Type, ZyxtError,
 };
+use crate::types::value::{Proc, Value};
 
 pub fn interpret_expr<O: Print>(
     input: &Element,
@@ -16,7 +17,7 @@ pub fn interpret_expr<O: Print>(
 ) -> Result<Value, ZyxtError> {
     match input {
         Element::Token(..) | Element::Comment { .. } | Element::Preprocess { .. } => panic!(),
-        Element::NullElement => Ok(Value::Null),
+        Element::NullElement => Ok(Value::Unit),
         Element::UnaryOpr {
             type_,
             operand,
@@ -100,11 +101,11 @@ pub fn interpret_expr<O: Print>(
                         .collect::<Vec<String>>()
                         .join(" ");
                     i_data.out.println(s);
-                    return Ok(Value::Null);
+                    return Ok(Value::Unit);
                 }
             }
             let to_call = interpret_expr(called, i_data)?;
-            Ok(Value::Null) // TODO
+            Ok(Value::Unit) // TODO
                             /*if let Value::Proc {
                                 is_fn,
                                 args,
@@ -165,7 +166,7 @@ pub fn interpret_expr<O: Print>(
                     return interpret_block(&cond.if_true, i_data, false, true);
                 }
             }
-            Ok(Value::Null)
+            Ok(Value::Unit)
         }
         Element::Block { content, .. } => interpret_block(content, i_data, true, true),
         Element::Delete {
@@ -177,7 +178,7 @@ pub fn interpret_expr<O: Print>(
             for name in names {
                 i_data.delete_val(name, position, raw)?;
             }
-            Ok(Value::Null)
+            Ok(Value::Unit)
         }
         Element::Return { value, .. } => {
             Ok(Value::Return(Box::new(interpret_expr(value, i_data)?)))
@@ -188,26 +189,27 @@ pub fn interpret_expr<O: Print>(
             return_type,
             content,
             ..
-        } => Ok(Value::Proc {
+        } => Ok(Value::Proc(Proc::Defined {
             is_fn: *is_fn,
             args: args.to_owned(),
             return_type: return_type.to_owned(),
             content: content.to_owned(),
-        }),
+        })),
         Element::Defer { content, .. } => {
             i_data.add_defer(content.to_owned());
-            Ok(Value::Null)
+            Ok(Value::Unit)
         }
         Element::Class {
-            class_attrs,
-            inst_attrs,
+            implementations,
+            inst_fields,
             is_struct,
             ..
         } => Ok(Value::Type(Type::Definition {
             name: if *is_struct { "struct" } else { "class" }.into(),
+            inst_name: None,
             generics: vec![],
-            class_attrs: class_attrs.to_owned(),
-            inst_attrs: inst_attrs.to_owned(),
+            implementations: implementations.to_owned(),
+            inst_fields: inst_fields.to_owned(),
         })),
     }
 }
@@ -218,7 +220,7 @@ pub fn interpret_block<O: Print>(
     returnable: bool,
     add_frame: bool,
 ) -> Result<Value, ZyxtError> {
-    let mut last = Value::Null;
+    let mut last = Value::Unit;
 
     macro_rules! pop {
         () => {
@@ -263,7 +265,7 @@ pub fn interpret_asts<O: Print>(
     input: &Vec<Element>,
     i_data: &mut InterpreterData<Value, O>,
 ) -> Result<i32, ZyxtError> {
-    let mut last = Value::Null;
+    let mut last = Value::Unit;
     for ele in input {
         if let Element::Return {
             value,
@@ -304,7 +306,7 @@ pub fn interpret_asts<O: Print>(
     }
     return if let Value::I32(v) = last {
         Ok(v)
-    } else if let Value::Null = last {
+    } else if let Value::Unit = last {
         Ok(0)
     } else {
         let last_ele = input.last().unwrap();

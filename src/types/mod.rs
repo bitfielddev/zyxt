@@ -5,4 +5,4 @@ pub mod position;
 pub mod printer;
 pub mod token;
 pub mod typeobj;
-mod value;
+pub mod value;

@@ -53,8 +53,8 @@ const fn i16_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref I16_T: Type = Type::Definition {
-        name: Some("i16".into()),
+    pub static ref I16_T: Type<Value> = Type::Definition {
+        inst_name: Some("i16".into()),
         generics: vec![],
         implementations: i16_t(),
         inst_fields: HashMap::new(),

@@ -45,8 +45,8 @@ const fn unit_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref UNIT_T: Type = Type::Definition {
-        name: Some("_unit".into()),
+    pub static ref UNIT_T: Type<Value> = Type::Definition {
+        inst_name: Some("_unit".into()),
         generics: vec![],
         implementations: unit_t(),
         inst_fields: HashMap::new(),

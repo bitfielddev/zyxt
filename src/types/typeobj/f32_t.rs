@@ -29,7 +29,7 @@ const fn f32_t() -> HashMap<&'static str, Value> {
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
             Type::Instance { name, .. } => match &*name {
-                "type" => typecast_to_type!(F32),
+                "type" => typecast_to_type!(F32_T),
                 "str" => typecast_float!(F32 => str, x),
                 "bool" => typecast_float!(F32 => bool, x),
                 "i8" => typecast_float!(F32 => I8 to_i8, x),
@@ -60,8 +60,8 @@ const fn f32_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref F32_T: Type = Type::Definition {
-        name: Some("f32".into()),
+    pub static ref F32_T: Type<Value> = Type::Definition {
+        inst_name: Some("f32".into()),
         generics: vec![],
         implementations: f32_t(),
         inst_fields: HashMap::new(),

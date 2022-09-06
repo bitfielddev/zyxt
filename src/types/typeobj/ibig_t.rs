@@ -65,8 +65,8 @@ const fn ibig_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref IBIG_T: Type = Type::Definition {
-        name: Some("ibig".into()),
+    pub static ref IBIG_T: Type<Value> = Type::Definition {
+        inst_name: Some("ibig".into()),
         generics: vec![],
         implementations: ibig_t(),
         inst_fields: HashMap::new(),

@@ -1,4 +1,5 @@
 use std::{fmt::Display, fs::File, io::Read, process::exit};
+use std::fmt::Debug;
 
 use ansi_term::{
     Color::{Black, Red, White, Yellow},
@@ -12,10 +13,10 @@ use crate::{
         position::Position,
         printer::Print,
         token::{Keyword, Token},
-        typeobj::Value,
     },
     Element, Type,
 };
+use crate::types::value::Value;
 
 #[derive(Clone)]
 pub struct ZyxtError {
@@ -287,7 +288,7 @@ impl ZyxtError {
     }
 
     /// Type has no attribute (typechecker)
-    pub fn error_3_1_0(parent: Element, parent_type: Type, attribute: impl Display) -> Self {
+    pub fn error_3_1_0<T: Clone + PartialEq + Debug>(parent: Element, parent_type: Type<T>, attribute: impl Display) -> Self {
         ZyxtError {
             position: vec![],
             code: "3.1.0",
@@ -373,7 +374,7 @@ impl ZyxtError {
     }
 
     /// Wrong type assigned to variable
-    pub fn error_4_3(variable: impl Display, var_type: Type, value_type: Type) -> Self {
+    pub fn error_4_3<T1: Clone + PartialEq + Debug, T2: Clone + PartialEq + Debug>(variable: impl Display, var_type: Type<T1>, value_type: Type<T2>) -> Self {
         ZyxtError {
             position: vec![],
             code: "4.3",
@@ -385,7 +386,7 @@ impl ZyxtError {
     }
 
     /// inconsistent block return type (temporary)
-    pub fn error_4_t(block_type: Type, return_type: Type) -> Self {
+    pub fn error_4_t<T1: Clone + PartialEq + Debug, T2: Clone + PartialEq + Debug>(block_type: Element, return_type: Type<T2>) -> Self {
         ZyxtError {
             position: vec![],
             code: "4.4",

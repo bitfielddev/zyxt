@@ -53,8 +53,8 @@ const fn u64_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref U64_T: Type = Type::Definition {
-        name: Some("u64".into()),
+    pub static ref U64_T: Type<Value> = Type::Definition {
+        inst_name: Some("u64".into()),
         generics: vec![],
         implementations: u64_t(),
         inst_fields: HashMap::new(),

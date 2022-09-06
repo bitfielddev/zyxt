@@ -59,8 +59,8 @@ const fn bool_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref BOOL_T: Type = Type::Definition {
-        name: Some("bool".into()),
+    pub static ref BOOL_T: Type<Value> = Type::Definition {
+        inst_name: Some("bool".into()),
         generics: vec![],
         implementations: bool_t(),
         inst_fields: HashMap::new(),

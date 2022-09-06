@@ -53,8 +53,8 @@ const fn u32_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref U32_T: Type = Type::Definition {
-        name: Some("u32".into()),
+    pub static ref U32_T: Type<Value> = Type::Definition {
+        inst_name: Some("u32".into()),
         generics: vec![],
         implementations: u32_t(),
         inst_fields: HashMap::new(),

@@ -53,8 +53,8 @@ const fn i8_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref I8_T: Type = Type::Definition {
-        name: Some("i8".into()),
+    pub static ref I8_T: Type<Value> = Type::Definition {
+        inst_name: Some("i8".into()),
         generics: vec![],
         implementations: i8_t(),
         inst_fields: HashMap::new(),

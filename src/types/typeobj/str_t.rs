@@ -5,7 +5,7 @@ use lazy_static::lazy_static;
 use crate::{
     binary, concat_vals, get_param, typecast_to_type,
     types::{
-        typeobj::{bool_t::BOOL_T, type_t::TYPE_T},
+        typeobj::{type_t::TYPE_T},
         value::{Proc, Value},
     },
     Type,
@@ -55,8 +55,8 @@ const fn str_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref STR_T: Type = Type::Definition {
-        name: Some("str".into()),
+    pub static ref STR_T: Type<Value> = Type::Definition {
+        inst_name: Some("str".into()),
         generics: vec![],
         implementations: str_t(),
         inst_fields: HashMap::new(),

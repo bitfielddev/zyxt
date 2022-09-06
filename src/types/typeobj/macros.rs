@@ -29,7 +29,7 @@ macro_rules! unary {
             $n,
             Proc::Builtin {
                 f: $f,
-                signature: vec![(vec![$ty], $ty)],
+                signature: vec![(vec![$ty.to_owned()], $ty.to_owned())],
             },
         );
     };
@@ -43,8 +43,8 @@ macro_rules! binary {
             Proc::Builtin {
                 f: $f,
                 signature: [$($o),+].into_iter().map(|o| (
-                    vec![$ty, o],
-                    $ty,
+                    vec![$ty.to_owned(), o.to_owned()],
+                    $ty.to_owned(),
                 )).collect(),
             },
         );
@@ -55,8 +55,8 @@ macro_rules! binary {
             Proc::Builtin {
                 f: $f,
                 signature: [$($o),+].into_iter().map(|o| (
-                    vec![$ty, o],
-                    $r,
+                    vec![$ty.to_owned(), o.to_owned()],
+                    $r.to_owned(),
                 )).collect(),
             },
         );

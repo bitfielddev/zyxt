@@ -59,8 +59,8 @@ const fn ubig_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref UBIG_T: Type = Type::Definition {
-        name: Some("ubig".into()),
+    pub static ref UBIG_T: Type<Value> = Type::Definition {
+        inst_name: Some("ubig".into()),
         generics: vec![],
         implementations: ubig_t(),
         inst_fields: HashMap::new(),

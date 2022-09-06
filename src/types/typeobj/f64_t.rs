@@ -60,8 +60,8 @@ const fn f64_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref F64_T: Type = Type::Definition {
-        name: Some("f16".into()),
+    pub static ref F64_T: Type<Value> = Type::Definition {
+        inst_name: Some("f16".into()),
         generics: vec![],
         implementations: f64_t(),
         inst_fields: HashMap::new(),

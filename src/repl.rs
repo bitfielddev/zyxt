@@ -8,9 +8,10 @@ use rustyline::{error::ReadlineError, Editor};
 use crate::{
     compile,
     interpreter::interpret_expr,
-    types::{interpreter_data::InterpreterData, printer::StdIoPrint, typeobj::Value},
+    types::{interpreter_data::InterpreterData, printer::StdIoPrint},
     ZyxtError,
 };
+use crate::types::value::Value;
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();

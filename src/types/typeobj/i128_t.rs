@@ -53,8 +53,8 @@ const fn i128_t() -> HashMap<&'static str, Value> {
 }
 
 lazy_static! {
-    pub static ref I128_T: Type = Type::Definition {
-        name: Some("i128".into()),
+    pub static ref I128_T: Type<Value> = Type::Definition {
+        inst_name: Some("i128".into()),
         generics: vec![],
         implementations: i128_t(),
         inst_fields: HashMap::new(),

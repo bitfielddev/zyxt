@@ -11,7 +11,6 @@ use num::{BigInt, BigUint};
 use crate::{
     types::{
         element::Argument,
-        token::OprType,
         typeobj::{
             bool_t::BOOL_T, f16_t::F16_T, f32_t::F32_T, f64_t::F64_T, i128_t::I128_T, i16_t::I16_T,
             i32_t::I32_T, i64_t::I64_T, i8_t::I8_T, ibig_t::IBIG_T, isize_t::ISIZE_T, str_t::STR_T,
@@ -22,21 +21,21 @@ use crate::{
     Element, ZyxtError,
 };
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Proc {
     Builtin {
         f: fn(&Vec<Value>) -> Option<Value>,
-        signature: Vec<(Vec<Type>, Type)>,
+        signature: Vec<(Vec<Type<Value>>, Type<Value>)>,
     },
     Defined {
         is_fn: bool,
         args: Vec<Argument>,
-        return_type: Type,
+        return_type: Type<Value>,
         content: Vec<Element>,
     },
 }
 
-#[derive(Clone, EnumAsInner)]
+#[derive(Clone, PartialEq, EnumAsInner)]
 pub enum Value {
     I8(i8),
     I16(i16),
@@ -57,10 +56,10 @@ pub enum Value {
     F64(f64),
     Str(String),
     Bool(bool),
-    Type(Type),
+    Type(Type<Value>),
     Proc(Proc),
     ClassInstance {
-        type_: Type,
+        type_: Type<Value>,
         attrs: HashMap<String, Value>,
     },
     Unit,
@@ -169,80 +168,6 @@ impl Display for Value {
 }
 
 impl Value {
-    pub fn call(&self, args: Vec<Value>) -> Result<Value, OprError> {
-        if args.len() == 1 {
-            macro_rules! mult {
-                () => {
-                    self.bin_opr(&OprType::AstMult, args.get(0).unwrap().to_owned())
-                };
-            }
-            match self {
-                Value::I8(_) => mult!(),
-                Value::I16(_) => mult!(),
-                Value::I32(_) => mult!(),
-                Value::I64(_) => mult!(),
-                Value::I128(_) => mult!(),
-                Value::Isize(_) => mult!(),
-                Value::Ibig(_) => mult!(),
-                Value::U8(_) => mult!(),
-                Value::U16(_) => mult!(),
-                Value::U32(_) => mult!(),
-                Value::U64(_) => mult!(),
-                Value::U128(_) => mult!(),
-                Value::Usize(_) => mult!(),
-                Value::Ubig(_) => mult!(),
-                Value::F32(_) => mult!(),
-                Value::F64(_) => mult!(),
-                Value::Proc { .. } => panic!(),
-                Value::Return(v) => v.call(args),
-                Value::Type(_v) => todo!(),
-                Value::ClassInstance { type_: _, .. } => todo!(),
-                _ => Err(OprError::NoImplForOpr),
-            }
-        } else {
-            Err(OprError::NoImplForOpr)
-        }
-    }
-    pub fn un_opr(&self, type_: &OprType) -> Result<Value, OprError> {
-        if let Value::Return(v) = self {
-            return v.un_opr(type_);
-        }
-        match type_ {
-            OprType::MinusSign => old::unary::un_minus(self),
-            OprType::PlusSign => old::unary::un_plus(self),
-            OprType::Not => old::unary::un_not(self),
-            _ => Err(OprError::NoImplForOpr),
-        }
-    }
-    pub fn bin_opr(&self, type_: &OprType, other: Value) -> Result<Value, OprError> {
-        if let Value::Return(v) = self {
-            return v.bin_opr(type_, other);
-        }
-        match type_ {
-            OprType::Plus => old::add::add(self, other),
-            OprType::Minus => old::sub::sub(self, other),
-            OprType::AstMult | OprType::DotMult | OprType::CrossMult => old::mul::mul(self, other),
-            OprType::Div | OprType::FractDiv => old::div::div(self, other),
-            OprType::Modulo => old::modulo::modulo(self, other),
-
-            OprType::Eq => old::eq::eq(self, other),
-            OprType::Noteq => old::eq::noteq(self, other),
-            OprType::Lt => old::lt::lt(self, other),
-            OprType::Lteq => old::lt::lteq(self, other),
-            OprType::Gt => old::gt::gt(self, other),
-            OprType::Gteq => old::gt::gteq(self, other),
-            OprType::Iseq => old::eq::iseq(self, other),
-            OprType::Isnteq => old::eq::isnteq(self, other),
-
-            OprType::And => unreachable!(),
-            OprType::Or => unreachable!(),
-            OprType::Xor => old::logic::xor(self, &other),
-
-            OprType::Concat => old::concat::concat(self, other),
-            OprType::TypeCast => old::typecast::typecast(self, other),
-            _ => Err(OprError::NoImplForOpr),
-        }
-    }
     pub fn is_num(&self) -> bool {
         matches!(
             self,
@@ -266,7 +191,7 @@ impl Value {
                 | Value::Bool(_)
         )
     }
-    pub fn default(type_: Type) -> Result<Self, ZyxtError> {
+    pub fn default(type_: Type<Value>) -> Result<Self, ZyxtError> {
         match type_.to_owned() {
             Type::Instance { name, .. } => Ok(match &*name {
                 "i8" => Value::I8(0),
@@ -294,7 +219,7 @@ impl Value {
             _ => panic!(),
         }
     }
-    pub fn from_type_content(type_: Type, content: String) -> Value {
+    pub fn from_type_content(type_: Type<Value>, content: String) -> Value {
         match type_ {
             Type::Instance { name, .. } => match &*name {
                 "i8" => Value::I8(content.parse::<i8>().unwrap()),
@@ -321,7 +246,7 @@ impl Value {
             _ => panic!(),
         }
     }
-    pub fn get_type_obj(&self) -> &Type {
+    pub fn get_type_obj(&self) -> &Type<Value> {
         match self {
             Value::I8(..) => &I8_T,
             Value::I16(..) => &I16_T,
@@ -347,7 +272,7 @@ impl Value {
             /*Type::Instance {
                 name: if *is_fn { "fn" } else { "proc" }.into(),
                 type_args: vec![Type::null(), return_type.to_owned()],
-                inst_attrs: Default::default(),
+                inst_fields: Default::default(),
                 implementation: None,
             }, // TODO angle bracket thingy when it is implemented*/
             {
@@ -359,7 +284,7 @@ impl Value {
         }
     }
     pub fn get_type(&self) -> Value {
-        Value::Type(self.get_type_obj())
+        Value::Type(self.get_type_obj().to_owned())
     }
     pub fn as_element(&self) -> Element {
         Element::Literal {
