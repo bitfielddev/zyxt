@@ -2,22 +2,24 @@ use std::collections::HashMap;
 
 use half::f16;
 
-use crate::{
-    arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_int, types::value::Proc,
-    unary, Type, Value,
-};
+use crate::{arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_int, unary, Type, typecast_to_type};
+use crate::types::value::{Proc, Value};
+use lazy_static::lazy_static;
+use crate::types::typeobj::type_t::TYPE_T;
+use crate::types::typeobj::str_t::STR_T;
+use crate::types::typeobj::bool_t::BOOL_T;
 
-pub const fn usize_t() -> HashMap<&'static str, Proc> {
+const fn usize_t() -> HashMap<&'static str, Value> {
     let mut h = HashMap::new();
-    concat_vals!(h, "usize");
-    unary!(h, unsigned default "usize" Usize);
-    arith_opr_num!(h, default "usize" Usize);
-    comp_opr_num!(h, default "usize" Usize);
+    concat_vals!(h, USIZE_T);
+    unary!(h, signed default USIZE_T Usize);
+    arith_opr_num!(h, default USIZE_T Usize);
+    comp_opr_num!(h, default USIZE_T Usize);
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
             Type::Instance { name, .. } => match &*name {
-                "type" => typecast_int!("usize" => type),
+                "type" => typecast_to_type!(USIZE_T),
                 "str" => typecast_int!(Usize => str, x),
                 "bool" => typecast_int!(Usize => bool, x),
                 "i8" => typecast_int!(Usize => I8, x),
@@ -42,7 +44,17 @@ pub const fn usize_t() -> HashMap<&'static str, Proc> {
             _ => unimplemented!(),
         })
     };
-    binary!(h, "usize", "_typecast", ["type"], "_any", typecast);
+    binary!(h, USIZE_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h
+    h.drain().map(|(k, v)| (k, Value::Proc(v))).collect()
 }
+
+lazy_static! {
+    pub static ref USIZE_T: Type = Type::Definition {
+        name: Some("usize".into()),
+        generics: vec![],
+        implementations: usize_t(),
+        inst_fields: HashMap::new(),
+    };
+}
+

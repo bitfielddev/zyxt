@@ -188,7 +188,7 @@ fn get_arguments(
             Ok(Argument {
                 name,
                 type_: if type_ == Element::NullElement {
-                    Type::any()
+                    Type::Any
                 } else {
                     type_.as_type()
                 },
@@ -543,7 +543,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                         }, /*type_: Type::from_name(if selected.type_ == TokenType::LiteralMisc {
                                match &*selected.value {
                                    "true" | "false" => "bool",
-                                   "null" => "_null",
+                                   "null" => "_unit",
                                    "inf" | "undef" => "_num",
                                    _ => unreachable!("{}", selected.value),
                                }
@@ -700,7 +700,7 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                         todo!("throw error here")
                     }
                 } else {
-                    Type::null()
+                    UNIT_T
                 };
 
                 if let Element::Block { content, .. } = selected {
@@ -1017,7 +1017,7 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
                 variable: Box::new(parse_expr(vec![declared_var.to_owned()])?),
                 content: Box::new(content),
                 flags,
-                type_: Type::null(), // TODO type later
+                type_: UNIT_T, // TODO type later
             });
             break;
         } else {

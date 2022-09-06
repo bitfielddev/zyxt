@@ -8,7 +8,7 @@ use rustyline::{error::ReadlineError, Editor};
 use crate::{
     compile,
     interpreter::interpret_expr,
-    types::{interpreter_data::InterpreterData, printer::StdIoPrint, value::Value},
+    types::{interpreter_data::InterpreterData, printer::StdIoPrint, typeobj::Value},
     ZyxtError,
 };
 
@@ -84,7 +84,7 @@ pub fn repl(verbosity: u8) {
                         }
                     } {
                         Ok(result) => {
-                            if result != Value::Null && i == instr_len - 1 {
+                            if result != Value::Unit && i == instr_len - 1 {
                                 println!("{}{}", out_symbol, Yellow.paint(format!("{:?}", result)))
                             }
                         }

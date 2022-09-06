@@ -4,13 +4,13 @@ use smol_str::SmolStr;
 
 use crate::{
     interpreter::interpret_block,
-    types::{errors::ZyxtError, position::Position, printer::Print, typeobj::Type, value::Value},
+    types::{errors::ZyxtError, position::Position, printer::Print, typeobj::Type, typeobj::Value},
     Element,
 };
 
 const PRIM_NAMES: [&str; 22] = [
     "str", "bool", "i8", "i16", "i32", "i64", "i128", "isize", "ibig", "u8", "u16", "u32", "u64",
-    "u128", "usize", "ubig", "f16", "f32", "f64", "_null", "_any", "type",
+    "u128", "usize", "ubig", "f16", "f32", "f64", "_unit", "_any", "type",
 ];
 
 pub struct FrameData<T: Clone + Display> {

@@ -6,30 +6,32 @@ use std::{
 use half::f16;
 use num_traits::ToPrimitive;
 
-use crate::{
-    arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_int, types::value::Proc,
-    unary, Type, Value,
-};
+use crate::{arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_int, unary, Type, typecast_to_type};
+use crate::types::value::{Proc, Value};
+use lazy_static::lazy_static;
+use crate::types::typeobj::type_t::TYPE_T;
+use crate::types::typeobj::str_t::STR_T;
+use crate::types::typeobj::bool_t::BOOL_T;
 
-pub const fn ibig_t() -> HashMap<&'static str, Proc> {
+const fn ibig_t() -> HashMap<&'static str, Value> {
     let mut h = HashMap::new();
-    concat_vals!(h, "ibig");
+    concat_vals!(h, IBIG_T);
 
-    unary!(h, "ibig", "_un_add", |x: &Vec<Value>| Some(x[0].to_owned()));
-    unary!(h, "ibig", "_un_sub", |x: &Vec<Value>| Some(Value::Ibig(
+    unary!(h, IBIG_T, "_un_add", |x: &Vec<Value>| Some(x[0].to_owned()));
+    unary!(h, IBIG_T, "_un_sub", |x: &Vec<Value>| Some(Value::Ibig(
         get_param!(x, 0, Ibig).neg()
     )));
-    unary!(h, "ibig", "_not", |x: &Vec<Value>| Some(Value::Bool(
+    unary!(h, IBIG_T, "_not", |x: &Vec<Value>| Some(Value::Bool(
         get_param!(x, 0, Ibig) == 0.into()
     )));
 
-    arith_opr_num!(h, big default "ibig" Ibig);
-    comp_opr_num!(h, default "ibig" Ibig);
+    arith_opr_num!(h, big default IBIG_T Ibig);
+    comp_opr_num!(h, default IBIG_T Ibig);
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
             Type::Instance { name, .. } => match &*name {
-                "type" => typecast_int!("ibig" => type),
+                "type" => typecast_to_type!(IBIG_T),
                 "str" => typecast_int!(Ibig => str, x),
                 "bool" => typecast_int!(Ibig => into bool, x),
                 "i8" => typecast_int!(Ibig => I8, x),
@@ -54,7 +56,16 @@ pub const fn ibig_t() -> HashMap<&'static str, Proc> {
             _ => unimplemented!(),
         })
     };
-    binary!(h, "ibig", "_typecast", ["type"], "_any", typecast);
+    binary!(h, IBIG_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h
+    h.drain().map(|(k, v)| (k, Value::Proc(v))).collect()
+}
+
+lazy_static! {
+    pub static ref IBIG_T: Type = Type::Definition {
+        name: Some("ibig".into()),
+        generics: vec![],
+        implementations: ibig_t(),
+        inst_fields: HashMap::new(),
+    };
 }

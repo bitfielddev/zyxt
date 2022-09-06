@@ -1,6 +1,6 @@
 #[macro_export]
 macro_rules! unary {
-    ($h:ident, signed default $ty1:literal $ty2:ident) => {
+    ($h:ident, signed default $ty1:ident $ty2:ident) => {
         unary!($h, $ty1, "_un_add", |x: &Vec<Value>| Some(x[0].to_owned()));
         unary!($h, $ty1, "_un_sub", |x: &Vec<Value>| Some(Value::$ty2(
             get_param!(x, 0, $ty2).checked_neg()?
@@ -9,13 +9,13 @@ macro_rules! unary {
             get_param!(x, 0, $ty2) == 0
         )));
     };
-    ($h:ident, unsigned default $ty1:literal $ty2:ident) => {
+    ($h:ident, unsigned default $ty1:ident $ty2:ident) => {
         unary!($h, $ty1, "_un_add", |x: &Vec<Value>| Some(x[0].to_owned()));
         unary!($h, $ty1, "_not", |x: &Vec<Value>| Some(Value::Bool(
             get_param!(x, 0, $ty2) == 0
         )));
     };
-    ($h:ident, float $ty1:literal $ty2:ident) => {
+    ($h:ident, float $ty1:ident $ty2:ident) => {
         unary!($h, $ty1, "_un_add", |x: &Vec<Value>| Some(x[0].to_owned()));
         unary!($h, $ty1, "_un_sub", |x: &Vec<Value>| Some(Value::$ty2(
             get_param!(x, 0, $ty2).neg()
@@ -24,12 +24,12 @@ macro_rules! unary {
             get_param!(x, 0, $ty2) == 0.0 || get_param!(x, 0, $ty2) == -0.0
         )));
     };
-    ($h:ident, $ty:literal, $n:literal, $f:expr) => {
+    ($h:ident, $ty:ident, $n:literal, $f:expr) => {
         $h.insert(
             $n,
             Proc::Builtin {
                 f: $f,
-                signature: vec![(vec![Type::from_name($ty)], Type::from_name($ty))],
+                signature: vec![(vec![$ty], $ty)],
             },
         );
     };
@@ -37,26 +37,26 @@ macro_rules! unary {
 
 #[macro_export]
 macro_rules! binary {
-    ($h:ident, $ty:literal, $n:literal, [$($o:literal),+], $f:expr) => {
+    ($h:ident, $ty:ident, $n:literal, [$($o:expr),+], $f:expr) => {
         $h.insert(
             $n,
             Proc::Builtin {
                 f: $f,
                 signature: [$($o),+].into_iter().map(|o| (
-                    vec![Type::from_name($ty), Type::from_name(o)],
-                    Type::from_name($ty),
+                    vec![$ty, o],
+                    $ty,
                 )).collect(),
             },
         );
     };
-    ($h:ident, $ty:literal, $n:literal, [$($o:literal),+], $r:literal, $f:expr) => {
+    ($h:ident, $ty:ident, $n:literal, [$($o:expr),+], $r:expr, $f:expr) => {
         $h.insert(
             $n,
             Proc::Builtin {
                 f: $f,
                 signature: [$($o),+].into_iter().map(|o| (
-                    vec![Type::from_name($ty), Type::from_name(o)],
-                    Type::from_name($ty),
+                    vec![$ty, o],
+                    $r,
                 )).collect(),
             },
         );
@@ -76,8 +76,8 @@ macro_rules! get_param {
 
 #[macro_export]
 macro_rules! typecast_to_type {
-    ($v:literal) => {
-        Value::Type(Type::from_name($v))
+    ($v:ident) => {
+        Value::Type($v)
     };
 }
 
@@ -86,10 +86,6 @@ macro_rules! typecast_int {
     ($v:ident => str, $x:ident) => {
         Value::Str(get_param!($x, 0, $v).to_string())
     };
-    ($v:literal => type) => {{
-        use $crate::typecast_to_type;
-        typecast_to_type!($v)
-    }};
     ($v:ident => bool, $x:ident) => {
         Value::Bool(get_param!($x, 0, $v) == 0)
     };
@@ -124,10 +120,6 @@ macro_rules! typecast_float {
     ($v:ident => str, $x:ident) => {
         Value::Str(get_param!($x, 0, $v).to_string())
     };
-    ($v:literal => type) => {{
-        use $crate::typecast_to_type;
-        typecast_to_type!($v)
-    }};
     ($v:ident => bool, $x:ident) => {
         Value::Bool(get_param!($x, 0, $v) == 0.0.into())
     };
@@ -144,14 +136,14 @@ macro_rules! typecast_float {
 
 #[macro_export]
 macro_rules! arith_opr_num {
-    ($h:ident, default $ty1:literal $ty2:ident) => {{
+    ($h:ident, default $ty1:ident $ty2:ident) => {{
         arith_opr_num!($h, $ty1 $ty2, "_add" checked_add);
         arith_opr_num!($h, $ty1 $ty2, "_sub" checked_sub);
         arith_opr_num!($h, $ty1 $ty2, "_mul" checked_mul);
         arith_opr_num!($h, $ty1 $ty2, "_div" checked_div);
         arith_opr_num!($h, $ty1 $ty2, "_rem" checked_rem);
     }};
-    ($h:ident, big default $ty1:literal $ty2:ident) => {{
+    ($h:ident, big default $ty1:ident $ty2:ident) => {{
         arith_opr_num!($h, $ty1 $ty2, "_add" big checked_add);
         arith_opr_num!($h, $ty1 $ty2, "_sub" big checked_sub);
         arith_opr_num!($h, $ty1 $ty2, "_mul" big checked_mul);
@@ -160,24 +152,24 @@ macro_rules! arith_opr_num {
             Value::$ty2(get_param!(x, 0, $ty2).rem(&get_param!(x, 1, U32)))
         ));
     }};
-    ($h:ident, float default $ty1:literal $ty2:ident) => {{
+    ($h:ident, float default $ty1:ident $ty2:ident) => {{
         arith_opr_num!($h, $ty1 $ty2, "_add" float add);
         arith_opr_num!($h, $ty1 $ty2, "_sub" float sub);
         arith_opr_num!($h, $ty1 $ty2, "_mul" float mul);
         arith_opr_num!($h, $ty1 $ty2, "_div" float div);
         arith_opr_num!($h, $ty1 $ty2, "_rem" float rem);
     }};
-    ($h:ident, $ty1:literal $ty2:ident, $fn_name:literal $rust_fn:ident) => {
+    ($h:ident, $ty1:ident $ty2:ident, $fn_name:literal $rust_fn:ident) => {
         binary!($h, $ty1, $fn_name, [$ty1], |x: &Vec<Value>| Some(
             Value::$ty2(get_param!(x, 0, $ty2).$rust_fn(get_param!(x, 1, $ty2))?)
         ));
     };
-    ($h:ident, $ty1:literal $ty2:ident, $fn_name:literal big $rust_fn:ident) => {
+    ($h:ident, $ty1:ident $ty2:ident, $fn_name:literal big $rust_fn:ident) => {
         binary!($h, $ty1, $fn_name, [$ty1], |x: &Vec<Value>| Some(
             Value::$ty2(get_param!(x, 0, $ty2).$rust_fn(&get_param!(x, 1, $ty2))?)
         ));
     };
-    ($h:ident, $ty1:literal $ty2:ident, $fn_name:literal float $rust_fn:ident) => {
+    ($h:ident, $ty1:ident $ty2:ident, $fn_name:literal float $rust_fn:ident) => {
         binary!($h, $ty1, $fn_name, [$ty1], |x: &Vec<Value>| Some(
             Value::$ty2(get_param!(x, 0, $ty2).$rust_fn(&get_param!(x, 1, $ty2)))
         ));
@@ -185,7 +177,7 @@ macro_rules! arith_opr_num {
 }
 #[macro_export]
 macro_rules! comp_opr_num {
-    ($h:ident, default $ty1:literal $ty2:ident) => {{
+    ($h:ident, default $ty1:ident $ty2:ident) => {{
         comp_opr_num!($h, $ty1 $ty2, "_eq" eq);
         comp_opr_num!($h, $ty1 $ty2, "_neq" !eq);
         comp_opr_num!($h, $ty1 $ty2, "_gt" gt);
@@ -193,21 +185,21 @@ macro_rules! comp_opr_num {
         comp_opr_num!($h, $ty1 $ty2, "_lt" lt);
         comp_opr_num!($h, $ty1 $ty2, "_le" le);
     }};
-    ($h:ident, $ty1:literal $ty2:ident, $fn_name:literal $rust_fn:ident) => {
-        binary!($h, $ty1, $fn_name, [$ty1], "bool", |x: &Vec<Value>| Some(
+    ($h:ident, $ty1:ident $ty2:ident, $fn_name:literal $rust_fn:ident) => {
+        binary!($h, $ty1, $fn_name, [$ty1], BOOL_T, |x: &Vec<Value>| Some(
             Value::Bool(get_param!(x, 0, $ty2).$rust_fn(&get_param!(x, 1, $ty2)))
         ));
     };
-    ($h:ident, $ty1:literal $ty2:ident, $fn_name:literal !$rust_fn:ident) => {
-        binary!($h, $ty1, $fn_name, [$ty1], "bool", |x: &Vec<Value>| Some(
+    ($h:ident, $ty1:ident $ty2:ident, $fn_name:literal !$rust_fn:ident) => {
+        binary!($h, $ty1, $fn_name, [$ty1], BOOL_T, |x: &Vec<Value>| Some(
             Value::Bool(!get_param!(x, 0, $ty2).$rust_fn(&get_param!(x, 1, $ty2)))
         ));
     }
 }
 #[macro_export]
 macro_rules! concat_vals {
-    ($h:ident, $ty1:literal) => {
-        binary!($h, $ty1, "_concat", ["_any"], "str", |x: &Vec<Value>| Some(
+    ($h:ident, $ty1:ident) => {
+        binary!($h, $ty1, "_concat", [Type::Any], STR_T, |x: &Vec<Value>| Some(
             Value::Str(format!("{}{}", x[0], x[1]))
         ));
     };

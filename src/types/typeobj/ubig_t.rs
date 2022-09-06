@@ -1,30 +1,31 @@
 use std::{collections::HashMap, ops::Rem};
 
 use half::f16;
-use num::BigUint;
 use num_traits::{CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, ToPrimitive};
 
-use crate::{
-    arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_int, types::value::Proc,
-    unary, Type, Value,
-};
+use crate::{arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_int, unary, Type, typecast_to_type};
+use crate::types::value::{Proc, Value};
+use lazy_static::lazy_static;
+use crate::types::typeobj::type_t::TYPE_T;
+use crate::types::typeobj::str_t::STR_T;
+use crate::types::typeobj::bool_t::BOOL_T;
 
-pub const fn ubig_t() -> HashMap<&'static str, Proc> {
+const fn ubig_t() -> HashMap<&'static str, Value> {
     let mut h = HashMap::new();
-    concat_vals!(h, "ubig");
+    concat_vals!(h, UBIG_T);
 
-    unary!(h, "ubig", "_un_add", |x: &Vec<Value>| Some(x[0].to_owned()));
-    unary!(h, "ubig", "_not", |x: &Vec<Value>| Some(Value::Bool(
+    unary!(h, UBIG_T, "_un_add", |x: &Vec<Value>| Some(x[0].to_owned()));
+    unary!(h, UBIG_T, "_not", |x: &Vec<Value>| Some(Value::Bool(
         get_param!(x, 0, Ubig) == 0u8.into()
     )));
 
-    arith_opr_num!(h, big default "ubig" Ubig);
-    comp_opr_num!(h, default "ubig" Ubig);
+    arith_opr_num!(h, big default UBIG_T Ubig);
+    comp_opr_num!(h, default UBIG_T Ubig);
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
             Type::Instance { name, .. } => match &*name {
-                "type" => typecast_int!("ubig" => type),
+                "type" => typecast_to_type!(UBIG_T),
                 "str" => typecast_int!(Ubig => str, x),
                 "bool" => typecast_int!(Ubig => into bool, x),
                 "i8" => typecast_int!(Ubig => I8, x),
@@ -49,7 +50,16 @@ pub const fn ubig_t() -> HashMap<&'static str, Proc> {
             _ => unimplemented!(),
         })
     };
-    binary!(h, "ubig", "_typecast", ["type"], "_any", typecast);
+    binary!(h, UBIG_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h
+    h.drain().map(|(k, v)| (k, Value::Proc(v))).collect()
+}
+
+lazy_static! {
+    pub static ref UBIG_T: Type = Type::Definition {
+        name: Some("ubig".into()),
+        generics: vec![],
+        implementations: ubig_t(),
+        inst_fields: HashMap::new(),
+    };
 }

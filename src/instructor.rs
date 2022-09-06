@@ -8,7 +8,7 @@ pub fn gen_instructions<O: Print>(
     typelist: &mut InterpreterData<Type, O>,
 ) -> Result<Vec<Element>, ZyxtError> {
     for ele in input.iter_mut() {
-        ele.eval_type(typelist)?;
+        ele.process(typelist)?;
     }
     Ok(input)
 }

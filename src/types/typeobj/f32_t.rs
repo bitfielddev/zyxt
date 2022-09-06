@@ -2,26 +2,28 @@ use std::collections::HashMap;
 
 use half::f16;
 
-use crate::{
-    arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_float, types::value::Proc,
-    unary, Type, Value,
-};
+use crate::{arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_float, unary, Type, typecast_to_type};
 use num::ToPrimitive;
 use num::bigint::ToBigInt;
 use num::bigint::ToBigUint;
 use std::ops::{Add, Sub, Mul, Div, Rem, Neg};
+use crate::types::value::{Proc, Value};
+use lazy_static::lazy_static;
+use crate::types::typeobj::type_t::TYPE_T;
+use crate::types::typeobj::str_t::STR_T;
+use crate::types::typeobj::bool_t::BOOL_T;
 
-pub const fn f32_t() -> HashMap<&'static str, Proc> {
+const fn f32_t() -> HashMap<&'static str, Value> {
     let mut h = HashMap::new();
-    concat_vals!(h, "f32");
-    unary!(h, float "f32" F32);
-    arith_opr_num!(h, float default "f32" F32);
-    comp_opr_num!(h, default "f32" F32);
+    concat_vals!(h, F32_T);
+    unary!(h, float F32_T F32);
+    arith_opr_num!(h, float default F32_T F32);
+    comp_opr_num!(h, default F32_T F32);
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
             Type::Instance { name, .. } => match &*name {
-                "type" => typecast_float!("f32" => type),
+                "type" => typecast_to_type!(F32),
                 "str" => typecast_float!(F32 => str, x),
                 "bool" => typecast_float!(F32 => bool, x),
                 "i8" => typecast_float!(F32 => I8 to_i8, x),
@@ -46,8 +48,16 @@ pub const fn f32_t() -> HashMap<&'static str, Proc> {
             _ => unimplemented!(),
         })
     };
-    binary!(h, "f32", "_typecast", ["type"], "_any", typecast);
+    binary!(h, F32_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h
+    h.drain().map(|(k, v)| (k, Value::Proc(v))).collect()
 }
-    
+
+lazy_static! {
+    pub static ref F32_T: Type = Type::Definition {
+        name: Some("f32".into()),
+        generics: vec![],
+        implementations: f32_t(),
+        inst_fields: HashMap::new(),
+    };
+}

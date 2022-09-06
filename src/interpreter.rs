@@ -6,7 +6,6 @@ use crate::{
         interpreter_data::{FrameData, InterpreterData},
         printer::Print,
         token::OprType,
-        value::{old::logic, Value},
     },
     Type, ZyxtError,
 };
@@ -105,7 +104,8 @@ pub fn interpret_expr<O: Print>(
                 }
             }
             let to_call = interpret_expr(called, i_data)?;
-            if let Value::Proc {
+            Ok(Value::Null) // TODO
+            /*if let Value::Proc {
                 is_fn,
                 args,
                 content,
@@ -155,7 +155,7 @@ pub fn interpret_expr<O: Print>(
             } else {
                 Err(ZyxtError::error_3_1_1(to_call, "_call".to_string())
                     .with_pos_and_raw(position, raw))
-            }
+            }*/
         }
         Element::If { conditions, .. } => {
             for cond in conditions {

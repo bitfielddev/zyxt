@@ -15,9 +15,14 @@ use crate::{
         printer::Print,
         token::{Flag, OprType, Token},
         typeobj::Type,
-        value::{utils::OprError, Value},
+        typeobj::{utils::OprError, Value},
     },
 };
+use crate::types::typeobj::bool_t::BOOL_T;
+use crate::types::typeobj::type_t::TYPE_T;
+use crate::types::typeobj::str_t::STR_T;
+use crate::types::typeobj::bool_t::BOOL_T;
+use crate::types::typeobj::unit_t::UNIT_T;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
@@ -139,7 +144,7 @@ impl Display for Argument {
             f,
             "{}{}{}",
             self.name,
-            if self.type_ != Type::any() {
+            if self.type_ != Type::Any {
                 format!(": {}", self.type_)
             } else {
                 "".to_string()
@@ -273,7 +278,7 @@ impl Element {
         ]
         .contains(type_)
         {
-            return Ok(Type::from_name("bool"));
+            return Ok(BOOL_T.to_owned());
         }
 
         match Value::default(type1.to_owned())? // TODO
@@ -296,7 +301,7 @@ impl Element {
         raw: &String,
     ) -> Result<Type, ZyxtError> {
         if type_ == &OprType::Not {
-            return Ok(Type::from_name("bool"));
+            return Ok(BOOL_T.to_owned());
         }
         match Value::default(opnd_type.to_owned())?.un_opr(type_) {
             Ok(v) => Ok(v.get_type_obj()),
@@ -313,13 +318,13 @@ impl Element {
         typelist: &mut InterpreterData<Type, O>,
         add_set: bool,
     ) -> Result<(Type, Option<Type>), ZyxtError> {
-        let mut last = Type::null();
+        let mut last = UNIT_T;
         let mut return_type = None;
         if add_set {
             typelist.add_frame(None);
         }
         for ele in content.iter_mut() {
-            last = ele.eval_type(typelist)?;
+            last = ele.process(typelist)?;
             if let Type::Return(value) = last.to_owned() {
                 if return_type.to_owned().is_none() {
                     return_type = Some(*value);
@@ -347,7 +352,7 @@ impl Element {
         typelist: &mut InterpreterData<Type, O>,
     ) -> Result<Type, ZyxtError> {
         for arg in args {
-            arg.eval_type(typelist)?;
+            arg.process(typelist)?;
         }
         if let Element::Ident {
             ref parent,
@@ -356,18 +361,18 @@ impl Element {
         } = *called
         {
             if name == &"out".to_string() && parent.get_name() == *"ter" {
-                return Ok(Type::null());
+                return Ok(UNIT_T);
             }
         }
         if let Type::Instance {
             name, type_args, ..
-        } = called.eval_type(typelist)?
+        } = called.process(typelist)?
         {
             if name == *"proc" || name == *"fn" {
                 return Ok(type_args[1].to_owned());
             }
         } // TODO type checking for args when arrays are implemented
-        Ok(Type::null())
+        Ok(UNIT_T)
         /*if let Some(v) = Variable::default(called.eval_type(typelist)?, typelist)?.call(
             args.iter_mut().map(|e| Variable::default(e.eval_type(typelist)?, typelist))
                 .collect::<Result<Vec<_>, _>>()?
@@ -383,7 +388,7 @@ impl Element {
     pub fn is_pattern(&self) -> bool {
         matches!(self, Element::Ident { .. })
     }
-    pub fn eval_type<O: Print>(
+    pub fn process<O: Print>(
         &mut self,
         typelist: &mut InterpreterData<Type, O>,
     ) -> Result<Type, ZyxtError> {
@@ -410,8 +415,8 @@ impl Element {
                         ZyxtError::error_2_2(*variable.to_owned()).with_element(&**variable)
                     );
                 }
-                let content_type = content.eval_type(typelist)?;
-                if *type_ == Type::null() {
+                let content_type = content.process(typelist)?;
+                if *type_ == UNIT_T {
                     typelist.declare_val(&variable.get_name(), &content_type);
                     *self = Element::Declare {
                         type_: content_type.to_owned(),
@@ -454,9 +459,9 @@ impl Element {
                 raw,
                 ..
             } => {
-                let type1 = operand1.eval_type(typelist)?;
-                let type2 = operand2.eval_type(typelist)?;
-                if type_ == &OprType::TypeCast && type2 == Type::from_name("type") {
+                let type1 = operand1.process(typelist)?;
+                let type2 = operand2.process(typelist)?;
+                if type_ == &OprType::TypeCast && type2 == TYPE_T {
                     return Ok(Type::from_name(&*operand2.get_name()));
                 }
                 Element::bin_op_return_type(type_, type1, type2, position, raw)
@@ -468,7 +473,7 @@ impl Element {
                 raw,
                 ..
             } => {
-                let opnd_type = operand.eval_type(typelist)?;
+                let opnd_type = operand.process(typelist)?;
                 Element::un_op_return_type(type_, opnd_type, position, raw)
             }
             Element::Procedure {
@@ -485,7 +490,7 @@ impl Element {
                     typelist.declare_val(&arg.name, &arg.type_);
                 }
                 let (res, block_return_type) = Element::block_type(content, typelist, false)?;
-                if return_type == &Type::null() || block_return_type.is_none() {
+                if return_type == &UNIT_T || block_return_type.is_none() {
                     *return_type = res;
                 } else if let Some(block_return_type) = block_return_type {
                     if *return_type == block_return_type {
@@ -493,12 +498,12 @@ impl Element {
                             return_type.to_owned(),
                             block_return_type,
                         )
-                        .with_pos_and_raw(position, raw));
+                            .with_pos_and_raw(position, raw));
                     }
                 }
                 Ok(Type::Instance {
                     name: if *is_fn { "fn" } else { "proc" }.into(),
-                    type_args: vec![Type::null(), return_type.to_owned()],
+                    type_args: vec![UNIT_T, return_type.to_owned()],
                     inst_attrs: Default::default(),
                     implementation: None,
                 })
@@ -509,13 +514,13 @@ impl Element {
                 let mut i_data = InterpreterData::default_variable(typelist.out);
                 let pre_value = interpret_block(&pre_instructions, &mut i_data, true, false)?;
                 *self = pre_value.as_element();
-                self.eval_type(typelist)
+                self.process(typelist)
             }
             Element::Defer { content, .. } =>
             // TODO check block return against call stack
-            {
-                Ok(Element::block_type(content, typelist, false)?.0)
-            }
+                {
+                    Ok(Element::block_type(content, typelist, false)?.0)
+                }
             Element::Set {
                 position,
                 variable,
@@ -528,7 +533,7 @@ impl Element {
                         ZyxtError::error_2_2(*variable.to_owned()).with_element(&**variable)
                     );
                 }
-                let content_type = content.eval_type(typelist)?;
+                let content_type = content.process(typelist)?;
                 let var_type = typelist.get_val(&variable.get_name(), position, raw)?;
                 if content_type != var_type {
                     Err(
@@ -549,7 +554,7 @@ impl Element {
                 typelist.add_frame(None);
                 let class_attrs = HashMap::new();
                 for expr in content.iter_mut() {
-                    expr.eval_type(typelist)?;
+                    expr.process(typelist)?;
                     if let Element::Declare {
                         variable,
                         content,
@@ -557,7 +562,7 @@ impl Element {
                         ..
                     } = expr
                     {
-                        content.eval_type(typelist)?;
+                        content.process(typelist)?;
                         if flags.contains(&Flag::Inst) && args != &None {
                             todo!("raise error here")
                         }
@@ -580,10 +585,10 @@ impl Element {
             Element::NullElement
             | Element::Delete { .. }
             | Element::Comment { .. }
-            | Element::Return { .. } => Ok(Type::null()),
+            | Element::Return { .. } => Ok(UNIT_T),
             Element::Token(Token {
-                position, value, ..
-            }) => Err(ZyxtError::error_2_1_0(value.to_owned())
+                               position, value, ..
+                           }) => Err(ZyxtError::error_2_1_0(value.to_owned())
                 .with_pos_and_raw(position, &value.to_string())),
         }
     }

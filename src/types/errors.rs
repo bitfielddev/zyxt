@@ -12,7 +12,7 @@ use crate::{
         position::Position,
         printer::Print,
         token::{Keyword, Token},
-        value::Value,
+        typeobj::Value,
     },
     Element, Type,
 };

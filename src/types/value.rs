@@ -1,26 +1,3 @@
-mod i128_t;
-mod i16_t;
-mod i32_t;
-mod i64_t;
-mod i8_t;
-mod ibig_t;
-mod isize_t;
-mod macros;
-pub mod old;
-mod u128_t;
-mod u16_t;
-mod u32_t;
-mod u64_t;
-mod u8_t;
-mod ubig_t;
-mod usize_t;
-mod str_t;
-mod bool_t;
-mod type_t;
-mod f32_t;
-mod f64_t;
-mod f16_t;
-
 use std::{
     collections::HashMap,
     fmt::{Debug, Display, Formatter},
@@ -32,9 +9,30 @@ use half::f16;
 use num::{BigInt, BigUint};
 
 use crate::{
-    types::{element::Argument, token::OprType, typeobj::Type, value::old::utils::OprError},
+    types::{element::Argument, token::OprType, typeobj::Type},
     Element, ZyxtError,
 };
+use crate::types::typeobj::i8_t::I8_T;
+use crate::types::typeobj::i16_t::I16_T;
+use crate::types::typeobj::i32_t::I32_T;
+use crate::types::typeobj::i64_t::I64_T;
+use crate::types::typeobj::i128_t::I128_T;
+use crate::types::typeobj::ibig_t::IBIG_T;
+use crate::types::typeobj::isize_t::ISIZE_T;
+use crate::types::typeobj::u8_t::U8_T;
+use crate::types::typeobj::u16_t::U16_T;
+use crate::types::typeobj::u32_t::U32_T;
+use crate::types::typeobj::u64_t::U64_T;
+use crate::types::typeobj::u128_t::U128_T;
+use crate::types::typeobj::ubig_t::UBIG_T;
+use crate::types::typeobj::usize_t::USIZE_T;
+use crate::types::typeobj::str_t::STR_T;
+use crate::types::typeobj::bool_t::BOOL_T;
+use crate::types::typeobj::type_t::TYPE_T;
+use crate::types::typeobj::unit_t::UNIT_T;
+use crate::types::typeobj::f16_t::F16_T;
+use crate::types::typeobj::f32_t::F32_T;
+use crate::types::typeobj::f64_t::F64_T;
 
 #[derive(Clone)]
 pub enum Proc {
@@ -77,7 +75,7 @@ pub enum Value {
         type_: Type,
         attrs: HashMap<String, Value>,
     },
-    Null,
+    Unit,
     Return(Box<Value>),
 }
 
@@ -117,7 +115,7 @@ impl Debug for Value {
                 | Value::Type(_)
                 | Value::ClassInstance { .. }
                 | Value::Proc { .. }
-                | Value::Null => self.to_string(),
+                | Value::Unit => self.to_string(),
                 Value::Return(_) => unreachable!(),
             }
         )
@@ -175,7 +173,7 @@ impl Display for Value {
                 Value::Bool(v) => v.to_string(),
                 Value::Type(v) | Value::ClassInstance { type_: v, .. } => format!("<{}>", v),
                 Value::Proc(v) => v.to_string(),
-                Value::Null => "null".to_string(),
+                Value::Unit => "()".to_string(),
                 Value::Return(v) => v.to_string(),
             }
         )
@@ -301,8 +299,8 @@ impl Value {
                 "f64" => Value::F64(0.0),
                 "str" => Value::Str("".to_string()),
                 "bool" => Value::Bool(false),
-                "_null" | "_any" => Value::Null, // TODO move _any somewhere else
-                "type" => Value::Type(Type::null()),
+                "_unit" | "_any" => Value::Unit, // TODO move _any somewhere else
+                "type" => Value::Type(UNIT_T.to_owned()),
                 _ => panic!("{:#?}", type_),
             }),
             _ => panic!(),
@@ -335,28 +333,28 @@ impl Value {
             _ => panic!(),
         }
     }
-    pub fn get_type_obj(&self) -> Type {
+    pub fn get_type_obj(&self) -> &Type {
         match self {
-            Value::I8(..) => Type::from_name("i8"),
-            Value::I16(..) => Type::from_name("i16"),
-            Value::I32(..) => Type::from_name("i32"),
-            Value::I64(..) => Type::from_name("i64"),
-            Value::I128(..) => Type::from_name("i128"),
-            Value::Isize(..) => Type::from_name("isize"),
-            Value::Ibig(..) => Type::from_name("ibig"),
-            Value::U8(..) => Type::from_name("u8"),
-            Value::U16(..) => Type::from_name("u16"),
-            Value::U32(..) => Type::from_name("u32"),
-            Value::U64(..) => Type::from_name("u64"),
-            Value::U128(..) => Type::from_name("u128"),
-            Value::Usize(..) => Type::from_name("usize"),
-            Value::Ubig(..) => Type::from_name("ubig"),
-            Value::F16(..) => Type::from_name("f16"),
-            Value::F32(..) => Type::from_name("f32"),
-            Value::F64(..) => Type::from_name("f64"),
-            Value::Str(..) => Type::from_name("str"),
-            Value::Bool(..) => Type::from_name("bool"),
-            Value::Type(..) => Type::from_name("type"),
+            Value::I8(..) => &I8_T,
+            Value::I16(..) => &I16_T,
+            Value::I32(..) => &I32_T,
+            Value::I64(..) => &I64_T,
+            Value::I128(..) => &I128_T,
+            Value::Isize(..) => &ISIZE_T,
+            Value::Ibig(..) => &IBIG_T,
+            Value::U8(..) => &U8_T,
+            Value::U16(..) => &U16_T,
+            Value::U32(..) => &U32_T,
+            Value::U64(..) => &U64_T,
+            Value::U128(..) => &U128_T,
+            Value::Usize(..) => &USIZE_T,
+            Value::Ubig(..) => &UBIG_T,
+            Value::F16(..) => &F16_T,
+            Value::F32(..) => &F32_T,
+            Value::F64(..) => &F64_T,
+            Value::Str(..) => &STR_T,
+            Value::Bool(..) => &BOOL_T,
+            Value::Type(..) => &TYPE_T,
             Value::Proc(_) =>
             /*Type::Instance {
                 name: if *is_fn { "fn" } else { "proc" }.into(),
@@ -367,8 +365,8 @@ impl Value {
             {
                 todo!()
             }
-            Value::ClassInstance { type_, .. } => type_.to_owned(),
-            Value::Null => Type::null(),
+            Value::ClassInstance { type_, .. } => type_,
+            Value::Unit => &UNIT_T,
             Value::Return(v) => v.get_type_obj(),
         }
     }
