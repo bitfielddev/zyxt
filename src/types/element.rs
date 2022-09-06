@@ -583,7 +583,8 @@ impl Element {
             | Element::Return { .. } => Ok(Type::null()),
             Element::Token(Token {
                 position, value, ..
-            }) => Err(ZyxtError::error_2_1_0(value.to_owned()).with_pos_and_raw(position, &value.to_string())),
+            }) => Err(ZyxtError::error_2_1_0(value.to_owned())
+                .with_pos_and_raw(position, &value.to_string())),
         }
     }
 }

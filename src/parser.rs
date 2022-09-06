@@ -1,13 +1,16 @@
 use std::{cmp::min, collections::HashMap};
+
 use num::BigInt;
 
-use crate::types::{
-    element::{Argument, Condition, Element, VecElementRaw},
-    errors::ZyxtError,
-    token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
-    typeobj::Type,
+use crate::{
+    types::{
+        element::{Argument, Condition, Element, VecElementRaw},
+        errors::ZyxtError,
+        token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
+        typeobj::Type,
+    },
+    Value,
 };
-use crate::Value;
 
 macro_rules! check_and_update_cursor {
     ($cursor: ident, $selected: ident, $elements: ident) => {
@@ -300,7 +303,9 @@ fn parse_preprocess_and_defer(elements: Vec<Element>) -> Result<Vec<Element>, Zy
         }) = selected
         {
             if cursor == elements.len() - 1 {
-                return Err(ZyxtError::error_2_1_16().with_pos_and_raw(position, &value.to_string()));
+                return Err(
+                    ZyxtError::error_2_1_16().with_pos_and_raw(position, &value.to_string())
+                );
             }
             let raw = selected.get_raw();
             let is_pre = raw.trim() == "pre";
@@ -525,44 +530,45 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                                     Value::I128(val)
                                 } else if let Ok(val) = selected.value.parse::<u128>() {
                                     Value::U128(val)
-                                } else if let Ok(val) = selected.value.parse::<BigInt>(){
+                                } else if let Ok(val) = selected.value.parse::<BigInt>() {
                                     Value::Ibig(val)
                                 } else {
                                     unreachable!()
                                 }
                             }
-                            TokenType::LiteralString => Value::Str(selected.value[1..selected.value.len() - 1].to_string()),
-                            type_ => unreachable!("{type_:?}")
-                        }
-                        /*type_: Type::from_name(if selected.type_ == TokenType::LiteralMisc {
-                            match &*selected.value {
-                                "true" | "false" => "bool",
-                                "null" => "_null",
-                                "inf" | "undef" => "_num",
-                                _ => unreachable!("{}", selected.value),
+                            TokenType::LiteralString => {
+                                Value::Str(selected.value[1..selected.value.len() - 1].to_string())
                             }
-                        } else if selected.type_ == TokenType::LiteralNumber {
-                            if selected.value.contains('.') {
-                                "f64"
-                            } else if selected.value.parse::<i32>().is_ok() {
-                                "i32"
-                            } else if selected.value.parse::<i64>().is_ok() {
-                                "i64"
-                            } else if selected.value.parse::<i128>().is_ok() {
-                                "i128"
-                            } else if selected.value.parse::<u128>().is_ok() {
-                                "u128"
-                            } else {
-                                "ibig"
-                            }
-                        } else {
-                            "str"
-                        }),
-                        content: if selected.type_ == TokenType::LiteralString {
-                            selected.value[1..selected.value.len() - 1].to_string()
-                        } else {
-                            selected.value.to_owned()
-                        },*/
+                            type_ => unreachable!("{type_:?}"),
+                        }, /*type_: Type::from_name(if selected.type_ == TokenType::LiteralMisc {
+                               match &*selected.value {
+                                   "true" | "false" => "bool",
+                                   "null" => "_null",
+                                   "inf" | "undef" => "_num",
+                                   _ => unreachable!("{}", selected.value),
+                               }
+                           } else if selected.type_ == TokenType::LiteralNumber {
+                               if selected.value.contains('.') {
+                                   "f64"
+                               } else if selected.value.parse::<i32>().is_ok() {
+                                   "i32"
+                               } else if selected.value.parse::<i64>().is_ok() {
+                                   "i64"
+                               } else if selected.value.parse::<i128>().is_ok() {
+                                   "i128"
+                               } else if selected.value.parse::<u128>().is_ok() {
+                                   "u128"
+                               } else {
+                                   "ibig"
+                               }
+                           } else {
+                               "str"
+                           }),
+                           content: if selected.type_ == TokenType::LiteralString {
+                               selected.value[1..selected.value.len() - 1].to_string()
+                           } else {
+                               selected.value.to_owned()
+                           },*/
                     }
                 }
                 TokenType::CloseParen => {

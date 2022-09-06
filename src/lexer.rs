@@ -214,7 +214,8 @@ impl Lexer for LineCommentLexer {
         while let Some((char, _)) = iter.next() {
             raw.push_str(char);
             if char == "\n" {
-                tokens.last_mut().unwrap().value = format!("{}{raw}", tokens.last().unwrap().value).into();
+                tokens.last_mut().unwrap().value =
+                    format!("{}{raw}", tokens.last().unwrap().value).into();
                 return Ok(Some(&MainLexer));
             }
         }
@@ -236,7 +237,8 @@ impl Lexer for BlockCommentLexer {
                 raw.push_str(char);
                 let (char, _) = iter.next().unwrap();
                 if char == "/" {
-                    tokens.last_mut().unwrap().value = format!("{}{raw}", tokens.last().unwrap().value).into();
+                    tokens.last_mut().unwrap().value =
+                        format!("{}{raw}", tokens.last().unwrap().value).into();
                     return Ok(Some(&MainLexer));
                 } else {
                     raw.push_str(char);
@@ -245,7 +247,8 @@ impl Lexer for BlockCommentLexer {
                 raw.push_str(char);
                 let (char, _) = iter.next().unwrap();
                 if char == "*" {
-                    tokens.last_mut().unwrap().value = format!("{}{raw}", tokens.last().unwrap().value).into();
+                    tokens.last_mut().unwrap().value =
+                        format!("{}{raw}", tokens.last().unwrap().value).into();
                     raw = "".to_string();
                     BlockCommentLexer.lex(iter, tokens)?.unwrap();
                 } else {

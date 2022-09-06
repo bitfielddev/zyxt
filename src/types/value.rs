@@ -1,33 +1,56 @@
-mod add;
-mod concat;
-mod div;
-mod eq;
-mod gt;
-pub mod logic;
-mod lt;
-mod modulo;
-mod mul;
-mod pow;
-mod sub;
-mod typecast;
-mod unary;
-pub mod utils;
+mod i128_t;
+mod i16_t;
+mod i32_t;
+mod i64_t;
+mod i8_t;
+mod ibig_t;
+mod isize_t;
+mod macros;
+pub mod old;
+mod u128_t;
+mod u16_t;
+mod u32_t;
+mod u64_t;
+mod u8_t;
+mod ubig_t;
+mod usize_t;
+mod str_t;
+mod bool_t;
+mod type_t;
+mod f32_t;
+mod f64_t;
+mod f16_t;
 
 use std::{
     collections::HashMap,
     fmt::{Debug, Display, Formatter},
 };
 
+use anyhow::Result;
 use enum_as_inner::EnumAsInner;
 use half::f16;
 use num::{BigInt, BigUint};
 
 use crate::{
-    types::{element::Argument, token::OprType, typeobj::Type, value::utils::OprError},
+    types::{element::Argument, token::OprType, typeobj::Type, value::old::utils::OprError},
     Element, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, EnumAsInner)]
+#[derive(Clone)]
+pub enum Proc {
+    Builtin {
+        f: fn(&Vec<Value>) -> Option<Value>,
+        signature: Vec<(Vec<Type>, Type)>,
+    },
+    Defined {
+        is_fn: bool,
+        args: Vec<Argument>,
+        return_type: Type,
+        content: Vec<Element>,
+    },
+}
+
+#[derive(Clone, EnumAsInner)]
 pub enum Value {
     I8(i8),
     I16(i16),
@@ -49,12 +72,7 @@ pub enum Value {
     Str(String),
     Bool(bool),
     Type(Type),
-    Proc {
-        is_fn: bool,
-        args: Vec<Argument>,
-        return_type: Type,
-        content: Vec<Element>,
-    },
+    Proc(Proc),
     ClassInstance {
         type_: Type,
         attrs: HashMap<String, Value>,
@@ -63,6 +81,11 @@ pub enum Value {
     Return(Box<Value>),
 }
 
+impl Debug for Proc {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_string())
+    }
+}
 impl Debug for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Value::Return(v) = self {
@@ -100,6 +123,31 @@ impl Debug for Value {
         )
     }
 }
+impl Display for Proc {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Proc::Builtin { f, signature } => "<{builtin}>".to_string(), // TODO
+                Proc::Defined {
+                    is_fn,
+                    args,
+                    return_type,
+                    ..
+                } => format!(
+                    "{}|{}|: {}",
+                    if *is_fn { "fn" } else { "proc" },
+                    args.iter()
+                        .map(|a| a.to_string())
+                        .collect::<Vec<String>>()
+                        .join(","),
+                    return_type
+                ),
+            }
+        )
+    }
+}
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -126,20 +174,7 @@ impl Display for Value {
                 Value::Str(v) => v.to_owned(),
                 Value::Bool(v) => v.to_string(),
                 Value::Type(v) | Value::ClassInstance { type_: v, .. } => format!("<{}>", v),
-                Value::Proc {
-                    is_fn,
-                    args,
-                    return_type,
-                    ..
-                } => format!(
-                    "{}|{}|: {}",
-                    if *is_fn { "fn" } else { "proc" },
-                    args.iter()
-                        .map(|a| a.to_string())
-                        .collect::<Vec<String>>()
-                        .join(","),
-                    return_type
-                ),
+                Value::Proc(v) => v.to_string(),
                 Value::Null => "null".to_string(),
                 Value::Return(v) => v.to_string(),
             }
@@ -187,9 +222,9 @@ impl Value {
             return v.un_opr(type_);
         }
         match type_ {
-            OprType::MinusSign => unary::un_minus(self),
-            OprType::PlusSign => unary::un_plus(self),
-            OprType::Not => unary::un_not(self),
+            OprType::MinusSign => old::unary::un_minus(self),
+            OprType::PlusSign => old::unary::un_plus(self),
+            OprType::Not => old::unary::un_not(self),
             _ => Err(OprError::NoImplForOpr),
         }
     }
@@ -198,27 +233,27 @@ impl Value {
             return v.bin_opr(type_, other);
         }
         match type_ {
-            OprType::Plus => add::add(self, other),
-            OprType::Minus => sub::sub(self, other),
-            OprType::AstMult | OprType::DotMult | OprType::CrossMult => mul::mul(self, other),
-            OprType::Div | OprType::FractDiv => div::div(self, other),
-            OprType::Modulo => modulo::modulo(self, other),
+            OprType::Plus => old::add::add(self, other),
+            OprType::Minus => old::sub::sub(self, other),
+            OprType::AstMult | OprType::DotMult | OprType::CrossMult => old::mul::mul(self, other),
+            OprType::Div | OprType::FractDiv => old::div::div(self, other),
+            OprType::Modulo => old::modulo::modulo(self, other),
 
-            OprType::Eq => eq::eq(self, other),
-            OprType::Noteq => eq::noteq(self, other),
-            OprType::Lt => lt::lt(self, other),
-            OprType::Lteq => lt::lteq(self, other),
-            OprType::Gt => gt::gt(self, other),
-            OprType::Gteq => gt::gteq(self, other),
-            OprType::Iseq => eq::iseq(self, other),
-            OprType::Isnteq => eq::isnteq(self, other),
+            OprType::Eq => old::eq::eq(self, other),
+            OprType::Noteq => old::eq::noteq(self, other),
+            OprType::Lt => old::lt::lt(self, other),
+            OprType::Lteq => old::lt::lteq(self, other),
+            OprType::Gt => old::gt::gt(self, other),
+            OprType::Gteq => old::gt::gteq(self, other),
+            OprType::Iseq => old::eq::iseq(self, other),
+            OprType::Isnteq => old::eq::isnteq(self, other),
 
             OprType::And => unreachable!(),
             OprType::Or => unreachable!(),
-            OprType::Xor => logic::xor(self, &other),
+            OprType::Xor => old::logic::xor(self, &other),
 
-            OprType::Concat => concat::concat(self, other),
-            OprType::TypeCast => typecast::typecast(self, other),
+            OprType::Concat => old::concat::concat(self, other),
+            OprType::TypeCast => old::typecast::typecast(self, other),
             _ => Err(OprError::NoImplForOpr),
         }
     }
@@ -322,14 +357,16 @@ impl Value {
             Value::Str(..) => Type::from_name("str"),
             Value::Bool(..) => Type::from_name("bool"),
             Value::Type(..) => Type::from_name("type"),
-            Value::Proc {
-                is_fn, return_type, ..
-            } => Type::Instance {
+            Value::Proc(_) =>
+            /*Type::Instance {
                 name: if *is_fn { "fn" } else { "proc" }.into(),
                 type_args: vec![Type::null(), return_type.to_owned()],
                 inst_attrs: Default::default(),
                 implementation: None,
-            }, // TODO angle bracket thingy when it is implemented
+            }, // TODO angle bracket thingy when it is implemented*/
+            {
+                todo!()
+            }
             Value::ClassInstance { type_, .. } => type_.to_owned(),
             Value::Null => Type::null(),
             Value::Return(v) => v.get_type_obj(),
@@ -342,7 +379,7 @@ impl Value {
         Element::Literal {
             position: Default::default(),
             raw: self.to_string(),
-            content: self.to_owned()
+            content: self.to_owned(),
         }
     }
 }

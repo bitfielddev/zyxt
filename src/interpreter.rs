@@ -6,7 +6,7 @@ use crate::{
         interpreter_data::{FrameData, InterpreterData},
         printer::Print,
         token::OprType,
-        value::{logic, Value},
+        value::{old::logic, Value},
     },
     Type, ZyxtError,
 };
