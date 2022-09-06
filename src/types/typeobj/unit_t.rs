@@ -1,17 +1,22 @@
-use lazy_static::lazy_static;
-use crate::{binary, concat_vals, get_param, Type, typecast_to_type};
 use std::collections::HashMap;
-use crate::types::value::{Value, Proc};
-use crate::types::typeobj::type_t::TYPE_T;
-use crate::types::typeobj::str_t::STR_T;
-use crate::types::typeobj::bool_t::BOOL_T;
+
+use lazy_static::lazy_static;
+
+use crate::{
+    binary, concat_vals, get_param, typecast_to_type,
+    types::{
+        typeobj::{bool_t::BOOL_T, str_t::STR_T, type_t::TYPE_T},
+        value::{Proc, Value},
+    },
+    Type,
+};
 
 macro_rules! comp_opr_unit {
     ($h:ident, $fn_name:literal, $res:literal) => {
-        binary!($h, UNIT_T, $fn_name, [UNIT_T], BOOL_T, |x: &Vec<Value>| Some(
-            Value::Bool($res)
-        ));
-    }
+        binary!($h, UNIT_T, $fn_name, [UNIT_T], BOOL_T, |x: &Vec<Value>| {
+            Some(Value::Bool($res))
+        });
+    };
 }
 
 const fn unit_t() -> HashMap<&'static str, Value> {

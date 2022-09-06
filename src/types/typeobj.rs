@@ -1,3 +1,7 @@
+pub mod bool_t;
+pub mod f16_t;
+pub mod f32_t;
+pub mod f64_t;
 pub mod i128_t;
 pub mod i16_t;
 pub mod i32_t;
@@ -6,20 +10,16 @@ pub mod i8_t;
 pub mod ibig_t;
 pub mod isize_t;
 pub mod macros;
+pub mod str_t;
+pub mod type_t;
 pub mod u128_t;
 pub mod u16_t;
 pub mod u32_t;
 pub mod u64_t;
 pub mod u8_t;
 pub mod ubig_t;
-pub mod usize_t;
-pub mod str_t;
-pub mod bool_t;
-pub mod type_t;
-pub mod f32_t;
-pub mod f64_t;
-pub mod f16_t;
 pub mod unit_t;
+pub mod usize_t;
 
 use std::{
     collections::HashMap,
@@ -28,12 +28,14 @@ use std::{
 
 use smol_str::SmolStr;
 
-use crate::{types::element::Argument, Element};
-use crate::types::typeobj::type_t::TYPE_T;
-use crate::types::typeobj::str_t::STR_T;
-use crate::types::typeobj::bool_t::BOOL_T;
-use crate::types::typeobj::unit_t::UNIT_T;
-use crate::types::value::Value;
+use crate::{
+    types::{
+        element::Argument,
+        typeobj::{bool_t::BOOL_T, str_t::STR_T, type_t::TYPE_T, unit_t::UNIT_T},
+        value::Value,
+    },
+    Element,
+};
 
 #[derive(Clone, Debug)]
 pub enum Type {
@@ -100,24 +102,20 @@ impl Type {
     }
     pub fn get_field(&self, attr: SmolStr) -> Option<&Value> {
         match &self {
-            Type::Instance {
-                fields, ..
-            } => fields.get(&attr),
+            Type::Instance { fields, .. } => fields.get(&attr),
             Type::Definition {
                 implementations, ..
             } => implementations.get(&attr),
             Type::Any => None,
-            Type::Return(ty) => ty.get_field(attr)
+            Type::Return(ty) => ty.get_field(attr),
         }
     }
     pub fn implementation(&self) -> &Type {
         match &self {
-            Type::Instance {
-                implementation, ..
-            } => implementation,
+            Type::Instance { implementation, .. } => implementation,
             Type::Definition { .. } => &TYPE_T,
             Type::Any => &UNIT_T,
-            Type::Return(ty) => ty.implementation()
+            Type::Return(ty) => ty.implementation(),
         }
     }
 }

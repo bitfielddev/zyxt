@@ -199,8 +199,8 @@ macro_rules! comp_opr_num {
 #[macro_export]
 macro_rules! concat_vals {
     ($h:ident, $ty1:ident) => {
-        binary!($h, $ty1, "_concat", [Type::Any], STR_T, |x: &Vec<Value>| Some(
-            Value::Str(format!("{}{}", x[0], x[1]))
-        ));
+        binary!($h, $ty1, "_concat", [Type::Any], STR_T, |x: &Vec<Value>| {
+            Some(Value::Str(format!("{}{}", x[0], x[1])))
+        });
     };
 }

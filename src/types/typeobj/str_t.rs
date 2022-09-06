@@ -1,14 +1,20 @@
 use std::collections::HashMap;
+
 use lazy_static::lazy_static;
-use crate::{concat_vals, get_param, binary, Type, typecast_to_type};
-use crate::types::value::{Value, Proc};
-use crate::types::typeobj::type_t::TYPE_T;
-use crate::types::typeobj::bool_t::BOOL_T;
+
+use crate::{
+    binary, concat_vals, get_param, typecast_to_type,
+    types::{
+        typeobj::{bool_t::BOOL_T, type_t::TYPE_T},
+        value::{Proc, Value},
+    },
+    Type,
+};
 
 macro_rules! typecast_str_to_num {
     ($v:ident, $x:ident) => {
-       Value::$v(get_param!($x, 0, Str).parse().ok()?)
-    }
+        Value::$v(get_param!($x, 0, Str).parse().ok()?)
+    };
 }
 
 const fn str_t() -> HashMap<&'static str, Value> {

@@ -4,7 +4,12 @@ use smol_str::SmolStr;
 
 use crate::{
     interpreter::interpret_block,
-    types::{errors::ZyxtError, position::Position, printer::Print, typeobj::Type, typeobj::Value},
+    types::{
+        errors::ZyxtError,
+        position::Position,
+        printer::Print,
+        typeobj::{Type, Value},
+    },
     Element,
 };
 

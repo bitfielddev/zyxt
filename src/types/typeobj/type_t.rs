@@ -1,10 +1,15 @@
 use std::collections::HashMap;
-use crate::{concat_vals, get_param, binary, Type, typecast_to_type};
-use crate::types::value::{Proc, Value};
+
 use lazy_static::lazy_static;
-use crate::types::typeobj::type_t::TYPE_T;
-use crate::types::typeobj::str_t::STR_T;
-use crate::types::typeobj::bool_t::BOOL_T;
+
+use crate::{
+    binary, concat_vals, get_param, typecast_to_type,
+    types::{
+        typeobj::{bool_t::BOOL_T, str_t::STR_T, type_t::TYPE_T},
+        value::{Proc, Value},
+    },
+    Type,
+};
 
 const fn type_t() -> HashMap<&'static str, Value> {
     let mut h = HashMap::new();

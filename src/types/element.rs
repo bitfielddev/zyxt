@@ -14,15 +14,12 @@ use crate::{
         position::Position,
         printer::Print,
         token::{Flag, OprType, Token},
-        typeobj::Type,
-        typeobj::{utils::OprError, Value},
+        typeobj::{
+            bool_t::BOOL_T, str_t::STR_T, type_t::TYPE_T, unit_t::UNIT_T, utils::OprError, Type,
+            Value,
+        },
     },
 };
-use crate::types::typeobj::bool_t::BOOL_T;
-use crate::types::typeobj::type_t::TYPE_T;
-use crate::types::typeobj::str_t::STR_T;
-use crate::types::typeobj::bool_t::BOOL_T;
-use crate::types::typeobj::unit_t::UNIT_T;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
@@ -498,7 +495,7 @@ impl Element {
                             return_type.to_owned(),
                             block_return_type,
                         )
-                            .with_pos_and_raw(position, raw));
+                        .with_pos_and_raw(position, raw));
                     }
                 }
                 Ok(Type::Instance {
@@ -518,9 +515,9 @@ impl Element {
             }
             Element::Defer { content, .. } =>
             // TODO check block return against call stack
-                {
-                    Ok(Element::block_type(content, typelist, false)?.0)
-                }
+            {
+                Ok(Element::block_type(content, typelist, false)?.0)
+            }
             Element::Set {
                 position,
                 variable,
@@ -587,8 +584,8 @@ impl Element {
             | Element::Comment { .. }
             | Element::Return { .. } => Ok(UNIT_T),
             Element::Token(Token {
-                               position, value, ..
-                           }) => Err(ZyxtError::error_2_1_0(value.to_owned())
+                position, value, ..
+            }) => Err(ZyxtError::error_2_1_0(value.to_owned())
                 .with_pos_and_raw(position, &value.to_string())),
         }
     }

@@ -1,17 +1,23 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    ops::{Add, Div, Mul, Neg, Rem, Sub},
+};
 
 use half::f16;
-
-use crate::{arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_float, unary, Type, typecast_to_type};
-use num::ToPrimitive;
-use num::bigint::ToBigInt;
-use num::bigint::ToBigUint;
-use std::ops::{Add, Sub, Mul, Div, Rem, Neg};
-use crate::types::value::{Proc, Value};
 use lazy_static::lazy_static;
-use crate::types::typeobj::type_t::TYPE_T;
-use crate::types::typeobj::str_t::STR_T;
-use crate::types::typeobj::bool_t::BOOL_T;
+use num::{
+    bigint::{ToBigInt, ToBigUint},
+    ToPrimitive,
+};
+
+use crate::{
+    arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_float, typecast_to_type,
+    types::{
+        typeobj::{bool_t::BOOL_T, str_t::STR_T, type_t::TYPE_T},
+        value::{Proc, Value},
+    },
+    unary, Type,
+};
 
 macro_rules! typecast_f16_to_int {
     ($vo:ident $f:ident, $x:ident) => {
@@ -22,11 +28,11 @@ macro_rules! typecast_f16_to_int {
 const fn f16_t() -> HashMap<&'static str, Value> {
     let mut h = HashMap::new();
     concat_vals!(h, F16_T);
-    unary!(h, F16_T,  "_un_add", |x: &Vec<Value>| Some(x[0].to_owned()));
-    unary!(h, F16_T,  "_un_sub", |x: &Vec<Value>| Some(Value::F16(
+    unary!(h, F16_T, "_un_add", |x: &Vec<Value>| Some(x[0].to_owned()));
+    unary!(h, F16_T, "_un_sub", |x: &Vec<Value>| Some(Value::F16(
         get_param!(x, 0, F16).neg()
     )));
-    unary!(h, F16_T,  "_not", |x: &Vec<Value>| Some(Value::Bool(
+    unary!(h, F16_T, "_not", |x: &Vec<Value>| Some(Value::Bool(
         get_param!(x, 0, F16) == f16::ZERO || get_param!(x, 0, F16) == f16::NEG_ZERO
     )));
     arith_opr_num!(h, float default F16_T F16);
@@ -38,7 +44,7 @@ const fn f16_t() -> HashMap<&'static str, Value> {
                 "type" => typecast_to_type!(F16_T),
                 "str" => typecast_float!(F16 => str, x),
                 "bool" => Value::Bool(
-                    get_param!(x, 0, F16) != f16::ZERO && get_param!(x, 0, F16) != f16::NEG_ZERO
+                    get_param!(x, 0, F16) != f16::ZERO && get_param!(x, 0, F16) != f16::NEG_ZERO,
                 ),
                 "i8" => typecast_f16_to_int!(I8 to_i8, x),
                 "i16" => typecast_f16_to_int!(I16 to_i16, x),

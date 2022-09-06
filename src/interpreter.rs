@@ -105,57 +105,57 @@ pub fn interpret_expr<O: Print>(
             }
             let to_call = interpret_expr(called, i_data)?;
             Ok(Value::Null) // TODO
-            /*if let Value::Proc {
-                is_fn,
-                args,
-                content,
-                ..
-            } = to_call
-            {
-                let mut processed_args = HashMap::new();
-                for (
-                    cursor,
-                    Argument {
-                        name, ref default, ..
-                    },
-                ) in args.into_iter().enumerate()
-                {
-                    let input_arg = if input_args.len() > cursor {
-                        input_args.get(cursor).unwrap()
-                    } else {
-                        default.as_ref().unwrap()
-                    };
-                    processed_args.insert(name, interpret_expr(input_arg, i_data)?);
-                }
+                            /*if let Value::Proc {
+                                is_fn,
+                                args,
+                                content,
+                                ..
+                            } = to_call
+                            {
+                                let mut processed_args = HashMap::new();
+                                for (
+                                    cursor,
+                                    Argument {
+                                        name, ref default, ..
+                                    },
+                                ) in args.into_iter().enumerate()
+                                {
+                                    let input_arg = if input_args.len() > cursor {
+                                        input_args.get(cursor).unwrap()
+                                    } else {
+                                        default.as_ref().unwrap()
+                                    };
+                                    processed_args.insert(name, interpret_expr(input_arg, i_data)?);
+                                }
 
-                if is_fn {
-                    let mut fn_i_data = InterpreterData::default_variable(i_data.out);
-                    fn_i_data.heap.last_mut().unwrap().extend(processed_args);
-                    let res = interpret_block(&content, &mut fn_i_data, true, false);
-                    fn_i_data.pop_frame()?;
-                    res
-                } else {
-                    i_data.add_frame(Some(FrameData {
-                        position: position.to_owned(),
-                        raw_call: raw.to_owned(),
-                        args: processed_args.to_owned(),
-                    }));
-                    i_data.heap.last_mut().unwrap().extend(processed_args);
-                    let res = interpret_block(&content, i_data, true, false);
-                    i_data.pop_frame()?;
-                    res
-                }
-            } else if let Ok(v) = to_call.call(
-                input_args
-                    .iter()
-                    .map(|a| interpret_expr(a, i_data))
-                    .collect::<Result<Vec<_>, _>>()?,
-            ) {
-                Ok(v)
-            } else {
-                Err(ZyxtError::error_3_1_1(to_call, "_call".to_string())
-                    .with_pos_and_raw(position, raw))
-            }*/
+                                if is_fn {
+                                    let mut fn_i_data = InterpreterData::default_variable(i_data.out);
+                                    fn_i_data.heap.last_mut().unwrap().extend(processed_args);
+                                    let res = interpret_block(&content, &mut fn_i_data, true, false);
+                                    fn_i_data.pop_frame()?;
+                                    res
+                                } else {
+                                    i_data.add_frame(Some(FrameData {
+                                        position: position.to_owned(),
+                                        raw_call: raw.to_owned(),
+                                        args: processed_args.to_owned(),
+                                    }));
+                                    i_data.heap.last_mut().unwrap().extend(processed_args);
+                                    let res = interpret_block(&content, i_data, true, false);
+                                    i_data.pop_frame()?;
+                                    res
+                                }
+                            } else if let Ok(v) = to_call.call(
+                                input_args
+                                    .iter()
+                                    .map(|a| interpret_expr(a, i_data))
+                                    .collect::<Result<Vec<_>, _>>()?,
+                            ) {
+                                Ok(v)
+                            } else {
+                                Err(ZyxtError::error_3_1_1(to_call, "_call".to_string())
+                                    .with_pos_and_raw(position, raw))
+                            }*/
         }
         Element::If { conditions, .. } => {
             for cond in conditions {

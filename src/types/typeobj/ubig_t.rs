@@ -1,14 +1,17 @@
 use std::{collections::HashMap, ops::Rem};
 
 use half::f16;
+use lazy_static::lazy_static;
 use num_traits::{CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, ToPrimitive};
 
-use crate::{arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_int, unary, Type, typecast_to_type};
-use crate::types::value::{Proc, Value};
-use lazy_static::lazy_static;
-use crate::types::typeobj::type_t::TYPE_T;
-use crate::types::typeobj::str_t::STR_T;
-use crate::types::typeobj::bool_t::BOOL_T;
+use crate::{
+    arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_int, typecast_to_type,
+    types::{
+        typeobj::{bool_t::BOOL_T, str_t::STR_T, type_t::TYPE_T},
+        value::{Proc, Value},
+    },
+    unary, Type,
+};
 
 const fn ubig_t() -> HashMap<&'static str, Value> {
     let mut h = HashMap::new();
