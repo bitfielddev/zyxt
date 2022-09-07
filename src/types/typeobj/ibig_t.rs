@@ -24,6 +24,7 @@ use crate::{
 
 fn ibig_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
+    h.insert("_default", Value::Ibig(0.into()));
     concat_vals!(h, IBIG_T);
 
     unary!(h, IBIG_T, "_un_add", |x: &Vec<Value>| Some(x[0].to_owned()));
@@ -41,7 +42,7 @@ fn ibig_t() -> HashMap<SmolStr, Value> {
         Some(match get_param!(x, 1, Type) {
             p if p == *TYPE_T => typecast_to_type!(IBIG_T),
             p if p == *STR_T => typecast_int!(Ibig => str, x),
-            p if p == *BOOL_T => typecast_int!(Ibig => into bool, x),
+            p if p == *BOOL_T => Value::Bool(get_param!(x, 0, Ibig) == 0.into()),
             p if p == *I8_T => typecast_int!(Ibig => I8, x),
             p if p == *I16_T => typecast_int!(Ibig => I16, x),
             p if p == *I32_T => typecast_int!(Ibig => I32, x),
@@ -64,7 +65,7 @@ fn ibig_t() -> HashMap<SmolStr, Value> {
     };
     binary!(h, IBIG_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
 lazy_static! {

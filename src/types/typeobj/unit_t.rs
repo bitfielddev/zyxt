@@ -22,6 +22,7 @@ macro_rules! comp_opr_unit {
 
 fn unit_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
+    h.insert("_default", Value::Unit);
     concat_vals!(h, UNIT_T);
     comp_opr_unit!(h, "_eq", true);
     comp_opr_unit!(h, "_ne", false);
@@ -39,7 +40,7 @@ fn unit_t() -> HashMap<SmolStr, Value> {
     };
     binary!(h, UNIT_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
 lazy_static! {

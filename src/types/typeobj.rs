@@ -29,13 +29,10 @@ use std::{
 
 use smol_str::SmolStr;
 
-use crate::{
-    types::{
-        element::Argument,
-        typeobj::{type_t::TYPE_T, unit_t::UNIT_T},
-    },
-    Element,
-};
+use crate::{types::{
+    element::Argument,
+    typeobj::{type_t::TYPE_T, unit_t::UNIT_T},
+}, Element, Value};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Type<T: Clone + PartialEq + Debug> {
@@ -77,9 +74,9 @@ impl<T: Clone + PartialEq + Debug> Display for Type<T> {
                                 .join(", ")
                         )
                     } else {
-                        name.to_string()
+                        name.unwrap_or_else(|| "{unknown}".into()).to_string()
                     },
-                Type::Definition { name, .. } => name.to_owned().into(),
+                Type::Definition { name, .. } => name.to_owned().unwrap_or_else(|| "{unknown}".into()).into(),
                 Type::Any => "_any".into(),
                 Type::Return(ty) => format!("{}", ty),
             }
@@ -87,6 +84,7 @@ impl<T: Clone + PartialEq + Debug> Display for Type<T> {
     }
 }
 impl<T: Clone + PartialEq + Debug> Type<T> {
+    #[deprecated]
     pub fn as_element(&self) -> Element {
         match self {
             Type::Instance { name, .. } => Element::Ident {
@@ -100,12 +98,58 @@ impl<T: Clone + PartialEq + Debug> Type<T> {
             Type::Return(ty) => ty.as_element(),
         }
     }
-    pub fn implementation(&self) -> &Type<T> {
+}
+
+impl Type<Element> {
+    pub fn implementation(&self) -> &Type<Element> {
         match &self {
             Type::Instance { implementation, .. } => implementation,
-            Type::Definition { .. } => &TYPE_T,
-            Type::Any => &UNIT_T,
+            Type::Definition { .. } => &TYPE_T.as_type_element(),
+            Type::Any => &UNIT_T.as_type_element(),
             Type::Return(ty) => ty.implementation(),
+        }
+    }
+}
+
+impl Type<Value> {
+    pub fn implementation(&self) -> &Type<Value> {
+        match &self {
+            Type::Instance { implementation, .. } => implementation,
+            Type::Definition { .. } => &*TYPE_T,
+            Type::Any => &*UNIT_T,
+            Type::Return(ty) => ty.implementation(),
+        }
+    }
+    pub fn as_type_element(&self) -> Type<Element> {
+        match &self {
+            Type::Instance { name, type_args, implementation } => {
+                Type::Instance {
+                    name: name.to_owned(),
+                    type_args: type_args.iter().map(|a| a.as_type_element()).collect(),
+                    implementation: Box::new(implementation.as_type_element())
+                }
+            }
+            Type::Definition { inst_name, name, generics, implementations, inst_fields } => {
+                Type::Definition {
+                    inst_name: inst_name.to_owned(),
+                    name: name.to_owned(),
+                    generics: generics.to_owned(),
+                    implementations: implementations.iter().map(|(k, v)| (k.to_owned(), Element::Literal {
+                        position: Default::default(),
+                        raw: "".into(),
+                        content: v.to_owned()
+                    })).collect(),
+                    inst_fields: inst_fields.iter().map(|(k, (v1, v2))| (k.to_owned(), (
+                        Box::new(v1.as_type_element())
+                        , v2.map(|v2| Element::Literal {
+                        position: Default::default(),
+                        raw: "".into(),
+                        content: v2
+                    })))).collect()
+                }
+            }
+            Type::Any => Type::Any,
+            Type::Return(t) => Type::Return(Box::new(t.as_type_element()))
         }
     }
 }

@@ -1,10 +1,18 @@
 use std::{collections::HashMap, fmt::Display};
+use lazy_static::lazy_static;
+use maplit::hashmap;
 
 use smol_str::SmolStr;
 
 use crate::{
     interpreter::interpret_block,
-    types::{errors::ZyxtError, position::Position, printer::Print, typeobj::Type, value::Value},
+    types::{errors::ZyxtError, position::Position, printer::Print, typeobj::{
+        Type,
+        bool_t::BOOL_T, f16_t::F16_T, f32_t::F32_T, f64_t::F64_T, i128_t::I128_T, i16_t::I16_T, i32_t::I32_T,
+        i64_t::I64_T, i8_t::I8_T, ibig_t::IBIG_T, isize_t::ISIZE_T, str_t::STR_T,
+        type_t::TYPE_T, u128_t::U128_T, u16_t::U16_T, u32_t::U32_T, u64_t::U64_T, u8_t::U8_T,
+        ubig_t::UBIG_T, usize_t::USIZE_T, unit_t::UNIT_T
+    }, value::Value},
     Element,
 };
 
@@ -12,6 +20,32 @@ const PRIM_NAMES: [&str; 22] = [
     "str", "bool", "i8", "i16", "i32", "i64", "i128", "isize", "ibig", "u8", "u16", "u32", "u64",
     "u128", "usize", "ubig", "f16", "f32", "f64", "_unit", "_any", "type",
 ];
+lazy_static! {
+    static ref PRIMS: HashMap<&'static str, &'static Type<Value>> = hashmap! {
+        "str" => &*STR_T,
+        "bool" => &*BOOL_T,
+        "type" => &*TYPE_T,
+        "_unit" => &*UNIT_T,
+        "i8" => &*I8_T,
+        "i16" => &*I16_T,
+        "i32" => &*I32_T,
+        "i64" => &*I64_T,
+        "i128" => &*I128_T,
+        "ibig" => &*IBIG_T,
+        "isize" => &*ISIZE_T,
+        "u8" => &*U8_T,
+        "u16" => &*U16_T,
+        "u32" => &*U32_T,
+        "u64" => &*U64_T,
+        "u128" => &*U128_T,
+        "ubig" => &*UBIG_T,
+        "usize" => &*USIZE_T,
+        "f16" => &*F16_T,
+        "f32" => &*F32_T,
+        "f64" => &*F64_T,
+        "_any" => &Type::Any
+    };
+}
 
 pub struct FrameData<T: Clone + Display> {
     pub position: Position,
@@ -35,13 +69,7 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
         for t in PRIM_NAMES {
             v.heap[0].insert(
                 t.into(),
-                Value::Type(Type::Definition {
-                    inst_name: Some("{builtin}".into()),
-                    name: t.into(),
-                    generics: vec![],
-                    inst_fields: Default::default(),
-                    implementations: Default::default(), // TODO
-                }),
+                Value::Type(PRIMS.get(t).unwrap().to_owned().to_owned()),
             );
         }
         v.add_frame(None);
@@ -85,13 +113,7 @@ impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
         for t in PRIM_NAMES {
             v.heap[0].insert(
                 t.into(),
-                Type::Definition {
-                    inst_name: Some("{builtin}".into()),
-                    name: "type".into(),
-                    generics: vec![],
-                    inst_fields: Default::default(),
-                    implementations: Default::default(), // TODO
-                },
+                PRIMS.get(t).unwrap().as_type_element(),
             );
         }
         v.add_frame(None);

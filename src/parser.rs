@@ -6,7 +6,6 @@ use crate::types::{
     element::{Argument, Condition, Element, VecElementRaw},
     errors::ZyxtError,
     token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
-    typeobj::{unit_t::UNIT_T, Type},
     value::Value,
 };
 
@@ -186,9 +185,14 @@ fn get_arguments(
             Ok(Argument {
                 name,
                 type_: if type_ == Element::NullElement {
-                    Type::Any
+                    Element::Ident {
+                        position: Default::default(),
+                        raw: "".to_string(),
+                        name: "_any".into(),
+                        parent: Box::new(Element::NullElement)
+                    }
                 } else {
-                    type_.as_type()
+                    type_
                 },
                 default,
             })
@@ -513,7 +517,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                             TokenType::LiteralMisc => match &*selected.value {
                                 "true" => Value::Bool(true),
                                 "false" => Value::Bool(false),
-                                p if p == *Unit_T => todo!(),
+                                "unit" => todo!(),
                                 "inf" => Value::F64(f64::INFINITY),
                                 _ => unreachable!("{}", selected.value),
                             },
@@ -671,7 +675,7 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                 };
 
                 check_and_update_cursor!(cursor, selected, elements);
-                let return_type = if let Element::Token(Token {
+                let return_type = Box::new(if let Element::Token(Token {
                     type_: TokenType::Colon,
                     value,
                     ..
@@ -687,19 +691,20 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                         }
                         catcher.push(selected.to_owned());
                     }
-                    if let Element::Ident { name, .. } = parse_expr(catcher)? {
-                        Type::Instance {
-                            name,
-                            type_args: vec![],
-                            inst_fields: Default::default(),
-                            implementation: None,
-                        }
+                    let return_type = parse_expr(catcher)?;
+                    if matches!(return_type.to_owned(), Element::Ident {..}) {
+                        return_type
                     } else {
                         todo!("throw error here")
                     }
                 } else {
-                    UNIT_T
-                };
+                    Element::Ident {
+                        position: Default::default(),
+                        raw: Default::default(),
+                        name: "_unit".into(),
+                        parent: Box::new(Element::NullElement)
+                    }
+                });
 
                 if let Element::Block { content, .. } = selected {
                     new_elements.push(Element::Procedure {
@@ -1015,7 +1020,12 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
                 variable: Box::new(parse_expr(vec![declared_var.to_owned()])?),
                 content: Box::new(content),
                 flags,
-                type_: UNIT_T, // TODO type later
+                type_: Box::new(Element::Ident {
+                    position: Default::default(),
+                    raw: Default::default(),
+                    name: "_any".into(),
+                    parent: Box::new(Element::NullElement)
+                }), // TODO type later
             });
             break;
         } else {

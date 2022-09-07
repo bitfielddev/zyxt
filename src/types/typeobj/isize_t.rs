@@ -20,6 +20,7 @@ use crate::{
 
 fn isize_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
+    h.insert("_default", Value::Isize(0));
     concat_vals!(h, ISIZE_T);
     unary!(h, signed default ISIZE_T Isize);
     arith_opr_num!(h, default ISIZE_T Isize);
@@ -52,7 +53,7 @@ fn isize_t() -> HashMap<SmolStr, Value> {
     };
     binary!(h, ISIZE_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
 lazy_static! {

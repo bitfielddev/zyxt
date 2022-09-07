@@ -20,6 +20,7 @@ use crate::{
 
 fn u128_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
+    h.insert("_default", Value::U128(0));
     concat_vals!(h, U128_T);
     unary!(h, signed default U128_T U128);
     arith_opr_num!(h, default U128_T U128);
@@ -52,7 +53,7 @@ fn u128_t() -> HashMap<SmolStr, Value> {
     };
     binary!(h, U128_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
 lazy_static! {

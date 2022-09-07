@@ -33,6 +33,7 @@ macro_rules! typecast_f16_to_int {
 
 fn f16_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
+    h.insert("_default", Value::F16(f16::from_f64_const(0.0)));
     concat_vals!(h, F16_T);
     unary!(h, F16_T, "_un_add", |x: &Vec<Value>| Some(x[0].to_owned()));
     unary!(h, F16_T, "_un_sub", |x: &Vec<Value>| Some(Value::F16(
@@ -73,7 +74,7 @@ fn f16_t() -> HashMap<SmolStr, Value> {
     };
     binary!(h, F16_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
 lazy_static! {

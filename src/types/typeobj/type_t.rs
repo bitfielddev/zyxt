@@ -14,6 +14,7 @@ use crate::{
 
 fn type_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
+    h.insert("_default", Value::Type(Type::Any));
     concat_vals!(h, TYPE_T);
     binary!(h, TYPE_T, "_eq", [TYPE_T], BOOL_T, |x: &Vec<Value>| {
         Some(Value::Bool(
@@ -35,7 +36,7 @@ fn type_t() -> HashMap<SmolStr, Value> {
     };
     binary!(h, TYPE_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
 lazy_static! {

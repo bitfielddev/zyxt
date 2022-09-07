@@ -7,7 +7,7 @@ use maplit::hashmap;
 use crate::{
     binary, concat_vals, get_param, typecast_to_type,
     types::{
-        typeobj::{str_t::STR_T, type_t::TYPE_T},
+        typeobj::{str_t::STR_T, type_t::TYPE_T, bool_t::BOOL_T},
         value::{Proc, Value},
     },
     Type,
@@ -26,7 +26,7 @@ fn proc_t() -> HashMap<SmolStr, Value> {
     };
     binary!(h, PROC_T, "_typecast", [PROC_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
 lazy_static! {
@@ -35,6 +35,6 @@ lazy_static! {
         inst_name: Some("proc".into()),
         generics: vec![],
         implementations: proc_t(),
-        inst_fields: hashmap! {SmolStr::from("is_fn") => (Box::new(BOOL_T), None)},
+        inst_fields: hashmap! {SmolStr::from("is_fn") => (Box::new(BOOL_T.to_owned()), None)},
     };
 }

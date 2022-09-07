@@ -27,10 +27,10 @@ macro_rules! unary {
     ($h:ident, $ty:ident, $n:literal, $f:expr) => {
         $h.insert(
             $n,
-            Proc::Builtin {
+            Value::Proc(Proc::Builtin {
                 f: $f,
                 signature: vec![(vec![$ty.to_owned()], $ty.to_owned())],
-            },
+            }),
         );
     };
 }
@@ -40,25 +40,25 @@ macro_rules! binary {
     ($h:ident, $ty:ident, $n:literal, [$($o:expr),+], $f:expr) => {
         $h.insert(
             $n,
-            Proc::Builtin {
+            Value::Proc(Proc::Builtin {
                 f: $f,
                 signature: [$($o),+].into_iter().map(|o| (
                     vec![$ty.to_owned(), o.to_owned()],
                     $ty.to_owned(),
                 )).collect(),
-            },
+            }),
         );
     };
     ($h:ident, $ty:ident, $n:literal, [$($o:expr),+], $r:expr, $f:expr) => {
         $h.insert(
             $n,
-            Proc::Builtin {
+            Value::Proc(Proc::Builtin {
                 f: $f,
                 signature: [$($o),+].into_iter().map(|o| (
                     vec![$ty.to_owned(), o.to_owned()],
                     $r.to_owned(),
                 )).collect(),
-            },
+            }),
         );
     };
 }
@@ -88,9 +88,6 @@ macro_rules! typecast_int {
     };
     ($v:ident => bool, $x:ident) => {
         Value::Bool(get_param!($x, 0, $v) == 0)
-    };
-    ($v:ident => into bool, $x:ident) => {
-        Value::Bool(get_param!($x, 0, $v) == 0.into())
     };
     ($v:ident => f64, $x:ident) => {
         Value::F64(get_param!($x, 0, $v) as f64)

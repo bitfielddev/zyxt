@@ -27,6 +27,7 @@ use crate::{
 
 fn f32_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
+    h.insert("_default", Value::F32(0.0));
     concat_vals!(h, F32_T);
     unary!(h, float F32_T F32);
     arith_opr_num!(h, float default F32_T F32);
@@ -59,7 +60,7 @@ fn f32_t() -> HashMap<SmolStr, Value> {
     };
     binary!(h, F32_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
 lazy_static! {

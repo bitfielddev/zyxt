@@ -197,7 +197,7 @@ impl Display for Value {
                 Value::Str(v) => v.to_owned(),
                 Value::Bool(v) => v.to_string(),
                 Value::Type(v) | Value::ClassInstance { type_: v, .. } => format!("<{}>", v),
-                Value::Proc(v) => v.to_string(),
+                v => v.to_string(),
                 Value::Unit => "()".to_string(),
                 Value::Return(v) => v.to_string(),
             }
@@ -228,34 +228,6 @@ impl Value {
                 | Value::F64(_)
                 | Value::Bool(_)
         )
-    }
-    pub fn default(type_: Type<Value>) -> Result<Self, ZyxtError> {
-        match type_.to_owned() {
-            Type::Instance { name, .. } => Ok(match &*name {
-                p if p == *I8_T => Value::I8(0),
-                p if p == *I16_T => Value::I16(0),
-                p if p == *I32_T => Value::I32(0),
-                p if p == *I64_T => Value::I64(0),
-                p if p == *I128_T => Value::I128(0),
-                p if p == *ISIZE_T => Value::Isize(0),
-                p if p == *IBIG_T => Value::Ibig(0i32.into()),
-                p if p == *U8_T => Value::U8(0),
-                p if p == *U16_T => Value::U16(0),
-                p if p == *U32_T => Value::U32(0),
-                p if p == *U64_T => Value::U64(0),
-                p if p == *U128_T => Value::U128(0),
-                p if p == *USIZE_T => Value::Usize(0),
-                p if p == *UBIG_T => Value::Ubig(0u32.into()),
-                p if p == *F32_T => Value::F32(0.0),
-                p if p == *F64_T => Value::F64(0.0),
-                p if p == *STR_T => Value::Str("".to_string()),
-                p if p == *BOOL_T => Value::Bool(false),
-                "_unit" | "_any" => Value::Unit, // TODO move _any somewhere else
-                p if p == *TYPE_T => Value::Type(UNIT_T.to_owned()),
-                _ => panic!("{:#?}", type_),
-            }),
-            _ => panic!(),
-        }
     }
     pub fn from_type_content(type_: Type<Value>, content: String) -> Value {
         match type_ {

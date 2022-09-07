@@ -25,6 +25,7 @@ macro_rules! typecast_str_to_num {
 
 fn str_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
+    h.insert("_default", Value::Str("".into()));
     concat_vals!(h, STR_T);
 
     let typecast = |x: &Vec<Value>| {
@@ -54,7 +55,7 @@ fn str_t() -> HashMap<SmolStr, Value> {
     };
     binary!(h, STR_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
 lazy_static! {
