@@ -9,17 +9,23 @@ use num::{
     bigint::{ToBigInt, ToBigUint},
     ToPrimitive,
 };
+use smol_str::SmolStr;
 
 use crate::{
     arith_opr_num, binary, comp_opr_num, concat_vals, get_param, typecast_float, typecast_to_type,
     types::{
-        typeobj::{bool_t::BOOL_T, str_t::STR_T, type_t::TYPE_T},
+        typeobj::{
+            bool_t::BOOL_T, f16_t::F16_T, f64_t::F64_T, i128_t::I128_T, i16_t::I16_T,
+            i32_t::I32_T, i64_t::I64_T, i8_t::I8_T, ibig_t::IBIG_T, isize_t::ISIZE_T, str_t::STR_T,
+            type_t::TYPE_T, u128_t::U128_T, u16_t::U16_T, u32_t::U32_T, u64_t::U64_T, u8_t::U8_T,
+            ubig_t::UBIG_T, usize_t::USIZE_T,
+        },
         value::{Proc, Value},
     },
     unary, Type,
 };
 
-const fn f32_t() -> HashMap<&'static str, Value> {
+fn f32_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
     concat_vals!(h, F32_T);
     unary!(h, float F32_T F32);
@@ -28,39 +34,37 @@ const fn f32_t() -> HashMap<&'static str, Value> {
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            Type::Instance { name, .. } => match &*name {
-                "type" => typecast_to_type!(F32_T),
-                "str" => typecast_float!(F32 => str, x),
-                "bool" => typecast_float!(F32 => bool, x),
-                "i8" => typecast_float!(F32 => I8 to_i8, x),
-                "i16" => typecast_float!(F32 => I16 to_i16, x),
-                "i32" => typecast_float!(F32 => I32 to_i32, x),
-                "i64" => typecast_float!(F32 => I64 to_i64, x),
-                "i128" => typecast_float!(F32 => I128 to_i128, x),
-                "isize" => typecast_float!(F32 => Isize to_isize, x),
-                "ibig" => typecast_float!(F32 => Ibig to_bigint, x),
-                "u8" => typecast_float!(F32 => U8 to_u8, x),
-                "u16" => typecast_float!(F32 => U16 to_u16, x),
-                "u32" => typecast_float!(F32 => U32 to_u32, x),
-                "u64" => typecast_float!(F32 => U64 to_u64, x),
-                "u128" => typecast_float!(F32 => U128 to_u128, x),
-                "usize" => typecast_float!(F32 => Usize to_usize, x),
-                "ubig" => typecast_float!(F32 => Ubig to_biguint, x),
-                "f16" => typecast_float!(F32 => f16, x),
-                "f32" => x[0].to_owned(),
-                "f64" => typecast_float!(F32 => F64 to_f64, x),
-                _ => return None,
-            },
-            _ => unimplemented!(),
+            p if p == *TYPE_T => typecast_to_type!(F32_T),
+            p if p == *STR_T => typecast_float!(F32 => str, x),
+            p if p == *BOOL_T => typecast_float!(F32 => bool, x),
+            p if p == *I8_T => typecast_float!(F32 => I8 to_i8, x),
+            p if p == *I16_T => typecast_float!(F32 => I16 to_i16, x),
+            p if p == *I32_T => typecast_float!(F32 => I32 to_i32, x),
+            p if p == *I64_T => typecast_float!(F32 => I64 to_i64, x),
+            p if p == *I128_T => typecast_float!(F32 => I128 to_i128, x),
+            p if p == *ISIZE_T => typecast_float!(F32 => Isize to_isize, x),
+            p if p == *IBIG_T => typecast_float!(F32 => Ibig to_bigint, x),
+            p if p == *U8_T => typecast_float!(F32 => U8 to_u8, x),
+            p if p == *U16_T => typecast_float!(F32 => U16 to_u16, x),
+            p if p == *U32_T => typecast_float!(F32 => U32 to_u32, x),
+            p if p == *U64_T => typecast_float!(F32 => U64 to_u64, x),
+            p if p == *U128_T => typecast_float!(F32 => U128 to_u128, x),
+            p if p == *USIZE_T => typecast_float!(F32 => Usize to_usize, x),
+            p if p == *UBIG_T => typecast_float!(F32 => Ubig to_biguint, x),
+            p if p == *F16_T => typecast_float!(F32 => f16, x),
+            p if p == *F32_T => x[0].to_owned(),
+            p if p == *F64_T => typecast_float!(F32 => F64 to_f64, x),
+            _ => return None,
         })
     };
     binary!(h, F32_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k, Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
 }
 
 lazy_static! {
     pub static ref F32_T: Type<Value> = Type::Definition {
+        name: Some("{builtin}".into()),
         inst_name: Some("f32".into()),
         generics: vec![],
         implementations: f32_t(),

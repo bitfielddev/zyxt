@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use lazy_static::lazy_static;
+use smol_str::SmolStr;
 
 use crate::{
     binary, concat_vals, get_param, typecast_to_type,
@@ -11,33 +12,35 @@ use crate::{
     Type,
 };
 
-const fn type_t() -> HashMap<&'static str, Value> {
+fn type_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
     concat_vals!(h, TYPE_T);
     binary!(h, TYPE_T, "_eq", [TYPE_T], BOOL_T, |x: &Vec<Value>| {
-            Some(Value::Bool(get_param!(x, 0, Type) == get_param!(x, 1, Type)))
+        Some(Value::Bool(
+            get_param!(x, 0, Type) == get_param!(x, 1, Type),
+        ))
     });
-    binary!(h, TYPE_T, "_neq", [TYPE_T], BOOL_T, |x: &Vec<Value>| {
-            Some(Value::Bool(get_param!(x, 0, Type) != get_param!(x, 1, Type)))
+    binary!(h, TYPE_T, "_ne", [TYPE_T], BOOL_T, |x: &Vec<Value>| {
+        Some(Value::Bool(
+            get_param!(x, 0, Type) != get_param!(x, 1, Type),
+        ))
     });
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            Type::Instance { name, .. } => match &*name {
-                "type" => typecast_to_type!(TYPE_T),
-                "str" => Value::Str(get_param!(x, 0, Type).to_string()),
-                _ => return None,
-            },
-            _ => unimplemented!(),
+            p if p == *TYPE_T => typecast_to_type!(TYPE_T),
+            p if p == *STR_T => Value::Str(get_param!(x, 0, Type).to_string()),
+            _ => return None,
         })
     };
     binary!(h, TYPE_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k, Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
 }
 
 lazy_static! {
     pub static ref TYPE_T: Type<Value> = Type::Definition {
+        name: Some("{builtin}".into()),
         inst_name: Some("type".into()),
         generics: vec![],
         implementations: type_t(),

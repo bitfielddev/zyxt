@@ -2,16 +2,13 @@ use std::{cmp::min, collections::HashMap};
 
 use num::BigInt;
 
-use crate::{
-    types::{
-        element::{Argument, Condition, Element, VecElementRaw},
-        errors::ZyxtError,
-        token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
-        typeobj::Type,
-    },
+use crate::types::{
+    element::{Argument, Condition, Element, VecElementRaw},
+    errors::ZyxtError,
+    token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
+    typeobj::{unit_t::UNIT_T, Type},
+    value::Value,
 };
-use crate::types::typeobj::unit_t::UNIT_T;
-use crate::types::value::Value;
 
 macro_rules! check_and_update_cursor {
     ($cursor: ident, $selected: ident, $elements: ident) => {
@@ -516,7 +513,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                             TokenType::LiteralMisc => match &*selected.value {
                                 "true" => Value::Bool(true),
                                 "false" => Value::Bool(false),
-                                "unit" => todo!(),
+                                p if p == *Unit_T => todo!(),
                                 "inf" => Value::F64(f64::INFINITY),
                                 _ => unreachable!("{}", selected.value),
                             },
@@ -545,7 +542,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                                match &*selected.value {
                                    "true" | "false" => "bool",
                                    "null" => "_unit",
-                                   "inf" | "undef" => "_num",
+                                   "inf" |  p if p == *Undef_T => "_num",
                                    _ => unreachable!("{}", selected.value),
                                }
                            } else if selected.type_ == TokenType::LiteralNumber {

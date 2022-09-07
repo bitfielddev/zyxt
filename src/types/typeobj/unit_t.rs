@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use lazy_static::lazy_static;
+use smol_str::SmolStr;
 
 use crate::{
     binary, concat_vals, get_param, typecast_to_type,
@@ -19,11 +20,11 @@ macro_rules! comp_opr_unit {
     };
 }
 
-const fn unit_t() -> HashMap<&'static str, Value> {
+fn unit_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
     concat_vals!(h, UNIT_T);
     comp_opr_unit!(h, "_eq", true);
-    comp_opr_unit!(h, "_neq", false);
+    comp_opr_unit!(h, "_ne", false);
     comp_opr_unit!(h, "_gt", false);
     comp_opr_unit!(h, "_ge", true);
     comp_opr_unit!(h, "_lt", false);
@@ -31,21 +32,19 @@ const fn unit_t() -> HashMap<&'static str, Value> {
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            Type::Instance { name, .. } => match &*name {
-                "type" => typecast_to_type!(UNIT_T),
-                "str" => Value::Str("()".into()),
-                _ => return None,
-            },
-            _ => unimplemented!(),
+            p if p == *TYPE_T => typecast_to_type!(UNIT_T),
+            p if p == *STR_T => Value::Str("()".into()),
+            _ => return None,
         })
     };
     binary!(h, UNIT_T, "_typecast", [TYPE_T], Type::Any, typecast);
 
-    h.drain().map(|(k, v)| (k, Value::Proc(v))).collect()
+    h.drain().map(|(k, v)| (k.into(), Value::Proc(v))).collect()
 }
 
 lazy_static! {
     pub static ref UNIT_T: Type<Value> = Type::Definition {
+        name: Some("{builtin}".into()),
         inst_name: Some("_unit".into()),
         generics: vec![],
         implementations: unit_t(),

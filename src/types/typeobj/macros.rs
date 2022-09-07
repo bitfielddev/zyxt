@@ -77,7 +77,7 @@ macro_rules! get_param {
 #[macro_export]
 macro_rules! typecast_to_type {
     ($v:ident) => {
-        Value::Type($v)
+        Value::Type($v.to_owned())
     };
 }
 
@@ -179,7 +179,7 @@ macro_rules! arith_opr_num {
 macro_rules! comp_opr_num {
     ($h:ident, default $ty1:ident $ty2:ident) => {{
         comp_opr_num!($h, $ty1 $ty2, "_eq" eq);
-        comp_opr_num!($h, $ty1 $ty2, "_neq" !eq);
+        comp_opr_num!($h, $ty1 $ty2, "_ne" ne);
         comp_opr_num!($h, $ty1 $ty2, "_gt" gt);
         comp_opr_num!($h, $ty1 $ty2, "_ge" ge);
         comp_opr_num!($h, $ty1 $ty2, "_lt" lt);
@@ -190,11 +190,6 @@ macro_rules! comp_opr_num {
             Value::Bool(get_param!(x, 0, $ty2).$rust_fn(&get_param!(x, 1, $ty2)))
         ));
     };
-    ($h:ident, $ty1:ident $ty2:ident, $fn_name:literal !$rust_fn:ident) => {
-        binary!($h, $ty1, $fn_name, [$ty1], BOOL_T, |x: &Vec<Value>| Some(
-            Value::Bool(!get_param!(x, 0, $ty2).$rust_fn(&get_param!(x, 1, $ty2)))
-        ));
-    }
 }
 #[macro_export]
 macro_rules! concat_vals {

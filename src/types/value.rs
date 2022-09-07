@@ -21,7 +21,7 @@ use crate::{
     Element, ZyxtError,
 };
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone)]
 pub enum Proc {
     Builtin {
         f: fn(&Vec<Value>) -> Option<Value>,
@@ -33,6 +33,44 @@ pub enum Proc {
         return_type: Type<Value>,
         content: Vec<Element>,
     },
+}
+impl PartialEq for Proc {
+    fn eq(&self, other: &Self) -> bool {
+        match &self {
+            Self::Builtin { f, signature } => {
+                if let Self::Builtin {
+                    f: f2,
+                    signature: signature2,
+                } = other
+                {
+                    signature == signature2 && *f as usize == *f2 as usize
+                } else {
+                    false
+                }
+            }
+            Self::Defined {
+                is_fn,
+                args,
+                return_type,
+                content,
+            } => {
+                if let Self::Defined {
+                    is_fn: is_fn2,
+                    args: args2,
+                    return_type: return_type2,
+                    content: content2,
+                } = other
+                {
+                    is_fn == is_fn2
+                        && args == args2
+                        && return_type == return_type2
+                        && content == content2
+                } else {
+                    false
+                }
+            }
+        }
+    }
 }
 
 #[derive(Clone, PartialEq, EnumAsInner)]
@@ -194,26 +232,26 @@ impl Value {
     pub fn default(type_: Type<Value>) -> Result<Self, ZyxtError> {
         match type_.to_owned() {
             Type::Instance { name, .. } => Ok(match &*name {
-                "i8" => Value::I8(0),
-                "i16" => Value::I16(0),
-                "i32" => Value::I32(0),
-                "i64" => Value::I64(0),
-                "i128" => Value::I128(0),
-                "isize" => Value::Isize(0),
-                "ibig" => Value::Ibig(0i32.into()),
-                "u8" => Value::U8(0),
-                "u16" => Value::U16(0),
-                "u32" => Value::U32(0),
-                "u64" => Value::U64(0),
-                "u128" => Value::U128(0),
-                "usize" => Value::Usize(0),
-                "ubig" => Value::Ubig(0u32.into()),
-                "f32" => Value::F32(0.0),
-                "f64" => Value::F64(0.0),
-                "str" => Value::Str("".to_string()),
-                "bool" => Value::Bool(false),
+                p if p == *I8_T => Value::I8(0),
+                p if p == *I16_T => Value::I16(0),
+                p if p == *I32_T => Value::I32(0),
+                p if p == *I64_T => Value::I64(0),
+                p if p == *I128_T => Value::I128(0),
+                p if p == *ISIZE_T => Value::Isize(0),
+                p if p == *IBIG_T => Value::Ibig(0i32.into()),
+                p if p == *U8_T => Value::U8(0),
+                p if p == *U16_T => Value::U16(0),
+                p if p == *U32_T => Value::U32(0),
+                p if p == *U64_T => Value::U64(0),
+                p if p == *U128_T => Value::U128(0),
+                p if p == *USIZE_T => Value::Usize(0),
+                p if p == *UBIG_T => Value::Ubig(0u32.into()),
+                p if p == *F32_T => Value::F32(0.0),
+                p if p == *F64_T => Value::F64(0.0),
+                p if p == *STR_T => Value::Str("".to_string()),
+                p if p == *BOOL_T => Value::Bool(false),
                 "_unit" | "_any" => Value::Unit, // TODO move _any somewhere else
-                "type" => Value::Type(UNIT_T.to_owned()),
+                p if p == *TYPE_T => Value::Type(UNIT_T.to_owned()),
                 _ => panic!("{:#?}", type_),
             }),
             _ => panic!(),
@@ -221,28 +259,25 @@ impl Value {
     }
     pub fn from_type_content(type_: Type<Value>, content: String) -> Value {
         match type_ {
-            Type::Instance { name, .. } => match &*name {
-                "i8" => Value::I8(content.parse::<i8>().unwrap()),
-                "i16" => Value::I16(content.parse::<i16>().unwrap()),
-                "i32" => Value::I32(content.parse::<i32>().unwrap()),
-                "i64" => Value::I64(content.parse::<i64>().unwrap()),
-                "i128" => Value::I128(content.parse::<i128>().unwrap()),
-                "isize" => Value::Isize(content.parse::<isize>().unwrap()),
-                "ibig" => Value::Ibig(content.parse::<BigInt>().unwrap()),
-                "u8" => Value::U8(content.parse::<u8>().unwrap()),
-                "u16" => Value::U16(content.parse::<u16>().unwrap()),
-                "u32" => Value::U32(content.parse::<u32>().unwrap()),
-                "u64" => Value::U64(content.parse::<u64>().unwrap()),
-                "u128" => Value::U128(content.parse::<u128>().unwrap()),
-                "usize" => Value::Usize(content.parse::<usize>().unwrap()),
-                "ubig" => Value::Ubig(content.parse::<BigUint>().unwrap()),
-                "f16" => Value::F16(content.parse::<f16>().unwrap()),
-                "f32" => Value::F32(content.parse::<f32>().unwrap()),
-                "f64" => Value::F64(content.parse::<f64>().unwrap()),
-                "str" => Value::Str(content),
-                "bool" => Value::Bool(&*content == "true"),
-                _ => panic!(),
-            },
+            p if p == *I8_T => Value::I8(content.parse::<i8>().unwrap()),
+            p if p == *I16_T => Value::I16(content.parse::<i16>().unwrap()),
+            p if p == *I32_T => Value::I32(content.parse::<i32>().unwrap()),
+            p if p == *I64_T => Value::I64(content.parse::<i64>().unwrap()),
+            p if p == *I128_T => Value::I128(content.parse::<i128>().unwrap()),
+            p if p == *ISIZE_T => Value::Isize(content.parse::<isize>().unwrap()),
+            p if p == *IBIG_T => Value::Ibig(content.parse::<BigInt>().unwrap()),
+            p if p == *U8_T => Value::U8(content.parse::<u8>().unwrap()),
+            p if p == *U16_T => Value::U16(content.parse::<u16>().unwrap()),
+            p if p == *U32_T => Value::U32(content.parse::<u32>().unwrap()),
+            p if p == *U64_T => Value::U64(content.parse::<u64>().unwrap()),
+            p if p == *U128_T => Value::U128(content.parse::<u128>().unwrap()),
+            p if p == *USIZE_T => Value::Usize(content.parse::<usize>().unwrap()),
+            p if p == *UBIG_T => Value::Ubig(content.parse::<BigUint>().unwrap()),
+            p if p == *F16_T => Value::F16(content.parse::<f16>().unwrap()),
+            p if p == *F32_T => Value::F32(content.parse::<f32>().unwrap()),
+            p if p == *F64_T => Value::F64(content.parse::<f64>().unwrap()),
+            p if p == *STR_T => Value::Str(content),
+            p if p == *BOOL_T => Value::Bool(&*content == "true"),
             _ => panic!(),
         }
     }

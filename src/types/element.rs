@@ -14,13 +14,10 @@ use crate::{
         position::Position,
         printer::Print,
         token::{Flag, OprType, Token},
-        typeobj::{
-            type_t::TYPE_T, unit_t::UNIT_T, Type,
-        },
+        typeobj::{proc_t::PROC_T, type_t::TYPE_T, unit_t::UNIT_T, Type},
+        value::Value,
     },
 };
-use crate::types::typeobj::proc_t::PROC_T;
-use crate::types::value::Value;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
@@ -380,7 +377,8 @@ impl Element {
                 let (res, block_return_type) = Element::block_type(content, typelist, false)?;
                 /*if return_type == &UNIT_T || block_return_type.is_none() {
                     *return_type = res;
-                } else*/ if let Some(block_return_type) = block_return_type {
+                } else*/
+                if let Some(block_return_type) = block_return_type {
                     if *return_type == block_return_type {
                         return Err(ZyxtError::error_4_t(
                             return_type.to_owned(),
@@ -454,7 +452,10 @@ impl Element {
                             todo!("raise error here")
                         }
                         if flags.contains(&Flag::Inst) {
-                            inst_fields.insert(variable.get_name(), (content_type, Some(content.to_owned())));
+                            inst_fields.insert(
+                                variable.get_name(),
+                                (content_type, Some(content.to_owned())),
+                            );
                         }
                     }
                 }
@@ -467,9 +468,11 @@ impl Element {
                     name: Some(if *is_struct { "struct" } else { "class" }.into()),
                     generics: vec![],
                     implementations: implementations.to_owned(),
-                    inst_fields: inst_fields.to_owned().into_iter().map(|(k, (v1, v2))| {
-                        (k, (Box::new(v1), v2.map(|v| *v)))
-                    }).collect(),
+                    inst_fields: inst_fields
+                        .to_owned()
+                        .into_iter()
+                        .map(|(k, (v1, v2))| (k, (Box::new(v1), v2.map(|v| *v))))
+                        .collect(),
                 })
             }
             Element::NullElement

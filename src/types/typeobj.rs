@@ -10,6 +10,7 @@ pub mod i8_t;
 pub mod ibig_t;
 pub mod isize_t;
 pub mod macros;
+pub mod proc_t;
 pub mod str_t;
 pub mod type_t;
 pub mod u128_t;
@@ -20,7 +21,6 @@ pub mod u8_t;
 pub mod ubig_t;
 pub mod unit_t;
 pub mod usize_t;
-pub mod proc_t;
 
 use std::{
     collections::HashMap,

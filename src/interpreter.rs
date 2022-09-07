@@ -6,10 +6,10 @@ use crate::{
         interpreter_data::{FrameData, InterpreterData},
         printer::Print,
         token::OprType,
+        value::{Proc, Value},
     },
     Type, ZyxtError,
 };
-use crate::types::value::{Proc, Value};
 
 pub fn interpret_expr<O: Print>(
     input: &Element,

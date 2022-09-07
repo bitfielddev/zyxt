@@ -15,13 +15,8 @@ use crate::{
     interpreter::interpret_asts,
     lexer::lex,
     parser::parse_token_list,
-    types::{
-        element::Element,
-        interpreter_data::InterpreterData,
-        typeobj::{Type},
-    },
+    types::{element::Element, interpreter_data::InterpreterData, typeobj::Type, value::Value},
 };
-use crate::types::value::Value;
 
 pub fn compile(
     input: String,
