@@ -1,18 +1,23 @@
 use std::{collections::HashMap, fmt::Display};
+
 use lazy_static::lazy_static;
 use maplit::hashmap;
-
 use smol_str::SmolStr;
 
 use crate::{
     interpreter::interpret_block,
-    types::{errors::ZyxtError, position::Position, printer::Print, typeobj::{
-        Type,
-        bool_t::BOOL_T, f16_t::F16_T, f32_t::F32_T, f64_t::F64_T, i128_t::I128_T, i16_t::I16_T, i32_t::I32_T,
-        i64_t::I64_T, i8_t::I8_T, ibig_t::IBIG_T, isize_t::ISIZE_T, str_t::STR_T,
-        type_t::TYPE_T, u128_t::U128_T, u16_t::U16_T, u32_t::U32_T, u64_t::U64_T, u8_t::U8_T,
-        ubig_t::UBIG_T, usize_t::USIZE_T, unit_t::UNIT_T
-    }, value::Value},
+    types::{
+        errors::ZyxtError,
+        position::Position,
+        printer::Print,
+        typeobj::{
+            bool_t::BOOL_T, f16_t::F16_T, f32_t::F32_T, f64_t::F64_T, i128_t::I128_T, i16_t::I16_T,
+            i32_t::I32_T, i64_t::I64_T, i8_t::I8_T, ibig_t::IBIG_T, isize_t::ISIZE_T, str_t::STR_T,
+            type_t::TYPE_T, u128_t::U128_T, u16_t::U16_T, u32_t::U32_T, u64_t::U64_T, u8_t::U8_T,
+            ubig_t::UBIG_T, unit_t::UNIT_T, usize_t::USIZE_T, Type,
+        },
+        value::Value,
+    },
     Element,
 };
 
@@ -111,10 +116,7 @@ impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
             out,
         };
         for t in PRIM_NAMES {
-            v.heap[0].insert(
-                t.into(),
-                PRIMS.get(t).unwrap().as_type_element(),
-            );
+            v.heap[0].insert(t.into(), PRIMS.get(t).unwrap().as_type_element());
         }
         v.add_frame(None);
         v

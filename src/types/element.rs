@@ -139,8 +139,8 @@ impl Display for Argument {
             f,
             "{}{}{}",
             self.name,
-            if self.type_ != Type::Any {
-                format!(": {}", self.type_)
+            if self.type_.get_name() != "_any" {
+                format!(": {}", self.type_.get_name())
             } else {
                 "".to_string()
             },
@@ -278,7 +278,7 @@ impl Element {
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> Result<Type<Element>, ZyxtError> {
         match self {
-            Element::Literal { content, .. } => Ok(content.get_type_obj().to_owned()),
+            Element::Literal { content, .. } => Ok(content.get_type_obj().as_type_element()),
             Element::Ident {
                 name,
                 position,
@@ -301,10 +301,10 @@ impl Element {
                     );
                 }
                 let content_type = content.process(typelist)?;
-                if *type_ == UNIT_T {
+                if *type_ == UNIT_T.as_type_element() {
                     typelist.declare_val(&variable.get_name(), &content_type);
                     *self = Element::Declare {
-                        type_: content_type.to_owned(),
+                        type_: content_type.as_type_element(),
                         content: content.to_owned(),
                         variable: variable.to_owned(),
                         position: position.to_owned(),
@@ -435,6 +435,8 @@ impl Element {
                 inst_fields,
                 args,
                 is_struct,
+                position,
+                raw,
                 ..
             } => {
                 typelist.add_frame(None);
@@ -462,17 +464,26 @@ impl Element {
                 if args.is_some() && implementations.contains_key("_init") {
                     todo!("raise error here")
                 }
+                for item in implementations.values_mut() {
+                    item.process(typelist)?;
+                }
+                let new_inst_fields = inst_fields.iter_mut()
+                    .map(|(ident, (ty, default))| {
+                        let ty = ty.process(typelist)?;
+                        if let Some(default) = default {
+                            if ty != default.process(typelist)? {
+                                todo!("raise error")
+                            }
+                        }
+                        Ok((ident.to_owned(), (ty, default.to_owned())))
+                    }).collect::<Result<HashMap<_, _>, _>>()?;
                 typelist.pop_frame();
                 Ok(Type::Definition {
                     inst_name: None,
                     name: Some(if *is_struct { "struct" } else { "class" }.into()),
                     generics: vec![],
                     implementations: implementations.to_owned(),
-                    inst_fields: inst_fields
-                        .to_owned()
-                        .into_iter()
-                        .map(|(k, (v1, v2))| (k, (Box::new(v1), v2.map(|v| *v))))
-                        .collect(),
+                    inst_fields: new_inst_fields
                 })
             }
             Element::NullElement

@@ -399,7 +399,7 @@ impl ZyxtError {
 
     /// inconsistent block return type (temporary)
     pub fn error_4_t<T1: Clone + PartialEq + Debug, T2: Clone + PartialEq + Debug>(
-        block_type: Element,
+        block_type: Type<T1>,
         return_type: Type<T2>,
     ) -> Self {
         ZyxtError {

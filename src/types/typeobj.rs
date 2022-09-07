@@ -29,10 +29,13 @@ use std::{
 
 use smol_str::SmolStr;
 
-use crate::{types::{
-    element::Argument,
-    typeobj::{type_t::TYPE_T, unit_t::UNIT_T},
-}, Element, Value};
+use crate::{
+    types::{
+        element::Argument,
+        typeobj::{type_t::TYPE_T, unit_t::UNIT_T},
+    },
+    Element, Value,
+};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Type<T: Clone + PartialEq + Debug> {
@@ -76,7 +79,8 @@ impl<T: Clone + PartialEq + Debug> Display for Type<T> {
                     } else {
                         name.unwrap_or_else(|| "{unknown}".into()).to_string()
                     },
-                Type::Definition { name, .. } => name.to_owned().unwrap_or_else(|| "{unknown}".into()).into(),
+                Type::Definition { name, .. } =>
+                    name.to_owned().unwrap_or_else(|| "{unknown}".into()).into(),
                 Type::Any => "_any".into(),
                 Type::Return(ty) => format!("{}", ty),
             }
@@ -122,34 +126,57 @@ impl Type<Value> {
     }
     pub fn as_type_element(&self) -> Type<Element> {
         match &self {
-            Type::Instance { name, type_args, implementation } => {
-                Type::Instance {
-                    name: name.to_owned(),
-                    type_args: type_args.iter().map(|a| a.as_type_element()).collect(),
-                    implementation: Box::new(implementation.as_type_element())
-                }
-            }
-            Type::Definition { inst_name, name, generics, implementations, inst_fields } => {
-                Type::Definition {
-                    inst_name: inst_name.to_owned(),
-                    name: name.to_owned(),
-                    generics: generics.to_owned(),
-                    implementations: implementations.iter().map(|(k, v)| (k.to_owned(), Element::Literal {
-                        position: Default::default(),
-                        raw: "".into(),
-                        content: v.to_owned()
-                    })).collect(),
-                    inst_fields: inst_fields.iter().map(|(k, (v1, v2))| (k.to_owned(), (
-                        Box::new(v1.as_type_element())
-                        , v2.map(|v2| Element::Literal {
-                        position: Default::default(),
-                        raw: "".into(),
-                        content: v2
-                    })))).collect()
-                }
-            }
+            Type::Instance {
+                name,
+                type_args,
+                implementation,
+            } => Type::Instance {
+                name: name.to_owned(),
+                type_args: type_args.iter().map(|a| a.as_type_element()).collect(),
+                implementation: Box::new(implementation.as_type_element()),
+            },
+            Type::Definition {
+                inst_name,
+                name,
+                generics,
+                implementations,
+                inst_fields,
+            } => Type::Definition {
+                inst_name: inst_name.to_owned(),
+                name: name.to_owned(),
+                generics: generics.to_owned(),
+                implementations: implementations
+                    .iter()
+                    .map(|(k, v)| {
+                        (
+                            k.to_owned(),
+                            Element::Literal {
+                                position: Default::default(),
+                                raw: "".into(),
+                                content: v.to_owned(),
+                            },
+                        )
+                    })
+                    .collect(),
+                inst_fields: inst_fields
+                    .iter()
+                    .map(|(k, (v1, v2))| {
+                        (
+                            k.to_owned(),
+                            (
+                                Box::new(v1.as_type_element()),
+                                v2.map(|v2| Element::Literal {
+                                    position: Default::default(),
+                                    raw: "".into(),
+                                    content: v2,
+                                }),
+                            ),
+                        )
+                    })
+                    .collect(),
+            },
             Type::Any => Type::Any,
-            Type::Return(t) => Type::Return(Box::new(t.as_type_element()))
+            Type::Return(t) => Type::Return(Box::new(t.as_type_element())),
         }
     }
 }

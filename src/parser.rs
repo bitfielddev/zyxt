@@ -189,7 +189,7 @@ fn get_arguments(
                         position: Default::default(),
                         raw: "".to_string(),
                         name: "_any".into(),
-                        parent: Box::new(Element::NullElement)
+                        parent: Box::new(Element::NullElement),
                     }
                 } else {
                     type_
@@ -675,36 +675,38 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                 };
 
                 check_and_update_cursor!(cursor, selected, elements);
-                let return_type = Box::new(if let Element::Token(Token {
-                    type_: TokenType::Colon,
-                    value,
-                    ..
-                }) = selected
-                {
-                    let mut catcher = vec![];
-                    raw = format!("{}{}", raw, value);
-                    loop {
-                        check_and_update_cursor!(cursor, selected, elements);
-                        raw = format!("{}{}", raw, selected.get_raw());
-                        if let Element::Block { .. } = selected {
-                            break;
+                let return_type = Box::new(
+                    if let Element::Token(Token {
+                        type_: TokenType::Colon,
+                        value,
+                        ..
+                    }) = selected
+                    {
+                        let mut catcher = vec![];
+                        raw = format!("{}{}", raw, value);
+                        loop {
+                            check_and_update_cursor!(cursor, selected, elements);
+                            raw = format!("{}{}", raw, selected.get_raw());
+                            if let Element::Block { .. } = selected {
+                                break;
+                            }
+                            catcher.push(selected.to_owned());
                         }
-                        catcher.push(selected.to_owned());
-                    }
-                    let return_type = parse_expr(catcher)?;
-                    if matches!(return_type.to_owned(), Element::Ident {..}) {
-                        return_type
+                        let return_type = parse_expr(catcher)?;
+                        if matches!(return_type.to_owned(), Element::Ident { .. }) {
+                            return_type
+                        } else {
+                            todo!("throw error here")
+                        }
                     } else {
-                        todo!("throw error here")
-                    }
-                } else {
-                    Element::Ident {
-                        position: Default::default(),
-                        raw: Default::default(),
-                        name: "_unit".into(),
-                        parent: Box::new(Element::NullElement)
-                    }
-                });
+                        Element::Ident {
+                            position: Default::default(),
+                            raw: Default::default(),
+                            name: "_unit".into(),
+                            parent: Box::new(Element::NullElement),
+                        }
+                    },
+                );
 
                 if let Element::Block { content, .. } = selected {
                     new_elements.push(Element::Procedure {
@@ -1024,7 +1026,7 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
                     position: Default::default(),
                     raw: Default::default(),
                     name: "_any".into(),
-                    parent: Box::new(Element::NullElement)
+                    parent: Box::new(Element::NullElement),
                 }), // TODO type later
             });
             break;
