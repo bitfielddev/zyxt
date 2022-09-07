@@ -95,6 +95,7 @@ pub enum Value {
     Str(String),
     Bool(bool),
     Type(Type<Value>),
+    PreType(Type<Element>),
     Proc(Proc),
     ClassInstance {
         type_: Type<Value>,
@@ -138,6 +139,7 @@ impl Debug for Value {
                 Value::Str(v) => format!("\"{}\"", v),
                 Value::Bool(_)
                 | Value::Type(_)
+                | Value::PreType(_)
                 | Value::ClassInstance { .. }
                 | Value::Proc { .. }
                 | Value::Unit => self.to_string(),
@@ -197,9 +199,10 @@ impl Display for Value {
                 Value::Str(v) => v.to_owned(),
                 Value::Bool(v) => v.to_string(),
                 Value::Type(v) | Value::ClassInstance { type_: v, .. } => format!("<{}>", v),
-                v => v.to_string(),
+                Value::PreType(v) => format!("<{}>", v),
                 Value::Unit => "()".to_string(),
                 Value::Return(v) => v.to_string(),
+                v => v.to_string(),
             }
         )
     }
@@ -274,7 +277,7 @@ impl Value {
             Value::F64(..) => &F64_T,
             Value::Str(..) => &STR_T,
             Value::Bool(..) => &BOOL_T,
-            Value::Type(..) => &TYPE_T,
+            Value::Type(..) | Value::PreType(..) => &TYPE_T,
             Value::Proc(_) =>
             /*Type::Instance {
                 name: if *is_fn { "fn" } else { "proc" }.into(),

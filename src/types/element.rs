@@ -18,6 +18,7 @@ use crate::{
         value::Value,
     },
 };
+use crate::types::typeobj::bool_t::BOOL_T;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
@@ -286,13 +287,24 @@ impl Element {
                 ..
             } => typelist.get_val(name, position, raw),
             Element::Block { content, .. } => Ok(Element::block_type(content, typelist, true)?.0),
-            Element::Call { called, args, .. } => Element::call_return_type(called, args, typelist),
+            Element::Call { called, args, .. } => {
+                let called_type = called.process(typelist)?;
+                if let Element::Procedure {args: args_objs, ..} = **called {
+                    for (i, arg) in args.iter_mut().enumerate() {
+                        if arg.process(typelist)? != arg_objs.get(i).unwrap() {
+                            todo!("errors")
+                        }
+                    }
+                } else {
+                    *called = called_type // TODO
+                }
+            },
             Element::Declare {
                 position,
                 variable,
                 content,
                 flags,
-                type_,
+                type_: pre_type,
                 raw,
             } => {
                 if !variable.is_pattern() {
@@ -301,28 +313,21 @@ impl Element {
                     );
                 }
                 let content_type = content.process(typelist)?;
-                if *type_ == UNIT_T.as_type_element() {
+                let type_ = pre_type.process(typelist)?;
+                if type_ == UNIT_T.as_type_element() {
                     typelist.declare_val(&variable.get_name(), &content_type);
-                    *self = Element::Declare {
-                        type_: content_type.as_type_element(),
-                        content: content.to_owned(),
-                        variable: variable.to_owned(),
-                        position: position.to_owned(),
-                        raw: raw.to_owned(),
-                        flags: flags.to_owned(),
-                    };
                 } else {
-                    typelist.declare_val(&variable.get_name(), type_);
-                    if content_type != *type_ {
+                    typelist.declare_val(&variable.get_name(), &type_);
+                    if content_type != type_ {
                         let new_content = Element::BinaryOpr {
                             position: position.to_owned(),
                             raw: raw.to_owned(),
                             type_: OprType::TypeCast,
                             operand1: content.to_owned(),
-                            operand2: Box::new(type_.as_element()),
+                            operand2: Box::new(type_.as_literal()),
                         };
                         *self = Element::Declare {
-                            type_: type_.to_owned(),
+                            type_: pre_type.to_owned(),
                             content: Box::new(new_content),
                             variable: variable.to_owned(),
                             position: position.to_owned(),
@@ -346,10 +351,45 @@ impl Element {
             } => {
                 let type1 = operand1.process(typelist)?;
                 let type2 = operand2.process(typelist)?;
-                if type_ == &OprType::TypeCast && type2 == TYPE_T {
-                    return Ok(Type::from_name(&*operand2.get_name()));
-                }
-                Element::bin_op_return_type(type_, type1, type2, position, raw)
+                Ok(match type_ {
+                    OprType::TypeCast => {
+                        if type2 == TYPE_T.as_type_element() {
+                            type2.get_instance().unwrap() // TODO handle error
+                        } else {
+                            todo!("Error here")
+                        }
+                    }
+                    OprType::And | OprType::Or => BOOL_T.get_instance().unwrap().as_type_element(),
+                    _ => {
+                        *self = Element::Call {
+                            position: position.to_owned(),
+                            raw: raw.to_owned(),
+                            called: Box::new(Element::Ident {
+                                position: Default::default(),
+                                raw: "".to_string(),
+                                name: match type_ {
+                                    OprType::Plus => "_add",
+                                    OprType::Minus => "_sub",
+                                    OprType::AstMult => "_mul",
+                                    OprType::Div => "_div",
+                                    OprType::Modulo => "_rem",
+                                    OprType::Eq => "_eq",
+                                    OprType::Noteq => "_ne",
+                                    OprType::Lt => "_lt",
+                                    OprType::Lteq => "_le",
+                                    OprType::Gt => "_gt",
+                                    OprType::Gteq => "_ge",
+                                    OprType::Concat => "_concat",
+                                    _ => unimplemented!()
+                                }.into(),
+                                parent: Box::new(type1.as_literal())
+                            }),
+                            args: vec![*operand1.to_owned(), *operand2.to_owned()],
+                            kwargs: Default::default()
+                        };
+                        self.process(typelist)?
+                    },
+                })
             }
             Element::UnaryOpr {
                 type_,
@@ -358,28 +398,51 @@ impl Element {
                 raw,
                 ..
             } => {
-                let opnd_type = operand.process(typelist)?;
-                Element::un_op_return_type(type_, opnd_type, position, raw)
+                let operand_type = operand.process(typelist)?;
+                *self = Element::Call {
+                    position: position.to_owned(),
+                    raw: raw.to_owned(),
+                    called: Box::new(Element::Ident {
+                        position: Default::default(),
+                        raw: "".to_string(),
+                        name: match type_ {
+                            OprType::Not => "_not",
+                            OprType::PlusSign => "_un_plus",
+                            OprType::MinusSign => "_un_minus",
+                            _ => panic!()
+                        }.into(),
+                        parent: Box::new(operand_type.as_literal())
+                    }),
+                    args: vec![*operand.to_owned()],
+                    kwargs: Default::default()
+                };
+                self.process(typelist)
             }
             Element::Procedure {
                 is_fn,
-                return_type,
+                return_type: pre_return_type,
                 content,
                 args,
                 position,
-                raw,
-                ..
+                raw
             } => {
+                let mut a = InterpreterData::default_type(typelist.out);
+                let typelist = if *is_fn {
+                    &mut a
+                } else {
+                    typelist
+                };
                 typelist.add_frame(None);
+                let return_type = pre_return_type.process(typelist)?;
                 for arg in args {
-                    typelist.declare_val(&arg.name, &arg.type_);
+                    typelist.declare_val(&arg.name, &arg.type_.process(typelist)?);
                 }
                 let (res, block_return_type) = Element::block_type(content, typelist, false)?;
                 /*if return_type == &UNIT_T || block_return_type.is_none() {
                     *return_type = res;
                 } else*/
                 if let Some(block_return_type) = block_return_type {
-                    if *return_type == block_return_type {
+                    if return_type != block_return_type {
                         return Err(ZyxtError::error_4_t(
                             return_type.to_owned(),
                             block_return_type,
@@ -387,10 +450,12 @@ impl Element {
                         .with_pos_and_raw(position, raw));
                     }
                 }
+                typelist.pop_frame();
                 Ok(Type::Instance {
-                    name: if *is_fn { "fn" } else { "proc" }.into(),
-                    type_args: vec![UNIT_T.to_owned(), return_type.to_owned()],
-                    implementation: Box::new(PROC_T.to_owned()),
+                    name: Some("proc".into()),
+                    //name: Some(if *is_fn { "fn" } else { "proc" }.into()),
+                    type_args: vec![UNIT_T.as_type_element(), return_type],
+                    implementation: Box::new(PROC_T.as_type_element()),
                 })
             } // TODO angle bracket thingy when it is implemented
             Element::Preprocess { content, .. } => {
@@ -446,17 +511,17 @@ impl Element {
                         variable,
                         content,
                         flags,
+                        type_,
                         ..
                     } = expr
                     {
-                        let content_type = content.process(typelist)?;
                         if flags.contains(&Flag::Inst) && args != &None {
                             todo!("raise error here")
                         }
                         if flags.contains(&Flag::Inst) {
                             inst_fields.insert(
                                 variable.get_name(),
-                                (content_type, Some(content.to_owned())),
+                                (*type_.to_owned(), Some(content.to_owned())),
                             );
                         }
                     }
@@ -475,7 +540,7 @@ impl Element {
                                 todo!("raise error")
                             }
                         }
-                        Ok((ident.to_owned(), (ty, default.to_owned())))
+                        Ok((ident.to_owned(), (Box::new(ty), default.map(|a| *a))))
                     }).collect::<Result<HashMap<_, _>, _>>()?;
                 typelist.pop_frame();
                 Ok(Type::Definition {
@@ -489,7 +554,7 @@ impl Element {
             Element::NullElement
             | Element::Delete { .. }
             | Element::Comment { .. }
-            | Element::Return { .. } => Ok(UNIT_T.to_owned()),
+            | Element::Return { .. } => Ok(UNIT_T.as_type_element()),
             Element::Token(Token {
                 position, value, ..
             }) => Err(ZyxtError::error_2_1_0(value.to_owned())

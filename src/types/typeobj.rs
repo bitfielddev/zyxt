@@ -87,24 +87,33 @@ impl<T: Clone + PartialEq + Debug> Display for Type<T> {
         )
     }
 }
+
 impl<T: Clone + PartialEq + Debug> Type<T> {
-    #[deprecated]
-    pub fn as_element(&self) -> Element {
-        match self {
-            Type::Instance { name, .. } => Element::Ident {
-                position: Default::default(),
-                name: name.to_owned().unwrap_or_default(), // TODO type args
-                raw: self.to_string(),
-                parent: Box::new(Element::NullElement),
-            },
-            Type::Definition { .. } => todo!(),
-            Type::Any => todo!(),
-            Type::Return(ty) => ty.as_element(),
+    pub fn get_instance(&self) -> Option<Type<T>> {
+        match &self {
+            Type::Instance {..} => None,
+            Type::Return(t) => t.get_instance(),
+            Type::Any => None,
+            Type::Definition {
+                inst_name, ..
+            } => Some(
+                Type::Instance {
+                    name: inst_name.to_owned(),
+                    type_args: vec![],
+                    implementation: Box::new(self.to_owned())
+                })
         }
     }
 }
 
 impl Type<Element> {
+    pub fn as_literal(&self) -> Element {
+        Element::Literal {
+            position: Default::default(),
+            raw: "".into(),
+            content: Value::PreType(self.to_owned())
+        }
+    }
     pub fn implementation(&self) -> &Type<Element> {
         match &self {
             Type::Instance { implementation, .. } => implementation,
