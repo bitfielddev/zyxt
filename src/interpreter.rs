@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     types::{
-        element::{Argument, Element},
+        element::{Element},
         interpreter_data::{FrameData, InterpreterData},
         printer::Print,
         token::OprType,
@@ -10,52 +10,53 @@ use crate::{
     },
     Type, ZyxtError,
 };
+use crate::types::element::Argument;
 
 pub fn interpret_expr<O: Print>(
     input: &Element,
     i_data: &mut InterpreterData<Value, O>,
 ) -> Result<Value, ZyxtError> {
     match input {
-        Element::Token(..) | Element::Comment { .. } | Element::Preprocess { .. } => panic!(),
+        Element::Token(..) | Element::Comment { .. } | Element::Preprocess { .. } | Element::UnaryOpr {..} => panic!(),
         Element::NullElement => Ok(Value::Unit),
-        Element::UnaryOpr {
-            type_,
-            operand,
-            position,
-            raw,
-            ..
-        } => {
-            if let Ok(v) = interpret_expr(operand, i_data)?.un_opr(type_) {
-                Ok(v)
-            } else {
-                Err(
-                    ZyxtError::error_4_1_1(type_.to_string(), interpret_expr(operand, i_data)?)
-                        .with_pos_and_raw(position, raw),
-                )
-            }
-        }
         Element::BinaryOpr {
             type_,
             operand1,
             operand2,
-            position,
-            raw,
             ..
         } => {
-            if let Ok(v) = match type_ {
-                OprType::And => Ok(logic::and(operand1, operand2, i_data)?),
-                OprType::Or => Ok(logic::or(operand1, operand2, i_data)?),
-                _ => interpret_expr(operand1, i_data)?
-                    .bin_opr(type_, interpret_expr(operand2, i_data)?),
-            } {
-                Ok(v)
-            } else {
-                Err(ZyxtError::error_4_1_0(
-                    type_.to_string(),
-                    interpret_expr(operand1, i_data)?,
-                    interpret_expr(operand2, i_data)?,
-                )
-                .with_pos_and_raw(position, raw))
+            match type_ {
+                OprType::And => {
+                    if let Value::Bool(b) = interpret_expr(operand1, i_data)? {
+                        if b {
+                            if let Value::Bool(b) = interpret_expr(operand2, i_data)? {
+                                Ok(Value::Bool(b))
+                            } else {
+                                panic!()
+                            }
+                        } else {
+                            Ok(Value::Bool(false))
+                        }
+                    } else {
+                        panic!()
+                    }
+                },
+                OprType::Or => {
+                    if let Value::Bool(b) = interpret_expr(operand1, i_data)? {
+                        if !b {
+                            if let Value::Bool(b) = interpret_expr(operand2, i_data)? {
+                                Ok(Value::Bool(b))
+                            } else {
+                                panic!()
+                            }
+                        } else {
+                            Ok(Value::Bool(true))
+                        }
+                    } else {
+                        panic!()
+                    }
+                },
+                _ => panic!(),
             }
         }
         Element::Ident {
@@ -104,59 +105,64 @@ pub fn interpret_expr<O: Print>(
                     return Ok(Value::Unit);
                 }
             }
-            let to_call = interpret_expr(called, i_data)?;
-            Ok(Value::Unit) // TODO
-                            /*if let Value::Proc {
-                                is_fn,
-                                args,
-                                content,
-                                ..
-                            } = to_call
-                            {
-                                let mut processed_args = HashMap::new();
-                                for (
-                                    cursor,
-                                    Argument {
-                                        name, ref default, ..
-                                    },
-                                ) in args.into_iter().enumerate()
-                                {
-                                    let input_arg = if input_args.len() > cursor {
-                                        input_args.get(cursor).unwrap()
-                                    } else {
-                                        default.as_ref().unwrap()
-                                    };
-                                    processed_args.insert(name, interpret_expr(input_arg, i_data)?);
-                                }
-
-                                if is_fn {
-                                    let mut fn_i_data = InterpreterData::default_variable(i_data.out);
-                                    fn_i_data.heap.last_mut().unwrap().extend(processed_args);
-                                    let res = interpret_block(&content, &mut fn_i_data, true, false);
-                                    fn_i_data.pop_frame()?;
-                                    res
-                                } else {
-                                    i_data.add_frame(Some(FrameData {
-                                        position: position.to_owned(),
-                                        raw_call: raw.to_owned(),
-                                        args: processed_args.to_owned(),
-                                    }));
-                                    i_data.heap.last_mut().unwrap().extend(processed_args);
-                                    let res = interpret_block(&content, i_data, true, false);
-                                    i_data.pop_frame()?;
-                                    res
-                                }
-                            } else if let Ok(v) = to_call.call(
-                                input_args
-                                    .iter()
-                                    .map(|a| interpret_expr(a, i_data))
-                                    .collect::<Result<Vec<_>, _>>()?,
-                            ) {
-                                Ok(v)
+            if let Value::Proc(proc) = interpret_expr(called, i_data)? {
+                match proc {
+                    Proc::Builtin {
+                        f, ..
+                    } => {
+                        let processed_args = input_args.iter()
+                            .map(|a| interpret_expr(a, i_data))
+                            .collect::<Result<Vec<_>, _>>()?;
+                        if let Some(v) = f(&processed_args) {
+                            Ok(v)
+                        } else {
+                            todo!()
+                        }
+                    },
+                    Proc::Defined {
+                        is_fn,
+                        args,
+                        content,
+                        ..
+                    } => {
+                        let mut processed_args = HashMap::new();
+                        for (
+                            cursor,
+                            Argument {
+                                name, ref default, ..
+                            },
+                        ) in args.into_iter().enumerate()
+                        {
+                            let input_arg = if input_args.len() > cursor {
+                                input_args.get(cursor).unwrap()
                             } else {
-                                Err(ZyxtError::error_3_1_1(to_call, "_call".to_string())
-                                    .with_pos_and_raw(position, raw))
-                            }*/
+                                default.as_ref().unwrap()
+                            };
+                            processed_args.insert(name, interpret_expr(input_arg, i_data)?);
+                        }
+
+                        if is_fn {
+                            let mut fn_i_data = InterpreterData::default_variable(i_data.out);
+                            fn_i_data.heap.last_mut().unwrap().extend(processed_args);
+                            let res = interpret_block(&content, &mut fn_i_data, true, false);
+                            fn_i_data.pop_frame()?;
+                            res
+                        } else {
+                            i_data.add_frame(Some(FrameData {
+                                position: position.to_owned(),
+                                raw_call: raw.to_owned(),
+                                args: processed_args.to_owned(),
+                            }));
+                            i_data.heap.last_mut().unwrap().extend(processed_args);
+                            let res = interpret_block(&content, i_data, true, false);
+                            i_data.pop_frame()?;
+                            res
+                        }
+                    }
+                }
+            } else {
+                panic!()
+            }
         }
         Element::If { conditions, .. } => {
             for cond in conditions {
@@ -192,7 +198,9 @@ pub fn interpret_expr<O: Print>(
         } => Ok(Value::Proc(Proc::Defined {
             is_fn: *is_fn,
             args: args.to_owned(),
-            return_type: return_type.to_owned(),
+            return_type: if let Value::Type(value) = interpret_expr(return_type, i_data)? {
+                value
+            } else {panic!()},
             content: content.to_owned(),
         })),
         Element::Defer { content, .. } => {
@@ -205,11 +213,22 @@ pub fn interpret_expr<O: Print>(
             is_struct,
             ..
         } => Ok(Value::Type(Type::Definition {
-            name: if *is_struct { "struct" } else { "class" }.into(),
+            name: Some(if *is_struct { "struct" } else { "class" }.into()),
             inst_name: None,
             generics: vec![],
-            implementations: implementations.to_owned(),
-            inst_fields: inst_fields.to_owned(),
+            implementations: implementations.iter()
+                .map(|(k, v)| Ok((k.to_owned(), interpret_expr(v, i_data)?)))
+                .collect::<Result<HashMap<_, _>, _>>()?,
+            inst_fields: inst_fields.iter()
+                .map(|(k, (v1, v2))| Ok((
+                    k.to_owned(),
+                    (
+                        Box::new(if let Value::Type(value) = interpret_expr(v1, i_data)? {
+                            value
+                        } else {panic!()}),
+                        v2.to_owned().map(|v2| interpret_expr(v2.as_ref(), i_data)).transpose()?
+                    )
+                    ))).collect::<Result<HashMap<_, _>, _>>()?,
         })),
     }
 }

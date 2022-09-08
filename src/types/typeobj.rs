@@ -29,13 +29,13 @@ use std::{
 
 use smol_str::SmolStr;
 
-use crate::{
-    types::{
-        element::Argument,
-        typeobj::{type_t::TYPE_T, unit_t::UNIT_T},
-    },
-    Element, Value,
-};
+use crate::{types::{
+    element::Argument,
+    typeobj::{type_t::TYPE_T, unit_t::UNIT_T},
+}, Element, Value, InterpreterData, ZyxtError, Print};
+use crate::interpreter::interpret_expr;
+use crate::types::typeobj::type_t::TYPE_T_ELE;
+use crate::types::typeobj::unit_t::UNIT_T_ELE;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Type<T: Clone + PartialEq + Debug> {
@@ -69,7 +69,7 @@ impl<T: Clone + PartialEq + Debug> Display for Type<T> {
                     if !type_args.is_empty() {
                         format!(
                             "{}<{}>",
-                            name.unwrap_or_else(|| "{unknown}".into()),
+                            name.as_ref().unwrap_or(&"{unknown}".into()),
                             type_args
                                 .iter()
                                 .map(|arg| format!("{}", arg))
@@ -77,7 +77,7 @@ impl<T: Clone + PartialEq + Debug> Display for Type<T> {
                                 .join(", ")
                         )
                     } else {
-                        name.unwrap_or_else(|| "{unknown}".into()).to_string()
+                        name.as_ref().unwrap_or(&"{unknown}".into()).to_string()
                     },
                 Type::Definition { name, .. } =>
                     name.to_owned().unwrap_or_else(|| "{unknown}".into()).into(),
@@ -117,10 +117,57 @@ impl Type<Element> {
     pub fn implementation(&self) -> &Type<Element> {
         match &self {
             Type::Instance { implementation, .. } => implementation,
-            Type::Definition { .. } => &TYPE_T.as_type_element(),
-            Type::Any => &UNIT_T.as_type_element(),
+            Type::Definition { .. } => &TYPE_T_ELE,
+            Type::Any => &UNIT_T_ELE,
             Type::Return(ty) => ty.implementation(),
         }
+    }
+    pub fn as_type_value(&self, i_data: &mut InterpreterData<Value, impl Print>) -> Result<Type<Value>, ZyxtError> {
+        Ok(match &self {
+            Type::Instance {
+                name,
+                type_args,
+                implementation,
+            } => Type::Instance {
+                name: name.to_owned(),
+                type_args: type_args.iter().map(|a| a.as_type_value(i_data)).collect::<Result<Vec<_>, _>>()?,
+                implementation: Box::new(implementation.as_type_value(i_data)?),
+            },
+            Type::Definition {
+                inst_name,
+                name,
+                generics,
+                implementations,
+                inst_fields,
+            } => Type::Definition {
+                inst_name: inst_name.to_owned(),
+                name: name.to_owned(),
+                generics: generics.to_owned(),
+                implementations: implementations
+                    .iter()
+                    .map(|(k, v)| Ok(
+                        (
+                            k.to_owned(),
+                            interpret_expr(v, i_data)?
+                        )
+                    ))
+                    .collect::<Result<HashMap<_, _>, _>>()?,
+                inst_fields: inst_fields
+                    .iter()
+                    .map(|(k, (v1, v2))| Ok(
+                        (
+                            k.to_owned(),
+                            (
+                                Box::new(v1.as_type_value(i_data)?),
+                                v2.to_owned().map(|v2| interpret_expr(&v2, i_data)).transpose()?,
+                            ),
+                        )
+                    ))
+                    .collect::<Result<HashMap<_, _>, _>>()?,
+            },
+            Type::Any => Type::Any,
+            Type::Return(t) => Type::Return(Box::new(t.as_type_value(i_data)?)),
+        })
     }
 }
 
@@ -174,7 +221,7 @@ impl Type<Value> {
                             k.to_owned(),
                             (
                                 Box::new(v1.as_type_element()),
-                                v2.map(|v2| Element::Literal {
+                                v2.to_owned().map(|v2| Element::Literal {
                                     position: Default::default(),
                                     raw: "".into(),
                                     content: v2,

@@ -3,7 +3,6 @@ use std::{
     fmt::{Debug, Display, Formatter},
 };
 
-use anyhow::Result;
 use enum_as_inner::EnumAsInner;
 use half::f16;
 use num::{BigInt, BigUint};
@@ -18,7 +17,7 @@ use crate::{
             ubig_t::UBIG_T, unit_t::UNIT_T, usize_t::USIZE_T, Type,
         },
     },
-    Element, ZyxtError,
+    Element,
 };
 
 #[derive(Clone)]
@@ -154,7 +153,7 @@ impl Display for Proc {
             f,
             "{}",
             match self {
-                Proc::Builtin { f, signature } => "<{builtin}>".to_string(), // TODO
+                Proc::Builtin { .. } => "<{builtin}>".to_string(), // TODO
                 Proc::Defined {
                     is_fn,
                     args,

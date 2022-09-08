@@ -3,14 +3,10 @@ use std::collections::HashMap;
 use lazy_static::lazy_static;
 use smol_str::SmolStr;
 
-use crate::{
-    binary, concat_vals, get_param, typecast_to_type,
-    types::{
-        typeobj::{bool_t::BOOL_T, str_t::STR_T, type_t::TYPE_T},
-        value::{Proc, Value},
-    },
-    Type,
-};
+use crate::{binary, concat_vals, get_param, typecast_to_type, types::{
+    typeobj::{bool_t::BOOL_T, str_t::STR_T, type_t::TYPE_T},
+    value::{Proc, Value},
+}, Type, Element};
 
 macro_rules! comp_opr_unit {
     ($h:ident, $fn_name:literal, $res:literal) => {
@@ -20,6 +16,7 @@ macro_rules! comp_opr_unit {
     };
 }
 
+#[allow(unused_variables)]
 fn unit_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
     h.insert("_default", Value::Unit);
@@ -51,4 +48,5 @@ lazy_static! {
         implementations: unit_t(),
         inst_fields: HashMap::new(),
     };
+    pub static ref UNIT_T_ELE: Type<Element> = UNIT_T.as_type_element();
 }

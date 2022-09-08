@@ -42,8 +42,8 @@ macro_rules! binary {
             $n,
             Value::Proc(Proc::Builtin {
                 f: $f,
-                signature: [$($o),+].into_iter().map(|o| (
-                    vec![$ty.to_owned(), o.to_owned()],
+                signature: [$(&$o),+].into_iter().map(|o| (
+                    vec![$ty.to_owned(), (*o).to_owned()],
                     $ty.to_owned(),
                 )).collect(),
             }),
@@ -54,8 +54,8 @@ macro_rules! binary {
             $n,
             Value::Proc(Proc::Builtin {
                 f: $f,
-                signature: [$($o),+].into_iter().map(|o| (
-                    vec![$ty.to_owned(), o.to_owned()],
+                signature: [$(&$o),+].into_iter().map(|o| (
+                    vec![$ty.to_owned(), (*o).to_owned()],
                     $r.to_owned(),
                 )).collect(),
             }),
@@ -66,8 +66,8 @@ macro_rules! binary {
 #[macro_export]
 macro_rules! get_param {
     ($x:ident, $i:literal, $v:ident) => {
-        if let Value::$v(v) = $x[$i] {
-            v
+        if let Value::$v(v) = &$x[$i] {
+            v.to_owned()
         } else {
             unreachable!()
         }
@@ -168,7 +168,7 @@ macro_rules! arith_opr_num {
     };
     ($h:ident, $ty1:ident $ty2:ident, $fn_name:literal float $rust_fn:ident) => {
         binary!($h, $ty1, $fn_name, [$ty1], |x: &Vec<Value>| Some(
-            Value::$ty2(get_param!(x, 0, $ty2).$rust_fn(&get_param!(x, 1, $ty2)))
+            Value::$ty2(get_param!(x, 0, $ty2).$rust_fn(get_param!(x, 1, $ty2)))
         ));
     }
 }
