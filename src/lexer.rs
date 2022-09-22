@@ -400,7 +400,7 @@ impl Lexer for MainLexer {
                             }
                             _ => TokenType::NormalOpr(OprType::Modulo),
                         },
-                        "~" => match iter.peek() {
+                        "^" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
                                 TokenType::AssignmentOpr(OprType::Concat)
