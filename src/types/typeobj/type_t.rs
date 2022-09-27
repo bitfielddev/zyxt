@@ -3,10 +3,14 @@ use std::collections::HashMap;
 use lazy_static::lazy_static;
 use smol_str::SmolStr;
 
-use crate::{binary, concat_vals, get_param, typecast_to_type, types::{
-    typeobj::{bool_t::BOOL_T, str_t::STR_T},
-    value::{Proc, Value},
-}, Type, Element};
+use crate::{
+    binary, concat_vals, get_param, typecast_to_type,
+    types::{
+        typeobj::{bool_t::BOOL_T, str_t::STR_T},
+        value::{Proc, Value},
+    },
+    Element, Type,
+};
 
 fn type_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();

@@ -1,14 +1,16 @@
 use std::collections::HashMap;
+
 use crate::{
-    types::{element::Element, interpreter_data::InterpreterData, printer::Print, typeobj::Type},
+    interpreter::interpret_block,
+    types::{
+        element::Element,
+        interpreter_data::InterpreterData,
+        printer::Print,
+        token::{Flag, OprType, Token},
+        typeobj::{bool_t::BOOL_T, proc_t::PROC_T, type_t::TYPE_T, unit_t::UNIT_T, Type},
+    },
     ZyxtError,
 };
-use crate::interpreter::interpret_block;
-use crate::types::token::{Flag, OprType, Token};
-use crate::types::typeobj::bool_t::BOOL_T;
-use crate::types::typeobj::proc_t::PROC_T;
-use crate::types::typeobj::type_t::TYPE_T;
-use crate::types::typeobj::unit_t::UNIT_T;
 
 pub fn gen_instructions<O: Print>(
     mut input: Vec<Element>,
@@ -43,22 +45,33 @@ impl Process for Element {
             Element::Block { content, .. } => Ok(Element::block_type(content, typelist, true)?.0),
             Element::Call { called, args, .. } => {
                 let called_type = called.process(typelist)?;
-                if let Element::Procedure {args: args_objs, return_type: pre_return_type, ..} = called.as_mut() {
+                if let Element::Procedure {
+                    args: args_objs,
+                    return_type: pre_return_type,
+                    ..
+                } = called.as_mut()
+                {
                     for (i, arg) in args.iter_mut().enumerate() {
-                        if arg.process(typelist)? != args_objs.get_mut(i).unwrap().type_.process(typelist)? {
+                        if arg.process(typelist)?
+                            != args_objs.get_mut(i).unwrap().type_.process(typelist)?
+                        {
                             todo!("errors")
                         }
                     }
                     pre_return_type.process(typelist)
                 } else {
-                    *called = if let Type::Definition {implementations, ..} = called_type.implementation() {
-                        Box::new(implementations.get("_call").unwrap().to_owned()) // TODO handle error
+                    *called = if let Type::Definition {
+                        implementations, ..
+                    } = called_type.implementation()
+                    {
+                        Box::new(implementations.get("_call").unwrap().to_owned())
+                    // TODO handle error
                     } else {
                         unreachable!()
                     };
                     self.process(typelist)
                 }
-            },
+            }
             Element::Declare {
                 position,
                 variable,
@@ -117,13 +130,19 @@ impl Process for Element {
                             *self = Element::Call {
                                 position: Default::default(),
                                 raw: "".to_string(),
-                                called: Box::new(if let Type::Definition {implementations, ..} = type1.implementation() {
-                                    implementations.get("_typecast").unwrap().to_owned() // TODO handle error
-                                } else {
-                                    unreachable!()
-                                }),
+                                called: Box::new(
+                                    if let Type::Definition {
+                                        implementations, ..
+                                    } = type1.implementation()
+                                    {
+                                        implementations.get("_typecast").unwrap().to_owned()
+                                    // TODO handle error
+                                    } else {
+                                        unreachable!()
+                                    },
+                                ),
                                 args: vec![*operand1.to_owned(), *operand2.to_owned()],
-                                kwargs: Default::default()
+                                kwargs: Default::default(),
                             };
                             type2.get_instance().unwrap() // TODO handle error
                         } else {
@@ -136,46 +155,63 @@ impl Process for Element {
                                 *operand = Box::new(Element::Call {
                                     position: Default::default(),
                                     raw: "".to_string(),
-                                    called: Box::new(if let Type::Definition {implementations, ..} = type1.implementation() {
-                                        implementations.get("_typecast").unwrap().to_owned() // TODO handle error
-                                    } else {
-                                        unreachable!()
-                                    }),
-                                    args: vec![*operand.to_owned(), BOOL_T.as_type_element().as_literal()],
-                                    kwargs: Default::default()
+                                    called: Box::new(
+                                        if let Type::Definition {
+                                            implementations, ..
+                                        } = type1.implementation()
+                                        {
+                                            implementations.get("_typecast").unwrap().to_owned()
+                                        // TODO handle error
+                                        } else {
+                                            unreachable!()
+                                        },
+                                    ),
+                                    args: vec![
+                                        *operand.to_owned(),
+                                        BOOL_T.as_type_element().as_literal(),
+                                    ],
+                                    kwargs: Default::default(),
                                 });
                             }
                         }
                         BOOL_T.get_instance().unwrap().as_type_element()
-                    },
+                    }
                     _ => {
                         *self = Element::Call {
                             position: position.to_owned(),
                             raw: raw.to_owned(),
-                            called: Box::new(if let Type::Definition {implementations, ..} = type1.implementation() {
-                                implementations.get(match type_ {
-                                    OprType::Plus => "_add",
-                                    OprType::Minus => "_sub",
-                                    OprType::AstMult => "_mul",
-                                    OprType::Div => "_div",
-                                    OprType::Modulo => "_rem",
-                                    OprType::Eq => "_eq",
-                                    OprType::Noteq => "_ne",
-                                    OprType::Lt => "_lt",
-                                    OprType::Lteq => "_le",
-                                    OprType::Gt => "_gt",
-                                    OprType::Gteq => "_ge",
-                                    OprType::Concat => "_concat",
-                                    _ => unimplemented!()
-                                }).unwrap().to_owned() // TODO handle error
-                            } else {
-                                unreachable!()
-                            }),
+                            called: Box::new(
+                                if let Type::Definition {
+                                    implementations, ..
+                                } = type1.implementation()
+                                {
+                                    implementations
+                                        .get(match type_ {
+                                            OprType::Plus => "_add",
+                                            OprType::Minus => "_sub",
+                                            OprType::AstMult => "_mul",
+                                            OprType::Div => "_div",
+                                            OprType::Modulo => "_rem",
+                                            OprType::Eq => "_eq",
+                                            OprType::Noteq => "_ne",
+                                            OprType::Lt => "_lt",
+                                            OprType::Lteq => "_le",
+                                            OprType::Gt => "_gt",
+                                            OprType::Gteq => "_ge",
+                                            OprType::Concat => "_concat",
+                                            _ => unimplemented!(),
+                                        })
+                                        .unwrap()
+                                        .to_owned() // TODO handle error
+                                } else {
+                                    unreachable!()
+                                },
+                            ),
                             args: vec![*operand1.to_owned(), *operand2.to_owned()],
-                            kwargs: Default::default()
+                            kwargs: Default::default(),
                         };
                         self.process(typelist)?
-                    },
+                    }
                 })
             }
             Element::UnaryOpr {
@@ -189,18 +225,26 @@ impl Process for Element {
                 *self = Element::Call {
                     position: position.to_owned(),
                     raw: raw.to_owned(),
-                    called: Box::new(if let Type::Definition {implementations, ..} = operand_type.implementation() {
-                        implementations.get(match type_ {
-                            OprType::Not => "_not",
-                            OprType::PlusSign => "_un_plus",
-                            OprType::MinusSign => "_un_minus",
-                            _ => panic!()
-                        }).unwrap().to_owned() // TODO handle error
-                    } else {
-                        unreachable!()
-                    }),
+                    called: Box::new(
+                        if let Type::Definition {
+                            implementations, ..
+                        } = operand_type.implementation()
+                        {
+                            implementations
+                                .get(match type_ {
+                                    OprType::Not => "_not",
+                                    OprType::PlusSign => "_un_plus",
+                                    OprType::MinusSign => "_un_minus",
+                                    _ => panic!(),
+                                })
+                                .unwrap()
+                                .to_owned() // TODO handle error
+                        } else {
+                            unreachable!()
+                        },
+                    ),
                     args: vec![*operand.to_owned()],
-                    kwargs: Default::default()
+                    kwargs: Default::default(),
                 };
                 self.process(typelist)
             }
@@ -210,14 +254,15 @@ impl Process for Element {
                 content,
                 args,
                 position,
-                raw
+                raw,
             } => {
                 /*let mut a = InterpreterData::default_type(typelist.out);
                 let typelist = if *is_fn {
                     &mut a
                 } else {
                     typelist
-                };*/ // TODO
+                };*/
+ // TODO
                 typelist.add_frame(None);
                 let return_type = pre_return_type.process(typelist)?;
                 for arg in args {
@@ -233,7 +278,7 @@ impl Process for Element {
                             return_type.to_owned(),
                             block_return_type,
                         )
-                            .with_pos_and_raw(position, raw));
+                        .with_pos_and_raw(position, raw));
                     }
                 }
                 typelist.pop_frame();
@@ -254,9 +299,9 @@ impl Process for Element {
             }
             Element::Defer { content, .. } =>
             // TODO check block return against call stack
-                {
-                    Ok(Element::block_type(content, typelist, false)?.0)
-                }
+            {
+                Ok(Element::block_type(content, typelist, false)?.0)
+            }
             Element::Set {
                 position,
                 variable,
@@ -316,7 +361,8 @@ impl Process for Element {
                 for item in implementations.values_mut() {
                     item.process(typelist)?;
                 }
-                let new_inst_fields = inst_fields.iter_mut()
+                let new_inst_fields = inst_fields
+                    .iter_mut()
                     .map(|(ident, (ty, default))| {
                         let ty = ty.process(typelist)?;
                         if let Some(default) = default {
@@ -324,15 +370,19 @@ impl Process for Element {
                                 todo!("raise error")
                             }
                         }
-                        Ok((ident.to_owned(), (Box::new(ty), default.to_owned().map(|a| *a))))
-                    }).collect::<Result<HashMap<_, _>, _>>()?;
+                        Ok((
+                            ident.to_owned(),
+                            (Box::new(ty), default.to_owned().map(|a| *a)),
+                        ))
+                    })
+                    .collect::<Result<HashMap<_, _>, _>>()?;
                 typelist.pop_frame();
                 Ok(Type::Definition {
                     inst_name: None,
                     name: Some(if *is_struct { "struct" } else { "class" }.into()),
                     generics: vec![],
                     implementations: implementations.to_owned(),
-                    inst_fields: new_inst_fields
+                    inst_fields: new_inst_fields,
                 })
             }
             Element::NullElement
@@ -340,8 +390,8 @@ impl Process for Element {
             | Element::Comment { .. }
             | Element::Return { .. } => Ok(UNIT_T.as_type_element()),
             Element::Token(Token {
-                               position, value, ..
-                           }) => Err(ZyxtError::error_2_1_0(value.to_owned())
+                position, value, ..
+            }) => Err(ZyxtError::error_2_1_0(value.to_owned())
                 .with_pos_and_raw(position, &value.to_string())),
         }
     }

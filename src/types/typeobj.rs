@@ -29,13 +29,17 @@ use std::{
 
 use smol_str::SmolStr;
 
-use crate::{types::{
-    element::Argument,
-    typeobj::{type_t::TYPE_T, unit_t::UNIT_T},
-}, Element, Value, InterpreterData, ZyxtError, Print};
-use crate::interpreter::interpret_expr;
-use crate::types::typeobj::type_t::TYPE_T_ELE;
-use crate::types::typeobj::unit_t::UNIT_T_ELE;
+use crate::{
+    interpreter::interpret_expr,
+    types::{
+        element::Argument,
+        typeobj::{
+            type_t::{TYPE_T, TYPE_T_ELE},
+            unit_t::{UNIT_T, UNIT_T_ELE},
+        },
+    },
+    Element, InterpreterData, Print, Value, ZyxtError,
+};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Type<T: Clone + PartialEq + Debug> {
@@ -91,17 +95,14 @@ impl<T: Clone + PartialEq + Debug> Display for Type<T> {
 impl<T: Clone + PartialEq + Debug> Type<T> {
     pub fn get_instance(&self) -> Option<Type<T>> {
         match &self {
-            Type::Instance {..} => None,
+            Type::Instance { .. } => None,
             Type::Return(t) => t.get_instance(),
             Type::Any => None,
-            Type::Definition {
-                inst_name, ..
-            } => Some(
-                Type::Instance {
-                    name: inst_name.to_owned(),
-                    type_args: vec![],
-                    implementation: Box::new(self.to_owned())
-                })
+            Type::Definition { inst_name, .. } => Some(Type::Instance {
+                name: inst_name.to_owned(),
+                type_args: vec![],
+                implementation: Box::new(self.to_owned()),
+            }),
         }
     }
 }
@@ -111,7 +112,7 @@ impl Type<Element> {
         Element::Literal {
             position: Default::default(),
             raw: "".into(),
-            content: Value::PreType(self.to_owned())
+            content: Value::PreType(self.to_owned()),
         }
     }
     pub fn implementation(&self) -> &Type<Element> {
@@ -122,7 +123,10 @@ impl Type<Element> {
             Type::Return(ty) => ty.implementation(),
         }
     }
-    pub fn as_type_value(&self, i_data: &mut InterpreterData<Value, impl Print>) -> Result<Type<Value>, ZyxtError> {
+    pub fn as_type_value(
+        &self,
+        i_data: &mut InterpreterData<Value, impl Print>,
+    ) -> Result<Type<Value>, ZyxtError> {
         Ok(match &self {
             Type::Instance {
                 name,
@@ -130,7 +134,10 @@ impl Type<Element> {
                 implementation,
             } => Type::Instance {
                 name: name.to_owned(),
-                type_args: type_args.iter().map(|a| a.as_type_value(i_data)).collect::<Result<Vec<_>, _>>()?,
+                type_args: type_args
+                    .iter()
+                    .map(|a| a.as_type_value(i_data))
+                    .collect::<Result<Vec<_>, _>>()?,
                 implementation: Box::new(implementation.as_type_value(i_data)?),
             },
             Type::Definition {
@@ -145,24 +152,21 @@ impl Type<Element> {
                 generics: generics.to_owned(),
                 implementations: implementations
                     .iter()
-                    .map(|(k, v)| Ok(
-                        (
-                            k.to_owned(),
-                            interpret_expr(v, i_data)?
-                        )
-                    ))
+                    .map(|(k, v)| Ok((k.to_owned(), interpret_expr(v, i_data)?)))
                     .collect::<Result<HashMap<_, _>, _>>()?,
                 inst_fields: inst_fields
                     .iter()
-                    .map(|(k, (v1, v2))| Ok(
-                        (
+                    .map(|(k, (v1, v2))| {
+                        Ok((
                             k.to_owned(),
                             (
                                 Box::new(v1.as_type_value(i_data)?),
-                                v2.to_owned().map(|v2| interpret_expr(&v2, i_data)).transpose()?,
+                                v2.to_owned()
+                                    .map(|v2| interpret_expr(&v2, i_data))
+                                    .transpose()?,
                             ),
-                        )
-                    ))
+                        ))
+                    })
                     .collect::<Result<HashMap<_, _>, _>>()?,
             },
             Type::Any => Type::Any,

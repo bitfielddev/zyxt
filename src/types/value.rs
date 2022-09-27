@@ -24,7 +24,7 @@ use crate::{
 pub enum Proc {
     Builtin {
         f: fn(&Vec<Value>) -> Option<Value>,
-        signature: Vec<(Vec<Type<Value>>, Type<Value>)>,
+        signature: Vec<&'static (dyn Fn() -> (Vec<Type<Value>>, Type<Value>) + Sync)>,
     },
     Defined {
         is_fn: bool,
@@ -42,7 +42,7 @@ impl PartialEq for Proc {
                     signature: signature2,
                 } = other
                 {
-                    signature == signature2 && *f as usize == *f2 as usize
+                    *f as usize == *f2 as usize
                 } else {
                     false
                 }
@@ -106,7 +106,7 @@ pub enum Value {
 
 impl Debug for Proc {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "{}", self)
     }
 }
 impl Debug for Value {

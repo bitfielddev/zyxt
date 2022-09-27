@@ -7,6 +7,7 @@ use smol_str::SmolStr;
 
 use crate::{
     gen_instructions,
+    instructor::Process,
     interpreter::interpret_block,
     types::{
         errors::ZyxtError,
@@ -14,12 +15,10 @@ use crate::{
         position::Position,
         printer::Print,
         token::{Flag, OprType, Token},
-        typeobj::{proc_t::PROC_T, type_t::TYPE_T, unit_t::UNIT_T, Type},
+        typeobj::{bool_t::BOOL_T, proc_t::PROC_T, type_t::TYPE_T, unit_t::UNIT_T, Type},
         value::Value,
     },
 };
-use crate::instructor::Process;
-use crate::types::typeobj::bool_t::BOOL_T;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
