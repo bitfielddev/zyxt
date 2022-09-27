@@ -262,7 +262,7 @@ impl Process for Element {
                 } else {
                     typelist
                 };*/
- // TODO
+                // TODO
                 typelist.add_frame(None);
                 let return_type = pre_return_type.process(typelist)?;
                 for arg in args {
@@ -274,11 +274,8 @@ impl Process for Element {
                     *pre_return_type = Box::new(res.as_literal());
                 } else if let Some(block_return_type) = block_return_type {
                     if return_type != block_return_type {
-                        return Err(ZyxtError::error_4_t(
-                            return_type.to_owned(),
-                            block_return_type,
-                        )
-                        .with_pos_and_raw(position, raw));
+                        return Err(ZyxtError::error_4_t(return_type, block_return_type)
+                            .with_pos_and_raw(position, raw));
                     }
                 }
                 typelist.pop_frame();

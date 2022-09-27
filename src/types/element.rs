@@ -6,16 +6,14 @@ use std::{
 use smol_str::SmolStr;
 
 use crate::{
-    gen_instructions,
     instructor::Process,
-    interpreter::interpret_block,
     types::{
         errors::ZyxtError,
         interpreter_data::InterpreterData,
         position::Position,
         printer::Print,
         token::{Flag, OprType, Token},
-        typeobj::{bool_t::BOOL_T, proc_t::PROC_T, type_t::TYPE_T, unit_t::UNIT_T, Type},
+        typeobj::{unit_t::UNIT_T, Type},
         value::Value,
     },
 };

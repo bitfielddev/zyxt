@@ -36,12 +36,8 @@ pub enum Proc {
 impl PartialEq for Proc {
     fn eq(&self, other: &Self) -> bool {
         match &self {
-            Self::Builtin { f, signature } => {
-                if let Self::Builtin {
-                    f: f2,
-                    signature: signature2,
-                } = other
-                {
+            Self::Builtin { f, .. } => {
+                if let Self::Builtin { f: f2, .. } = other {
                     *f as usize == *f2 as usize
                 } else {
                     false

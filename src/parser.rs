@@ -1301,10 +1301,7 @@ pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError
         }
     }
 
-    input = input
-        .into_iter()
-        .filter(|token| token.type_ != TokenType::Comment)
-        .collect();
+    input.retain(|token| token.type_ != TokenType::Comment);
 
     // generate and return an AST for each expression
     parse_block(
