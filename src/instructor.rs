@@ -4,12 +4,12 @@ use crate::{
     interpreter::interpret_block,
     types::{
         element::Element,
-        interpreter_data::InterpreterData,
+        interpreter_data::{FrameType, InterpreterData},
         printer::Print,
         token::{Flag, OprType, Token},
         typeobj::{bool_t::BOOL_T, proc_t::PROC_T, type_t::TYPE_T, unit_t::UNIT_T, Type},
     },
-    ZyxtError,
+    Value, ZyxtError,
 };
 
 pub fn gen_instructions<O: Print>(
@@ -256,14 +256,14 @@ impl Process for Element {
                 position,
                 raw,
             } => {
-                /*let mut a = InterpreterData::default_type(typelist.out);
-                let typelist = if *is_fn {
-                    &mut a
-                } else {
-                    typelist
-                };*/
-                // TODO
-                typelist.add_frame(None);
+                typelist.add_frame(
+                    None,
+                    if *is_fn {
+                        FrameType::Function
+                    } else {
+                        FrameType::Normal
+                    },
+                );
                 let return_type = pre_return_type.process(typelist)?;
                 for arg in args {
                     let value = arg.type_.process(typelist)?;
@@ -287,9 +287,9 @@ impl Process for Element {
                 })
             } // TODO angle bracket thingy when it is implemented
             Element::Preprocess { content, .. } => {
-                let mut pre_typelist = InterpreterData::default_type(typelist.out);
+                let mut pre_typelist = InterpreterData::<Type<Element>, _>::new(typelist.out);
                 let pre_instructions = gen_instructions(content.to_owned(), &mut pre_typelist)?;
-                let mut i_data = InterpreterData::default_variable(typelist.out);
+                let mut i_data = InterpreterData::<Value, _>::new(typelist.out);
                 let pre_value = interpret_block(&pre_instructions, &mut i_data, true, false)?;
                 *self = pre_value.as_element();
                 self.process(typelist)
@@ -330,7 +330,7 @@ impl Process for Element {
                 is_struct,
                 ..
             } => {
-                typelist.add_frame(None);
+                typelist.add_frame(None, FrameType::Normal);
                 for expr in content.iter_mut() {
                     expr.process(typelist)?;
                     if let Element::Declare {

@@ -4,7 +4,10 @@ use backtrace::Backtrace;
 use clap::Parser;
 use zyxt::{
     repl,
-    types::{errors::ZyxtError, interpreter_data::InterpreterData, printer::StdIoPrint},
+    types::{
+        element::Element, errors::ZyxtError, interpreter_data::InterpreterData,
+        printer::StdIoPrint, typeobj::Type, value::Value,
+    },
 };
 
 #[derive(Parser)]
@@ -57,8 +60,8 @@ fn main() {
             };
             let mut sip1 = StdIoPrint(verbose);
             let mut sip2 = StdIoPrint(verbose);
-            let mut typelist = InterpreterData::default_type(&mut sip1);
-            let mut i_data = InterpreterData::default_variable(&mut sip2);
+            let mut typelist = InterpreterData::<Type<Element>, _>::new(&mut sip1);
+            let mut i_data = InterpreterData::<Value, _>::new(&mut sip2);
             let exit_code = zyxt::interpret(
                 &zyxt::compile(content, filename, &mut typelist)
                     .unwrap_or_else(|e| e.print_exit(&mut StdIoPrint(verbose))),

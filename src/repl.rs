@@ -9,15 +9,15 @@ use crate::{
     compile,
     interpreter::interpret_expr,
     types::{interpreter_data::InterpreterData, printer::StdIoPrint, value::Value},
-    ZyxtError,
+    Element, Type, ZyxtError,
 };
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
     let mut sip1 = StdIoPrint(verbosity);
     let mut sip2 = StdIoPrint(verbosity);
-    let mut typelist = InterpreterData::default_type(&mut sip1);
-    let mut varlist = InterpreterData::default_variable(&mut sip2);
+    let mut typelist = InterpreterData::<Type<Element>, _>::new(&mut sip1);
+    let mut varlist = InterpreterData::<Value, _>::new(&mut sip2);
     let mut rl = Editor::<()>::new().unwrap();
     let mut history_path = home_dir().unwrap();
     history_path.push(".zyxt_history");

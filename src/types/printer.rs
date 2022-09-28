@@ -1,11 +1,11 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use ansi_term::{
     Color::{Red, White, Yellow},
     Style,
 };
 
-pub trait Print: Clone {
+pub trait Print: Debug {
     fn println(&mut self, s: impl Display);
     fn print(&mut self, s: impl Display);
     fn eprintln(&mut self, s: impl Display);
@@ -19,7 +19,7 @@ pub trait Print: Clone {
     fn verbosity(&self) -> u8;
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct StdIoPrint(pub u8);
 
 impl StdIoPrint {

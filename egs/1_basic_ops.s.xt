@@ -37,7 +37,6 @@ ter.out (a >= b);
 // logic operators
 ter.out (true && false);
 ter.out (true || false);
-ter.out (true ^^ false);
 
 /* number types other than i32 and f64 include:
  * f16, f32

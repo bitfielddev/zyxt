@@ -1,4 +1,7 @@
-use std::{collections::HashMap, fmt::Display};
+use std::{
+    collections::{vec_deque::VecDeque, HashMap},
+    fmt::{Debug, Display},
+};
 
 use lazy_static::lazy_static;
 use maplit::hashmap;
@@ -52,39 +55,55 @@ lazy_static! {
     };
 }
 
+#[derive(Debug)]
 pub struct FrameData<T: Clone + Display> {
     pub position: Position,
     pub raw_call: String,
     pub args: HashMap<SmolStr, T>,
 }
-pub struct InterpreterData<'a, T: Clone + Display, O: Print> {
-    pub heap: Vec<HashMap<SmolStr, T>>,
-    pub defer: Vec<Vec<Vec<Element>>>,
-    pub frame_data: Vec<Option<FrameData<T>>>,
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FrameType {
+    Normal,
+    Constants,
+    Function,
+}
+
+#[derive(Debug)]
+pub struct Frame<T: Clone + Display + Debug> {
+    pub heap: HashMap<SmolStr, T>,
+    pub defer: Vec<Vec<Element>>,
+    pub frame_data: Option<FrameData<T>>,
+    pub ty: FrameType,
+}
+#[derive(Debug)]
+pub struct InterpreterData<'a, T: Clone + Display + Debug, O: Print> {
+    pub frames: VecDeque<Frame<T>>,
     pub out: &'a mut O,
 }
 impl<'a, O: Print> InterpreterData<'a, Value, O> {
-    pub fn default_variable(out: &'a mut O) -> InterpreterData<'a, Value, O> {
+    pub fn new(out: &'a mut O) -> InterpreterData<'a, Value, O> {
         let mut v = InterpreterData {
-            heap: vec![HashMap::new()],
-            defer: vec![vec![]],
-            frame_data: vec![],
+            frames: VecDeque::new(),
             out,
         };
+        let const_frame = v.add_frame(None, FrameType::Constants);
         for t in PRIM_NAMES {
-            v.heap[0].insert(
+            const_frame.heap.insert(
                 t.into(),
                 Value::Type(PRIMS.get(t).unwrap().to_owned().to_owned()),
             );
         }
-        v.add_frame(None);
+        v.add_frame(None, FrameType::Normal);
         v
     }
     pub fn heap_to_string(&self) -> String {
-        self.heap
+        self.frames
             .iter()
-            .map(|hmap| {
-                hmap.iter()
+            .map(|frame| {
+                frame
+                    .heap
+                    .iter()
                     .map(|(k, v)| format!("{}: {} = {}", k, v.get_type_obj(), v))
                     .collect::<Vec<String>>()
                     .join("\n")
@@ -93,52 +112,54 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
             .join("\n-------\n")
     }
     pub fn pop_frame(&mut self) -> Result<Option<Value>, ZyxtError> {
-        self.heap.pop();
-        self.frame_data.pop();
-
-        for content in self.defer.last().unwrap().clone() {
+        for content in self.frames.front_mut().unwrap().defer.to_owned() {
             if let Value::Return(v) = interpret_block(&content, self, false, false)? {
-                self.defer.pop();
+                self.frames.pop_front();
                 return Ok(Some(*v));
             }
         }
-        self.defer.pop();
+        self.frames.pop_front();
         Ok(None)
     }
 }
 
 impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
-    pub fn default_type(out: &'a mut O) -> InterpreterData<'a, Type<Element>, O> {
+    pub fn new(out: &'a mut O) -> InterpreterData<'a, Type<Element>, O> {
         let mut v = InterpreterData {
-            heap: vec![HashMap::new()],
-            defer: vec![vec![]],
-            frame_data: vec![],
+            frames: VecDeque::new(),
             out,
         };
+        let const_frame = v.add_frame(None, FrameType::Constants);
         for t in PRIM_NAMES {
-            v.heap[0].insert(t.into(), PRIMS.get(t).unwrap().as_type_element());
+            const_frame
+                .heap
+                .insert(t.into(), PRIMS.get(t).unwrap().as_type_element());
         }
-        v.add_frame(None);
         v
     }
     pub fn pop_frame(&mut self) {
-        self.heap.pop();
-        self.frame_data.pop();
-        self.defer.pop();
+        self.frames.pop_front();
     }
 }
 
-impl<T: Clone + Display, O: Print> InterpreterData<'_, T, O> {
-    pub fn add_frame(&mut self, frame_data: Option<FrameData<T>>) {
-        self.heap.push(HashMap::new());
-        self.defer.push(vec![]);
-        self.frame_data.push(frame_data);
+impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
+    pub fn add_frame(&mut self, frame_data: Option<FrameData<T>>, ty: FrameType) -> &mut Frame<T> {
+        self.frames.push_front(Frame {
+            heap: HashMap::new(),
+            defer: vec![],
+            frame_data,
+            ty,
+        });
+        self.frames.front_mut().unwrap()
     }
     pub fn declare_val(&mut self, name: &SmolStr, value: &T) {
-        self.heap
-            .last_mut()
-            .unwrap()
-            .insert(name.to_owned(), value.to_owned());
+        if let Some(frame) = self.frames.front_mut() {
+            frame
+        } else {
+            self.add_frame(None, FrameType::Normal)
+        }
+        .heap
+        .insert(name.to_owned(), value.to_owned());
     }
     pub fn set_val(
         &mut self,
@@ -147,10 +168,16 @@ impl<T: Clone + Display, O: Print> InterpreterData<'_, T, O> {
         position: &Position,
         raw: &String,
     ) -> Result<(), ZyxtError> {
-        for set in self.heap.iter_mut().rev() {
-            if set.contains_key(name) {
-                set.insert(name.to_owned(), value.to_owned());
+        for frame in self.frames.iter_mut() {
+            if frame.heap.contains_key(name) {
+                if frame.ty == FrameType::Constants {
+                    todo!("Err trying to change const value")
+                }
+                frame.heap.insert(name.to_owned(), value.to_owned());
                 return Ok(());
+            }
+            if frame.ty == FrameType::Function {
+                break;
             }
         }
         Err(ZyxtError::error_3_0(name.to_owned()).with_pos_and_raw(position, raw))
@@ -161,9 +188,12 @@ impl<T: Clone + Display, O: Print> InterpreterData<'_, T, O> {
         position: &Position,
         raw: &String,
     ) -> Result<T, ZyxtError> {
-        for set in self.heap.iter().rev() {
-            if set.contains_key(name) {
-                return Ok(set.get(name).unwrap().to_owned());
+        for frame in self.frames.iter() {
+            if frame.heap.contains_key(name) {
+                return Ok(frame.heap.get(name).unwrap().to_owned());
+            }
+            if frame.ty == FrameType::Function {
+                break;
             }
         }
         Err(ZyxtError::error_3_0(name.to_owned()).with_pos_and_raw(position, raw))
@@ -174,13 +204,13 @@ impl<T: Clone + Display, O: Print> InterpreterData<'_, T, O> {
         position: &Position,
         raw: &String,
     ) -> Result<T, ZyxtError> {
-        if let Some(v) = self.heap.last_mut().unwrap().remove(name) {
+        if let Some(v) = self.frames.front_mut().unwrap().heap.remove(name) {
             Ok(v)
         } else {
             Err(ZyxtError::error_3_0(name.to_owned()).with_pos_and_raw(position, raw))
         }
     }
     pub fn add_defer(&mut self, content: Vec<Element>) {
-        self.defer.last_mut().unwrap().push(content);
+        self.frames.front_mut().unwrap().defer.push(content);
     }
 }

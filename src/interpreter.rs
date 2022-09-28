@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     types::{
         element::{Argument, Element},
-        interpreter_data::{FrameData, InterpreterData},
+        interpreter_data::{FrameData, FrameType, InterpreterData},
         printer::Print,
         token::OprType,
         value::{Proc, Value},
@@ -139,24 +139,24 @@ pub fn interpret_expr<O: Print>(
                             };
                             processed_args.insert(name, interpret_expr(input_arg, i_data)?);
                         }
-
-                        if is_fn {
-                            let mut fn_i_data = InterpreterData::default_variable(i_data.out);
-                            fn_i_data.heap.last_mut().unwrap().extend(processed_args);
-                            let res = interpret_block(&content, &mut fn_i_data, true, false);
-                            fn_i_data.pop_frame()?;
-                            res
-                        } else {
-                            i_data.add_frame(Some(FrameData {
-                                position: position.to_owned(),
-                                raw_call: raw.to_owned(),
-                                args: processed_args.to_owned(),
-                            }));
-                            i_data.heap.last_mut().unwrap().extend(processed_args);
-                            let res = interpret_block(&content, i_data, true, false);
-                            i_data.pop_frame()?;
-                            res
-                        }
+                        i_data
+                            .add_frame(
+                                Some(FrameData {
+                                    position: position.to_owned(),
+                                    raw_call: raw.to_owned(),
+                                    args: processed_args.to_owned(),
+                                }),
+                                if is_fn {
+                                    FrameType::Function
+                                } else {
+                                    FrameType::Normal
+                                },
+                            )
+                            .heap
+                            .extend(processed_args);
+                        let res = interpret_block(&content, i_data, true, false);
+                        i_data.pop_frame()?;
+                        res
                     }
                 }
             } else {
@@ -263,7 +263,7 @@ pub fn interpret_block<O: Print>(
     }
 
     if add_frame {
-        i_data.add_frame(None);
+        i_data.add_frame(None, FrameType::Normal);
     }
     for ele in input {
         if let Element::Return { value, .. } = &ele {

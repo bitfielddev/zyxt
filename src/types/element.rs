@@ -9,7 +9,7 @@ use crate::{
     instructor::Process,
     types::{
         errors::ZyxtError,
-        interpreter_data::InterpreterData,
+        interpreter_data::{FrameType, InterpreterData},
         position::Position,
         printer::Print,
         token::{Flag, OprType, Token},
@@ -244,7 +244,7 @@ impl Element {
         let mut last = UNIT_T.as_type_element();
         let mut return_type = None;
         if add_set {
-            typelist.add_frame(None);
+            typelist.add_frame(None, FrameType::Normal);
         }
         for ele in content.iter_mut() {
             last = ele.process(typelist)?;
