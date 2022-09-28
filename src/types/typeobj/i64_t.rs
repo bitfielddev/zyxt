@@ -58,7 +58,7 @@ fn i64_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref I64_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin i64}".into()),
         inst_name: Some("i64".into()),
         generics: vec![],
         implementations: i64_t(),

@@ -452,7 +452,7 @@ impl Lexer for MainLexer {
                             Some(("&", _)) => {
                                 iter.next().unwrap();
                                 char.push('&');
-                                TokenType::AssignmentOpr(OprType::And)
+                                TokenType::NormalOpr(OprType::And)
                             } // TODO pointer
                             _ => TokenType::UnaryOpr(OprType::Ref),
                         },
@@ -460,7 +460,7 @@ impl Lexer for MainLexer {
                             Some(("|", _)) => {
                                 iter.next().unwrap();
                                 char.push('|');
-                                TokenType::AssignmentOpr(OprType::Or)
+                                TokenType::NormalOpr(OprType::Or)
                             } // TODO |>
                             _ => TokenType::Bar,
                         },

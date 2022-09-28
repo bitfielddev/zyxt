@@ -58,7 +58,7 @@ fn u64_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref U64_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin u64}".into()),
         inst_name: Some("u64".into()),
         generics: vec![],
         implementations: u64_t(),

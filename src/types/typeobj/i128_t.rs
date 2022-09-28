@@ -58,7 +58,7 @@ fn i128_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref I128_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin i128}".into()),
         inst_name: Some("i128".into()),
         generics: vec![],
         implementations: i128_t(),

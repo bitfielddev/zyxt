@@ -27,6 +27,7 @@ use std::{
     fmt::{Debug, Display, Formatter},
 };
 
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::{
@@ -41,7 +42,7 @@ use crate::{
     Element, InterpreterData, Print, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq)]
 pub enum Type<T: Clone + PartialEq + Debug> {
     Instance {
         // str, bool, cpx<int> etc. Is of type Typedef
@@ -59,6 +60,33 @@ pub enum Type<T: Clone + PartialEq + Debug> {
     },
     Any,
     Return(Box<Type<T>>),
+}
+impl<T: Clone + PartialEq + Debug> Debug for Type<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Type::Instance { implementation, .. } => {
+                write!(f, "{} (implementation: {:?})", self, implementation)
+            }
+            Type::Definition {
+                implementations,
+                inst_fields,
+                ..
+            } => {
+                write!(
+                    f,
+                    "{} for {} (implementations: {{{}}}; fields: {{{}}})",
+                    self,
+                    self.get_instance()
+                        .map(|a| a.to_string())
+                        .unwrap_or_else(|| "Unknown".into()),
+                    implementations.iter().map(|(k, _)| k).join(", "),
+                    inst_fields.iter().map(|(k, _)| k).join(", ")
+                )
+            }
+            Type::Any => write!(f, "_any"),
+            Type::Return(t) => <Self as Debug>::fmt(t, f),
+        }
+    }
 }
 
 impl<T: Clone + PartialEq + Debug> Display for Type<T> {

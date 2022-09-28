@@ -64,7 +64,7 @@ fn ubig_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref UBIG_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin ubig}".into()),
         inst_name: Some("ubig".into()),
         generics: vec![],
         implementations: ubig_t(),

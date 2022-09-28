@@ -64,7 +64,7 @@ fn bool_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref BOOL_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin bool}".into()),
         inst_name: Some("bool".into()),
         generics: vec![],
         implementations: bool_t(),

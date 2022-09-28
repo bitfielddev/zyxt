@@ -112,7 +112,7 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
             .join("\n-------\n")
     }
     pub fn pop_frame(&mut self) -> Result<Option<Value>, ZyxtError> {
-        for content in self.frames.front_mut().unwrap().defer.to_owned() {
+        for content in self.frames.front_mut().unwrap().defer.clone() {
             if let Value::Return(v) = interpret_block(&content, self, false, false)? {
                 self.frames.pop_front();
                 return Ok(Some(*v));
@@ -135,6 +135,7 @@ impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
                 .heap
                 .insert(t.into(), PRIMS.get(t).unwrap().as_type_element());
         }
+        v.add_frame(None, FrameType::Normal);
         v
     }
     pub fn pop_frame(&mut self) {
@@ -168,8 +169,9 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
         position: &Position,
         raw: &String,
     ) -> Result<(), ZyxtError> {
+        let mut only_consts = false;
         for frame in self.frames.iter_mut() {
-            if frame.heap.contains_key(name) {
+            if (only_consts && frame.ty == FrameType::Constants) || frame.heap.contains_key(name) {
                 if frame.ty == FrameType::Constants {
                     todo!("Err trying to change const value")
                 }
@@ -177,7 +179,7 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
                 return Ok(());
             }
             if frame.ty == FrameType::Function {
-                break;
+                only_consts = true;
             }
         }
         Err(ZyxtError::error_3_0(name.to_owned()).with_pos_and_raw(position, raw))
@@ -188,12 +190,13 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
         position: &Position,
         raw: &String,
     ) -> Result<T, ZyxtError> {
+        let mut only_consts = false;
         for frame in self.frames.iter() {
-            if frame.heap.contains_key(name) {
+            if (only_consts && frame.ty == FrameType::Constants) || frame.heap.contains_key(name) {
                 return Ok(frame.heap.get(name).unwrap().to_owned());
             }
             if frame.ty == FrameType::Function {
-                break;
+                only_consts = true;
             }
         }
         Err(ZyxtError::error_3_0(name.to_owned()).with_pos_and_raw(position, raw))

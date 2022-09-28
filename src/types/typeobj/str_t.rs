@@ -54,13 +54,18 @@ fn str_t() -> HashMap<SmolStr, Value> {
         })
     };
     binary!(h, STR_T, "_typecast", [TYPE_T], Type::Any, typecast);
+    binary!(h, STR_T, "_mul", [USIZE_T], STR_T, |x: &Vec<Value>| {
+        Some(Value::Str(
+            get_param!(x, 0, Str).repeat(get_param!(x, 1, Usize)),
+        ))
+    });
 
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
 lazy_static! {
     pub static ref STR_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin str}".into()),
         inst_name: Some("str".into()),
         generics: vec![],
         implementations: str_t(),

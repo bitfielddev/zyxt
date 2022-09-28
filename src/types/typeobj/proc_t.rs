@@ -31,7 +31,7 @@ fn proc_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref PROC_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin proc}".into()),
         inst_name: Some("proc".into()),
         generics: vec![],
         implementations: proc_t(),

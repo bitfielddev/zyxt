@@ -58,7 +58,7 @@ fn u16_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref U16_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin u16}".into()),
         inst_name: Some("u16".into()),
         generics: vec![],
         implementations: u16_t(),

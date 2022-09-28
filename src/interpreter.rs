@@ -19,7 +19,7 @@ pub fn interpret_expr<O: Print>(
         Element::Token(..)
         | Element::Comment { .. }
         | Element::Preprocess { .. }
-        | Element::UnaryOpr { .. } => panic!(),
+        | Element::UnaryOpr { .. } => panic!("{input:#?}"),
         Element::NullElement => Ok(Value::Unit),
         Element::BinaryOpr {
             type_,
@@ -57,7 +57,7 @@ pub fn interpret_expr<O: Print>(
                     panic!()
                 }
             }
-            _ => panic!(),
+            opr => panic!("{opr:?}"),
         },
         Element::Ident {
             name,
@@ -83,7 +83,11 @@ pub fn interpret_expr<O: Print>(
             i_data.set_val(&variable.get_name(), &var.to_owned()?, position, raw)?;
             var
         }
-        Element::Literal { content, .. } => Ok(content.to_owned()),
+        Element::Literal { content, .. } => Ok(if let Value::PreType(v) = content {
+            Value::Type(v.as_type_value(i_data)?)
+        } else {
+            content.to_owned()
+        }),
         Element::Call {
             called,
             args: input_args,
@@ -200,7 +204,7 @@ pub fn interpret_expr<O: Print>(
             return_type: if let Value::Type(value) = interpret_expr(return_type, i_data)? {
                 value
             } else {
-                panic!()
+                panic!("{:#?}", input)
             },
             content: content.to_owned(),
         })),

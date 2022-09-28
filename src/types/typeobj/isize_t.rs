@@ -58,7 +58,7 @@ fn isize_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref ISIZE_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin isize}".into()),
         inst_name: Some("isize".into()),
         generics: vec![],
         implementations: isize_t(),

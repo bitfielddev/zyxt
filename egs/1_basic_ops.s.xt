@@ -6,6 +6,8 @@ b := 4.0;
 ter.out a, "is type", a@type;
 ter.out b, "is type", b@type;
 
+b := 4;
+
 // +-*/%
 ter.out (a + b);
 ter.out (a - b);
@@ -48,4 +50,4 @@ ter.out (true || false);
  del a;
 
  // str multiplication
- ter.out("a"*5);
+ ter.out("a"*(5@usize));

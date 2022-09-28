@@ -46,7 +46,7 @@ fn unit_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref UNIT_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin unit}".into()),
         inst_name: Some("_unit".into()),
         generics: vec![],
         implementations: unit_t(),

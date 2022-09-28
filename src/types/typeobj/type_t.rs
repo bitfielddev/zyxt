@@ -41,7 +41,7 @@ fn type_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref TYPE_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin type}".into()),
         inst_name: Some("type".into()),
         generics: vec![],
         implementations: type_t(),

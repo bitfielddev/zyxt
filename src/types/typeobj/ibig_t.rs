@@ -70,7 +70,7 @@ fn ibig_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref IBIG_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin ibig}".into()),
         inst_name: Some("ibig".into()),
         generics: vec![],
         implementations: ibig_t(),

@@ -5,6 +5,7 @@ use std::{
 
 use enum_as_inner::EnumAsInner;
 use half::f16;
+use itertools::Itertools;
 use num::{BigInt, BigUint};
 
 use crate::{
@@ -12,9 +13,10 @@ use crate::{
         element::Argument,
         typeobj::{
             bool_t::BOOL_T, f16_t::F16_T, f32_t::F32_T, f64_t::F64_T, i128_t::I128_T, i16_t::I16_T,
-            i32_t::I32_T, i64_t::I64_T, i8_t::I8_T, ibig_t::IBIG_T, isize_t::ISIZE_T, str_t::STR_T,
-            type_t::TYPE_T, u128_t::U128_T, u16_t::U16_T, u32_t::U32_T, u64_t::U64_T, u8_t::U8_T,
-            ubig_t::UBIG_T, unit_t::UNIT_T, usize_t::USIZE_T, Type,
+            i32_t::I32_T, i64_t::I64_T, i8_t::I8_T, ibig_t::IBIG_T, isize_t::ISIZE_T,
+            proc_t::PROC_T, str_t::STR_T, type_t::TYPE_T, u128_t::U128_T, u16_t::U16_T,
+            u32_t::U32_T, u64_t::U64_T, u8_t::U8_T, ubig_t::UBIG_T, unit_t::UNIT_T,
+            usize_t::USIZE_T, Type,
         },
     },
     Element,
@@ -132,12 +134,10 @@ impl Debug for Value {
                 Value::F32(v) => format!("{}@f32", v),
                 Value::F64(v) => format!("{}@f64", v),
                 Value::Str(v) => format!("\"{}\"", v),
-                Value::Bool(_)
-                | Value::Type(_)
-                | Value::PreType(_)
-                | Value::ClassInstance { .. }
-                | Value::Proc { .. }
-                | Value::Unit => self.to_string(),
+                Value::Type(v) => format!("{:?}", v),
+                Value::PreType(v) => format!("{:?}", v),
+                Value::Bool(_) | Value::ClassInstance { .. } | Value::Proc { .. } | Value::Unit =>
+                    self.to_string(),
                 Value::Return(_) => unreachable!(),
             }
         )
@@ -149,7 +149,19 @@ impl Display for Proc {
             f,
             "{}",
             match self {
-                Proc::Builtin { .. } => "<{builtin}>".to_string(), // TODO
+                Proc::Builtin { signature, .. } => {
+                    signature
+                        .iter()
+                        .map(|s| {
+                            let (args, ret): (Vec<Type<Value>>, Type<Value>) = s();
+                            format!(
+                                "fn|{}|: {}",
+                                args.iter().map(|a| a.to_string()).join(","),
+                                ret
+                            )
+                        })
+                        .join(" / ")
+                }
                 Proc::Defined {
                     is_fn,
                     args,
@@ -158,10 +170,7 @@ impl Display for Proc {
                 } => format!(
                     "{}|{}|: {}",
                     if *is_fn { "fn" } else { "proc" },
-                    args.iter()
-                        .map(|a| a.to_string())
-                        .collect::<Vec<String>>()
-                        .join(","),
+                    args.iter().map(|a| a.to_string()).join(","),
                     return_type
                 ),
             }
@@ -197,7 +206,8 @@ impl Display for Value {
                 Value::PreType(v) => format!("<{}>", v),
                 Value::Unit => "()".to_string(),
                 Value::Return(v) => v.to_string(),
-                v => v.to_string(),
+                Value::Proc(v) => v.to_string(),
+                _ => todo!(),
             }
         )
     }
@@ -273,16 +283,7 @@ impl Value {
             Value::Str(..) => &STR_T,
             Value::Bool(..) => &BOOL_T,
             Value::Type(..) | Value::PreType(..) => &TYPE_T,
-            Value::Proc(_) =>
-            /*Type::Instance {
-                name: if *is_fn { "fn" } else { "proc" }.into(),
-                type_args: vec![Type::null(), return_type.to_owned()],
-                inst_fields: Default::default(),
-                implementation: None,
-            }, // TODO angle bracket thingy when it is implemented*/
-            {
-                todo!()
-            }
+            Value::Proc(_) => &PROC_T,
             Value::ClassInstance { type_, .. } => type_,
             Value::Unit => &UNIT_T,
             Value::Return(v) => v.get_type_obj(),

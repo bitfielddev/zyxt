@@ -2,11 +2,14 @@ use std::{cmp::min, collections::HashMap};
 
 use num::BigInt;
 
-use crate::types::{
-    element::{Argument, Condition, Element, VecElementRaw},
-    errors::ZyxtError,
-    token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
-    value::Value,
+use crate::{
+    types::{
+        element::{Argument, Condition, Element, VecElementRaw},
+        errors::ZyxtError,
+        token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
+        value::Value,
+    },
+    Type,
 };
 
 macro_rules! check_and_update_cursor {
@@ -1022,11 +1025,10 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
                 variable: Box::new(parse_expr(vec![declared_var.to_owned()])?),
                 content: Box::new(content),
                 flags,
-                type_: Box::new(Element::Ident {
+                type_: Box::new(Element::Literal {
                     position: Default::default(),
                     raw: Default::default(),
-                    name: "_any".into(),
-                    parent: Box::new(Element::NullElement),
+                    content: Value::Type(Type::Any),
                 }), // TODO type later
             });
             break;

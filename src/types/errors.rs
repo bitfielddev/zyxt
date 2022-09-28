@@ -440,8 +440,8 @@ impl ZyxtError {
                                 let end = contents.get_mut(end_pos.line as usize - 1).unwrap();
                                 let end_graphemes = end.graphemes(true).collect::<Vec<_>>();
                                 let index = end_pos.column as usize - 1
-                                    + if pos.line == end_pos.line { 11 } else { 0 };
-                                *end = end_graphemes[0..index]
+                                    + if pos.line == end_pos.line { 1 } else { 0 };
+                                *end = end_graphemes[0..index - 1]
                                     .iter()
                                     .cloned()
                                     .chain(vec!["\u{001b}[0;37;2m"])

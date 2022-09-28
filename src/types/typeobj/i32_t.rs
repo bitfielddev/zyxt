@@ -58,7 +58,7 @@ fn i32_t() -> HashMap<SmolStr, Value> {
 
 lazy_static! {
     pub static ref I32_T: Type<Value> = Type::Definition {
-        name: Some("{builtin}".into()),
+        name: Some("{builtin i32}".into()),
         inst_name: Some("i32".into()),
         generics: vec![],
         implementations: i32_t(),
