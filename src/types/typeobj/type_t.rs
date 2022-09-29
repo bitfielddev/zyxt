@@ -6,7 +6,7 @@ use smol_str::SmolStr;
 use crate::{
     binary, concat_vals, get_param, typecast_to_type,
     types::{
-        typeobj::{bool_t::BOOL_T, str_t::STR_T},
+        typeobj::{bool_t::BOOL_T, str_t::STR_T, TypeDefinition},
         value::{Proc, Value},
     },
     Element, Type,
@@ -40,7 +40,7 @@ fn type_t() -> HashMap<SmolStr, Value> {
 }
 
 lazy_static! {
-    pub static ref TYPE_T: Type<Value> = Type::Definition {
+    pub static ref TYPE_T: TypeDefinition<Value> = TypeDefinition {
         name: Some("{builtin type}".into()),
         inst_name: Some("type".into()),
         generics: vec![],

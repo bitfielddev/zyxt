@@ -43,49 +43,82 @@ use crate::{
 };
 
 #[derive(Clone, PartialEq)]
+pub struct TypeDefinition<T: Clone + PartialEq + Debug> {
+    // class, struct, (anything that implements a Type). Is of type <type> (Typedef)
+    pub inst_name: Option<SmolStr>, // TODO inheritance
+    pub name: Option<SmolStr>,
+    pub generics: Vec<Argument>,
+    pub implementations: HashMap<SmolStr, T>,
+    pub inst_fields: HashMap<SmolStr, (Box<Type<T>>, Option<T>)>,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct TypeInstance<T: Clone + PartialEq + Debug> {
+    // str, bool, cpx<int> etc. Is of type Typedef
+    pub name: Option<SmolStr>,
+    pub type_args: Vec<Type<T>>,
+    pub implementation: TypeDefinition<T>,
+}
+
+#[derive(Clone, PartialEq)]
 pub enum Type<T: Clone + PartialEq + Debug> {
-    Instance {
-        // str, bool, cpx<int> etc. Is of type Typedef
-        name: Option<SmolStr>,
-        type_args: Vec<Type<T>>,
-        implementation: Box<Type<T>>,
-    },
-    Definition {
-        // class, struct, (anything that implements a Type). Is of type <type> (Typedef)
-        inst_name: Option<SmolStr>, // TODO inheritance
-        name: Option<SmolStr>,
-        generics: Vec<Argument>,
-        implementations: HashMap<SmolStr, T>,
-        inst_fields: HashMap<SmolStr, (Box<Type<T>>, Option<T>)>,
-    },
+    Instance(TypeInstance<T>),
+    Definition(TypeDefinition<T>),
     Any,
     Return(Box<Type<T>>),
+}
+impl<T: Clone + PartialEq + Debug> Debug for TypeInstance<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} (implementation: {:?})", self, self.implementation)
+    }
+}
+impl<T: Clone + PartialEq + Debug> Debug for TypeDefinition<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} for {} (implementations: {{{}}}; fields: {{{}}})",
+            self,
+            self.inst_name.unwrap_or_else(|| "{unknown}".into()),
+            self.implementations.iter().map(|(k, _)| k).join(", "),
+            self.inst_fields.iter().map(|(k, _)| k).join(", ")
+        )
+    }
 }
 impl<T: Clone + PartialEq + Debug> Debug for Type<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Type::Instance { implementation, .. } => {
-                write!(f, "{} (implementation: {:?})", self, implementation)
+            Type::Instance(inst) => {
+                write!(f, "{inst:?}")
             }
-            Type::Definition {
-                implementations,
-                inst_fields,
-                ..
-            } => {
-                write!(
-                    f,
-                    "{} for {} (implementations: {{{}}}; fields: {{{}}})",
-                    self,
-                    self.get_instance()
-                        .map(|a| a.to_string())
-                        .unwrap_or_else(|| "Unknown".into()),
-                    implementations.iter().map(|(k, _)| k).join(", "),
-                    inst_fields.iter().map(|(k, _)| k).join(", ")
-                )
+            Type::Definition(def) => {
+                write!(f, "{def:?}")
             }
             Type::Any => write!(f, "_any"),
             Type::Return(t) => <Self as Debug>::fmt(t, f),
         }
+    }
+}
+impl<T: Clone + PartialEq + Debug> Display for TypeDefinition<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.name.to_owned().unwrap_or_else(|| "{unknown}".into())
+        )
+    }
+}
+impl<T: Clone + PartialEq + Debug> Display for TypeInstance<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}<{}>",
+            self.name.as_ref().unwrap_or(&"{unknown}".into()),
+            self.type_args
+                .iter()
+                .map(|arg| format!("{}", arg))
+                .collect::<Vec<String>>()
+                .join(", ")
+        )
     }
 }
 
@@ -95,42 +128,136 @@ impl<T: Clone + PartialEq + Debug> Display for Type<T> {
             f,
             "{}",
             match self {
-                Type::Instance {
-                    name, type_args, ..
-                } =>
-                    if !type_args.is_empty() {
-                        format!(
-                            "{}<{}>",
-                            name.as_ref().unwrap_or(&"{unknown}".into()),
-                            type_args
-                                .iter()
-                                .map(|arg| format!("{}", arg))
-                                .collect::<Vec<String>>()
-                                .join(", ")
-                        )
-                    } else {
-                        name.as_ref().unwrap_or(&"{unknown}".into()).to_string()
-                    },
-                Type::Definition { name, .. } =>
-                    name.to_owned().unwrap_or_else(|| "{unknown}".into()).into(),
+                Type::Instance(inst) => inst.to_string(),
+                Type::Definition(def) => def.to_string(),
                 Type::Any => "_any".into(),
-                Type::Return(ty) => format!("{}", ty),
+                Type::Return(ty) => ty.to_string(),
             }
         )
     }
 }
 
-impl<T: Clone + PartialEq + Debug> Type<T> {
-    pub fn get_instance(&self) -> Option<Type<T>> {
-        match &self {
-            Type::Instance { .. } => None,
-            Type::Return(t) => t.get_instance(),
-            Type::Any => None,
-            Type::Definition { inst_name, .. } => Some(Type::Instance {
-                name: inst_name.to_owned(),
+impl TypeDefinition<Element> {
+    pub fn get_instance(&self) -> Type<Element> {
+        if *self == TYPE_T.as_type_element() {
+            Type::Definition(TYPE_T.as_type_element())
+        } else {
+            Type::Instance(TypeInstance {
+                name: self.inst_name.to_owned(),
                 type_args: vec![],
-                implementation: Box::new(self.to_owned()),
-            }),
+                implementation: self.to_owned(),
+            })
+        }
+    }
+}
+impl TypeDefinition<Value> {
+    pub fn get_instance(&self) -> Type<Value> {
+        if *self == *TYPE_T {
+            Type::Definition(TYPE_T.to_owned())
+        } else {
+            Type::Instance(TypeInstance {
+                name: self.inst_name.to_owned(),
+                type_args: vec![],
+                implementation: self.to_owned(),
+            })
+        }
+    }
+}
+
+impl TypeDefinition<Element> {
+    pub fn as_type_value(
+        &self,
+        i_data: &mut InterpreterData<Value, impl Print>,
+    ) -> Result<TypeDefinition<Value>, ZyxtError> {
+        Ok(TypeDefinition {
+            inst_name: self.inst_name.to_owned(),
+            name: self.name.to_owned(),
+            generics: self.generics.to_owned(),
+            implementations: self
+                .implementations
+                .iter()
+                .map(|(k, v)| Ok((k.to_owned(), interpret_expr(v, i_data)?)))
+                .collect::<Result<HashMap<_, _>, _>>()?,
+            inst_fields: self
+                .inst_fields
+                .iter()
+                .map(|(k, (v1, v2))| {
+                    Ok((
+                        k.to_owned(),
+                        (
+                            Box::new(v1.as_type_value(i_data)?),
+                            v2.to_owned()
+                                .map(|v2| interpret_expr(&v2, i_data))
+                                .transpose()?,
+                        ),
+                    ))
+                })
+                .collect::<Result<HashMap<_, _>, _>>()?,
+        })
+    }
+}
+impl TypeInstance<Element> {
+    pub fn as_type_value(
+        &self,
+        i_data: &mut InterpreterData<Value, impl Print>,
+    ) -> Result<TypeInstance<Value>, ZyxtError> {
+        Ok(TypeInstance {
+            name: self.name.to_owned(),
+            type_args: self
+                .type_args
+                .iter()
+                .map(|a| a.as_type_value(i_data))
+                .collect::<Result<Vec<_>, _>>()?,
+            implementation: self.implementation.as_type_value(i_data)?,
+        })
+    }
+}
+impl TypeInstance<Value> {
+    pub fn as_type_element(&self) -> TypeInstance<Element> {
+        TypeInstance {
+            name: self.name.to_owned(),
+            type_args: self.type_args.iter().map(|a| a.as_type_element()).collect(),
+            implementation: self.implementation.as_type_element(),
+        }
+    }
+}
+impl TypeDefinition<Value> {
+    pub fn as_type_element(&self) -> TypeDefinition<Element> {
+        TypeDefinition {
+            inst_name: self.inst_name.to_owned(),
+            name: self.name.to_owned(),
+            generics: self.generics.to_owned(),
+            implementations: self
+                .implementations
+                .iter()
+                .map(|(k, v)| {
+                    (
+                        k.to_owned(),
+                        Element::Literal {
+                            position: Default::default(),
+                            raw: "".into(),
+                            content: v.to_owned(),
+                        },
+                    )
+                })
+                .collect(),
+            inst_fields: self
+                .inst_fields
+                .iter()
+                .map(|(k, (v1, v2))| {
+                    (
+                        k.to_owned(),
+                        (
+                            Box::new(v1.as_type_element()),
+                            v2.to_owned().map(|v2| Element::Literal {
+                                position: Default::default(),
+                                raw: "".into(),
+                                content: v2,
+                            }),
+                        ),
+                    )
+                })
+                .collect(),
         }
     }
 }
@@ -143,9 +270,9 @@ impl Type<Element> {
             content: Value::PreType(self.to_owned()),
         }
     }
-    pub fn implementation(&self) -> &Type<Element> {
+    pub fn implementation(&self) -> &TypeDefinition<Element> {
         match &self {
-            Type::Instance { implementation, .. } => implementation,
+            Type::Instance(TypeInstance { implementation, .. }) => implementation,
             Type::Definition { .. } => &TYPE_T_ELE,
             Type::Any => &UNIT_T_ELE,
             Type::Return(ty) => ty.implementation(),
@@ -156,47 +283,8 @@ impl Type<Element> {
         i_data: &mut InterpreterData<Value, impl Print>,
     ) -> Result<Type<Value>, ZyxtError> {
         Ok(match &self {
-            Type::Instance {
-                name,
-                type_args,
-                implementation,
-            } => Type::Instance {
-                name: name.to_owned(),
-                type_args: type_args
-                    .iter()
-                    .map(|a| a.as_type_value(i_data))
-                    .collect::<Result<Vec<_>, _>>()?,
-                implementation: Box::new(implementation.as_type_value(i_data)?),
-            },
-            Type::Definition {
-                inst_name,
-                name,
-                generics,
-                implementations,
-                inst_fields,
-            } => Type::Definition {
-                inst_name: inst_name.to_owned(),
-                name: name.to_owned(),
-                generics: generics.to_owned(),
-                implementations: implementations
-                    .iter()
-                    .map(|(k, v)| Ok((k.to_owned(), interpret_expr(v, i_data)?)))
-                    .collect::<Result<HashMap<_, _>, _>>()?,
-                inst_fields: inst_fields
-                    .iter()
-                    .map(|(k, (v1, v2))| {
-                        Ok((
-                            k.to_owned(),
-                            (
-                                Box::new(v1.as_type_value(i_data)?),
-                                v2.to_owned()
-                                    .map(|v2| interpret_expr(&v2, i_data))
-                                    .transpose()?,
-                            ),
-                        ))
-                    })
-                    .collect::<Result<HashMap<_, _>, _>>()?,
-            },
+            Type::Instance(inst) => Type::Instance(inst.as_type_value(i_data)?),
+            Type::Definition(def) => Type::Definition(def.as_type_value(i_data)?),
             Type::Any => Type::Any,
             Type::Return(t) => Type::Return(Box::new(t.as_type_value(i_data)?)),
         })
@@ -204,9 +292,9 @@ impl Type<Element> {
 }
 
 impl Type<Value> {
-    pub fn implementation(&self) -> &Type<Value> {
+    pub fn implementation(&self) -> &TypeDefinition<Value> {
         match &self {
-            Type::Instance { implementation, .. } => implementation,
+            Type::Instance(TypeInstance { implementation, .. }) => implementation,
             Type::Definition { .. } => &*TYPE_T,
             Type::Any => &*UNIT_T,
             Type::Return(ty) => ty.implementation(),
@@ -214,55 +302,8 @@ impl Type<Value> {
     }
     pub fn as_type_element(&self) -> Type<Element> {
         match &self {
-            Type::Instance {
-                name,
-                type_args,
-                implementation,
-            } => Type::Instance {
-                name: name.to_owned(),
-                type_args: type_args.iter().map(|a| a.as_type_element()).collect(),
-                implementation: Box::new(implementation.as_type_element()),
-            },
-            Type::Definition {
-                inst_name,
-                name,
-                generics,
-                implementations,
-                inst_fields,
-            } => Type::Definition {
-                inst_name: inst_name.to_owned(),
-                name: name.to_owned(),
-                generics: generics.to_owned(),
-                implementations: implementations
-                    .iter()
-                    .map(|(k, v)| {
-                        (
-                            k.to_owned(),
-                            Element::Literal {
-                                position: Default::default(),
-                                raw: "".into(),
-                                content: v.to_owned(),
-                            },
-                        )
-                    })
-                    .collect(),
-                inst_fields: inst_fields
-                    .iter()
-                    .map(|(k, (v1, v2))| {
-                        (
-                            k.to_owned(),
-                            (
-                                Box::new(v1.as_type_element()),
-                                v2.to_owned().map(|v2| Element::Literal {
-                                    position: Default::default(),
-                                    raw: "".into(),
-                                    content: v2,
-                                }),
-                            ),
-                        )
-                    })
-                    .collect(),
-            },
+            Type::Instance(inst) => Type::Instance(inst.as_type_element()),
+            Type::Definition(def) => Type::Definition(def.as_type_element()),
             Type::Any => Type::Any,
             Type::Return(t) => Type::Return(Box::new(t.as_type_element())),
         }

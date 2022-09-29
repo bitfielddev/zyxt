@@ -9,7 +9,10 @@ use crate::{
         interpreter_data::{FrameType, InterpreterData},
         printer::Print,
         token::{Flag, OprType, Token},
-        typeobj::{bool_t::BOOL_T, proc_t::PROC_T, type_t::TYPE_T, unit_t::UNIT_T, Type},
+        typeobj::{
+            bool_t::BOOL_T, proc_t::PROC_T, type_t::TYPE_T, unit_t::UNIT_T, Type, TypeDefinition,
+            TypeInstance,
+        },
         value::Proc,
     },
     Value, ZyxtError,
@@ -87,15 +90,10 @@ impl Process for Element {
                             println!("{arg_objs:#?} {ret:#?}");
                             for (i, arg) in args.iter_mut().enumerate() {
                                 println!("{arg:#?}");
-                                if arg.process(typelist)?
-                                    != arg_objs.get_mut(i).unwrap().as_type_element()
-                                    && arg_objs.get_mut(i).unwrap().as_type_element() != Type::Any
-                                {
-                                    todo!(
-                                        "{:#?} != {:#?}",
-                                        arg.process(typelist)?,
-                                        arg_objs.get_mut(i).unwrap().as_type_element()
-                                    )
+                                let arg = arg.process(typelist)?;
+                                let arg_req = arg_objs.get_mut(i).unwrap().as_type_element();
+                                if arg != arg_req && arg != Type::Any && arg_req != Type::Any {
+                                    todo!("{:#?} != {:#?}", arg, arg_req)
                                 }
                             }
                             ret.as_type_element()
@@ -116,11 +114,11 @@ impl Process for Element {
                         }
                     })
                 } else {
-                    if let Type::Instance {
+                    if let Type::Instance(TypeInstance {
                         ref name,
                         ref type_args,
                         ..
-                    } = called_type
+                    }) = called_type
                     {
                         if *name == Some(SmolStr::from("proc")) {
                             if let Some(return_type) = type_args.get(1) {
@@ -128,9 +126,9 @@ impl Process for Element {
                             }
                         }
                     }
-                    *called = if let Type::Definition {
+                    *called = if let Type::Definition(TypeDefinition {
                         implementations, ..
-                    } = called_type
+                    }) = called_type
                     {
                         if let Some(call) = implementations.get("_call") {
                             Box::new(call.to_owned())
@@ -208,14 +206,15 @@ impl Process for Element {
                 let type2 = operand2.process(typelist)?;
                 Ok(match type_ {
                     OprType::TypeCast => {
-                        if *type2.implementation() == TYPE_T.as_type_element() {
+                        if type2 == TYPE_T.as_type_element() {
                             *self = Element::Call {
                                 position: Default::default(),
                                 raw: "".to_string(),
                                 called: Box::new(
-                                    if let Type::Definition {
-                                        implementations, ..
-                                    } = type1
+                                    if let Type::Definition(TypeDefinition {
+                                        implementations,
+                                        ..
+                                    }) = type1
                                     {
                                         implementations.get("_typecast").unwrap().to_owned()
                                     // TODO handle error
@@ -226,7 +225,11 @@ impl Process for Element {
                                 args: vec![*operand1.to_owned(), *operand2.to_owned()],
                                 kwargs: Default::default(),
                             };
-                            type2.get_instance().unwrap() // TODO handle error
+                            if let Type::Definition(def) = type2 {
+                                def.get_instance()
+                            } else {
+                                todo!()
+                            }
                         } else {
                             todo!("Error here")
                         }
@@ -238,10 +241,10 @@ impl Process for Element {
                                     position: Default::default(),
                                     raw: "".to_string(),
                                     called: Box::new(
-                                        if let Type::Definition {
+                                        if let Type::Definition(TypeDefinition {
                                             ref implementations,
                                             ..
-                                        } = type_
+                                        }) = type_
                                         {
                                             implementations.get("_typecast").unwrap().to_owned()
                                         // TODO handle error
@@ -264,10 +267,10 @@ impl Process for Element {
                             position: position.to_owned(),
                             raw: raw.to_owned(),
                             called: Box::new(
-                                if let Type::Definition {
+                                if let Type::Definition(TypeDefinition {
                                     ref implementations,
                                     ..
-                                } = type1
+                                }) = type1
                                 {
                                     implementations
                                         .get(match type_ {
@@ -285,7 +288,7 @@ impl Process for Element {
                                             OprType::Concat => "_concat",
                                             _ => unimplemented!("{:#?}", type_),
                                         })
-                                        .expect(&*format!("{type1:?} ; {type_:?}"))
+                                        .expect(&*format!("{operand1:?} ; {type1:?} ; {type_:?}"))
                                         .to_owned() // TODO handle error
                                 } else {
                                     unreachable!()
@@ -310,9 +313,9 @@ impl Process for Element {
                     position: position.to_owned(),
                     raw: raw.to_owned(),
                     called: Box::new(
-                        if let Type::Definition {
+                        if let Type::Definition(TypeDefinition {
                             implementations, ..
-                        } = operand_type
+                        }) = operand_type
                         {
                             implementations
                                 .get(match type_ {
@@ -365,12 +368,12 @@ impl Process for Element {
                     }
                 }
                 typelist.pop_frame();
-                Ok(Type::Instance {
+                Ok(Type::Instance(TypeInstance {
                     name: Some("proc".into()),
                     //name: Some(if *is_fn { "fn" } else { "proc" }.into()),
                     type_args: vec![UNIT_T.as_type_element(), return_type],
-                    implementation: Box::new(PROC_T.as_type_element()),
-                })
+                    implementation: PROC_T.as_type_element(),
+                }))
             } // TODO angle bracket thingy when it is implemented
             Element::Preprocess { content, .. } => {
                 let mut pre_typelist = InterpreterData::<Type<Element>, _>::new(typelist.out);
@@ -460,13 +463,13 @@ impl Process for Element {
                     })
                     .collect::<Result<HashMap<_, _>, _>>()?;
                 typelist.pop_frame();
-                Ok(Type::Definition {
+                Ok(Type::Definition(TypeDefinition {
                     inst_name: None,
                     name: Some(if *is_struct { "struct" } else { "class" }.into()),
                     generics: vec![],
                     implementations: implementations.to_owned(),
                     inst_fields: new_inst_fields,
-                })
+                }))
             }
             Element::NullElement
             | Element::Delete { .. }

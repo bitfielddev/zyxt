@@ -74,6 +74,7 @@ pub struct Frame<T: Clone + Display + Debug> {
     pub heap: HashMap<SmolStr, T>,
     pub defer: Vec<Vec<Element>>,
     pub frame_data: Option<FrameData<T>>,
+    pub typedefs: HashMap<SmolStr, Type<Element>>,
     pub ty: FrameType,
 }
 #[derive(Debug)]
@@ -121,6 +122,15 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
         self.frames.pop_front();
         Ok(None)
     }
+    pub fn declare_val(&mut self, name: &SmolStr, value: &Value) {
+        if let Some(frame) = self.frames.front_mut() {
+            frame
+        } else {
+            self.add_frame(None, FrameType::Normal)
+        }
+        .heap
+        .insert(name.to_owned(), value.to_owned());
+    }
 }
 
 impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
@@ -131,12 +141,29 @@ impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
         };
         let const_frame = v.add_frame(None, FrameType::Constants);
         for t in PRIM_NAMES {
+            const_frame.heap.insert(
+                t.into(),
+                PRIMS.get(t).unwrap().implementation().as_type_element(),
+            );
             const_frame
-                .heap
+                .typedefs
                 .insert(t.into(), PRIMS.get(t).unwrap().as_type_element());
         }
         v.add_frame(None, FrameType::Normal);
         v
+    }
+    pub fn declare_val(&mut self, name: &SmolStr, value: &Type<Element>) {
+        let frame = if let Some(frame) = self.frames.front_mut() {
+            frame
+        } else {
+            self.add_frame(None, FrameType::Normal)
+        };
+        frame.heap.insert(name.to_owned(), value.to_owned());
+        if matches!(value, Type::Definition { .. }) {
+            frame
+                .typedefs
+                .insert(name.to_owned(), value.get_instance().unwrap());
+        }
     }
     pub fn pop_frame(&mut self) {
         self.frames.pop_front();
@@ -149,19 +176,12 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
             heap: HashMap::new(),
             defer: vec![],
             frame_data,
+            typedefs: HashMap::new(),
             ty,
         });
         self.frames.front_mut().unwrap()
     }
-    pub fn declare_val(&mut self, name: &SmolStr, value: &T) {
-        if let Some(frame) = self.frames.front_mut() {
-            frame
-        } else {
-            self.add_frame(None, FrameType::Normal)
-        }
-        .heap
-        .insert(name.to_owned(), value.to_owned());
-    }
+
     pub fn set_val(
         &mut self,
         name: &SmolStr,
@@ -175,6 +195,7 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
                 if frame.ty == FrameType::Constants {
                     todo!("Err trying to change const value")
                 }
+                // TODO sth abt all type definitions being constant
                 frame.heap.insert(name.to_owned(), value.to_owned());
                 return Ok(());
             }

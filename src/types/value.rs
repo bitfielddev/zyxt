@@ -207,7 +207,6 @@ impl Display for Value {
                 Value::Unit => "()".to_string(),
                 Value::Return(v) => v.to_string(),
                 Value::Proc(v) => v.to_string(),
-                _ => todo!(),
             }
         )
     }

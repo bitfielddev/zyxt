@@ -6,6 +6,7 @@ use crate::{
         interpreter_data::{FrameData, FrameType, InterpreterData},
         printer::Print,
         token::OprType,
+        typeobj::TypeDefinition,
         value::{Proc, Value},
     },
     Type, ZyxtError,
@@ -217,7 +218,7 @@ pub fn interpret_expr<O: Print>(
             inst_fields,
             is_struct,
             ..
-        } => Ok(Value::Type(Type::Definition {
+        } => Ok(Value::Type(Type::Definition(TypeDefinition {
             name: Some(if *is_struct { "struct" } else { "class" }.into()),
             inst_name: None,
             generics: vec![],
@@ -243,7 +244,7 @@ pub fn interpret_expr<O: Print>(
                     ))
                 })
                 .collect::<Result<HashMap<_, _>, _>>()?,
-        })),
+        }))),
     }
 }
 
