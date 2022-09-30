@@ -59,7 +59,7 @@ impl Process for Element {
                             args.iter_mut()
                                 .map(|a| a.process(typelist))
                                 .collect::<Result<Vec<_>, ZyxtError>>()?;
-                            return Ok(UNIT_T.as_type_element());
+                            return Ok(UNIT_T.get_instance().as_type_element());
                         }
                     }
                 }

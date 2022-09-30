@@ -35,30 +35,37 @@ fn f64_t() -> HashMap<SmolStr, Value> {
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            p if p == *TYPE_T => typecast_to_type!(F64_T),
-            p if p == *STR_T => typecast_float!(F64 => str, x),
-            p if p == *BOOL_T => typecast_float!(F64 => bool, x),
-            p if p == *I8_T => typecast_float!(F64 => I8 to_i8, x),
-            p if p == *I16_T => typecast_float!(F64 => I16 to_i16, x),
-            p if p == *I32_T => typecast_float!(F64 => I32 to_i32, x),
-            p if p == *I64_T => typecast_float!(F64 => I64 to_i64, x),
-            p if p == *I128_T => typecast_float!(F64 => I128 to_i128, x),
-            p if p == *ISIZE_T => typecast_float!(F64 => Isize to_isize, x),
-            p if p == *IBIG_T => typecast_float!(F64 => Ibig to_bigint, x),
-            p if p == *U8_T => typecast_float!(F64 => U8 to_u8, x),
-            p if p == *U16_T => typecast_float!(F64 => U16 to_u16, x),
-            p if p == *U32_T => typecast_float!(F64 => U32 to_u32, x),
-            p if p == *U64_T => typecast_float!(F64 => U64 to_u64, x),
-            p if p == *U128_T => typecast_float!(F64 => U128 to_u128, x),
-            p if p == *USIZE_T => typecast_float!(F64 => Usize to_usize, x),
-            p if p == *UBIG_T => typecast_float!(F64 => Ubig to_biguint, x),
-            p if p == *F16_T => typecast_float!(F64 => f16, x),
-            p if p == *F32_T => typecast_float!(F64 => F32 to_f32, x),
-            p if p == *F64_T => x[0].to_owned(),
+            p if p == TYPE_T.to_type() => typecast_to_type!(F64_T),
+            p if p == STR_T.to_type() => typecast_float!(F64 => str, x),
+            p if p == BOOL_T.to_type() => typecast_float!(F64 => bool, x),
+            p if p == I8_T.to_type() => typecast_float!(F64 => I8 to_i8, x),
+            p if p == I16_T.to_type() => typecast_float!(F64 => I16 to_i16, x),
+            p if p == I32_T.to_type() => typecast_float!(F64 => I32 to_i32, x),
+            p if p == I64_T.to_type() => typecast_float!(F64 => I64 to_i64, x),
+            p if p == I128_T.to_type() => typecast_float!(F64 => I128 to_i128, x),
+            p if p == ISIZE_T.to_type() => typecast_float!(F64 => Isize to_isize, x),
+            p if p == IBIG_T.to_type() => typecast_float!(F64 => Ibig to_bigint, x),
+            p if p == U8_T.to_type() => typecast_float!(F64 => U8 to_u8, x),
+            p if p == U16_T.to_type() => typecast_float!(F64 => U16 to_u16, x),
+            p if p == U32_T.to_type() => typecast_float!(F64 => U32 to_u32, x),
+            p if p == U64_T.to_type() => typecast_float!(F64 => U64 to_u64, x),
+            p if p == U128_T.to_type() => typecast_float!(F64 => U128 to_u128, x),
+            p if p == USIZE_T.to_type() => typecast_float!(F64 => Usize to_usize, x),
+            p if p == UBIG_T.to_type() => typecast_float!(F64 => Ubig to_biguint, x),
+            p if p == F16_T.to_type() => typecast_float!(F64 => f16, x),
+            p if p == F32_T.to_type() => typecast_float!(F64 => F32 to_f32, x),
+            p if p == F64_T.to_type() => x[0].to_owned(),
             _ => return None,
         })
     };
-    binary!(h, F64_T, "_typecast", [TYPE_T], Type::Any, typecast);
+    binary!(
+        h,
+        F64_T.to_type(),
+        "_typecast",
+        [TYPE_T.to_type()],
+        Type::Any,
+        typecast
+    );
 
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }

@@ -14,9 +14,14 @@ use crate::{
 
 macro_rules! comp_opr_unit {
     ($h:ident, $fn_name:literal, $res:literal) => {
-        binary!($h, UNIT_T, $fn_name, [UNIT_T], BOOL_T, |x: &Vec<Value>| {
-            Some(Value::Bool($res))
-        });
+        binary!(
+            $h,
+            UNIT_T.to_type(),
+            $fn_name,
+            [UNIT_T.to_type()],
+            BOOL_T.to_type(),
+            |x: &Vec<Value>| { Some(Value::Bool($res)) }
+        );
     };
 }
 
@@ -34,12 +39,19 @@ fn unit_t() -> HashMap<SmolStr, Value> {
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            p if p == *TYPE_T => typecast_to_type!(UNIT_T),
-            p if p == *STR_T => Value::Str("()".into()),
+            p if p == TYPE_T.to_type() => typecast_to_type!(UNIT_T),
+            p if p == STR_T.to_type() => Value::Str("()".into()),
             _ => return None,
         })
     };
-    binary!(h, UNIT_T, "_typecast", [TYPE_T], Type::Any, typecast);
+    binary!(
+        h,
+        UNIT_T.to_type(),
+        "_typecast",
+        [TYPE_T.to_type()],
+        Type::Any,
+        typecast
+    );
 
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
@@ -52,5 +64,5 @@ lazy_static! {
         implementations: unit_t(),
         inst_fields: HashMap::new(),
     };
-    pub static ref UNIT_T_ELE: Type<Element> = UNIT_T.as_type_element();
+    pub static ref UNIT_T_ELE: TypeDefinition<Element> = UNIT_T.as_type_element();
 }

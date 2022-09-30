@@ -16,25 +16,46 @@ fn type_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
     h.insert("_default", Value::Type(Type::Any));
     concat_vals!(h, TYPE_T);
-    binary!(h, TYPE_T, "_eq", [TYPE_T], BOOL_T, |x: &Vec<Value>| {
-        Some(Value::Bool(
-            get_param!(x, 0, Type) == get_param!(x, 1, Type),
-        ))
-    });
-    binary!(h, TYPE_T, "_ne", [TYPE_T], BOOL_T, |x: &Vec<Value>| {
-        Some(Value::Bool(
-            get_param!(x, 0, Type) != get_param!(x, 1, Type),
-        ))
-    });
+    binary!(
+        h,
+        TYPE_T.to_type(),
+        "_eq",
+        [TYPE_T.to_type()],
+        BOOL_T.to_type(),
+        |x: &Vec<Value>| {
+            Some(Value::Bool(
+                get_param!(x, 0, Type) == get_param!(x, 1, Type),
+            ))
+        }
+    );
+    binary!(
+        h,
+        TYPE_T.to_type(),
+        "_ne",
+        [TYPE_T.to_type()],
+        BOOL_T.to_type(),
+        |x: &Vec<Value>| {
+            Some(Value::Bool(
+                get_param!(x, 0, Type) != get_param!(x, 1, Type),
+            ))
+        }
+    );
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            p if p == *TYPE_T => typecast_to_type!(TYPE_T),
-            p if p == *STR_T => Value::Str(get_param!(x, 0, Type).to_string()),
+            p if p == TYPE_T.to_type() => typecast_to_type!(TYPE_T),
+            p if p == STR_T.to_type() => Value::Str(get_param!(x, 0, Type).to_string()),
             _ => return None,
         })
     };
-    binary!(h, TYPE_T, "_typecast", [TYPE_T], Type::Any, typecast);
+    binary!(
+        h,
+        TYPE_T.to_type(),
+        "_typecast",
+        [TYPE_T.to_type()],
+        Type::Any,
+        typecast
+    );
 
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
@@ -47,5 +68,5 @@ lazy_static! {
         implementations: type_t(),
         inst_fields: HashMap::new(),
     };
-    pub static ref TYPE_T_ELE: Type<Element> = TYPE_T.as_type_element();
+    pub static ref TYPE_T_ELE: TypeDefinition<Element> = TYPE_T.as_type_element();
 }

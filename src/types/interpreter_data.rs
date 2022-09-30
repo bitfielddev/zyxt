@@ -30,27 +30,27 @@ const PRIM_NAMES: [&str; 22] = [
 ];
 lazy_static! {
     static ref PRIMS: HashMap<&'static str, &'static Type<Value>> = hashmap! {
-        "str" => &*STR_T,
-        "bool" => &*BOOL_T,
-        "type" => &*TYPE_T,
-        "_unit" => &*UNIT_T,
-        "i8" => &*I8_T,
-        "i16" => &*I16_T,
-        "i32" => &*I32_T,
-        "i64" => &*I64_T,
-        "i128" => &*I128_T,
-        "ibig" => &*IBIG_T,
-        "isize" => &*ISIZE_T,
-        "u8" => &*U8_T,
-        "u16" => &*U16_T,
-        "u32" => &*U32_T,
-        "u64" => &*U64_T,
-        "u128" => &*U128_T,
-        "ubig" => &*UBIG_T,
-        "usize" => &*USIZE_T,
-        "f16" => &*F16_T,
-        "f32" => &*F32_T,
-        "f64" => &*F64_T,
+        "str" => &STR_T.to_type(),
+        "bool" => &BOOL_T.to_type(),
+        "type" => &TYPE_T.to_type(),
+        "_unit" => &UNIT_T.to_type(),
+        "i8" => &I8_T.to_type(),
+        "i16" => &I16_T.to_type(),
+        "i32" => &I32_T.to_type(),
+        "i64" => &I64_T.to_type(),
+        "i128" => &I128_T.to_type(),
+        "ibig" => &IBIG_T.to_type(),
+        "isize" => &ISIZE_T.to_type(),
+        "u8" => &U8_T.to_type(),
+        "u16" => &U16_T.to_type(),
+        "u32" => &U32_T.to_type(),
+        "u64" => &U64_T.to_type(),
+        "u128" => &U128_T.to_type(),
+        "ubig" => &UBIG_T.to_type(),
+        "usize" => &USIZE_T.to_type(),
+        "f16" => &F16_T.to_type(),
+        "f32" => &F32_T.to_type(),
+        "f64" => &F64_T.to_type(),
         "_any" => &Type::Any
     };
 }
@@ -143,7 +143,12 @@ impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
         for t in PRIM_NAMES {
             const_frame.heap.insert(
                 t.into(),
-                PRIMS.get(t).unwrap().implementation().as_type_element(),
+                PRIMS
+                    .get(t)
+                    .unwrap()
+                    .implementation()
+                    .to_type()
+                    .as_type_element(),
             );
             const_frame
                 .typedefs
@@ -159,10 +164,8 @@ impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
             self.add_frame(None, FrameType::Normal)
         };
         frame.heap.insert(name.to_owned(), value.to_owned());
-        if matches!(value, Type::Definition { .. }) {
-            frame
-                .typedefs
-                .insert(name.to_owned(), value.get_instance().unwrap());
+        if let Type::Definition(def) = value {
+            frame.typedefs.insert(name.to_owned(), def.get_instance());
         }
     }
     pub fn pop_frame(&mut self) {

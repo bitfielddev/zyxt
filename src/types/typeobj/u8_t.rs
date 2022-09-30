@@ -28,30 +28,37 @@ fn u8_t() -> HashMap<SmolStr, Value> {
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            p if p == *TYPE_T => typecast_to_type!(U8_T),
-            p if p == *STR_T => typecast_int!(U8 => str, x),
-            p if p == *BOOL_T => typecast_int!(U8 => bool, x),
-            p if p == *I8_T => typecast_int!(U8 => I8, x),
-            p if p == *I16_T => typecast_int!(U8 => I16, x),
-            p if p == *I32_T => typecast_int!(U8 => I32, x),
-            p if p == *I64_T => typecast_int!(U8 => I64, x),
-            p if p == *I128_T => typecast_int!(U8 => I128, x),
-            p if p == *ISIZE_T => typecast_int!(U8 => Isize, x),
-            p if p == *IBIG_T => typecast_int!(U8 => Ibig, x),
-            p if p == *U8_T => x[0].to_owned(),
-            p if p == *U16_T => typecast_int!(U8 => U16, x),
-            p if p == *U32_T => typecast_int!(U8 => U32, x),
-            p if p == *U64_T => typecast_int!(U8 => U64, x),
-            p if p == *U128_T => typecast_int!(U8 => U128, x),
-            p if p == *USIZE_T => typecast_int!(U8 => Usize, x),
-            p if p == *UBIG_T => typecast_int!(U8 => Ubig, x),
-            p if p == *F16_T => typecast_int!(U8 => f16, x),
-            p if p == *F32_T => typecast_int!(U8 => f32, x),
-            p if p == *F64_T => typecast_int!(U8 => f64, x),
+            p if p == TYPE_T.to_type() => typecast_to_type!(U8_T),
+            p if p == STR_T.to_type() => typecast_int!(U8 => str, x),
+            p if p == BOOL_T.to_type() => typecast_int!(U8 => bool, x),
+            p if p == I8_T.to_type() => typecast_int!(U8 => I8, x),
+            p if p == I16_T.to_type() => typecast_int!(U8 => I16, x),
+            p if p == I32_T.to_type() => typecast_int!(U8 => I32, x),
+            p if p == I64_T.to_type() => typecast_int!(U8 => I64, x),
+            p if p == I128_T.to_type() => typecast_int!(U8 => I128, x),
+            p if p == ISIZE_T.to_type() => typecast_int!(U8 => Isize, x),
+            p if p == IBIG_T.to_type() => typecast_int!(U8 => Ibig, x),
+            p if p == U8_T.to_type() => x[0].to_owned(),
+            p if p == U16_T.to_type() => typecast_int!(U8 => U16, x),
+            p if p == U32_T.to_type() => typecast_int!(U8 => U32, x),
+            p if p == U64_T.to_type() => typecast_int!(U8 => U64, x),
+            p if p == U128_T.to_type() => typecast_int!(U8 => U128, x),
+            p if p == USIZE_T.to_type() => typecast_int!(U8 => Usize, x),
+            p if p == UBIG_T.to_type() => typecast_int!(U8 => Ubig, x),
+            p if p == F16_T.to_type() => typecast_int!(U8 => f16, x),
+            p if p == F32_T.to_type() => typecast_int!(U8 => f32, x),
+            p if p == F64_T.to_type() => typecast_int!(U8 => f64, x),
             _ => return None,
         })
     };
-    binary!(h, U8_T, "_typecast", [TYPE_T], Type::Any, typecast);
+    binary!(
+        h,
+        U8_T.to_type(),
+        "_typecast",
+        [TYPE_T.to_type()],
+        Type::Any,
+        typecast
+    );
 
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }

@@ -30,35 +30,49 @@ fn str_t() -> HashMap<SmolStr, Value> {
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            p if p == *TYPE_T => typecast_to_type!(STR_T),
-            p if p == *STR_T => x[0].to_owned(),
-            p if p == *BOOL_T => Value::Bool(get_param!(x, 0, Str).is_empty()),
-            p if p == *I8_T => typecast_str_to_num!(I8, x),
-            p if p == *I16_T => typecast_str_to_num!(I16, x),
-            p if p == *I32_T => typecast_str_to_num!(I32, x),
-            p if p == *I64_T => typecast_str_to_num!(I64, x),
-            p if p == *I128_T => typecast_str_to_num!(I128, x),
-            p if p == *ISIZE_T => typecast_str_to_num!(Isize, x),
-            p if p == *IBIG_T => typecast_str_to_num!(Ibig, x),
-            p if p == *U8_T => typecast_str_to_num!(U8, x),
-            p if p == *U16_T => typecast_str_to_num!(U16, x),
-            p if p == *U32_T => typecast_str_to_num!(U32, x),
-            p if p == *U64_T => typecast_str_to_num!(U64, x),
-            p if p == *U128_T => typecast_str_to_num!(U128, x),
-            p if p == *USIZE_T => typecast_str_to_num!(Usize, x),
-            p if p == *UBIG_T => typecast_str_to_num!(Ubig, x),
-            p if p == *F16_T => typecast_str_to_num!(F16, x),
-            p if p == *F32_T => typecast_str_to_num!(F32, x),
-            p if p == *F64_T => typecast_str_to_num!(F64, x),
+            p if p == TYPE_T.to_type() => typecast_to_type!(STR_T),
+            p if p == STR_T.to_type() => x[0].to_owned(),
+            p if p == BOOL_T.to_type() => Value::Bool(get_param!(x, 0, Str).is_empty()),
+            p if p == I8_T.to_type() => typecast_str_to_num!(I8, x),
+            p if p == I16_T.to_type() => typecast_str_to_num!(I16, x),
+            p if p == I32_T.to_type() => typecast_str_to_num!(I32, x),
+            p if p == I64_T.to_type() => typecast_str_to_num!(I64, x),
+            p if p == I128_T.to_type() => typecast_str_to_num!(I128, x),
+            p if p == ISIZE_T.to_type() => typecast_str_to_num!(Isize, x),
+            p if p == IBIG_T.to_type() => typecast_str_to_num!(Ibig, x),
+            p if p == U8_T.to_type() => typecast_str_to_num!(U8, x),
+            p if p == U16_T.to_type() => typecast_str_to_num!(U16, x),
+            p if p == U32_T.to_type() => typecast_str_to_num!(U32, x),
+            p if p == U64_T.to_type() => typecast_str_to_num!(U64, x),
+            p if p == U128_T.to_type() => typecast_str_to_num!(U128, x),
+            p if p == USIZE_T.to_type() => typecast_str_to_num!(Usize, x),
+            p if p == UBIG_T.to_type() => typecast_str_to_num!(Ubig, x),
+            p if p == F16_T.to_type() => typecast_str_to_num!(F16, x),
+            p if p == F32_T.to_type() => typecast_str_to_num!(F32, x),
+            p if p == F64_T.to_type() => typecast_str_to_num!(F64, x),
             _ => return None,
         })
     };
-    binary!(h, STR_T, "_typecast", [TYPE_T], Type::Any, typecast);
-    binary!(h, STR_T, "_mul", [USIZE_T], STR_T, |x: &Vec<Value>| {
-        Some(Value::Str(
-            get_param!(x, 0, Str).repeat(get_param!(x, 1, Usize)),
-        ))
-    });
+    binary!(
+        h,
+        STR_T.to_type(),
+        "_typecast",
+        [TYPE_T.to_type()],
+        Type::Any,
+        typecast
+    );
+    binary!(
+        h,
+        STR_T.to_type(),
+        "_mul",
+        [USIZE_T.to_type()],
+        STR_T.to_type(),
+        |x: &Vec<Value>| {
+            Some(Value::Str(
+                get_param!(x, 0, Str).repeat(get_param!(x, 1, Usize)),
+            ))
+        }
+    );
 
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }

@@ -164,6 +164,17 @@ impl TypeDefinition<Value> {
     }
 }
 
+impl<T: Clone + PartialEq + Debug> TypeDefinition<T> {
+    pub fn to_type(&self) -> Type<T> {
+        Type::Definition(self.to_owned())
+    }
+}
+impl<T: Clone + PartialEq + Debug> TypeInstance<T> {
+    pub fn to_type(&self) -> Type<T> {
+        Type::Instance(self.to_owned())
+    }
+}
+
 impl TypeDefinition<Element> {
     pub fn as_type_value(
         &self,
