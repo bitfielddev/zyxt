@@ -30,7 +30,6 @@ impl Token {
 }
 pub fn get_order(opr: &OprType) -> u8 {
     match *opr {
-        OprType::Null => 0,
         OprType::Increment
         | OprType::Decrement
         | OprType::PlusSign
@@ -119,7 +118,6 @@ pub enum OprType {
     Ref,
     Deref,
     TypeCast,
-    Null,
 }
 impl Display for OprType {
     fn fmt(&self, f: &mut Formatter) -> Result {
@@ -175,34 +173,34 @@ pub enum Side {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(dead_code)]
 pub enum TokenType {
-    CommentStart,           // //
-    CommentEnd,             // \n
-    MultilineCommentStart,  // /*
-    MultilineCommentEnd,    // */
-    Flag(Flag),             // hoi, pub, priv, prot, const
-    UnaryOpr(OprType),      // \~, ++, ! etc
-    AssignmentOpr(OprType), // =, += etc
-    NormalOpr(OprType),     // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
-    DotOpr,                 // .
-    DeclarationOpr,         // :=
-    LiteralMisc,            // true, null, etc
-    LiteralNumber,          // 3, 24, -34.5 etc
-    LiteralString,          // "abc" etc
-    StatementEnd,           // ;
-    OpenParen,              // (
-    CloseParen,             // )
-    OpenSquareParen,        // [
-    CloseSquareParen,       // ]
-    OpenCurlyParen,         // {
-    CloseCurlyParen,        // }
-    OpenAngleBracket,       // <
-    CloseAngleBracket,      // >
-    Comma,                  // ,
-    Colon,                  // :
-    Apostrophe,             // '
-    Quote,                  // "
-    Bar,                    // |
-    Keyword(Keyword),       // if, while etc
+    CommentStart,                   // //
+    CommentEnd,                     // \n
+    MultilineCommentStart,          // /*
+    MultilineCommentEnd,            // */
+    Flag(Flag),                     // hoi, pub, priv, prot, const
+    UnaryOpr(OprType),              // \~, ++, ! etc
+    AssignmentOpr(Option<OprType>), // =, += etc
+    NormalOpr(OprType), // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
+    DotOpr,             // .
+    DeclarationOpr,     // :=
+    LiteralMisc,        // true, null, etc
+    LiteralNumber,      // 3, 24, -34.5 etc
+    LiteralString,      // "abc" etc
+    StatementEnd,       // ;
+    OpenParen,          // (
+    CloseParen,         // )
+    OpenSquareParen,    // [
+    CloseSquareParen,   // ]
+    OpenCurlyParen,     // {
+    CloseCurlyParen,    // }
+    OpenAngleBracket,   // <
+    CloseAngleBracket,  // >
+    Comma,              // ,
+    Colon,              // :
+    Apostrophe,         // '
+    Quote,              // "
+    Bar,                // |
+    Keyword(Keyword),   // if, while etc
     Comment,
     Ident,
     Whitespace,

@@ -758,9 +758,7 @@ fn parse_assignment_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtErr
                 return Err(ZyxtError::error_2_1_3(ele.get_raw()).with_element(ele));
             }
             let variable = parse_expr(vec![elements[i - 1].to_owned()])?;
-            let content = if opr_type == &OprType::Null {
-                parse_expr(elements[i + 1..].to_vec())?
-            } else {
+            let content = if let Some(opr_type) = opr_type {
                 let operand2 = parse_expr(elements[i + 1..].to_vec())?;
                 Element::BinaryOpr {
                     position: position.to_owned(),
@@ -769,6 +767,8 @@ fn parse_assignment_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtErr
                     operand1: Box::new(variable.to_owned()),
                     operand2: Box::new(operand2),
                 }
+            } else {
+                parse_expr(elements[i + 1..].to_vec())?
             };
 
             return Ok(elements[..i - 1]

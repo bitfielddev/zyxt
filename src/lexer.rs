@@ -318,7 +318,7 @@ impl Lexer for MainLexer {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
                                 char.push('=');
-                                TokenType::AssignmentOpr(OprType::Plus)
+                                TokenType::AssignmentOpr(Some(OprType::Plus))
                             }
                             Some(("+", _)) => {
                                 iter.next().unwrap();
@@ -336,7 +336,7 @@ impl Lexer for MainLexer {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
                                 char.push('=');
-                                TokenType::AssignmentOpr(OprType::Minus)
+                                TokenType::AssignmentOpr(Some(OprType::Minus))
                             }
                             Some(("-", _)) => {
                                 iter.next().unwrap();
@@ -354,7 +354,7 @@ impl Lexer for MainLexer {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
                                 char.push('=');
-                                TokenType::AssignmentOpr(OprType::AstMult)
+                                TokenType::AssignmentOpr(Some(OprType::AstMult))
                             }
                             Some(("/", _)) => todo!(),
                             _ => TokenType::NormalOpr(OprType::AstMult),
@@ -363,7 +363,7 @@ impl Lexer for MainLexer {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
                                 char.push('=');
-                                TokenType::AssignmentOpr(OprType::FractDiv)
+                                TokenType::AssignmentOpr(Some(OprType::FractDiv))
                             }
                             Some(("*", _)) => {
                                 iter.next().unwrap();
@@ -391,7 +391,7 @@ impl Lexer for MainLexer {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
                                 char.push('=');
-                                TokenType::AssignmentOpr(OprType::Power)
+                                TokenType::AssignmentOpr(Some(OprType::Power))
                             }
                             _ => TokenType::NormalOpr(OprType::Power),
                         },
@@ -399,14 +399,14 @@ impl Lexer for MainLexer {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
                                 char.push('=');
-                                TokenType::AssignmentOpr(OprType::Modulo)
+                                TokenType::AssignmentOpr(Some(OprType::Modulo))
                             }
                             _ => TokenType::NormalOpr(OprType::Modulo),
                         },
                         "~" => match iter.peek() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
-                                TokenType::AssignmentOpr(OprType::Concat)
+                                TokenType::AssignmentOpr(Some(OprType::Concat))
                             }
                             _ => TokenType::NormalOpr(OprType::Concat),
                         },
@@ -417,7 +417,7 @@ impl Lexer for MainLexer {
                                 char.push('=');
                                 TokenType::NormalOpr(OprType::Eq)
                             }
-                            _ => TokenType::AssignmentOpr(OprType::Null),
+                            _ => TokenType::AssignmentOpr(None),
                         },
                         "!" => match iter.peek() {
                             Some(("=", _)) => {
