@@ -10,6 +10,7 @@ use smol_str::SmolStr;
 use crate::{
     interpreter::interpret_block,
     types::{
+        element::PosRaw,
         errors::ZyxtError,
         position::Position,
         printer::Print,
@@ -21,7 +22,6 @@ use crate::{
         },
         value::Value,
     },
-    Element,
 };
 
 const PRIM_NAMES: [&str; 22] = [
@@ -189,8 +189,7 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
         &mut self,
         name: &SmolStr,
         value: &T,
-        position: &Position,
-        raw: &String,
+        pos_raw: &PosRaw,
     ) -> Result<(), ZyxtError> {
         let mut only_consts = false;
         for frame in self.frames.iter_mut() {
@@ -206,14 +205,9 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
                 only_consts = true;
             }
         }
-        Err(ZyxtError::error_3_0(name.to_owned()).with_pos_and_raw(position, raw))
+        Err(ZyxtError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
     }
-    pub fn get_val(
-        &mut self,
-        name: &SmolStr,
-        position: &Position,
-        raw: &String,
-    ) -> Result<T, ZyxtError> {
+    pub fn get_val(&mut self, name: &SmolStr, pos_raw: &PosRaw) -> Result<T, ZyxtError> {
         let mut only_consts = false;
         for frame in self.frames.iter() {
             if (only_consts && frame.ty == FrameType::Constants) || frame.heap.contains_key(name) {
@@ -223,18 +217,13 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
                 only_consts = true;
             }
         }
-        Err(ZyxtError::error_3_0(name.to_owned()).with_pos_and_raw(position, raw))
+        Err(ZyxtError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
     }
-    pub fn delete_val(
-        &mut self,
-        name: &SmolStr,
-        position: &Position,
-        raw: &String,
-    ) -> Result<T, ZyxtError> {
+    pub fn delete_val(&mut self, name: &SmolStr, pos_raw: &PosRaw) -> Result<T, ZyxtError> {
         if let Some(v) = self.frames.front_mut().unwrap().heap.remove(name) {
             Ok(v)
         } else {
-            Err(ZyxtError::error_3_0(name.to_owned()).with_pos_and_raw(position, raw))
+            Err(ZyxtError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
         }
     }
     pub fn add_defer(&mut self, content: Vec<Element>) {

@@ -47,7 +47,7 @@ impl Process for Element {
                 position,
                 raw,
                 ..
-            } => typelist.get_val(name, position, raw),
+            } => typelist.get_val(name, pos_raw),
             Element::Block { content, .. } => Ok(Element::block_type(content, typelist, true)?.0),
             Element::Call { called, args, .. } => {
                 if let Element::Ident { name, parent, .. } = called.as_ref() {
@@ -362,7 +362,7 @@ impl Process for Element {
                 } else if let Some(block_return_type) = block_return_type {
                     if return_type != block_return_type {
                         return Err(ZyxtError::error_4_t(return_type, block_return_type)
-                            .with_pos_and_raw(position, raw));
+                            .with_pos_raw(pos_raw));
                     }
                 }
                 typelist.pop_frame();
@@ -399,11 +399,11 @@ impl Process for Element {
                     );
                 }
                 let content_type = content.process(typelist)?;
-                let var_type = typelist.get_val(&variable.get_name(), position, raw)?;
+                let var_type = typelist.get_val(&variable.get_name(), pos_raw)?;
                 if content_type != var_type {
                     Err(
                         ZyxtError::error_4_3(variable.get_name(), var_type, content_type)
-                            .with_pos_and_raw(position, raw),
+                            .with_pos_raw(pos_raw),
                     )
                 } else {
                     Ok(var_type)

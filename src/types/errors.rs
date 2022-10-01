@@ -1,4 +1,5 @@
 use std::{
+    any::Any,
     fmt::{Debug, Display},
     fs::File,
     io::Read,
@@ -14,17 +15,18 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
     types::{
+        element::{Element, PosRaw},
         position::Position,
         printer::Print,
         token::{Keyword, Token},
         value::Value,
     },
-    Element, Type,
+    Type,
 };
 
 #[derive(Clone)]
 pub struct ZyxtError {
-    pub position: Vec<(Position, String)>,
+    pub position: Vec<PosRaw>,
     pub code: &'static str,
     pub message: String,
 }
@@ -264,11 +266,11 @@ impl ZyxtError {
     }
 
     /// expected pattern, got something else
-    pub fn error_2_2(ele: Element) -> Self {
+    pub fn error_2_2(ele: Element<impl Any>) -> Self {
         ZyxtError {
             position: vec![],
             code: "2.2",
-            message: format!("Expected pattern, got `{}`", ele.get_raw()),
+            message: format!("Expected pattern, got `{}`", ele.pos_raw.raw),
         }
     }
 
@@ -484,22 +486,19 @@ impl ZyxtError {
                 + &*Red.bold().paint(format!(" {}", self.message)).to_string(),
         );
     }
-    pub fn with_pos_and_raw(mut self, pos: &Position, raw: &String) -> Self {
-        self.position = vec![(pos.to_owned(), raw.to_owned().trim().to_string())];
+    pub fn with_pos_raw(mut self, pos_raw: &PosRaw) -> Self {
+        self.position = vec![pos_raw.to_owned()];
         self
     }
-    pub fn with_element(mut self, element: &Element) -> Self {
-        self.position = vec![(
-            element.get_pos().to_owned(),
-            element.get_raw().trim().to_string(),
-        )];
+    pub fn with_element(mut self, element: &Element<impl Any>) -> Self {
+        self.position = vec![element.pos_raw];
         self
     }
     pub fn with_token(mut self, token: &Token) -> Self {
-        self.position = vec![(
-            token.position.to_owned(),
-            token.value.to_owned().trim().to_string(),
-        )];
+        self.position = vec![PosRaw {
+            position: token.position.to_owned(),
+            raw: token.value.to_owned().trim().to_string().parse().unwrap(),
+        }];
         self
     }
 }

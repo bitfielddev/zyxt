@@ -65,7 +65,7 @@ pub fn interpret_expr<O: Print>(
             position,
             raw,
             ..
-        } => i_data.get_val(name, position, raw),
+        } => i_data.get_val(name, pos_raw),
         Element::Declare {
             variable, content, ..
         } => {
@@ -81,7 +81,7 @@ pub fn interpret_expr<O: Print>(
             ..
         } => {
             let var = interpret_expr(content, i_data);
-            i_data.set_val(&variable.get_name(), &var.to_owned()?, position, raw)?;
+            i_data.set_val(&variable.get_name(), &var.to_owned()?, pos_raw)?;
             var
         }
         Element::Literal { content, .. } => Ok(if let Value::PreType(v) = content {
@@ -186,7 +186,7 @@ pub fn interpret_expr<O: Print>(
             ..
         } => {
             for name in names {
-                i_data.delete_val(name, position, raw)?;
+                i_data.delete_val(name, pos_raw)?;
             }
             Ok(Value::Unit)
         }
@@ -316,7 +316,7 @@ pub fn interpret_asts<O: Print>(
             return if let Value::I32(v) = return_val {
                 Ok(v)
             } else {
-                Err(ZyxtError::error_4_2(return_val).with_pos_and_raw(position, raw))
+                Err(ZyxtError::error_4_2(return_val).with_pos_raw(pos_raw))
             };
         } else {
             last = interpret_expr(ele, i_data)?;
