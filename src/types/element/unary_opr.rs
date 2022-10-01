@@ -8,7 +8,7 @@ use crate::{
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct UnaryOpr {
-    type_: OprType,
+    ty: OprType,
     operand: Element,
 }
 
@@ -27,7 +27,7 @@ impl ElementData for UnaryOpr {
                 pos_raw: pos_raw.to_owned(),
                 data: Box::new(
                     Ident {
-                        name: match self.type_ {
+                        name: match self.ty {
                             OprType::Not => "_not",
                             OprType::PlusSign => "_un_plus",
                             OprType::MinusSign => "_un_minus",

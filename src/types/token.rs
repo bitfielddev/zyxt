@@ -7,7 +7,7 @@ use crate::types::position::Position;
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Token {
     pub value: SmolStr,
-    pub type_: Option<TokenType>,
+    pub ty: Option<TokenType>,
     pub position: Position,
     pub whitespace: SmolStr,
 }
@@ -15,7 +15,7 @@ impl Default for Token {
     fn default() -> Self {
         Token {
             value: "".into(),
-            type_: None,
+            ty: None,
             position: Position {
                 ..Default::default()
             },

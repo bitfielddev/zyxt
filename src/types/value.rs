@@ -95,7 +95,7 @@ pub enum Value {
     PreType(Type<Element>),
     Proc(Proc),
     ClassInstance {
-        type_: Type<Value>,
+        ty: Type<Value>,
         attrs: HashMap<String, Value>,
     },
     Unit,
@@ -202,7 +202,7 @@ impl Display for Value {
                 Value::F64(v) => v.to_string(),
                 Value::Str(v) => v.to_owned(),
                 Value::Bool(v) => v.to_string(),
-                Value::Type(v) | Value::ClassInstance { type_: v, .. } => format!("<{}>", v),
+                Value::Type(v) | Value::ClassInstance { ty: v, .. } => format!("<{}>", v),
                 Value::PreType(v) => format!("<{}>", v),
                 Value::Unit => "()".to_string(),
                 Value::Return(v) => v.to_string(),
@@ -259,7 +259,7 @@ impl Value {
             Value::Bool(..) => BOOL_T.get_instance(),
             Value::Type(..) | Value::PreType(..) => TYPE_T.get_instance(),
             Value::Proc(_) => PROC_T.get_instance(),
-            Value::ClassInstance { type_, .. } => type_.to_owned(),
+            Value::ClassInstance { ty, .. } => ty.to_owned(),
             Value::Unit => UNIT_T.get_instance(),
             Value::Return(v) => v.get_type_obj(),
         }

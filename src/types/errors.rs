@@ -337,11 +337,11 @@ impl ZyxtError {
         }
     }
     /// Unary operator not implemented for type
-    pub fn error_4_0_1(operator: impl Display, type_: impl Display) -> Self {
+    pub fn error_4_0_1(operator: impl Display, ty: impl Display) -> Self {
         ZyxtError {
             position: vec![],
             code: "4.0.1",
-            message: format!("Operator {} not implemented for type `{}`", operator, type_),
+            message: format!("Operator {} not implemented for type `{}`", operator, ty),
         }
     }
 

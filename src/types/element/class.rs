@@ -41,7 +41,7 @@ impl ElementData for Class {
                 variable,
                 content,
                 flags,
-                type_,
+                ty,
                 ..
             }) = &*expr.data
             {
@@ -51,7 +51,7 @@ impl ElementData for Class {
                 if flags.contains(&Flag::Inst) {
                     self.inst_fields.insert(
                         variable.get_name(),
-                        (*type_.to_owned(), Some(content.to_owned())),
+                        (*ty.to_owned(), Some(content.to_owned())),
                     );
                 }
             }

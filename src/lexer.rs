@@ -21,7 +21,7 @@ fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
     let mut whitespace_stack: SmolStr = "".into();
 
     for mut t in input {
-        if t.type_ != Some(TokenType::Whitespace) {
+        if t.ty != Some(TokenType::Whitespace) {
             t.whitespace = whitespace_stack.to_owned();
             whitespace_stack = "".into();
             out.push(t);
@@ -94,7 +94,7 @@ impl Lexer for TextLiteralLexer {
             if char == "\"" {
                 raw.push('"');
                 tokens.push(Token {
-                    type_: Some(TokenType::LiteralString),
+                    ty: Some(TokenType::LiteralString),
                     value: raw.into(),
                     position: pos,
                     ..Default::default()
@@ -140,7 +140,7 @@ impl Lexer for WordLexer {
                 iter.next().unwrap();
             } else {
                 tokens.push(Token {
-                    type_: Some(match raw.as_str() {
+                    ty: Some(match raw.as_str() {
                         "true" => TokenType::LiteralMisc,
                         "false" => TokenType::LiteralMisc,
                         "if" => TokenType::Keyword(Keyword::If),
@@ -190,7 +190,7 @@ impl Lexer for NumberLexer {
                 iter.next().unwrap();
             } else {
                 tokens.push(Token {
-                    type_: Some(TokenType::LiteralNumber),
+                    ty: Some(TokenType::LiteralNumber),
                     value: raw.into(),
                     position: pos,
                     ..Default::default()
@@ -282,7 +282,7 @@ impl Lexer for WhitespaceLexer {
                 iter.next().unwrap();
             } else {
                 tokens.push(Token {
-                    type_: Some(TokenType::Whitespace),
+                    ty: Some(TokenType::Whitespace),
                     value: raw.into(),
                     position: pos,
                     ..Default::default()
@@ -313,7 +313,7 @@ impl Lexer for MainLexer {
             } else {
                 let mut char = iter.next().unwrap().0.to_string();
                 tokens.push(Token {
-                    type_: Some(match char.as_str() {
+                    ty: Some(match char.as_str() {
                         "+" => match iter.peek().as_mut() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
@@ -368,7 +368,7 @@ impl Lexer for MainLexer {
                             Some(("*", _)) => {
                                 iter.next().unwrap();
                                 tokens.push(Token {
-                                    type_: Some(TokenType::Comment),
+                                    ty: Some(TokenType::Comment),
                                     value: "/*".into(),
                                     position: pos,
                                     ..Default::default()
@@ -378,7 +378,7 @@ impl Lexer for MainLexer {
                             Some(("/", _)) => {
                                 iter.next().unwrap();
                                 tokens.push(Token {
-                                    type_: Some(TokenType::Comment),
+                                    ty: Some(TokenType::Comment),
                                     value: "//".into(),
                                     position: pos,
                                     ..Default::default()

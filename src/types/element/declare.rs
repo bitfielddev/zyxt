@@ -15,7 +15,7 @@ pub struct Declare {
     pub variable: Element<Ident>,
     pub content: Element,
     pub flags: Vec<Flag>,
-    pub type_: Option<Element>,
+    pub ty: Option<Element>,
 }
 
 impl ElementData for Declare {
@@ -32,7 +32,7 @@ impl ElementData for Declare {
             return Err(ZyxtError::error_2_2(self.variable.to_owned()).with_element(&self.variable));
         }
         let content_type = self.content.process(typelist)?;
-        let type_ = if let ElementVariant::Literal(literal) = self.type_.data.as_ref() {
+        let ty = if let ElementVariant::Literal(literal) = self.ty.data.as_ref() {
             if let Value::Type(t) = &literal.content {
                 t
             } else {
@@ -42,20 +42,20 @@ impl ElementData for Declare {
             todo!()
         }
         .as_type_element();
-        if type_ == Type::Any {
+        if ty == Type::Any {
             typelist.declare_val(&self.variable.data.name, &content_type);
         } else {
-            typelist.declare_val(&self.variable.data.name, &type_);
-            if content_type != type_ {
+            typelist.declare_val(&self.variable.data.name, &ty);
+            if content_type != ty {
                 let mut new_content = BinaryOpr {
-                    type_: OprType::TypeCast,
+                    ty: OprType::TypeCast,
                     operand1: self.content.to_owned(),
-                    operand2: type_.as_literal(),
+                    operand2: ty.as_literal(),
                 }
                 .as_variant();
                 new_content.process(typelist)?;
                 *self = Declare {
-                    type_: self.type_.to_owned(),
+                    ty: self.ty.to_owned(),
                     content: Element {
                         pos_raw: pos_raw.to_owned(),
                         data: Box::new(new_content),
@@ -75,7 +75,7 @@ impl ElementData for Declare {
     ) -> Result<ElementVariant, ZyxtError> {
         let mut new_self = self.to_owned();
         new_self.content = self.content.desugared(out)?;
-        new_self.type_ = self.type_.map(|a| a.desugared(out)).transpose()?;
+        new_self.ty = self.ty.map(|a| a.desugared(out)).transpose()?;
         Ok(new_self.as_variant())
     }
 

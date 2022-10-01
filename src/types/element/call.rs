@@ -52,7 +52,7 @@ impl ElementData for Call {
         {
             for (i, arg) in self.args.iter_mut().enumerate() {
                 if arg.process(typelist)?
-                    != procedure.args.get_mut(i).unwrap().type_.process(typelist)?
+                    != procedure.args.get_mut(i).unwrap().ty.process(typelist)?
                 {
                     todo!("errors")
                 }
@@ -80,7 +80,7 @@ impl ElementData for Call {
                 } => {
                     for (i, arg) in self.args.iter_mut().enumerate() {
                         if arg.process(typelist)?
-                            != arg_objs.get_mut(i).unwrap().type_.process(typelist)?
+                            != arg_objs.get_mut(i).unwrap().ty.process(typelist)?
                         {
                             todo!("errors")
                         }

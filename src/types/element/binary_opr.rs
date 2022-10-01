@@ -9,7 +9,7 @@ use crate::{
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct BinaryOpr {
-    pub type_: OprType,
+    pub ty: OprType,
     pub operand1: Element,
     pub operand2: Element,
 }
@@ -24,7 +24,7 @@ impl ElementData for BinaryOpr {
         pos_raw: &PosRaw,
         out: &mut impl Print,
     ) -> Result<ElementVariant, ZyxtError> {
-        Ok(match self.type_ {
+        Ok(match self.ty {
             OprType::And | OprType::Or => {
                 let mut new_self = self.to_owned();
                 for operand in [&mut new_self.operand1, &mut new_self.operand2] {
@@ -32,7 +32,7 @@ impl ElementData for BinaryOpr {
                         pos_raw: pos_raw.to_owned(),
                         data: Box::new(
                             BinaryOpr {
-                                type_: OprType::TypeCast,
+                                ty: OprType::TypeCast,
                                 operand1: operand.desugared(out)?,
                                 operand2: Element {
                                     pos_raw: pos_raw.to_owned(),
@@ -58,7 +58,7 @@ impl ElementData for BinaryOpr {
                     pos_raw: pos_raw.to_owned(),
                     data: Box::new(
                         Ident {
-                            name: match self.type_ {
+                            name: match self.ty {
                                 OprType::Plus => "_add",
                                 OprType::Minus => "_sub",
                                 OprType::AstMult => "_mul",
@@ -72,7 +72,7 @@ impl ElementData for BinaryOpr {
                                 OprType::Gteq => "_ge",
                                 OprType::Concat => "_concat",
                                 OprType::TypeCast => "_typecast",
-                                _ => unimplemented!("{:#?}", self.type_),
+                                _ => unimplemented!("{:#?}", self.ty),
                             }
                             .into(),
                             parent: Some(self.operand1.desugared(out)?),
@@ -91,7 +91,7 @@ impl ElementData for BinaryOpr {
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
-        match self.type_ {
+        match self.ty {
             OprType::And => {
                 if let Value::Bool(b) = self.operand1.interpret_expr(i_data)? {
                     if b {

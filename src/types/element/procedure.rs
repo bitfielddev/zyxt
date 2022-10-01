@@ -15,7 +15,7 @@ use crate::{
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Argument {
     pub name: SmolStr,
-    pub type_: Element<Ident>,
+    pub ty: Element<Ident>,
     pub default: Option<Element>,
 }
 impl Display for Argument {
@@ -24,8 +24,8 @@ impl Display for Argument {
             f,
             "{}{}{}",
             self.name,
-            if self.type_.get_name() != "_any" {
-                format!(": {}", self.type_.get_name())
+            if self.ty.get_name() != "_any" {
+                format!(": {}", self.ty.get_name())
             } else {
                 "".to_string()
             },
@@ -72,7 +72,7 @@ impl ElementData for Procedure {
         );
         let return_type = self.return_type.process(typelist)?;
         for arg in self.args {
-            let value = arg.type_.process(typelist)?;
+            let value = arg.ty.process(typelist)?;
             typelist.declare_val(&arg.name, &value);
         }
         let (res, block_return_type) = self.content.data.block_type(typelist, false)?;
