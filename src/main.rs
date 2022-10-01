@@ -16,7 +16,7 @@ struct Args {
     #[clap(subcommand)]
     subcmd: Subcmd,
     /// Enables debugging info
-    #[clap(short, long, parse(from_occurrences))]
+    #[clap(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
 }
 #[derive(Parser)]

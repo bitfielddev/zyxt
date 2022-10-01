@@ -27,13 +27,13 @@ fn ibig_t() -> HashMap<SmolStr, Value> {
     h.insert("_default", Value::Ibig(0.into()));
     concat_vals!(h, IBIG_T);
 
-    unary!(h, IBIG_T.to_type(), "_un_add", |x: &Vec<Value>| Some(
+    unary!(h, IBIG_T.as_type(), "_un_add", |x: &Vec<Value>| Some(
         x[0].to_owned()
     ));
-    unary!(h, IBIG_T.to_type(), "_un_sub", |x: &Vec<Value>| Some(
+    unary!(h, IBIG_T.as_type(), "_un_sub", |x: &Vec<Value>| Some(
         Value::Ibig(get_param!(x, 0, Ibig).neg())
     ));
-    unary!(h, IBIG_T.to_type(), "_not", |x: &Vec<Value>| Some(
+    unary!(h, IBIG_T.as_type(), "_not", |x: &Vec<Value>| Some(
         Value::Bool(get_param!(x, 0, Ibig) == 0.into())
     ));
 
@@ -42,34 +42,34 @@ fn ibig_t() -> HashMap<SmolStr, Value> {
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            p if p == TYPE_T.to_type() => typecast_to_type!(IBIG_T),
-            p if p == STR_T.to_type() => typecast_int!(Ibig => str, x),
-            p if p == BOOL_T.to_type() => Value::Bool(get_param!(x, 0, Ibig) == 0.into()),
-            p if p == I8_T.to_type() => typecast_int!(Ibig => I8, x),
-            p if p == I16_T.to_type() => typecast_int!(Ibig => I16, x),
-            p if p == I32_T.to_type() => typecast_int!(Ibig => I32, x),
-            p if p == I64_T.to_type() => typecast_int!(Ibig => I64, x),
-            p if p == I128_T.to_type() => typecast_int!(Ibig => I128, x),
-            p if p == ISIZE_T.to_type() => typecast_int!(Ibig => Ibig, x),
-            p if p == IBIG_T.to_type() => x[0].to_owned(),
-            p if p == U8_T.to_type() => typecast_int!(Ibig => U8, x),
-            p if p == U16_T.to_type() => typecast_int!(Ibig => U16, x),
-            p if p == U32_T.to_type() => typecast_int!(Ibig => U32, x),
-            p if p == U64_T.to_type() => typecast_int!(Ibig => U64, x),
-            p if p == U128_T.to_type() => typecast_int!(Ibig => U128, x),
-            p if p == USIZE_T.to_type() => typecast_int!(Ibig => Usize, x),
-            p if p == UBIG_T.to_type() => typecast_int!(Ibig => Ubig, x),
-            p if p == F16_T.to_type() => typecast_int!(big Ibig => f16, x),
-            p if p == F32_T.to_type() => typecast_int!(big Ibig => f32, x),
-            p if p == F64_T.to_type() => typecast_int!(big Ibig => f64, x),
+            p if p == TYPE_T.as_type() => typecast_to_type!(IBIG_T),
+            p if p == STR_T.as_type() => typecast_int!(Ibig => str, x),
+            p if p == BOOL_T.as_type() => Value::Bool(get_param!(x, 0, Ibig) == 0.into()),
+            p if p == I8_T.as_type() => typecast_int!(Ibig => I8, x),
+            p if p == I16_T.as_type() => typecast_int!(Ibig => I16, x),
+            p if p == I32_T.as_type() => typecast_int!(Ibig => I32, x),
+            p if p == I64_T.as_type() => typecast_int!(Ibig => I64, x),
+            p if p == I128_T.as_type() => typecast_int!(Ibig => I128, x),
+            p if p == ISIZE_T.as_type() => typecast_int!(Ibig => Ibig, x),
+            p if p == IBIG_T.as_type() => x[0].to_owned(),
+            p if p == U8_T.as_type() => typecast_int!(Ibig => U8, x),
+            p if p == U16_T.as_type() => typecast_int!(Ibig => U16, x),
+            p if p == U32_T.as_type() => typecast_int!(Ibig => U32, x),
+            p if p == U64_T.as_type() => typecast_int!(Ibig => U64, x),
+            p if p == U128_T.as_type() => typecast_int!(Ibig => U128, x),
+            p if p == USIZE_T.as_type() => typecast_int!(Ibig => Usize, x),
+            p if p == UBIG_T.as_type() => typecast_int!(Ibig => Ubig, x),
+            p if p == F16_T.as_type() => typecast_int!(big Ibig => f16, x),
+            p if p == F32_T.as_type() => typecast_int!(big Ibig => f32, x),
+            p if p == F64_T.as_type() => typecast_int!(big Ibig => f64, x),
             _ => return None,
         })
     };
     binary!(
         h,
-        IBIG_T.to_type(),
+        IBIG_T.as_type(),
         "_typecast",
-        [TYPE_T.to_type()],
+        [TYPE_T.as_type()],
         Type::Any,
         typecast
     );

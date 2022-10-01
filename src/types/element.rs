@@ -241,7 +241,7 @@ impl Element {
         typelist: &mut InterpreterData<Type<Element>, O>,
         add_set: bool,
     ) -> Result<(Type<Element>, Option<Type<Element>>), ZyxtError> {
-        let mut last = UNIT_T.as_type_element();
+        let mut last = UNIT_T.as_type().as_type_element();
         let mut return_type = None;
         if add_set {
             typelist.add_frame(None, FrameType::Normal);

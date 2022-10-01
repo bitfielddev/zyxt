@@ -87,9 +87,7 @@ impl Process for Element {
                         Proc::Builtin { signature, .. } => {
                             let (mut arg_objs, ret): (Vec<Type<Value>>, Type<Value>) =
                                 signature[0]();
-                            println!("{arg_objs:#?} {ret:#?}");
                             for (i, arg) in args.iter_mut().enumerate() {
-                                println!("{arg:#?}");
                                 let arg = arg.process(typelist)?;
                                 let arg_req = arg_objs.get_mut(i).unwrap().as_type_element();
                                 if arg != arg_req && arg != Type::Any && arg_req != Type::Any {
@@ -206,7 +204,7 @@ impl Process for Element {
                 let type2 = operand2.process(typelist)?;
                 Ok(match type_ {
                     OprType::TypeCast => {
-                        if type2 == TYPE_T.as_type_element() {
+                        if type2 == TYPE_T.as_type().as_type_element() {
                             *self = Element::Call {
                                 position: Default::default(),
                                 raw: "".to_string(),
@@ -236,7 +234,7 @@ impl Process for Element {
                     }
                     OprType::And | OprType::Or => {
                         for (type_, operand) in [(&type1, operand1), (&type2, operand2)] {
-                            if *type_ != BOOL_T.as_type_element() {
+                            if *type_ != BOOL_T.as_type().as_type_element() {
                                 *operand = Box::new(Element::Call {
                                     position: Default::default(),
                                     raw: "".to_string(),
@@ -254,13 +252,13 @@ impl Process for Element {
                                     ),
                                     args: vec![
                                         *operand.to_owned(),
-                                        BOOL_T.as_type_element().as_literal(),
+                                        BOOL_T.as_type().as_type_element().as_literal(),
                                     ],
                                     kwargs: Default::default(),
                                 });
                             }
                         }
-                        BOOL_T.get_instance().unwrap().as_type_element()
+                        BOOL_T.get_instance().as_type_element()
                     }
                     _ => {
                         *self = Element::Call {
@@ -357,10 +355,10 @@ impl Process for Element {
                     typelist.declare_val(&arg.name, &value);
                 }
                 let (res, block_return_type) = Element::block_type(content, typelist, false)?;
-                if return_type == UNIT_T.get_instance().unwrap().as_type_element()
+                if return_type == UNIT_T.get_instance().as_type_element()
                     || block_return_type.is_none()
                 {
-                    *pre_return_type = Box::new(res.get_instance().unwrap().as_literal());
+                    *pre_return_type = Box::new(res.as_literal());
                 } else if let Some(block_return_type) = block_return_type {
                     if return_type != block_return_type {
                         return Err(ZyxtError::error_4_t(return_type, block_return_type)
@@ -371,7 +369,7 @@ impl Process for Element {
                 Ok(Type::Instance(TypeInstance {
                     name: Some("proc".into()),
                     //name: Some(if *is_fn { "fn" } else { "proc" }.into()),
-                    type_args: vec![UNIT_T.as_type_element(), return_type],
+                    type_args: vec![UNIT_T.as_type().as_type_element(), return_type],
                     implementation: PROC_T.as_type_element(),
                 }))
             } // TODO angle bracket thingy when it is implemented
@@ -474,7 +472,7 @@ impl Process for Element {
             Element::NullElement
             | Element::Delete { .. }
             | Element::Comment { .. }
-            | Element::Return { .. } => Ok(UNIT_T.as_type_element()),
+            | Element::Return { .. } => Ok(UNIT_T.get_instance().as_type_element()),
             Element::Token(Token {
                 position, value, ..
             }) => Err(ZyxtError::error_2_1_0(value.to_owned())

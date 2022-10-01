@@ -236,60 +236,36 @@ impl Value {
                 | Value::Bool(_)
         )
     }
-    pub fn from_type_content(type_: Type<Value>, content: String) -> Value {
-        match type_ {
-            p if p == *I8_T => Value::I8(content.parse::<i8>().unwrap()),
-            p if p == *I16_T => Value::I16(content.parse::<i16>().unwrap()),
-            p if p == *I32_T => Value::I32(content.parse::<i32>().unwrap()),
-            p if p == *I64_T => Value::I64(content.parse::<i64>().unwrap()),
-            p if p == *I128_T => Value::I128(content.parse::<i128>().unwrap()),
-            p if p == *ISIZE_T => Value::Isize(content.parse::<isize>().unwrap()),
-            p if p == *IBIG_T => Value::Ibig(content.parse::<BigInt>().unwrap()),
-            p if p == *U8_T => Value::U8(content.parse::<u8>().unwrap()),
-            p if p == *U16_T => Value::U16(content.parse::<u16>().unwrap()),
-            p if p == *U32_T => Value::U32(content.parse::<u32>().unwrap()),
-            p if p == *U64_T => Value::U64(content.parse::<u64>().unwrap()),
-            p if p == *U128_T => Value::U128(content.parse::<u128>().unwrap()),
-            p if p == *USIZE_T => Value::Usize(content.parse::<usize>().unwrap()),
-            p if p == *UBIG_T => Value::Ubig(content.parse::<BigUint>().unwrap()),
-            p if p == *F16_T => Value::F16(content.parse::<f16>().unwrap()),
-            p if p == *F32_T => Value::F32(content.parse::<f32>().unwrap()),
-            p if p == *F64_T => Value::F64(content.parse::<f64>().unwrap()),
-            p if p == *STR_T => Value::Str(content),
-            p if p == *BOOL_T => Value::Bool(&*content == "true"),
-            _ => panic!(),
-        }
-    }
-    pub fn get_type_obj(&self) -> &Type<Value> {
+    pub fn get_type_obj(&self) -> Type<Value> {
         match self {
-            Value::I8(..) => &I8_T,
-            Value::I16(..) => &I16_T,
-            Value::I32(..) => &I32_T,
-            Value::I64(..) => &I64_T,
-            Value::I128(..) => &I128_T,
-            Value::Isize(..) => &ISIZE_T,
-            Value::Ibig(..) => &IBIG_T,
-            Value::U8(..) => &U8_T,
-            Value::U16(..) => &U16_T,
-            Value::U32(..) => &U32_T,
-            Value::U64(..) => &U64_T,
-            Value::U128(..) => &U128_T,
-            Value::Usize(..) => &USIZE_T,
-            Value::Ubig(..) => &UBIG_T,
-            Value::F16(..) => &F16_T,
-            Value::F32(..) => &F32_T,
-            Value::F64(..) => &F64_T,
-            Value::Str(..) => &STR_T,
-            Value::Bool(..) => &BOOL_T,
-            Value::Type(..) | Value::PreType(..) => &TYPE_T,
-            Value::Proc(_) => &PROC_T,
-            Value::ClassInstance { type_, .. } => type_,
-            Value::Unit => &UNIT_T,
+            Value::I8(..) => I8_T.get_instance(),
+            Value::I16(..) => I16_T.get_instance(),
+            Value::I32(..) => I32_T.get_instance(),
+            Value::I64(..) => I64_T.get_instance(),
+            Value::I128(..) => I128_T.get_instance(),
+            Value::Isize(..) => ISIZE_T.get_instance(),
+            Value::Ibig(..) => IBIG_T.get_instance(),
+            Value::U8(..) => U8_T.get_instance(),
+            Value::U16(..) => U16_T.get_instance(),
+            Value::U32(..) => U32_T.get_instance(),
+            Value::U64(..) => U64_T.get_instance(),
+            Value::U128(..) => U128_T.get_instance(),
+            Value::Usize(..) => USIZE_T.get_instance(),
+            Value::Ubig(..) => UBIG_T.get_instance(),
+            Value::F16(..) => F16_T.get_instance(),
+            Value::F32(..) => F32_T.get_instance(),
+            Value::F64(..) => F64_T.get_instance(),
+            Value::Str(..) => STR_T.get_instance(),
+            Value::Bool(..) => BOOL_T.get_instance(),
+            Value::Type(..) | Value::PreType(..) => TYPE_T.get_instance(),
+            Value::Proc(_) => PROC_T.get_instance(),
+            Value::ClassInstance { type_, .. } => type_.to_owned(),
+            Value::Unit => UNIT_T.get_instance(),
             Value::Return(v) => v.get_type_obj(),
         }
     }
     pub fn get_type(&self) -> Value {
-        Value::Type(self.get_type_obj().to_owned())
+        Value::Type(self.get_type_obj())
     }
     pub fn as_element(&self) -> Element {
         Element::Literal {

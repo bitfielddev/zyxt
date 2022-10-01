@@ -18,10 +18,10 @@ fn type_t() -> HashMap<SmolStr, Value> {
     concat_vals!(h, TYPE_T);
     binary!(
         h,
-        TYPE_T.to_type(),
+        TYPE_T.as_type(),
         "_eq",
-        [TYPE_T.to_type()],
-        BOOL_T.to_type(),
+        [TYPE_T.as_type()],
+        BOOL_T.as_type(),
         |x: &Vec<Value>| {
             Some(Value::Bool(
                 get_param!(x, 0, Type) == get_param!(x, 1, Type),
@@ -30,10 +30,10 @@ fn type_t() -> HashMap<SmolStr, Value> {
     );
     binary!(
         h,
-        TYPE_T.to_type(),
+        TYPE_T.as_type(),
         "_ne",
-        [TYPE_T.to_type()],
-        BOOL_T.to_type(),
+        [TYPE_T.as_type()],
+        BOOL_T.as_type(),
         |x: &Vec<Value>| {
             Some(Value::Bool(
                 get_param!(x, 0, Type) != get_param!(x, 1, Type),
@@ -43,16 +43,16 @@ fn type_t() -> HashMap<SmolStr, Value> {
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            p if p == TYPE_T.to_type() => typecast_to_type!(TYPE_T),
-            p if p == STR_T.to_type() => Value::Str(get_param!(x, 0, Type).to_string()),
+            p if p == TYPE_T.as_type() => typecast_to_type!(TYPE_T),
+            p if p == STR_T.as_type() => Value::Str(get_param!(x, 0, Type).to_string()),
             _ => return None,
         })
     };
     binary!(
         h,
-        TYPE_T.to_type(),
+        TYPE_T.as_type(),
         "_typecast",
-        [TYPE_T.to_type()],
+        [TYPE_T.as_type()],
         Type::Any,
         typecast
     );

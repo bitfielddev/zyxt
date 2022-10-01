@@ -1,32 +1,32 @@
 #[macro_export]
 macro_rules! unary {
     ($h:ident, signed default $ty1:ident $ty2:ident) => {
-        unary!($h, $ty1.to_type(), "_un_add", |x: &Vec<Value>| Some(
+        unary!($h, $ty1.as_type(), "_un_add", |x: &Vec<Value>| Some(
             x[0].to_owned()
         ));
-        unary!($h, $ty1.to_type(), "_un_sub", |x: &Vec<Value>| Some(
+        unary!($h, $ty1.as_type(), "_un_sub", |x: &Vec<Value>| Some(
             Value::$ty2(get_param!(x, 0, $ty2).checked_neg()?)
         ));
-        unary!($h, $ty1.to_type(), "_not", |x: &Vec<Value>| Some(
+        unary!($h, $ty1.as_type(), "_not", |x: &Vec<Value>| Some(
             Value::Bool(get_param!(x, 0, $ty2) == 0)
         ));
     };
     ($h:ident, unsigned default $ty1:ident $ty2:ident) => {
-        unary!($h, $ty1.to_type(), "_un_add", |x: &Vec<Value>| Some(
+        unary!($h, $ty1.as_type(), "_un_add", |x: &Vec<Value>| Some(
             x[0].to_owned()
         ));
-        unary!($h, $ty1.to_type(), "_not", |x: &Vec<Value>| Some(
+        unary!($h, $ty1.as_type(), "_not", |x: &Vec<Value>| Some(
             Value::Bool(get_param!(x, 0, $ty2) == 0)
         ));
     };
     ($h:ident, float $ty1:ident $ty2:ident) => {
-        unary!($h, $ty1.to_type(), "_un_add", |x: &Vec<Value>| Some(
+        unary!($h, $ty1.as_type(), "_un_add", |x: &Vec<Value>| Some(
             x[0].to_owned()
         ));
-        unary!($h, $ty1.to_type(), "_un_sub", |x: &Vec<Value>| Some(
+        unary!($h, $ty1.as_type(), "_un_sub", |x: &Vec<Value>| Some(
             Value::$ty2(get_param!(x, 0, $ty2).neg())
         ));
-        unary!($h, $ty1.to_type(), "_not", |x: &Vec<Value>| Some(
+        unary!($h, $ty1.as_type(), "_not", |x: &Vec<Value>| Some(
             Value::Bool(get_param!(x, 0, $ty2) == 0.0 || get_param!(x, 0, $ty2) == -0.0)
         ));
     };
@@ -87,7 +87,7 @@ macro_rules! get_param {
 #[macro_export]
 macro_rules! typecast_to_type {
     ($v:ident) => {
-        Value::Type($v.to_type())
+        Value::Type($v.as_type())
     };
 }
 
@@ -155,7 +155,7 @@ macro_rules! arith_opr_num {
         arith_opr_num!($h, $ty1 $ty2, "_sub" big checked_sub);
         arith_opr_num!($h, $ty1 $ty2, "_mul" big checked_mul);
         arith_opr_num!($h, $ty1 $ty2, "_div" big checked_div);
-        binary!($h, $ty1.to_type(), "_rem", [$ty1.to_type()], |x: &Vec<Value>| Some(
+        binary!($h, $ty1.as_type(), "_rem", [$ty1.as_type()], |x: &Vec<Value>| Some(
             Value::$ty2(get_param!(x, 0, $ty2).rem(&get_param!(x, 1, U32)))
         ));
     }};
@@ -167,17 +167,17 @@ macro_rules! arith_opr_num {
         arith_opr_num!($h, $ty1 $ty2, "_rem" float rem);
     }};
     ($h:ident, $ty1:ident $ty2:ident, $fn_name:literal $rust_fn:ident) => {
-        binary!($h, $ty1.to_type(), $fn_name, [$ty1.to_type()], |x: &Vec<Value>| Some(
+        binary!($h, $ty1.as_type(), $fn_name, [$ty1.as_type()], |x: &Vec<Value>| Some(
             Value::$ty2(get_param!(x, 0, $ty2).$rust_fn(get_param!(x, 1, $ty2))?)
         ));
     };
     ($h:ident, $ty1:ident $ty2:ident, $fn_name:literal big $rust_fn:ident) => {
-        binary!($h, $ty1.to_type(), $fn_name, [$ty1.to_type()], |x: &Vec<Value>| Some(
+        binary!($h, $ty1.as_type(), $fn_name, [$ty1.as_type()], |x: &Vec<Value>| Some(
             Value::$ty2(get_param!(x, 0, $ty2).$rust_fn(&get_param!(x, 1, $ty2))?)
         ));
     };
     ($h:ident, $ty1:ident $ty2:ident, $fn_name:literal float $rust_fn:ident) => {
-        binary!($h, $ty1.to_type(), $fn_name, [$ty1.to_type()], |x: &Vec<Value>| Some(
+        binary!($h, $ty1.as_type(), $fn_name, [$ty1.as_type()], |x: &Vec<Value>| Some(
             Value::$ty2(get_param!(x, 0, $ty2).$rust_fn(get_param!(x, 1, $ty2)))
         ));
     }
@@ -193,7 +193,7 @@ macro_rules! comp_opr_num {
         comp_opr_num!($h, $ty1 $ty2, "_le" le);
     }};
     ($h:ident, $ty1:ident $ty2:ident, $fn_name:literal $rust_fn:ident) => {
-        binary!($h, $ty1.to_type(), $fn_name, [$ty1.to_type()], BOOL_T.to_type(), |x: &Vec<Value>| Some(
+        binary!($h, $ty1.as_type(), $fn_name, [$ty1.as_type()], BOOL_T.as_type(), |x: &Vec<Value>| Some(
             Value::Bool(get_param!(x, 0, $ty2).$rust_fn(&get_param!(x, 1, $ty2)))
         ));
     };
@@ -203,10 +203,10 @@ macro_rules! concat_vals {
     ($h:ident, $ty1:ident) => {
         binary!(
             $h,
-            $ty1.to_type(),
+            $ty1.as_type(),
             "_concat",
             [Type::Any],
-            STR_T.to_type(),
+            STR_T.as_type(),
             |x: &Vec<Value>| { Some(Value::Str(format!("{}{}", x[0], x[1]))) }
         );
     };

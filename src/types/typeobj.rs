@@ -78,7 +78,9 @@ impl<T: Clone + PartialEq + Debug> Debug for TypeDefinition<T> {
             f,
             "{} for {} (implementations: {{{}}}; fields: {{{}}})",
             self,
-            self.inst_name.unwrap_or_else(|| "{unknown}".into()),
+            self.inst_name
+                .to_owned()
+                .unwrap_or_else(|| "{unknown}".into()),
             self.implementations.iter().map(|(k, _)| k).join(", "),
             self.inst_fields.iter().map(|(k, _)| k).join(", ")
         )
@@ -165,12 +167,12 @@ impl TypeDefinition<Value> {
 }
 
 impl<T: Clone + PartialEq + Debug> TypeDefinition<T> {
-    pub fn to_type(&self) -> Type<T> {
+    pub fn as_type(&self) -> Type<T> {
         Type::Definition(self.to_owned())
     }
 }
 impl<T: Clone + PartialEq + Debug> TypeInstance<T> {
-    pub fn to_type(&self) -> Type<T> {
+    pub fn as_type(&self) -> Type<T> {
         Type::Instance(self.to_owned())
     }
 }

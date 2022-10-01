@@ -19,16 +19,16 @@ fn proc_t() -> HashMap<SmolStr, Value> {
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            p if p == TYPE_T.to_type() => typecast_to_type!(PROC_T),
-            p if p == STR_T.to_type() => Value::Str(get_param!(x, 0, Proc).to_string()),
+            p if p == TYPE_T.as_type() => typecast_to_type!(PROC_T),
+            p if p == STR_T.as_type() => Value::Str(get_param!(x, 0, Proc).to_string()),
             _ => return None,
         })
     };
     binary!(
         h,
-        PROC_T.to_type(),
+        PROC_T.as_type(),
         "_typecast",
-        [PROC_T.to_type()],
+        [PROC_T.as_type()],
         Type::Any,
         typecast
     );
@@ -42,6 +42,6 @@ lazy_static! {
         inst_name: Some("proc".into()),
         generics: vec![],
         implementations: proc_t(),
-        inst_fields: hashmap! {SmolStr::from("is_fn") => (Box::new(BOOL_T.to_type()), None)},
+        inst_fields: hashmap! {SmolStr::from("is_fn") => (Box::new(BOOL_T.as_type()), None)},
     };
 }

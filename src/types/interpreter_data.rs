@@ -29,29 +29,29 @@ const PRIM_NAMES: [&str; 22] = [
     "u128", "usize", "ubig", "f16", "f32", "f64", "_unit", "_any", "type",
 ];
 lazy_static! {
-    static ref PRIMS: HashMap<&'static str, &'static Type<Value>> = hashmap! {
-        "str" => &STR_T.to_type(),
-        "bool" => &BOOL_T.to_type(),
-        "type" => &TYPE_T.to_type(),
-        "_unit" => &UNIT_T.to_type(),
-        "i8" => &I8_T.to_type(),
-        "i16" => &I16_T.to_type(),
-        "i32" => &I32_T.to_type(),
-        "i64" => &I64_T.to_type(),
-        "i128" => &I128_T.to_type(),
-        "ibig" => &IBIG_T.to_type(),
-        "isize" => &ISIZE_T.to_type(),
-        "u8" => &U8_T.to_type(),
-        "u16" => &U16_T.to_type(),
-        "u32" => &U32_T.to_type(),
-        "u64" => &U64_T.to_type(),
-        "u128" => &U128_T.to_type(),
-        "ubig" => &UBIG_T.to_type(),
-        "usize" => &USIZE_T.to_type(),
-        "f16" => &F16_T.to_type(),
-        "f32" => &F32_T.to_type(),
-        "f64" => &F64_T.to_type(),
-        "_any" => &Type::Any
+    static ref PRIMS: HashMap<&'static str, Type<Value>> = hashmap! {
+        "str" => STR_T.as_type(),
+        "bool" => BOOL_T.as_type(),
+        "type" => TYPE_T.as_type(),
+        "_unit" => UNIT_T.as_type(),
+        "i8" => I8_T.as_type(),
+        "i16" => I16_T.as_type(),
+        "i32" => I32_T.as_type(),
+        "i64" => I64_T.as_type(),
+        "i128" => I128_T.as_type(),
+        "ibig" => IBIG_T.as_type(),
+        "isize" => ISIZE_T.as_type(),
+        "u8" => U8_T.as_type(),
+        "u16" => U16_T.as_type(),
+        "u32" => U32_T.as_type(),
+        "u64" => U64_T.as_type(),
+        "u128" => U128_T.as_type(),
+        "ubig" => UBIG_T.as_type(),
+        "usize" => USIZE_T.as_type(),
+        "f16" => F16_T.as_type(),
+        "f32" => F32_T.as_type(),
+        "f64" => F64_T.as_type(),
+        "_any" => Type::Any
     };
 }
 
@@ -147,7 +147,7 @@ impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
                     .get(t)
                     .unwrap()
                     .implementation()
-                    .to_type()
+                    .as_type()
                     .as_type_element(),
             );
             const_frame

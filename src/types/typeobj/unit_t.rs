@@ -16,10 +16,10 @@ macro_rules! comp_opr_unit {
     ($h:ident, $fn_name:literal, $res:literal) => {
         binary!(
             $h,
-            UNIT_T.to_type(),
+            UNIT_T.as_type(),
             $fn_name,
-            [UNIT_T.to_type()],
-            BOOL_T.to_type(),
+            [UNIT_T.as_type()],
+            BOOL_T.as_type(),
             |x: &Vec<Value>| { Some(Value::Bool($res)) }
         );
     };
@@ -39,16 +39,16 @@ fn unit_t() -> HashMap<SmolStr, Value> {
 
     let typecast = |x: &Vec<Value>| {
         Some(match get_param!(x, 1, Type) {
-            p if p == TYPE_T.to_type() => typecast_to_type!(UNIT_T),
-            p if p == STR_T.to_type() => Value::Str("()".into()),
+            p if p == TYPE_T.as_type() => typecast_to_type!(UNIT_T),
+            p if p == STR_T.as_type() => Value::Str("()".into()),
             _ => return None,
         })
     };
     binary!(
         h,
-        UNIT_T.to_type(),
+        UNIT_T.as_type(),
         "_typecast",
-        [TYPE_T.to_type()],
+        [TYPE_T.as_type()],
         Type::Any,
         typecast
     );
