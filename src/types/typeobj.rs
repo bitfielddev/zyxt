@@ -24,7 +24,7 @@ pub mod usize_t;
 
 use std::{
     collections::HashMap,
-    fmt::{Debug, Display, Formatter},
+    fmt::{rt::v1::Argument, Debug, Display, Formatter},
 };
 
 use itertools::Itertools;
@@ -32,12 +32,9 @@ use smol_str::SmolStr;
 
 use crate::{
     interpreter::interpret_expr,
-    types::{
-        element::{Argument, Element},
-        typeobj::{
-            type_t::{TYPE_T, TYPE_T_ELE},
-            unit_t::{UNIT_T, UNIT_T_ELE},
-        },
+    types::typeobj::{
+        type_t::{TYPE_T, TYPE_T_ELE},
+        unit_t::{UNIT_T, UNIT_T_ELE},
     },
     Element, InterpreterData, Print, Value, ZyxtError,
 };

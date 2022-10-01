@@ -1,10 +1,10 @@
 use crate::{
     types::{
-        element::{call::Call, ident::Ident, Element, ElementData, ElementVariants, PosRaw},
+        element::{call::Call, ident::Ident, Element, ElementData, ElementVariant, PosRaw},
         token::OprType,
         typeobj::bool_t::BOOL_T,
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Value, ZyxtError,
 };
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -15,18 +15,15 @@ pub struct BinaryOpr {
 }
 
 impl ElementData for BinaryOpr {
-    fn as_variant(&self) -> ElementVariants {
-        ElementVariants::BinaryOpr(self.to_owned())
+    fn as_variant(&self) -> ElementVariant {
+        ElementVariant::BinaryOpr(self.to_owned())
     }
 
-    fn is_pattern(&self) -> bool {
-        false
-    }
     fn desugared(
         &self,
         pos_raw: &PosRaw,
         out: &mut impl Print,
-    ) -> Result<ElementVariants, ZyxtError> {
+    ) -> Result<ElementVariant, ZyxtError> {
         Ok(match self.type_ {
             OprType::And | OprType::Or => {
                 let mut new_self = self.to_owned();
@@ -35,7 +32,7 @@ impl ElementData for BinaryOpr {
                         pos_raw: pos_raw.to_owned(),
                         data: Box::new(
                             BinaryOpr {
-                                type_: OprType::Typecast,
+                                type_: OprType::TypeCast,
                                 operand1: operand.desugared(out)?,
                                 operand2: Element {
                                     pos_raw: pos_raw.to_owned(),
@@ -56,7 +53,7 @@ impl ElementData for BinaryOpr {
                 }
                 new_self.as_variant()
             }
-            _ => ElementVariants::Call(Call {
+            _ => ElementVariant::Call(Call {
                 called: Element {
                     pos_raw: pos_raw.to_owned(),
                     data: Box::new(
@@ -94,6 +91,38 @@ impl ElementData for BinaryOpr {
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
-        todo!()
+        match self.type_ {
+            OprType::And => {
+                if let Value::Bool(b) = self.operand1.interpret_expr(i_data)? {
+                    if b {
+                        if let Value::Bool(b) = self.operand2.interpret_expr(i_data)? {
+                            Ok(Value::Bool(b))
+                        } else {
+                            panic!()
+                        }
+                    } else {
+                        Ok(Value::Bool(false))
+                    }
+                } else {
+                    panic!()
+                }
+            }
+            OprType::Or => {
+                if let Value::Bool(b) = self.operand1.interpret_expr(i_data)? {
+                    if !b {
+                        if let Value::Bool(b) = self.operand2.interpret_expr(i_data)? {
+                            Ok(Value::Bool(b))
+                        } else {
+                            panic!()
+                        }
+                    } else {
+                        Ok(Value::Bool(true))
+                    }
+                } else {
+                    panic!()
+                }
+            }
+            opr => panic!("{:?}", opr),
+        }
     }
 }

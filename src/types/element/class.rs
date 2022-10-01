@@ -5,8 +5,8 @@ use smol_str::SmolStr;
 use crate::{
     types::{
         element::{
-            block::Block, ident::Ident, procedure::Argument, Element, ElementData, ElementVariants,
-            PosRaw,
+            block::Block, declare::Declare, ident::Ident, procedure::Argument, Element,
+            ElementData, ElementVariant, PosRaw,
         },
         interpreter_data::FrameType,
         token::Flag,
@@ -25,8 +25,8 @@ pub struct Class {
 }
 
 impl ElementData for Class {
-    fn as_variant(&self) -> ElementVariants {
-        ElementVariants::Class(self.to_owned())
+    fn as_variant(&self) -> ElementVariant {
+        ElementVariant::Class(self.to_owned())
     }
 
     fn process<O: Print>(
@@ -37,13 +37,13 @@ impl ElementData for Class {
         typelist.add_frame(None, FrameType::Normal);
         for expr in self.content.data.content.iter_mut() {
             expr.process(typelist)?;
-            if let Element::Declare {
+            if let ElementVariant::Declare(Declare {
                 variable,
                 content,
                 flags,
                 type_,
                 ..
-            } = expr
+            }) = &*expr.data
             {
                 if flags.contains(&Flag::Inst) && self.args != &None {
                     todo!("raise error here")
@@ -92,15 +92,18 @@ impl ElementData for Class {
         &self,
         pos_raw: &PosRaw,
         out: &mut impl Print,
-    ) -> Result<ElementVariants, ZyxtError> {
+    ) -> Result<ElementVariant, ZyxtError> {
         let mut new_self = self.to_owned();
-        new_self.content.desugared();
+        new_self.content = Element {
+            pos_raw: pos_raw.to_owned(),
+            data: self.content.desugared(out)?.as_block().unwrap(),
+        };
         new_self
             .args
             .map(|args| {
                 args.into_iter()
                     .map(|mut arg| {
-                        arg.desugar(pos_raw)?;
+                        arg.desugar(pos_raw, out)?;
                         Ok(arg)
                     })
                     .collect()
@@ -113,6 +116,34 @@ impl ElementData for Class {
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
-        todo!()
+        Ok(Value::Type(Type::Definition(TypeDefinition {
+            name: Some(if self.is_struct { "struct" } else { "class" }.into()),
+            inst_name: None,
+            generics: vec![],
+            implementations: self
+                .implementations
+                .iter()
+                .map(|(k, v)| Ok((k.to_owned(), v.interpret_expr(i_data)?)))
+                .collect::<Result<HashMap<_, _>, _>>()?,
+            inst_fields: self
+                .inst_fields
+                .iter()
+                .map(|(k, (v1, v2))| {
+                    Ok((
+                        k.to_owned(),
+                        (
+                            Box::new(if let Value::Type(value) = v1.interpret_expr(i_data)? {
+                                value
+                            } else {
+                                panic!()
+                            }),
+                            v2.to_owned()
+                                .map(|v2| v2.interpret_expr(i_data))
+                                .transpose()?,
+                        ),
+                    ))
+                })
+                .collect::<Result<HashMap<_, _>, _>>()?,
+        })))
     }
 }

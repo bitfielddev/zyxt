@@ -1,7 +1,7 @@
 use smol_str::SmolStr;
 
 use crate::{
-    types::element::{Element, ElementData, ElementVariants, PosRaw},
+    types::element::{Element, ElementData, ElementVariant, PosRaw},
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
@@ -12,8 +12,8 @@ pub struct Ident {
 }
 
 impl ElementData for Ident {
-    fn as_variant(&self) -> ElementVariants {
-        ElementVariants::Ident(self.to_owned())
+    fn as_variant(&self) -> ElementVariant {
+        ElementVariant::Ident(self.to_owned())
     }
 
     fn is_pattern(&self) -> bool {
@@ -27,10 +27,20 @@ impl ElementData for Ident {
         typelist.get_val(&self.name, pos_raw)
     }
 
+    fn desugared(
+        &self,
+        _pos_raw: &PosRaw,
+        out: &mut impl Print,
+    ) -> Result<ElementVariant, ZyxtError> {
+        let mut new_self = self.to_owned();
+        new_self.parent = new_self.parent.map(|a| a.desugared(out)).transpose()?;
+        Ok(new_self.as_variant())
+    }
+
     fn interpret_expr<O: Print>(
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
-        todo!()
+        i_data.get_val(&self.name, Default::default()) // TODO
     }
 }

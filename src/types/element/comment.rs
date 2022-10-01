@@ -1,8 +1,8 @@
 use smol_str::SmolStr;
 
 use crate::{
-    types::element::{Element, ElementData, ElementVariants},
-    InterpreterData, Print, Type, Value, ZyxtError,
+    types::element::{ElementData, ElementVariant},
+    Type, Value, ZyxtError,
 };
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -11,7 +11,7 @@ pub struct Comment {
 }
 
 impl ElementData for Comment {
-    fn as_variant(&self) -> ElementVariants {
-        ElementVariants::Comment(self.to_owned())
+    fn as_variant(&self) -> ElementVariant {
+        ElementVariant::Comment(self.to_owned())
     }
 }

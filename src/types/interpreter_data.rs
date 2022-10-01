@@ -8,9 +8,8 @@ use maplit::hashmap;
 use smol_str::SmolStr;
 
 use crate::{
-    interpreter::interpret_block,
     types::{
-        element::PosRaw,
+        element::{block::Block, PosRaw},
         errors::ZyxtError,
         position::Position,
         printer::Print,
@@ -22,6 +21,7 @@ use crate::{
         },
         value::Value,
     },
+    Element,
 };
 
 const PRIM_NAMES: [&str; 22] = [
@@ -72,7 +72,7 @@ pub enum FrameType {
 #[derive(Debug)]
 pub struct Frame<T: Clone + Display + Debug> {
     pub heap: HashMap<SmolStr, T>,
-    pub defer: Vec<Vec<Element>>,
+    pub defer: Vec<Element<Block>>,
     pub frame_data: Option<FrameData<T>>,
     pub typedefs: HashMap<SmolStr, Type<Element>>,
     pub ty: FrameType,
@@ -114,7 +114,7 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
     }
     pub fn pop_frame(&mut self) -> Result<Option<Value>, ZyxtError> {
         for content in self.frames.front_mut().unwrap().defer.clone() {
-            if let Value::Return(v) = interpret_block(&content, self, false, false)? {
+            if let Value::Return(v) = content.data.interpret_block(self, false, false)? {
                 self.frames.pop_front();
                 return Ok(Some(*v));
             }
@@ -226,7 +226,7 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
             Err(ZyxtError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
         }
     }
-    pub fn add_defer(&mut self, content: Vec<Element>) {
+    pub fn add_defer(&mut self, content: Element<Block>) {
         self.frames.front_mut().unwrap().defer.push(content);
     }
 }

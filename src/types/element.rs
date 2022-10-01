@@ -1,19 +1,19 @@
-mod binary_opr;
-mod block;
-mod call;
-mod class;
-mod comment;
-mod declare;
-mod defer;
-mod delete;
-mod ident;
-mod r#if;
-mod literal;
-mod preprocess;
-mod procedure;
-mod r#return;
-mod set;
-mod unary_opr;
+pub mod binary_opr;
+pub mod block;
+pub mod call;
+pub mod class;
+pub mod comment;
+pub mod declare;
+pub mod defer;
+pub mod delete;
+pub mod ident;
+pub mod r#if;
+pub mod literal;
+pub mod preprocess;
+pub mod procedure;
+pub mod r#return;
+pub mod set;
+pub mod unary_opr;
 
 use std::{
     collections::HashMap,
@@ -49,7 +49,7 @@ pub struct PosRaw {
 }
 
 pub trait ElementData: Clone + PartialEq + Eq + Debug {
-    fn as_variant(&self) -> ElementVariants;
+    fn as_variant(&self) -> ElementVariant;
     fn is_pattern(&self) -> bool {
         false
     }
@@ -64,7 +64,7 @@ pub trait ElementData: Clone + PartialEq + Eq + Debug {
         &self,
         _pos_raw: &PosRaw,
         _out: &mut impl Print,
-    ) -> Result<ElementVariants, ZyxtError> {
+    ) -> Result<ElementVariant, ZyxtError> {
         Ok(self.as_variant())
     }
     fn interpret_expr<O: Print>(
@@ -76,30 +76,30 @@ pub trait ElementData: Clone + PartialEq + Eq + Debug {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Element<V: ElementData = ElementVariants> {
+pub struct Element<V: ElementData = ElementVariant> {
     pub pos_raw: PosRaw,
     pub data: Box<V>,
 }
-impl Element {
-    fn as_variant(&self) -> Element {
+impl<V: ElementData> Element<V> {
+    pub fn as_variant(&self) -> Element {
         self.to_owned()
     }
-    fn is_pattern(&self) -> bool {
+    pub fn is_pattern(&self) -> bool {
         self.data.is_pattern()
     }
-    fn process<O: Print>(
+    pub fn process<O: Print>(
         &mut self,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> Result<Type<Element>, ZyxtError> {
         self.data.process(typelist)
     }
-    fn desugared(&self, out: &mut impl Print) -> Result<Element, ZyxtError> {
+    pub fn desugared(&self, out: &mut impl Print) -> Result<Element, ZyxtError> {
         Element {
             pos_raw: self.pos_raw.to_owned(),
             data: *self.data.desugared(&self.pos_raw, out)?,
         }
     }
-    fn interpret_expr<O: Print>(
+    pub fn interpret_expr<O: Print>(
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
@@ -131,7 +131,7 @@ macro_rules! for_all_variants {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, EnumAsInner)]
-pub enum ElementVariants {
+pub enum ElementVariant {
     Comment(Comment),
     Call(Call),
     UnaryOpr(UnaryOpr),
@@ -149,8 +149,8 @@ pub enum ElementVariants {
     Defer(Defer),
     Class(Class),
 }
-impl ElementData for ElementVariants {
-    fn as_variant(&self) -> ElementVariants {
+impl ElementData for ElementVariant {
+    fn as_variant(&self) -> ElementVariant {
         self.to_owned()
     }
     fn is_pattern(&self) -> bool {
@@ -167,7 +167,7 @@ impl ElementData for ElementVariants {
         &self,
         pos_raw: &PosRaw,
         out: &mut impl Print,
-    ) -> Result<ElementVariants, ZyxtError> {
+    ) -> Result<ElementVariant, ZyxtError> {
         for_all_variants!(self, desugared, pos_raw, out)
     }
     fn interpret_expr<O: Print>(

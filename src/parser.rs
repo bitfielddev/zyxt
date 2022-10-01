@@ -4,7 +4,10 @@ use num::BigInt;
 
 use crate::{
     types::{
-        element::{Argument, Condition, Element, VecElementRaw},
+        element::{
+            block::Block, procedure::Argument, r#if::Condition, Element, ElementVariant,
+            VecElementRaw,
+        },
         errors::ZyxtError,
         token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
         value::Value,
@@ -387,11 +390,10 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>) -> Result<Vec<Elemen
                     check_and_update_cursor!(cursor, selected, elements);
                 }
                 let mut content = vec![];
-                if let Element::Block {
+                if let ElementVariant::Block(Block {
                     content: block_content,
-                    raw: block_raw,
                     ..
-                } = selected
+                }) = selected.data
                 {
                     content = block_content.to_owned();
                     raw = format!("{}{}", raw, block_raw);

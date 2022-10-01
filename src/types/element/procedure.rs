@@ -4,9 +4,10 @@ use smol_str::SmolStr;
 
 use crate::{
     types::{
-        element::{block::Block, ident::Ident, Element, ElementData, ElementVariants, PosRaw},
+        element::{block::Block, ident::Ident, Element, ElementData, ElementVariant, PosRaw},
         interpreter_data::FrameType,
         typeobj::{proc_t::PROC_T, unit_t::UNIT_T, TypeInstance},
+        value::Proc,
     },
     InterpreterData, Print, Type, Value, ZyxtError,
 };
@@ -37,7 +38,7 @@ impl Display for Argument {
     }
 }
 impl Argument {
-    pub fn desugar(&mut self, pos_raw: &PosRaw, out: &mut impl Print) -> Result<(), ZyxtError> {
+    pub fn desugar(&mut self, _pos_raw: &PosRaw, out: &mut impl Print) -> Result<(), ZyxtError> {
         self.default = self.default.map(|e| e.desugared(out)).transpose()?;
         Ok(())
     }
@@ -52,8 +53,8 @@ pub struct Procedure {
 }
 
 impl ElementData for Procedure {
-    fn as_variant(&self) -> ElementVariants {
-        ElementVariants::Procedure(self.to_owned())
+    fn as_variant(&self) -> ElementVariant {
+        ElementVariant::Procedure(self.to_owned())
     }
 
     fn process<O: Print>(
@@ -97,7 +98,7 @@ impl ElementData for Procedure {
         &self,
         _pos_raw: &PosRaw,
         out: &mut impl Print,
-    ) -> Result<ElementVariants, ZyxtError> {
+    ) -> Result<ElementVariant, ZyxtError> {
         let mut new_self = self.to_owned();
         new_self.args = self
             .args
@@ -107,7 +108,10 @@ impl ElementData for Procedure {
                 Ok(a)
             })
             .collect()?;
-        new_self.content = self.content.desugared(out);
+        new_self.content = Element {
+            pos_raw: self.content.pos_raw.to_owned(),
+            data: self.content.desugared(out)?.as_block().unwrap(),
+        };
         Ok(new_self.as_variant())
     }
 
@@ -115,6 +119,15 @@ impl ElementData for Procedure {
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
-        todo!()
+        Ok(Value::Proc(Proc::Defined {
+            is_fn: self.is_fn,
+            args: self.args.to_owned(),
+            return_type: if let Value::Type(value) = self.return_type.interpret_expr(i_data)? {
+                value
+            } else {
+                panic!("{:#?}", self)
+            },
+            content: self.content.to_owned(),
+        }))
     }
 }

@@ -1,6 +1,6 @@
 use crate::{
     types::{
-        element::{Element, ElementData, ElementVariants, PosRaw},
+        element::{Element, ElementData, ElementVariant, PosRaw},
         interpreter_data::FrameType,
         typeobj::unit_t::UNIT_T,
     },
@@ -13,8 +13,8 @@ pub struct Block {
 }
 
 impl ElementData for Block {
-    fn as_variant(&self) -> ElementVariants {
-        todo!()
+    fn as_variant(&self) -> ElementVariant {
+        ElementVariant::Block(self.to_owned())
     }
 
     fn process<O: Print>(
@@ -22,16 +22,16 @@ impl ElementData for Block {
         _pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> Result<Type<Element>, ZyxtError> {
-        Ok(self.data.block_type(typelist, true)?.0)
+        Ok(self.block_type(typelist, true)?.0)
     }
 
     fn desugared(
         &self,
         _pos_raw: &PosRaw,
         out: &mut impl Print,
-    ) -> Result<ElementVariants, ZyxtError> {
-        Ok(ElementVariants::Block(Self {
-            content: self.content.iter().map(|c| c.desugared(_pos_raw)).collect(),
+    ) -> Result<ElementVariant, ZyxtError> {
+        Ok(ElementVariant::Block(Self {
+            content: self.content.iter().map(|c| c.desugared(out)).collect(),
         }))
     }
 
@@ -39,7 +39,7 @@ impl ElementData for Block {
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
-        todo!()
+        self.interpret_block(i_data, true, true)
     }
 }
 impl Block {
@@ -75,5 +75,51 @@ impl Block {
             typelist.pop_frame();
         }
         Ok((last, if add_set { None } else { return_type }))
+    }
+    pub fn interpret_block<O: Print>(
+        &self,
+        i_data: &mut InterpreterData<Value, O>,
+        returnable: bool,
+        add_frame: bool,
+    ) -> Result<Value, ZyxtError> {
+        let mut last = Value::Unit;
+
+        macro_rules! pop {
+            () => {
+                if add_frame {
+                    let res = i_data.pop_frame()?;
+                    if let Some(res) = res {
+                        return Ok(res);
+                    }
+                }
+            };
+        }
+
+        if add_frame {
+            i_data.add_frame(None, FrameType::Normal);
+        }
+        for ele in self.content {
+            if let ElementVariant::Return(r#return) = &ele.data {
+                if returnable {
+                    last = r#return.value.interpret_expr(i_data)?
+                } else {
+                    last = ele.interpret_expr(i_data)?;
+                }
+                pop!();
+                return Ok(last);
+            } else {
+                last = ele.interpret_expr(i_data)?;
+                if let Value::Return(value) = last {
+                    pop!();
+                    return if returnable {
+                        Ok(*value)
+                    } else {
+                        Ok(Value::Return(value))
+                    };
+                }
+            }
+        }
+        pop!();
+        Ok(last)
     }
 }

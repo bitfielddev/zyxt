@@ -4,7 +4,11 @@ use smol_str::SmolStr;
 
 use crate::{
     types::{
-        element::{ident::Ident, literal::Literal, Element, ElementData, ElementVariants, PosRaw},
+        element::{
+            ident::Ident, literal::Literal, procedure::Argument, Element, ElementData,
+            ElementVariant, PosRaw,
+        },
+        interpreter_data::{FrameData, FrameType},
         typeobj::{unit_t::UNIT_T, TypeDefinition, TypeInstance},
         value::Proc,
     },
@@ -19,8 +23,8 @@ pub struct Call {
 }
 
 impl ElementData for Call {
-    fn as_variant(&self) -> ElementVariants {
-        ElementVariants::Call(self.to_owned())
+    fn as_variant(&self) -> ElementVariant {
+        ElementVariant::Call(self.to_owned())
     }
     fn process<O: Print>(
         &mut self,
@@ -118,7 +122,7 @@ impl ElementData for Call {
         &self,
         _pos_raw: &PosRaw,
         out: &mut impl Print,
-    ) -> Result<ElementVariants, ZyxtError> {
+    ) -> Result<ElementVariant, ZyxtError> {
         todo!()
     }
 
@@ -126,6 +130,83 @@ impl ElementData for Call {
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
-        todo!()
+        if let ElementVariant::Ident(Ident {
+            name,
+            parent:
+                Some(Element {
+                    data:
+                        ElementVariant::Ident(Ident {
+                            name: parent_name, ..
+                        }),
+                    ..
+                }),
+        }) = &self.called.data
+        {
+            if *name == "out" && parent_name == *"ter" {
+                let s = self
+                    .args
+                    .iter()
+                    .map(|arg| arg.interpret_expr(i_data))
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<String>>()
+                    .join(" ");
+                i_data.out.println(s);
+                return Ok(Value::Unit);
+            }
+        }
+        if let Value::Proc(proc) = self.called.interpret_expr(i_data)? {
+            match proc {
+                Proc::Builtin { f, .. } => {
+                    let processed_args = self
+                        .args
+                        .iter()
+                        .map(|a| a.interpret_expr(i_data))
+                        .collect::<Result<Vec<_>, _>>()?;
+                    if let Some(v) = f(&processed_args) {
+                        Ok(v)
+                    } else {
+                        todo!()
+                    }
+                }
+                Proc::Defined {
+                    is_fn,
+                    args,
+                    content,
+                    ..
+                } => {
+                    let mut processed_args = HashMap::new();
+                    for (cursor, Argument { name, default, .. }) in args.iter().enumerate() {
+                        let input_arg = if self.args.len() > cursor {
+                            self.args.get(cursor).unwrap()
+                        } else {
+                            default.as_ref().unwrap()
+                        };
+                        processed_args.insert(name.to_owned(), input_arg.interpret_expr(i_data)?);
+                    }
+                    i_data
+                        .add_frame(
+                            Some(FrameData {
+                                position: Default::default(), // TODO
+                                raw_call: Default::default(),
+                                args: processed_args.to_owned(),
+                            }),
+                            if is_fn {
+                                FrameType::Function
+                            } else {
+                                FrameType::Normal
+                            },
+                        )
+                        .heap
+                        .extend(processed_args);
+                    let res = content.data.interpret_block(i_data, true, false);
+                    i_data.pop_frame()?;
+                    res
+                }
+            }
+        } else {
+            panic!()
+        }
     }
 }

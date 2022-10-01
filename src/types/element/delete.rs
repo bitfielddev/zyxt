@@ -1,6 +1,6 @@
 use crate::{
     types::{
-        element::{ident::Ident, Element, ElementData, ElementVariants, PosRaw},
+        element::{ident::Ident, Element, ElementData, ElementVariant, PosRaw},
         typeobj::unit_t::UNIT_T,
     },
     InterpreterData, Print, Type, Value, ZyxtError,
@@ -12,8 +12,8 @@ pub struct Delete {
 }
 
 impl ElementData for Delete {
-    fn as_variant(&self) -> ElementVariants {
-        ElementVariants::Delete(self.to_owned())
+    fn as_variant(&self) -> ElementVariant {
+        ElementVariant::Delete(self.to_owned())
     }
 
     fn process<O: Print>(
@@ -21,13 +21,16 @@ impl ElementData for Delete {
         _pos_raw: &PosRaw,
         _typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> Result<Type<Element>, ZyxtError> {
-        Ok(UNIT_T.as_type().as_type_element())
+        Ok(UNIT_T.get_instance().as_type().as_type_element())
     }
 
     fn interpret_expr<O: Print>(
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
-        todo!()
+        for name in &self.names {
+            i_data.delete_val(&name.data.name, Default::default())?; // TODO
+        }
+        Ok(Value::Unit)
     }
 }
