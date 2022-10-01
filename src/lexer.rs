@@ -21,7 +21,7 @@ fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
     let mut whitespace_stack: SmolStr = "".into();
 
     for mut t in input {
-        if t.type_ != TokenType::Whitespace {
+        if t.type_ != Some(TokenType::Whitespace) {
             t.whitespace = whitespace_stack.to_owned();
             whitespace_stack = "".into();
             out.push(t);
@@ -94,7 +94,7 @@ impl Lexer for TextLiteralLexer {
             if char == "\"" {
                 raw.push('"');
                 tokens.push(Token {
-                    type_: TokenType::LiteralString,
+                    type_: Some(TokenType::LiteralString),
                     value: raw.into(),
                     position: pos,
                     ..Default::default()
@@ -140,7 +140,7 @@ impl Lexer for WordLexer {
                 iter.next().unwrap();
             } else {
                 tokens.push(Token {
-                    type_: match raw.as_str() {
+                    type_: Some(match raw.as_str() {
                         "true" => TokenType::LiteralMisc,
                         "false" => TokenType::LiteralMisc,
                         "if" => TokenType::Keyword(Keyword::If),
@@ -158,7 +158,7 @@ impl Lexer for WordLexer {
                         "class" => TokenType::Keyword(Keyword::Class),
                         "struct" => TokenType::Keyword(Keyword::Struct),
                         _ => TokenType::Ident,
-                    },
+                    }),
                     value: raw.into(),
                     position: pos,
                     ..Default::default()
@@ -190,7 +190,7 @@ impl Lexer for NumberLexer {
                 iter.next().unwrap();
             } else {
                 tokens.push(Token {
-                    type_: TokenType::LiteralNumber,
+                    type_: Some(TokenType::LiteralNumber),
                     value: raw.into(),
                     position: pos,
                     ..Default::default()
@@ -282,7 +282,7 @@ impl Lexer for WhitespaceLexer {
                 iter.next().unwrap();
             } else {
                 tokens.push(Token {
-                    type_: TokenType::Whitespace,
+                    type_: Some(TokenType::Whitespace),
                     value: raw.into(),
                     position: pos,
                     ..Default::default()
@@ -313,7 +313,7 @@ impl Lexer for MainLexer {
             } else {
                 let mut char = iter.next().unwrap().0.to_string();
                 tokens.push(Token {
-                    type_: match char.as_str() {
+                    type_: Some(match char.as_str() {
                         "+" => match iter.peek().as_mut() {
                             Some(("=", _)) => {
                                 iter.next().unwrap();
@@ -368,7 +368,7 @@ impl Lexer for MainLexer {
                             Some(("*", _)) => {
                                 iter.next().unwrap();
                                 tokens.push(Token {
-                                    type_: TokenType::Comment,
+                                    type_: Some(TokenType::Comment),
                                     value: "/*".into(),
                                     position: pos,
                                     ..Default::default()
@@ -378,7 +378,7 @@ impl Lexer for MainLexer {
                             Some(("/", _)) => {
                                 iter.next().unwrap();
                                 tokens.push(Token {
-                                    type_: TokenType::Comment,
+                                    type_: Some(TokenType::Comment),
                                     value: "//".into(),
                                     position: pos,
                                     ..Default::default()
@@ -485,7 +485,7 @@ impl Lexer for MainLexer {
                             return Err(ZyxtError::error_2_1_1(char.to_owned())
                                 .with_pos_and_raw(&pos, &char.to_string()))
                         }
-                    },
+                    }),
                     value: char.into(),
                     position: pos.to_owned(),
                     ..Default::default()

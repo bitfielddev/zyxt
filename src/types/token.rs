@@ -7,7 +7,7 @@ use crate::types::position::Position;
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Token {
     pub value: SmolStr,
-    pub type_: TokenType,
+    pub type_: Option<TokenType>,
     pub position: Position,
     pub whitespace: SmolStr,
 }
@@ -15,7 +15,7 @@ impl Default for Token {
     fn default() -> Self {
         Token {
             value: "".into(),
-            type_: TokenType::Null,
+            type_: None,
             position: Position {
                 ..Default::default()
             },
@@ -204,7 +204,6 @@ pub enum TokenType {
     Comment,
     Ident,
     Whitespace,
-    Null,
 }
 impl TokenType {
     pub fn categories(&self) -> Vec<TokenCategory> {
@@ -257,7 +256,7 @@ impl TokenType {
                 TokenCategory::ValueStart,
                 TokenCategory::ValueEnd,
             ],
-            TokenType::Null | TokenType::Comma => vec![],
+            TokenType::Comma => vec![],
             _ => todo!("{:?}", self),
         }
     }
