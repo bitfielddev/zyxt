@@ -1,12 +1,16 @@
+mod buffer;
+
 use std::{cmp::min, collections::HashMap};
 
+use itertools::Either;
 use num::BigInt;
 
 use crate::{
+    parser::buffer::{Buffer, BufferWindow},
     types::{
         element::{
-            block::Block, ident::Ident, procedure::Argument, r#if::Condition, Element, ElementData,
-            ElementVariant, VecElementRaw,
+            block::Block, comment::Comment, ident::Ident, procedure::Argument, r#if::Condition,
+            Element, ElementData, ElementVariant, PosRaw, VecElementRaw,
         },
         errors::ZyxtError,
         token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
@@ -1272,16 +1276,55 @@ fn parse_block(input: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
     )
 }
 
+impl<'a> Buffer<'a> {
+    fn parse_as_file(&mut self) -> Result<(), ZyxtError> {
+        let mut buffers = self.get_split_between(
+            TokenType::OpenCurlyParen,
+            TokenType::CloseCurlyParen,
+            TokenType::StatementEnd,
+            false,
+        )?;
+        buffers.with_as_buffers(&|b| {
+            b.parse_as_expr()?;
+            Ok(b)
+        })?;
+        self.splice_buffers(buffers);
+        Ok(())
+    }
+    fn parse_as_block(&mut self) -> Result<(), ZyxtError> {
+        let mut buffers = self.get_split_between(
+            TokenType::OpenCurlyParen,
+            TokenType::CloseCurlyParen,
+            TokenType::StatementEnd,
+            true,
+        )?;
+        buffers.with_as_buffers(&|b| {
+            b.parse_as_expr()?;
+            Ok(b)
+        })?;
+        self.splice_buffers(buffers);
+        Ok(())
+    }
+    fn parse_as_expr(&mut self) -> Result<(), ZyxtError> {
+
+        Ok(())
+    }
+}
+
 pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError> {
-    let mut comments: Vec<Element> = vec![];
+    let mut comments: Vec<Element<Comment>> = vec![];
 
     // detect & remove comments
     for token in input.iter() {
         if token.ty == Some(TokenType::Comment) {
-            comments.push(Element::Comment {
-                position: token.position.to_owned(),
-                raw: token.pos_raw.raw,
-                content: token.value.to_owned(),
+            comments.push(Element {
+                pos_raw: PosRaw {
+                    position: token.position.to_owned(),
+                    raw: token.get_raw().into(),
+                },
+                data: Box::new(Comment {
+                    content: token.value.to_owned(),
+                }),
             })
         } else if [
             Some(TokenType::CommentStart),
@@ -1297,11 +1340,16 @@ pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError
 
     input.retain(|token| token.ty != Some(TokenType::Comment));
 
-    // generate and return an AST for each expression
-    parse_block(
-        input
-            .into_iter()
-            .map(Element::Token)
-            .collect::<Vec<Element>>(),
-    )
+    let buffer = Buffer::new(input);
+    buffer
+        .content
+        .into_iter()
+        .map(|e| {
+            if let Either::Left(e) = e {
+                Ok(e.to_owned())
+            } else {
+                todo!()
+            }
+        })
+        .collect::<Result<Vec<_>, ZyxtError>>()
 }

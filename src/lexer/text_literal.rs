@@ -9,7 +9,7 @@ pub fn lex_text_literal(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<()
     let mut raw = "\"".to_string();
     let pos = iter.peek().ok_or_else(|| todo!())?.1;
     while let Some((char, _)) = iter.next() {
-        if char == "\"" {
+        if *char == "\"" {
             raw.push('"');
             tokens.push(Token {
                 ty: Some(TokenType::LiteralString),
@@ -18,9 +18,9 @@ pub fn lex_text_literal(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<()
                 ..Default::default()
             });
             return Ok(());
-        } else if char == "\\" {
+        } else if *char == "\\" {
             if let Some((char, _)) = iter.next() {
-                let new_str = match char {
+                let new_str = match *char {
                     "\"" => "\"",
                     "\\" => "\\",
                     "n" => "\n",

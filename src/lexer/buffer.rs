@@ -8,18 +8,6 @@ pub struct Buffer<'a> {
     cursor: usize,
     started: bool,
 }
-impl<'a> Iterator for Buffer<'a> {
-    type Item = (&'a str, Position);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.started {
-            self.cursor += 1;
-        } else {
-            self.started = true;
-        }
-        self.content.get(self.cursor).cloned()
-    }
-}
 impl<'a> Buffer<'a> {
     pub fn new(input: &'a String, mut pos: Position) -> Self {
         Self {
@@ -34,6 +22,14 @@ impl<'a> Buffer<'a> {
             cursor: 0,
             started: false,
         }
+    }
+    pub fn next(&mut self) -> Option<&(&'a str, Position)> {
+        if self.started {
+            self.cursor += 1;
+        } else {
+            self.started = true;
+        }
+        self.content.get(self.cursor)
     }
     pub fn peek(&self) -> Option<(&str, Position)> {
         self.content

@@ -39,5 +39,5 @@ pub fn lex_word(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), ZyxtEr
             return Ok(());
         }
     }
-    Ok()
+    Ok(())
 }

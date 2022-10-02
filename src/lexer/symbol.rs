@@ -11,9 +11,10 @@ use crate::{
 };
 
 pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), ZyxtError> {
-    let (mut char, pos) = iter.next().unwrap();
+    let (char, pos) = iter.next().unwrap();
+    let mut char = char.to_string();
     tokens.push(Token {
-        ty: Some(match char {
+        ty: Some(match &*char {
             "+" => match iter.peek().as_mut() {
                 Some(("=", _)) => {
                     iter.next().unwrap();
@@ -70,7 +71,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), Zyxt
                     tokens.push(Token {
                         ty: Some(TokenType::Comment),
                         value: "/*".into(),
-                        position: pos,
+                        position: pos.to_owned(),
                         ..Default::default()
                     });
                     lex_block_comment(iter, tokens)?;
@@ -81,7 +82,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), Zyxt
                     tokens.push(Token {
                         ty: Some(TokenType::Comment),
                         value: "//".into(),
-                        position: pos,
+                        position: pos.to_owned(),
                         ..Default::default()
                     });
                     lex_line_comment(iter, tokens)?;
@@ -186,7 +187,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), Zyxt
             _ => {
                 return Err(
                     ZyxtError::error_2_1_1(char.to_owned()).with_pos_raw(&PosRaw {
-                        position: pos,
+                        position: pos.to_owned(),
                         raw: char.into(),
                     }),
                 )
