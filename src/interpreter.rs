@@ -1,13 +1,11 @@
 use crate::{
     types::{
         element::{block::Block, Element},
-        interpreter_data::{FrameType, InterpreterData},
+        interpreter_data::InterpreterData,
         printer::Print,
-        token::OprType,
-        typeobj::TypeDefinition,
-        value::{Proc, Value},
+        value::Value,
     },
-    Type, ZyxtError,
+    ZyxtError,
 };
 
 pub fn interpret_asts<O: Print>(
@@ -24,9 +22,9 @@ pub fn interpret_asts<O: Print>(
     if last == Value::Unit {
         last == Value::I32(0);
     }
-    return if let Value::I32(v) = *last {
+    return if let Value::I32(v) = last {
         Ok(v)
     } else {
-        Err(ZyxtError::error_4_2(*last).with_pos_raw(Default::default())) // TODO
+        Err(ZyxtError::error_4_2(last).with_pos_raw(Default::default())) // TODO
     };
 }

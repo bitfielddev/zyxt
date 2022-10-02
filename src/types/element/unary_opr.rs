@@ -3,7 +3,7 @@ use crate::{
         element::{call::Call, ident::Ident, Element, ElementData, ElementVariant, PosRaw},
         token::OprType,
     },
-    InterpreterData, Print, Value, ZyxtError,
+    Print, Value, ZyxtError,
 };
 
 #[derive(Clone, PartialEq, Eq, Debug)]

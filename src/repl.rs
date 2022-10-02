@@ -7,7 +7,6 @@ use rustyline::{error::ReadlineError, Editor};
 
 use crate::{
     compile,
-    interpreter::interpret_expr,
     types::{interpreter_data::InterpreterData, printer::StdIoPrint, value::Value},
     Element, Type, ZyxtError,
 };
@@ -74,10 +73,10 @@ pub fn repl(verbosity: u8) {
                 for (i, instr) in instructions.into_iter().enumerate() {
                     match {
                         if verbosity == 0 {
-                            interpret_expr(&instr, &mut varlist)
+                            instr.interpret_expr(&mut varlist)
                         } else {
                             let interpret_start = Instant::now();
-                            let result = interpret_expr(&instr, &mut varlist);
+                            let result = instr.interpret_expr(&mut varlist);
                             let interpret_time = interpret_start.elapsed().as_micros();
                             println!("{}", White.dimmed().paint(format!("{}µs", interpret_time)));
                             result

@@ -83,7 +83,7 @@ impl ElementData for BinaryOpr {
                 args: vec![self.operand2.desugared(out)?],
                 kwargs: Default::default(),
             })
-            .desugared(pos_raw, out),
+            .desugared(pos_raw, out)?,
         })
     }
 

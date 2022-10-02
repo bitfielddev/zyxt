@@ -15,34 +15,28 @@ pub mod r#return;
 pub mod set;
 pub mod unary_opr;
 
-use std::{
-    collections::HashMap,
-    fmt::{Debug, Display, Formatter},
-};
+use std::fmt::{Debug, Display, Formatter};
 
 use enum_as_inner::EnumAsInner;
 use smol_str::SmolStr;
 
-use crate::{
-    instructor::Process,
-    types::{
-        element::{
-            binary_opr::BinaryOpr, block::Block, call::Call, class::Class, comment::Comment,
-            declare::Declare, defer::Defer, delete::Delete, ident::Ident, literal::Literal,
-            preprocess::Preprocess, procedure::Procedure, r#if::If, r#return::Return, set::Set,
-            unary_opr::UnaryOpr,
-        },
-        errors::ZyxtError,
-        interpreter_data::{FrameType, InterpreterData},
-        position::Position,
-        printer::Print,
-        token::{Flag, OprType, Token},
-        typeobj::{unit_t::UNIT_T, Type},
-        value::Value,
+use crate::types::{
+    element::{
+        binary_opr::BinaryOpr, block::Block, call::Call, class::Class, comment::Comment,
+        declare::Declare, defer::Defer, delete::Delete, ident::Ident, literal::Literal,
+        preprocess::Preprocess, procedure::Procedure, r#if::If, r#return::Return, set::Set,
+        unary_opr::UnaryOpr,
     },
+    errors::ZyxtError,
+    interpreter_data::InterpreterData,
+    position::Position,
+    printer::Print,
+    token::{OprType, Token},
+    typeobj::{unit_t::UNIT_T, Type},
+    value::Value,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub struct PosRaw {
     pub position: Position,
     pub raw: SmolStr,
@@ -110,22 +104,22 @@ impl<V: ElementData> Element<V> {
 macro_rules! for_all_variants {
     ($self:ident, $f:ident $(, $args:tt)*) => {
         match &$self {
-            ElementVariants::Comment(v) => v.$f($($args,)*),
-            ElementVariants::Call(v) => v.$f($($args,)*),
-            ElementVariants::UnaryOpr(v) => v.$f($($args,)*),
-            ElementVariants::BinaryOpr(v) => v.$f($($args,)*),
-            ElementVariants::Declare(v) => v.$f($($args,)*),
-            ElementVariants::Set(v) => v.$f($($args,)*),
-            ElementVariants::Literal(v) => v.$f($($args,)*),
-            ElementVariants::Ident(v) => v.$f($($args,)*),
-            ElementVariants::If(v) => v.$f($($args,)*),
-            ElementVariants::Block(v) => v.$f($($args,)*),
-            ElementVariants::Delete(v) => v.$f($($args,)*),
-            ElementVariants::Return(v) => v.$f($($args,)*),
-            ElementVariants::Procedure(v) => v.$f($($args,)*),
-            ElementVariants::Preprocess(v) => v.$f($($args,)*),
-            ElementVariants::Defer(v) => v.$f($($args,)*),
-            ElementVariants::Class(v) => v.$f($($args,)*),
+            ElementVariant::Comment(v) => v.$f($($args,)*),
+            ElementVariant::Call(v) => v.$f($($args,)*),
+            ElementVariant::UnaryOpr(v) => v.$f($($args,)*),
+            ElementVariant::BinaryOpr(v) => v.$f($($args,)*),
+            ElementVariant::Declare(v) => v.$f($($args,)*),
+            ElementVariant::Set(v) => v.$f($($args,)*),
+            ElementVariant::Literal(v) => v.$f($($args,)*),
+            ElementVariant::Ident(v) => v.$f($($args,)*),
+            ElementVariant::If(v) => v.$f($($args,)*),
+            ElementVariant::Block(v) => v.$f($($args,)*),
+            ElementVariant::Delete(v) => v.$f($($args,)*),
+            ElementVariant::Return(v) => v.$f($($args,)*),
+            ElementVariant::Procedure(v) => v.$f($($args,)*),
+            ElementVariant::Preprocess(v) => v.$f($($args,)*),
+            ElementVariant::Defer(v) => v.$f($($args,)*),
+            ElementVariant::Class(v) => v.$f($($args,)*),
         }
     }
 }

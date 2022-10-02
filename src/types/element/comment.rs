@@ -1,9 +1,6 @@
 use smol_str::SmolStr;
 
-use crate::{
-    types::element::{ElementData, ElementVariant},
-    Type, Value, ZyxtError,
-};
+use crate::types::element::{ElementData, ElementVariant};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Comment {

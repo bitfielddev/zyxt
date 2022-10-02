@@ -1,5 +1,3 @@
-use smol_str::SmolStr;
-
 use crate::{
     types::{
         element::{

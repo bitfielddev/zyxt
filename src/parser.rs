@@ -5,8 +5,8 @@ use num::BigInt;
 use crate::{
     types::{
         element::{
-            block::Block, procedure::Argument, r#if::Condition, Element, ElementVariant,
-            VecElementRaw,
+            block::Block, ident::Ident, procedure::Argument, r#if::Condition, Element, ElementData,
+            ElementVariant, VecElementRaw,
         },
         errors::ZyxtError,
         token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
@@ -14,12 +14,12 @@ use crate::{
     },
     Type,
 };
-
+/*
 macro_rules! check_and_update_cursor {
     ($cursor: ident, $selected: ident, $elements: ident) => {
         if $cursor == $elements.len() - 1 {
-            return Err(ZyxtError::error_2_1_0($selected.get_raw())
-                .with_pos_and_raw($selected.get_pos(), &$selected.get_raw()));
+            return Err(ZyxtError::error_2_1_0($selected.pos_raw.raw)
+                .with_pos_raw($selected.get_pos(), &$selected.pos_raw.raw));
         }
         $cursor += 1;
         $selected = &$elements[$cursor];
@@ -46,11 +46,11 @@ fn catch_between(
         *cursor += 1;
         if *cursor >= elements.len() {
             return if opening.is_none() {
-                Err(ZyxtError::error_2_1_0(elements[*cursor].get_raw())
-                    .with_pos_and_raw(&paren_pos, &elements[*cursor].get_raw()))
+                Err(ZyxtError::error_2_1_0(elements[*cursor].pos_raw.raw)
+                    .with_pos_raw(&paren_pos, &elements[*cursor].pos_raw.raw))
             } else {
                 Err(ZyxtError::error_2_0_1(opening_char.to_string())
-                    .with_pos_and_raw(&paren_pos, &opening_char.to_string()))
+                    .with_pos_raw(&paren_pos, &opening_char.to_string()))
             };
         }
         let catcher_selected = &elements[*cursor];
@@ -114,7 +114,7 @@ fn base_split<T: Clone>(
             }
             .to_string(),
         )
-        .with_pos_and_raw(&Default::default(), &"".to_string())); // TODO
+        .with_pos_raw(&Default::default(), &"".to_string())); // TODO
     }
     if out.is_empty() && catcher.is_empty() {
         return Ok(vec![]);
@@ -158,42 +158,38 @@ fn get_arguments(
         raw,
         contents
             .iter()
-            .map(|e| e.get_raw())
+            .map(|e| e.pos_raw.raw)
             .collect::<Vec<String>>()
             .join(""),
-        elements[*cursor].get_raw()
+        elements[*cursor].pos_raw.raw
     );
     base_split(
         &|raw_arg| {
             let parts = split_between(TokenType::Colon, None, None, raw_arg.to_owned(), true)?;
-            let name = if let Some(Element::Ident { name, .. }) = parts.get(0) {
-                name.to_owned()
+            let name = if let Some(Element { data: ElementVariant::Ident(ident), ..}) = parts.get(0) {
+                ident.name.to_owned()
             } else {
                 return Err(ZyxtError::error_2_1_15(",".to_string())
-                    .with_pos_and_raw(parts.get(0).unwrap().get_pos(), &raw_arg.get_raw()));
+                    .with_pos_raw(parts.get(0).unwrap().get_pos(), &raw_arg.pos_raw.raw));
             };
-            let ty = if let Some(t) = parts.get(1) {
-                t.to_owned()
-            } else {
-                Element::NullElement
-            };
+            let ty = parts.get(1).cloned();
             let default = parts.get(2).cloned();
             if parts.len() > 3 {
-                return Err(ZyxtError::error_2_1_14(parts[3].get_raw())
-                    .with_pos_and_raw(parts.get(3).unwrap().get_pos(), &raw_arg.get_raw()));
+                return Err(ZyxtError::error_2_1_14(parts[3].pos_raw.raw)
+                    .with_pos_raw(parts.get(3).unwrap().get_pos(), &raw_arg.pos_raw.raw));
             }
             Ok(Argument {
                 name,
-                ty: if ty == Element::NullElement {
-                    Element::Ident {
-                        position: Default::default(),
-                        raw: "".to_string(),
-                        name: "_any".into(),
-                        parent: Box::new(Element::NullElement),
-                    }
-                } else {
-                    ty
-                },
+                ty: ty.unwrap_or(Element {
+                    pos_raw: Default::default(),
+                    data:ty.unwrap_or(Element {
+                        pos_raw: Default::default(),
+                        data: Box::new(Ident {
+                            name: "_any".into(),
+                            parent: None
+                        }.as_variant())
+                    }).data
+                }),
                 default,
             })
         },
@@ -239,9 +235,9 @@ fn parse_parens(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                         if let Some(raw) = new_elements.last_mut().unwrap().get_raw_mut() {
                             *raw = format!(
                                 "{}{}{}",
-                                selected.get_raw(),
+                                selected.pos_raw.raw,
                                 raw,
-                                elements[cursor].get_raw()
+                                elements[cursor].pos_raw.raw
                             );
                         }
                     } else {
@@ -252,7 +248,7 @@ fn parse_parens(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                 }
             } else if selected.ty == Some(TokenType::OpenCurlyParen) {
                 // blocks, {
-                let raw = selected.get_raw();
+                let raw = selected.pos_raw.raw;
                 let paren_contents = catch_between(
                     Some(TokenType::OpenCurlyParen),
                     Some(TokenType::CloseCurlyParen),
@@ -266,10 +262,10 @@ fn parse_parens(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                         raw,
                         paren_contents
                             .iter()
-                            .map(|e| e.get_raw())
+                            .map(|e| e.pos_raw.raw)
                             .collect::<Vec<String>>()
                             .join(""),
-                        elements[cursor].get_raw()
+                        elements[cursor].pos_raw.raw
                     ),
                     content: parse_block(paren_contents)?,
                 });
@@ -307,10 +303,10 @@ fn parse_preprocess_and_defer(elements: Vec<Element>) -> Result<Vec<Element>, Zy
         {
             if cursor == elements.len() - 1 {
                 return Err(
-                    ZyxtError::error_2_1_16().with_pos_and_raw(position, &value.to_string())
+                    ZyxtError::error_2_1_16().with_pos_raw(position, &value.to_string())
                 );
             }
-            let raw = selected.get_raw();
+            let raw = selected.pos_raw.raw;
             let is_pre = raw.trim() == "pre";
             check_and_update_cursor!(cursor, selected, elements);
             if let Element::Block {
@@ -337,13 +333,13 @@ fn parse_preprocess_and_defer(elements: Vec<Element>) -> Result<Vec<Element>, Zy
                 if is_pre {
                     new_elements.push(Element::Preprocess {
                         position: position.to_owned(),
-                        raw: format!("{}{}", raw, content.get_raw()),
+                        raw: format!("{}{}", raw, content.pos_raw.raw),
                         content: vec![content],
                     });
                 } else {
                     new_elements.push(Element::Defer {
                         position: position.to_owned(),
-                        raw: format!("{}{}", raw, content.get_raw()),
+                        raw: format!("{}{}", raw, content.pos_raw.raw),
                         content: vec![content],
                     })
                 }
@@ -371,7 +367,7 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>) -> Result<Vec<Elemen
         }) = selected
         {
             if [Keyword::Class, Keyword::Struct].contains(keyword) {
-                let mut raw = selected.get_raw();
+                let mut raw = selected.pos_raw.raw;
                 check_and_update_cursor!(cursor, selected, elements);
 
                 let mut args = None;
@@ -384,7 +380,7 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>) -> Result<Vec<Elemen
                 {
                     if keyword == &Keyword::Class {
                         return Err(ZyxtError::error_2_1_17()
-                            .with_pos_and_raw(position, &format!("class {}", value.trim())));
+                            .with_pos_raw(position, &format!("class {}", value.trim())));
                     }
                     args = Some(get_arguments(&mut cursor, &elements, &mut raw)?);
                     check_and_update_cursor!(cursor, selected, elements);
@@ -393,14 +389,14 @@ fn parse_classes_structs_and_mixins(elements: Vec<Element>) -> Result<Vec<Elemen
                 if let ElementVariant::Block(Block {
                     content: block_content,
                     ..
-                }) = selected.data
+                }) = &selected.data
                 {
                     content = block_content.to_owned();
-                    raw = format!("{}{}", raw, block_raw);
+                    raw = format!("{}{}", raw, selected.pos_raw.raw);
                 } else if keyword == &Keyword::Class {
-                    return Err(ZyxtError::error_2_1_18(keyword).with_pos_and_raw(
+                    return Err(ZyxtError::error_2_1_18(keyword).with_pos_raw(
                         selected.get_pos(),
-                        &format!("{}{}", raw, &selected.get_raw()),
+                        &format!("{}{}", raw, &selected.pos_raw.raw),
                     ));
                 }
                 new_elements.push(Element::Class {
@@ -471,9 +467,9 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                             name: next_element.value.to_owned(),
                             raw: format!(
                                 "{}{}{}",
-                                catcher.get_raw(),
-                                selected.get_raw(),
-                                next_element.get_raw()
+                                catcher.pos_raw.raw,
+                                selected.pos_raw.raw,
+                                next_element.pos_raw.raw
                             ),
                             parent: Box::new(catcher),
                         };
@@ -484,9 +480,9 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                             name: next_element.value.to_owned(),
                             raw: format!(
                                 "{}{}{}",
-                                catcher.get_raw(),
-                                selected.get_raw(),
-                                next_element.get_raw()
+                                catcher.pos_raw.raw,
+                                selected.pos_raw.raw,
+                                next_element.pos_raw.raw
                             ),
                             parent: Box::new(catcher),
                         };
@@ -502,7 +498,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                     catcher = Element::Ident {
                         position: selected.position.to_owned(),
                         name: selected.value.to_owned(),
-                        raw: selected.get_raw(),
+                        raw: selected.pos_raw.raw,
                         parent: Box::new(Element::NullElement),
                     }
                 }
@@ -514,7 +510,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                     }
                     catcher = Element::Literal {
                         position: selected.position.to_owned(),
-                        raw: selected.get_raw(),
+                        raw: selected.pos_raw.raw,
                         content: match selected.ty {
                             Some(TokenType::LiteralMisc) => match &*selected.value {
                                 "true" => Value::Bool(true),
@@ -583,7 +579,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                         return Err(ZyxtError::error_2_1_0(String::from("(")).with_token(selected));
                         // parens should have been settled in the first part
                     }
-                    let mut raw = selected.get_raw();
+                    let mut raw = selected.pos_raw.raw;
                     let contents = catch_between(
                         Some(TokenType::OpenParen),
                         Some(TokenType::CloseParen),
@@ -595,10 +591,10 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                         raw,
                         contents
                             .iter()
-                            .map(|e| e.get_raw())
+                            .map(|e| e.pos_raw.raw)
                             .collect::<Vec<String>>()
                             .join(""),
-                        elements[cursor].get_raw()
+                        elements[cursor].pos_raw.raw
                     );
                     let args = split_between(
                         TokenType::Comma,
@@ -609,7 +605,7 @@ fn parse_vars_literals_and_calls(elements: Vec<Element>) -> Result<Vec<Element>,
                     )?;
                     catcher = Element::Call {
                         position: catcher.get_pos().to_owned(),
-                        raw: format!("{}{}", catcher.get_raw(), raw),
+                        raw: format!("{}{}", catcher.pos_raw.raw, raw),
                         called: Box::new(catcher),
                         args,
                         kwargs: HashMap::new(),
@@ -659,10 +655,10 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                 } else {
                     false
                 };
-                let mut raw = selected.get_raw().to_owned();
+                let mut raw = selected.pos_raw.raw.to_owned();
                 if *ty != Some(TokenType::Bar) {
                     check_and_update_cursor!(cursor, selected, elements);
-                    raw = format!("{}{}", raw, selected.get_raw());
+                    raw = format!("{}{}", raw, selected.pos_raw.raw);
                 }
 
                 let args = if let Element::Token(Token {
@@ -688,7 +684,7 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                         raw = format!("{}{}", raw, value);
                         loop {
                             check_and_update_cursor!(cursor, selected, elements);
-                            raw = format!("{}{}", raw, selected.get_raw());
+                            raw = format!("{}{}", raw, selected.pos_raw.raw);
                             if let Element::Block { .. } = selected {
                                 break;
                             }
@@ -726,7 +722,7 @@ fn parse_procs_and_fns(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
                         is_fn,
                         args,
                         return_type,
-                        raw: format!("{}{}", raw, content.get_raw()),
+                        raw: format!("{}{}", raw, content.pos_raw.raw),
                         content: vec![content],
                     });
                     return Ok(new_elements);
@@ -754,7 +750,7 @@ fn parse_assignment_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtErr
         }) = ele
         {
             if i == 0 || i == elements.len() - 1 {
-                return Err(ZyxtError::error_2_1_3(ele.get_raw()).with_element(ele));
+                return Err(ZyxtError::error_2_1_3(ele.pos_raw.raw).with_element(ele));
             }
             let variable = parse_expr(vec![elements[i - 1].to_owned()])?;
             let content = if let Some(opr_type) = opr_type {
@@ -762,7 +758,7 @@ fn parse_assignment_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtErr
                 Element::BinaryOpr {
                     position: position.to_owned(),
                     ty: *opr_type,
-                    raw: operand2.get_raw(),
+                    raw: operand2.pos_raw.raw,
                     operand1: Box::new(variable.to_owned()),
                     operand2: Box::new(operand2),
                 }
@@ -777,9 +773,9 @@ fn parse_assignment_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtErr
                     position: position.to_owned(),
                     raw: format!(
                         "{}{}{}",
-                        variable.get_raw(),
-                        ele.get_raw(),
-                        content.get_raw()
+                        variable.pos_raw.raw,
+                        ele.pos_raw.raw,
+                        content.pos_raw.raw
                     ),
                     variable: Box::new(variable),
                     content: Box::new(content),
@@ -803,7 +799,7 @@ fn parse_un_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
         {
             if opr_type.side() == Side::Left {
                 if i == elements.len() - 1 {
-                    return Err(ZyxtError::error_2_1_4(ele.get_raw()).with_element(ele));
+                    return Err(ZyxtError::error_2_1_4(ele.pos_raw.raw).with_element(ele));
                 }
                 let operand = parse_un_oprs(elements[i + 1..].to_vec())?[0].to_owned();
                 return parse_un_oprs(
@@ -813,21 +809,21 @@ fn parse_un_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
                         .chain(vec![Element::UnaryOpr {
                             position: position.to_owned(),
                             ty: *opr_type,
-                            raw: format!("{}{}", ele.get_raw(), operand.get_raw()),
+                            raw: format!("{}{}", ele.pos_raw.raw, operand.pos_raw.raw),
                             operand: Box::new(operand),
                         }])
                         .collect::<Vec<Element>>(),
                 );
             } else if opr_type.side() == Side::Right {
                 if i == 0 {
-                    return Err(ZyxtError::error_2_1_4(ele.get_raw()).with_element(ele));
+                    return Err(ZyxtError::error_2_1_4(ele.pos_raw.raw).with_element(ele));
                 }
                 let operand = parse_un_oprs(elements[..i].to_vec())?[0].to_owned();
                 return parse_un_oprs(
                     vec![Element::UnaryOpr {
                         position: position.to_owned(),
                         ty: *opr_type,
-                        raw: format!("{}{}", operand.get_raw(), ele.get_raw()),
+                        raw: format!("{}{}", operand.pos_raw.raw, ele.pos_raw.raw),
                         operand: Box::new(operand),
                     }]
                     .into_iter()
@@ -879,9 +875,9 @@ fn parse_normal_oprs(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
             ty: *opr_type,
             raw: format!(
                 "{}{}{}",
-                operand1.get_raw(),
-                elements[highest_order_index].get_raw(),
-                operand2.get_raw()
+                operand1.pos_raw.raw,
+                elements[highest_order_index].pos_raw.raw,
+                operand2.pos_raw.raw
             ),
             operand1: Box::new(operand1),
             operand2: Box::new(operand2),
@@ -919,17 +915,17 @@ fn parse_delete_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
                 {
                     return Err(ZyxtError::error_2_1_12(raw.to_owned()).with_element(var));
                 } else {
-                    return Err(ZyxtError::error_2_1_11(var.get_raw()).with_element(var));
+                    return Err(ZyxtError::error_2_1_11(var.pos_raw.raw).with_element(var));
                 }
             }
             new_elements.push(Element::Delete {
                 position: ele.get_pos().to_owned(),
                 raw: format!(
                     "{}{}",
-                    ele.get_raw(),
+                    ele.pos_raw.raw,
                     elements[i + 1..]
                         .iter()
-                        .map(|e| e.get_raw())
+                        .map(|e| e.pos_raw.raw)
                         .collect::<Vec<String>>()
                         .join("")
                 ),
@@ -956,7 +952,7 @@ fn parse_return_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
             let return_val = parse_expr(elements[i + 1..].to_vec())?;
             new_elements.push(Element::Return {
                 position: ele.get_pos().to_owned(),
-                raw: format!("{}{}{}", whitespace, value, return_val.get_raw()),
+                raw: format!("{}{}{}", whitespace, value, return_val.pos_raw.raw),
                 value: Box::new(return_val),
             });
             return Ok(new_elements);
@@ -993,7 +989,7 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
                 return Err(ZyxtError::error_2_1_5().with_element(selected));
             }
             let declared_var: &Element = &elements[cursor - 1];
-            let mut raw = format!("{}{}{}", declared_var.get_raw(), whitespace, value);
+            let mut raw = format!("{}{}{}", declared_var.pos_raw.raw, whitespace, value);
             let flags = if flag_pos == None {
                 vec![]
             } else {
@@ -1009,7 +1005,7 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
                         raw = format!("{}{}{}", whitespace, value, raw);
                         f.push(*flag);
                     } else {
-                        return Err(ZyxtError::error_2_1_6(ele.get_raw()).with_element(ele));
+                        return Err(ZyxtError::error_2_1_6(ele.pos_raw.raw).with_element(ele));
                     }
                 }
                 f
@@ -1020,7 +1016,7 @@ fn parse_declaration_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtEr
             let content = parse_expr(elements[cursor + 1..].to_vec())?;
             new_elements.push(Element::Declare {
                 position: position.to_owned(),
-                raw: format!("{}{}", raw, content.get_raw()),
+                raw: format!("{}{}", raw, content.pos_raw.raw),
                 variable: Box::new(parse_expr(vec![declared_var.to_owned()])?),
                 content: Box::new(content),
                 flags,
@@ -1090,33 +1086,36 @@ pub fn parse_if_expr(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError> 
                         prev_catcher_kwd = catcher_kwd;
                         check_and_update_cursor!(cursor, catcher_selected, elements);
                         let condition = if catcher_kwd == "else" {
-                            Element::NullElement
-                        } else if let Element::Block { raw: block_raw, .. } = catcher_selected {
-                            raw = format!("{}{}", raw, block_raw);
+                            None
+                        } else if let Element::Block(block) = catcher_selected.data {
+                            raw = format!("{}{}", raw, block.raw);
                             check_and_update_cursor!(cursor, catcher_selected, elements);
-                            catcher_selected.to_owned()
+                            Some(catcher_selected.to_owned())
                         } else {
                             let mut catcher = vec![elements[cursor].to_owned()];
                             loop {
                                 check_and_update_cursor!(cursor, catcher_selected, elements);
-                                raw = format!("{}{}", raw, catcher_selected.get_raw());
+                                raw = format!("{}{}", raw, catcher_selected.pos_raw.raw);
                                 if let Element::Block { .. } = catcher_selected {
                                     break;
                                 } else {
                                     catcher.push(catcher_selected.to_owned());
                                 }
                             }
-                            parse_expr(catcher)?
+                            Some(parse_expr(catcher)?)
                         };
                         catcher_selected = &elements[cursor];
-                        raw = format!("{}{}", raw, catcher_selected.get_raw());
-                        if let Element::Block { content, .. } = catcher_selected {
+                        raw = format!("{}{}", raw, catcher_selected.pos_raw.raw);
+                        if let ElementVariant::Block(block) = catcher_selected {
                             conditions.push(Condition {
                                 condition,
-                                if_true: content.to_owned(),
+                                if_true: Element {
+                                    pos_raw: catcher_selected.pos_raw.to_owned(),
+                                    data: Box::new(block.to_owned())
+                                },
                             })
                         } else {
-                            return Err(ZyxtError::error_2_1_8(catcher_selected.get_raw())
+                            return Err(ZyxtError::error_2_1_8(catcher_selected.pos_raw.raw)
                                 .with_element(selected));
                         }
                         cursor += 1;
@@ -1229,14 +1228,14 @@ fn parse_unparen_calls(elements: Vec<Element>) -> Result<Vec<Element>, ZyxtError
         position: elements[0].get_pos().to_owned(),
         raw: elements
             .iter()
-            .map(|e| e.get_raw())
+            .map(|e| e.pos_raw.raw)
             .collect::<Vec<String>>()
             .join(""),
         called: Box::new(elements[0].to_owned()),
         args: split_between(TokenType::Comma, None, None, elements[1..].to_vec(), false)?,
         kwargs: Default::default(),
     }])
-}
+}*/
 
 fn parse_expr(mut elements: Vec<Element>) -> Result<Element, ZyxtError> {
     if elements.len() > 1 {
@@ -1258,7 +1257,7 @@ fn parse_expr(mut elements: Vec<Element>) -> Result<Element, ZyxtError> {
     }
     elements = parse_un_oprs(elements)?;
     if elements.len() > 1 {
-        return Err(ZyxtError::error_2_1_0(elements[1].get_raw()).with_element(&elements[1]));
+        return Err(ZyxtError::error_2_1_0(elements[1].pos_raw.raw).with_element(&elements[1]));
     }
     Ok(elements.get(0).unwrap_or(&Element::NullElement).to_owned())
 }
@@ -1281,7 +1280,7 @@ pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError
         if token.ty == Some(TokenType::Comment) {
             comments.push(Element::Comment {
                 position: token.position.to_owned(),
-                raw: token.get_raw(),
+                raw: token.pos_raw.raw,
                 content: token.value.to_owned(),
             })
         } else if [

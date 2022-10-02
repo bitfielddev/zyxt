@@ -1,5 +1,4 @@
 use std::{
-    any::Any,
     fmt::{Debug, Display},
     fs::File,
     io::Read,
@@ -15,8 +14,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
     types::{
-        element::{Element, PosRaw},
-        position::Position,
+        element::{Element, ElementData, PosRaw},
         printer::Print,
         token::{Keyword, Token},
         value::Value,
@@ -266,7 +264,7 @@ impl ZyxtError {
     }
 
     /// expected pattern, got something else
-    pub fn error_2_2(ele: Element<impl Any>) -> Self {
+    pub fn error_2_2(ele: Element<impl ElementData>) -> Self {
         ZyxtError {
             position: vec![],
             code: "2.2",
@@ -304,7 +302,7 @@ impl ZyxtError {
             code: "3.1.0",
             message: format!(
                 "`{}` (type `{}`) has no attribute `{}`",
-                parent.get_raw().trim(),
+                parent.pos_raw.raw.trim(),
                 parent_type,
                 attribute
             ),
@@ -490,7 +488,7 @@ impl ZyxtError {
         self.position = vec![pos_raw.to_owned()];
         self
     }
-    pub fn with_element(mut self, element: &Element<impl Any>) -> Self {
+    pub fn with_element(mut self, element: &Element<impl ElementData>) -> Self {
         self.position = vec![element.pos_raw];
         self
     }

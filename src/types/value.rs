@@ -10,7 +10,7 @@ use num::{BigInt, BigUint};
 
 use crate::{
     types::{
-        element::{block::Block, procedure::Argument, Argument},
+        element::{block::Block, procedure::Argument},
         typeobj::{
             bool_t::BOOL_T, f16_t::F16_T, f32_t::F32_T, f64_t::F64_T, i128_t::I128_T, i16_t::I16_T,
             i32_t::I32_T, i64_t::I64_T, i8_t::I8_T, ibig_t::IBIG_T, isize_t::ISIZE_T,

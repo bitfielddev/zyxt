@@ -60,7 +60,7 @@ impl Block {
                     return_type = Some(*value);
                 } else if last != return_type.to_owned().unwrap() {
                     return Err(ZyxtError::error_4_t(last, return_type.unwrap())
-                        .with_pos_and_raw(ele.get_pos(), &ele.get_raw()));
+                        .with_pos_raw(ele.get_pos(), &ele.pos_raw.raw));
                 }
             }
         }
@@ -68,7 +68,7 @@ impl Block {
             if last != return_type {
                 let last_ele = self.content.last().unwrap();
                 return Err(ZyxtError::error_4_t(last, return_type)
-                    .with_pos_and_raw(last_ele.get_pos(), &last_ele.get_raw()));
+                    .with_pos_raw(last_ele.get_pos(), &last_ele.pos_raw.raw));
             }
         }
         if add_set {

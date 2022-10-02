@@ -24,17 +24,19 @@ pub mod usize_t;
 
 use std::{
     collections::HashMap,
-    fmt::{rt::v1::Argument, Debug, Display, Formatter},
+    fmt::{Debug, Display, Formatter},
 };
 
 use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::{
-    interpreter::interpret_expr,
-    types::typeobj::{
-        type_t::{TYPE_T, TYPE_T_ELE},
-        unit_t::{UNIT_T, UNIT_T_ELE},
+    types::{
+        element::procedure::Argument,
+        typeobj::{
+            type_t::{TYPE_T, TYPE_T_ELE},
+            unit_t::{UNIT_T, UNIT_T_ELE},
+        },
     },
     Element, InterpreterData, Print, Value, ZyxtError,
 };
@@ -186,7 +188,7 @@ impl TypeDefinition<Element> {
             implementations: self
                 .implementations
                 .iter()
-                .map(|(k, v)| Ok((k.to_owned(), interpret_expr(v, i_data)?)))
+                .map(|(k, v)| Ok((k.to_owned(), v.interpret_expr(i_data)?)))
                 .collect::<Result<HashMap<_, _>, _>>()?,
             inst_fields: self
                 .inst_fields
@@ -197,7 +199,7 @@ impl TypeDefinition<Element> {
                         (
                             Box::new(v1.as_type_value(i_data)?),
                             v2.to_owned()
-                                .map(|v2| interpret_expr(&v2, i_data))
+                                .map(|v2| v2.interpret_expr(i_data))
                                 .transpose()?,
                         ),
                     ))

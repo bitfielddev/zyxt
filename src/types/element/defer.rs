@@ -1,5 +1,3 @@
-use smol_str::SmolStr;
-
 use crate::{
     types::element::{block::Block, Element, ElementData, ElementVariant, PosRaw},
     InterpreterData, Print, Type, Value, ZyxtError,

@@ -1,6 +1,4 @@
 use crate::{
-    gen_instructions,
-    interpreter::interpret_block,
     types::element::{block::Block, Element, ElementData, ElementVariant, PosRaw},
     InterpreterData, Print, Type, Value, ZyxtError,
 };
@@ -21,10 +19,14 @@ impl ElementData for Preprocess {
         out: &mut impl Print,
     ) -> Result<ElementVariant, ZyxtError> {
         let mut pre_typelist = InterpreterData::<Type<Element>, _>::new(out);
-        let pre_instructions =
-            gen_instructions(self.content.content.to_owned(), &mut pre_typelist)?;
+        let mut pre_instructions: Block = self
+            .content
+            .desugared(Default::default(), out)?
+            .as_block()
+            .unwrap();
+        pre_instructions.process(Default::default(), &mut pre_typelist)?;
         let mut i_data = InterpreterData::<Value, _>::new(out);
-        let pre_value = interpret_block(&pre_instructions, &mut i_data, true, false)?;
+        let pre_value = pre_instructions.interpret_block(&mut i_data, true, false)?;
         Ok(*pre_value.as_element().data)
     }
 }

@@ -28,28 +28,31 @@ impl ElementData for Call {
     }
     fn process<O: Print>(
         &mut self,
-        pos_raw: &PosRaw,
+        _pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> Result<Type<Element>, ZyxtError> {
-        todo!()
-        /*if let ElementVariants::Ident(Ident {
+        if let ElementVariant::Ident(Ident {
             name,
-            parent: Some(Element {
-                data: ElementVariants::Ident(Ident {
-                    name: parent_name, ..
-                                             }), ..
-                         })
-        }) = &self.called.data {
+            parent:
+                Some(Element {
+                    data:
+                        ElementVariant::Ident(Ident {
+                            name: parent_name, ..
+                        }),
+                    ..
+                }),
+        }) = &self.called.data
+        {
             if &**name == "out" && &**parent_name == "ter" {
-                self.args.iter_mut()
+                self.args
+                    .iter_mut()
                     .map(|a| a.process(typelist))
                     .collect::<Result<Vec<_>, ZyxtError>>()?;
                 return Ok(UNIT_T.get_instance().as_type_element());
             }
         }
         let called_type = self.called.process(typelist)?;
-        if let ElementVariants::Procedure(procedure) = self.called.data.as_mut()
-        {
+        if let ElementVariant::Procedure(procedure) = self.called.data.as_mut() {
             for (i, arg) in self.args.iter_mut().enumerate() {
                 if arg.process(typelist)?
                     != procedure.args.get_mut(i).unwrap().ty.process(typelist)?
@@ -58,12 +61,13 @@ impl ElementData for Call {
                 }
             }
             procedure.return_type.process(typelist)
-        } else if let ElementVariants::Literal(Literal { content: Value::Proc(proc) }) = self.called.data.as_mut()
+        } else if let ElementVariant::Literal(Literal {
+            content: Value::Proc(proc),
+        }) = self.called.data.as_mut()
         {
             Ok(match proc {
                 Proc::Builtin { signature, .. } => {
-                    let (mut arg_objs, ret): (Vec<Type<Value>>, Type<Value>) =
-                        signature[0]();
+                    let (mut arg_objs, ret): (Vec<Type<Value>>, Type<Value>) = signature[0]();
                     for (i, arg) in self.args.iter_mut().enumerate() {
                         let arg = arg.process(typelist)?;
                         let arg_req = arg_objs.get_mut(i).unwrap().as_type_element();
@@ -90,10 +94,8 @@ impl ElementData for Call {
             })
         } else {
             if let Type::Instance(TypeInstance {
-                                      name,
-                                      type_args,
-                                      ..
-                                  }) = &called_type
+                name, type_args, ..
+            }) = &called_type
             {
                 if *name == Some(SmolStr::from("proc")) {
                     if let Some(return_type) = type_args.get(1) {
@@ -102,8 +104,8 @@ impl ElementData for Call {
                 }
             }
             self.called = if let Type::Definition(TypeDefinition {
-                                                  implementations, ..
-                                              }) = called_type
+                implementations, ..
+            }) = called_type
             {
                 if let Some(call) = implementations.get("_call") {
                     call.to_owned()
@@ -115,7 +117,7 @@ impl ElementData for Call {
                 unreachable!()
             };
             self.process(typelist)
-        }*/
+        }
     }
 
     fn desugared(
