@@ -1,7 +1,10 @@
 use itertools::Either;
-use crate::parser::buffer::Buffer;
-use crate::types::token::{TokenCategory, TokenType};
-use crate::ZyxtError;
+
+use crate::{
+    parser::buffer::Buffer,
+    types::token::{TokenCategory, TokenType},
+    ZyxtError,
+};
 
 impl<'a> Buffer<'a> {
     fn parse_parentheses(&mut self) -> Result<(), ZyxtError> {
@@ -10,18 +13,22 @@ impl<'a> Buffer<'a> {
             let selected = if let Either::Right(selected) = selected {
                 selected
             } else {
-                continue
+                continue;
             };
 
             if selected.ty == Some(TokenType::OpenParen) {
                 if let Some(Either::Right(prev_ele)) = self.prev() {
-                    if prev_ele.ty.map(|ty| ty.categories()).unwrap_or(vec![])
-                        .contains(&TokenCategory::ValueEnd) {
-                        continue
+                    if prev_ele
+                        .ty
+                        .map(|ty| ty.categories())
+                        .unwrap_or(vec![])
+                        .contains(&TokenCategory::ValueEnd)
+                    {
+                        continue;
                     }
                     prev_ele
                 } else {
-                    continue
+                    continue;
                 };
                 if let Some(Either::Right(next_ele)) = self.peek() {
                     if next_ele.ty == Some(TokenType::CloseParen) {
@@ -30,10 +37,8 @@ impl<'a> Buffer<'a> {
                 }
 
                 self.start_raw_collection();
-                let mut paren_window = self.get_between(
-                    TokenType::OpenParen,
-                    TokenType::CloseParen
-                )?;
+                let mut paren_window =
+                    self.get_between(TokenType::OpenParen, TokenType::CloseParen)?;
                 let raw = self.end_raw_collection();
                 paren_window.with_as_buffer(&|f| {
                     let mut ele = f.parse_as_expr()?;
@@ -44,10 +49,8 @@ impl<'a> Buffer<'a> {
             } else if selected.ty == Some(TokenType::OpenCurlyParen) {
                 // blocks, {
                 self.start_raw_collection();
-                let mut paren_window = self.get_between(
-                    TokenType::OpenCurlyParen,
-                    TokenType::CloseCurlyParen
-                )?;
+                let mut paren_window =
+                    self.get_between(TokenType::OpenCurlyParen, TokenType::CloseCurlyParen)?;
                 let raw = self.end_raw_collection();
                 paren_window.with_as_buffer(&|f| {
                     let mut ele = f.parse_as_block()?;
