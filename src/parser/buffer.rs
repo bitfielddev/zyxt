@@ -137,7 +137,10 @@ impl<'a> Buffer<'a> {
             .to_vec()
             .splice(
                 buffers.range,
-                buffers.buffer_windows.into_iter().flat_map(|b| b.slice.to_vec()),
+                buffers
+                    .buffer_windows
+                    .into_iter()
+                    .flat_map(|b| b.slice.to_vec()),
             )
             .collect::<Vec<_>>();
     }
@@ -166,13 +169,20 @@ impl<'a> BufferWindows<'a> {
     pub fn as_buffers(&self) -> Vec<Buffer> {
         self.buffer_windows.iter().map(|a| a.as_buffer()).collect()
     }
-    pub fn with_as_buffers(&mut self, f: &dyn Fn(Buffer) -> Result<Buffer, ZyxtError>) -> Result<(), ZyxtError>{
-        self.buffer_windows = self.buffer_windows.iter().map(|b| {
-            Ok(BufferWindow {
-                slice: f(b.as_buffer())?.content,
-                range: b.range.to_owned()
+    pub fn with_as_buffers(
+        &mut self,
+        f: &dyn Fn(Buffer) -> Result<Buffer, ZyxtError>,
+    ) -> Result<(), ZyxtError> {
+        self.buffer_windows = self
+            .buffer_windows
+            .iter()
+            .map(|b| {
+                Ok(BufferWindow {
+                    slice: f(b.as_buffer())?.content,
+                    range: b.range.to_owned(),
+                })
             })
-        }).collect()?;
+            .collect()?;
         Ok(())
     }
 }

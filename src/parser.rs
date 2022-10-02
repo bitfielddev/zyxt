@@ -1306,7 +1306,6 @@ impl<'a> Buffer<'a> {
         Ok(())
     }
     fn parse_as_expr(&mut self) -> Result<(), ZyxtError> {
-
         Ok(())
     }
 }
