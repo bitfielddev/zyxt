@@ -4,8 +4,9 @@ use smol_str::SmolStr;
 
 use crate::{
     types::{
-        element::{block::Block, ident::Ident, Element, ElementData, ElementVariant, PosRaw},
+        element::{block::Block, ident::Ident, Element, ElementData, ElementVariant},
         interpreter_data::FrameType,
+        position::PosRaw,
         typeobj::{proc_t::PROC_T, unit_t::UNIT_T, TypeInstance},
         value::Proc,
     },

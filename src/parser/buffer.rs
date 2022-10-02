@@ -3,34 +3,69 @@ use std::{borrow::Cow, ops::Range};
 use itertools::Either;
 
 use crate::{
-    types::token::{Token, TokenType},
+    types::{
+        position::PosRaw,
+        token::{Token, TokenType},
+    },
     Element, ZyxtError,
 };
 
 #[derive(Clone)]
 pub struct Buffer<'a> {
     pub content: Cow<'a, [Either<Element, Token>]>,
-    cursor: usize,
+    pub(crate) cursor: usize,
     started: bool,
     raw: Option<String>,
 }
 impl<'a> Buffer<'a> {
-    fn next(&mut self) -> Option<&Either<Element, Token>> {
+    pub fn next(&mut self) -> Option<&Either<Element, Token>> {
         if self.started {
             self.cursor += 1;
         } else {
             self.started = true;
         }
-        self.content.get(self.cursor)
+        self.content.get(self.cursor).map(|c| {
+            self.raw = self.raw.map(|mut raw| {
+                raw.push_str(match c {
+                    Either::Left(c) => &*c.pos_raw.raw,
+                    Either::Right(c) => &*c.get_raw(),
+                });
+                raw
+            });
+            c
+        })
     }
-    fn next_cursor_pos(&self) -> usize {
+    pub fn next_or_err(
+        &mut self,
+        curr_pos_raw: &PosRaw,
+    ) -> Result<&Either<Element, Token>, ZyxtError> {
+        if let Some(c) = self.next() {
+            Ok(c)
+        } else {
+            Err(ZyxtError::error_2_1_0(&curr_pos_raw.raw).with_pos_raw(curr_pos_raw))
+        }
+    }
+    pub fn prev(&mut self) -> Option<&Either<Element, Token>> {
+        if !self.started {
+            None
+        } else {
+            self.content.get(self.cursor - 1)
+        }
+    }
+    pub fn rest_incl_curr(&mut self) -> BufferWindow {
+        BufferWindow {
+            slice: Cow::Borrowed(&self.content[self.cursor..]),
+            range: self.cursor..self.content.len(),
+        }
+    }
+    pub fn next_cursor_pos(&self) -> usize {
         if self.started {
             self.cursor + 1
         } else {
             0
         }
     }
-    fn reset_cursor(&mut self) {
+    pub fn reset_cursor(&mut self) {
         self.started = false;
         self.cursor = 0;
     }
@@ -51,7 +86,20 @@ impl<'a> Buffer<'a> {
         self.content.get(self.next_cursor_pos())
     }
     pub fn start_raw_collection(&mut self) {
-        self.raw = Some("".into());
+        self.raw = Some(
+            if self.started {
+                self.content
+                    .get(self.cursor)
+                    .map(|c| match c {
+                        Either::Left(c) => &*c.pos_raw.raw,
+                        Either::Right(c) => &*c.get_raw(),
+                    })
+                    .unwrap_or("")
+            } else {
+                ""
+            }
+            .to_string(),
+        );
     }
     pub fn end_raw_collection(&mut self) -> String {
         self.raw.take().unwrap_or("".into())
@@ -61,8 +109,8 @@ impl<'a> Buffer<'a> {
         start_token: TokenType,
         end_token: TokenType,
     ) -> Result<BufferWindow, ZyxtError> {
-        let mut nest_level = 0usize;
-        let start = self.next_cursor_pos();
+        let mut nest_level = 1usize;
+        let start = self.cursor;
         while let Some(ele) = self.next() {
             if let Either::Right(ele) = ele {
                 if start_token == end_token {
@@ -90,11 +138,10 @@ impl<'a> Buffer<'a> {
         start_token: TokenType,
         end_token: TokenType,
         divider: TokenType,
-        start_end_has_token: bool,
     ) -> Result<BufferWindows, ZyxtError> {
-        let mut nest_level = if start_end_has_token { 1usize } else { 0usize };
-        let bet_start = self.next_cursor_pos();
-        let mut start = self.next_cursor_pos() + 1;
+        let mut nest_level = 1usize;
+        let bet_start = self.cursor;
+        let mut start = self.cursor + 1;
         let mut buffer_windows = vec![];
         while let Some(ele) = self.next() {
             if let Either::Right(ele) = ele {
@@ -117,22 +164,24 @@ impl<'a> Buffer<'a> {
                 break;
             }
         }
-        if nest_level != 0 && !start_end_has_token {
+        if nest_level != 0 {
             todo!("err")
         }
         Ok(BufferWindows {
-            buffer_windows: buffer_windows,
+            buffer_windows,
             range: bet_start..self.next_cursor_pos(),
         })
     }
     pub fn splice_buffer(&mut self, buffer: BufferWindow) {
         self.content = self.content.to_owned();
+        self.cursor = buffer.range.end - 1;
         self.content
             .to_vec()
             .splice(buffer.range, buffer.slice.to_vec());
     }
     pub fn splice_buffers(&mut self, buffers: BufferWindows) {
         self.content = self.content.to_owned();
+        self.cursor = buffers.range.end - 1;
         self.content
             .to_vec()
             .splice(
@@ -159,6 +208,18 @@ impl<'a> BufferWindow<'a> {
             raw: None,
         }
     }
+    pub fn with_as_buffer<T>(
+        &mut self,
+        f: &dyn Fn(&mut Buffer) -> Result<T, ZyxtError>,
+    ) -> Result<T, ZyxtError> {
+        let mut buffer = self.as_buffer();
+        let res = f(&mut buffer)?;
+        *self = BufferWindow {
+            slice: buffer.content,
+            range: self.range.to_owned(),
+        };
+        Ok(res)
+    }
 }
 
 pub struct BufferWindows<'a> {
@@ -169,20 +230,13 @@ impl<'a> BufferWindows<'a> {
     pub fn as_buffers(&self) -> Vec<Buffer> {
         self.buffer_windows.iter().map(|a| a.as_buffer()).collect()
     }
-    pub fn with_as_buffers(
+    pub fn with_as_buffers<T>(
         &mut self,
-        f: &dyn Fn(Buffer) -> Result<Buffer, ZyxtError>,
-    ) -> Result<(), ZyxtError> {
-        self.buffer_windows = self
-            .buffer_windows
-            .iter()
-            .map(|b| {
-                Ok(BufferWindow {
-                    slice: f(b.as_buffer())?.content,
-                    range: b.range.to_owned(),
-                })
-            })
-            .collect()?;
-        Ok(())
+        f: &dyn Fn(&mut Buffer) -> Result<T, ZyxtError>,
+    ) -> Result<Vec<T>, ZyxtError> {
+        self.buffer_windows
+            .iter_mut()
+            .map(|b| b.with_as_buffer(f))
+            .collect::<Result<Vec<_>, ZyxtError>>()
     }
 }

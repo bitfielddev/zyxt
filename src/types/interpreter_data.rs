@@ -9,9 +9,9 @@ use smol_str::SmolStr;
 
 use crate::{
     types::{
-        element::{block::Block, PosRaw},
+        element::block::Block,
         errors::ZyxtError,
-        position::Position,
+        position::{PosRaw, Position},
         printer::Print,
         typeobj::{
             bool_t::BOOL_T, f16_t::F16_T, f32_t::F32_T, f64_t::F64_T, i128_t::I128_T, i16_t::I16_T,

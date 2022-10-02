@@ -1,5 +1,8 @@
 use crate::{
-    types::element::{block::Block, Element, ElementData, ElementVariant, PosRaw},
+    types::{
+        element::{block::Block, Element, ElementData, ElementVariant},
+        position::PosRaw,
+    },
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 

@@ -1,6 +1,10 @@
 use std::fmt::{Debug, Display, Formatter};
 
+use itertools::Either;
+use smol_str::SmolStr;
 use unicode_segmentation::UnicodeSegmentation;
+
+use crate::{types::token::Token, Element};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Position {
@@ -57,6 +61,36 @@ impl Position {
             self.column = 1;
         } else {
             self.column += 1
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
+pub struct PosRaw {
+    pub position: Position,
+    pub raw: SmolStr,
+}
+pub trait GetPosRaw {
+    fn pos_raw(&self) -> PosRaw;
+}
+impl GetPosRaw for Element {
+    fn pos_raw(&self) -> PosRaw {
+        self.pos_raw.to_owned()
+    }
+}
+impl GetPosRaw for Token {
+    fn pos_raw(&self) -> PosRaw {
+        PosRaw {
+            position: self.position.to_owned(),
+            raw: self.get_raw().into(),
+        }
+    }
+}
+impl GetPosRaw for Either<Element, Token> {
+    fn pos_raw(&self) -> PosRaw {
+        match self {
+            Either::Left(c) => c.pos_raw(),
+            Either::Right(c) => c.pos_raw(),
         }
     }
 }

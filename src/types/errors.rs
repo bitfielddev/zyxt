@@ -14,7 +14,8 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
     types::{
-        element::{Element, ElementData, PosRaw},
+        element::{Element, ElementData},
+        position::PosRaw,
         printer::Print,
         token::{Keyword, Token},
         value::Value,

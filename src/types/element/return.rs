@@ -1,6 +1,7 @@
 use crate::{
     types::{
-        element::{Element, ElementData, ElementVariant, PosRaw},
+        element::{Element, ElementData, ElementVariant},
+        position::PosRaw,
         typeobj::unit_t::UNIT_T,
     },
     InterpreterData, Print, Type, Value, ZyxtError,

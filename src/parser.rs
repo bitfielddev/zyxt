@@ -1,6 +1,8 @@
 mod buffer;
+mod parentheses;
+mod preprocess_defer;
 
-use std::{cmp::min, collections::HashMap};
+use std::{borrow::Cow, cmp::min, collections::HashMap};
 
 use itertools::Either;
 use num::BigInt;
@@ -10,9 +12,10 @@ use crate::{
     types::{
         element::{
             block::Block, comment::Comment, ident::Ident, procedure::Argument, r#if::Condition,
-            Element, ElementData, ElementVariant, PosRaw, VecElementRaw,
+            Element, ElementData, ElementVariant, VecElementRaw,
         },
         errors::ZyxtError,
+        position::{GetPosRaw, PosRaw},
         token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
         value::Value,
     },
@@ -1277,36 +1280,26 @@ fn parse_block(input: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
 }
 
 impl<'a> Buffer<'a> {
-    fn parse_as_file(&mut self) -> Result<(), ZyxtError> {
+    fn parse_as_block(&mut self) -> Result<Element, ZyxtError> {
         let mut buffers = self.get_split_between(
             TokenType::OpenCurlyParen,
             TokenType::CloseCurlyParen,
             TokenType::StatementEnd,
-            false,
         )?;
-        buffers.with_as_buffers(&|b| {
-            b.parse_as_expr()?;
-            Ok(b)
-        })?;
-        self.splice_buffers(buffers);
-        Ok(())
+        let block = buffers.with_as_buffers(&|buffer| buffer.parse_as_expr())?;
+        let ele = Element {
+            pos_raw: self.content.get(0).map(|c| c.pos_raw()).unwrap_or_default(),
+            data: Box::new(Block { content: block }.as_variant()),
+        };
+        let buffer_window = BufferWindow {
+            slice: Cow::Owned(vec![Either::Left(ele.to_owned())]),
+            range: buffers.range,
+        };
+        self.splice_buffer(buffer_window);
+        Ok(ele)
     }
-    fn parse_as_block(&mut self) -> Result<(), ZyxtError> {
-        let mut buffers = self.get_split_between(
-            TokenType::OpenCurlyParen,
-            TokenType::CloseCurlyParen,
-            TokenType::StatementEnd,
-            true,
-        )?;
-        buffers.with_as_buffers(&|b| {
-            b.parse_as_expr()?;
-            Ok(b)
-        })?;
-        self.splice_buffers(buffers);
-        Ok(())
-    }
-    fn parse_as_expr(&mut self) -> Result<(), ZyxtError> {
-        Ok(())
+    fn parse_as_expr(&mut self) -> Result<Element, ZyxtError> {
+        todo!()
     }
 }
 
@@ -1317,10 +1310,7 @@ pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError
     for token in input.iter() {
         if token.ty == Some(TokenType::Comment) {
             comments.push(Element {
-                pos_raw: PosRaw {
-                    position: token.position.to_owned(),
-                    raw: token.get_raw().into(),
-                },
+                pos_raw: token.pos_raw(),
                 data: Box::new(Comment {
                     content: token.value.to_owned(),
                 }),

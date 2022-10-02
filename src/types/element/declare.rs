@@ -1,8 +1,7 @@
 use crate::{
     types::{
-        element::{
-            binary_opr::BinaryOpr, ident::Ident, Element, ElementData, ElementVariant, PosRaw,
-        },
+        element::{binary_opr::BinaryOpr, ident::Ident, Element, ElementData, ElementVariant},
+        position::PosRaw,
         token::{Flag, OprType},
     },
     InterpreterData, Print, Type, Value, ZyxtError,

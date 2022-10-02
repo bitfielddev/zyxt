@@ -29,18 +29,12 @@ use crate::types::{
     },
     errors::ZyxtError,
     interpreter_data::InterpreterData,
-    position::Position,
+    position::{PosRaw, Position},
     printer::Print,
     token::{OprType, Token},
     typeobj::{unit_t::UNIT_T, Type},
     value::Value,
 };
-
-#[derive(Clone, PartialEq, Eq, Debug, Default)]
-pub struct PosRaw {
-    pub position: Position,
-    pub raw: SmolStr,
-}
 
 pub trait ElementData: Clone + PartialEq + Eq + Debug {
     fn as_variant(&self) -> ElementVariant;
@@ -85,13 +79,13 @@ impl<V: ElementData> Element<V> {
         &mut self,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> Result<Type<Element>, ZyxtError> {
-        self.data.process(typelist)
+        self.data.process(pos_raw, typelist)
     }
     pub fn desugared(&self, out: &mut impl Print) -> Result<Element, ZyxtError> {
-        Element {
+        Ok(Element {
             pos_raw: self.pos_raw.to_owned(),
-            data: *self.data.desugared(&self.pos_raw, out)?,
-        }
+            data: self.data.desugared(&self.pos_raw, out)?,
+        })
     }
     pub fn interpret_expr<O: Print>(
         &self,
@@ -179,7 +173,7 @@ impl VecElementRaw for Vec<Element> {
     fn get_raw(&self) -> String {
         self.iter()
             .map(|e| e.pos_raw.raw)
-            .collect::<Vec<String>>()
+            .collect::<Vec<SmolStr>>()
             .join("\n")
     }
 }

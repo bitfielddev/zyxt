@@ -6,9 +6,10 @@ use crate::{
     types::{
         element::{
             block::Block, declare::Declare, ident::Ident, procedure::Argument, Element,
-            ElementData, ElementVariant, PosRaw,
+            ElementData, ElementVariant,
         },
         interpreter_data::FrameType,
+        position::PosRaw,
         token::Flag,
         typeobj::TypeDefinition,
     },

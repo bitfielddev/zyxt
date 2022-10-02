@@ -1,11 +1,14 @@
 use crate::{
-    types::element::{block::Block, Element, ElementData, ElementVariant, PosRaw},
+    types::{
+        element::{block::Block, Element, ElementData, ElementVariant},
+        position::PosRaw,
+    },
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Defer {
-    content: Element<Block>,
+    pub(crate) content: Element<Block>,
 }
 
 impl ElementData for Defer {

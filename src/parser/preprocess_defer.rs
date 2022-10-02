@@ -1,0 +1,74 @@
+use std::borrow::Cow;
+use itertools::Either;
+use crate::parser::buffer::{Buffer, BufferWindow};
+use crate::{Element, ZyxtError};
+use crate::types::element::{ElementData, ElementVariant};
+use crate::types::element::defer::Defer;
+use crate::types::element::preprocess::Preprocess;
+use crate::types::position::{GetPosRaw, PosRaw};
+use crate::types::token::{Keyword, Token, TokenType};
+
+impl<'a> Buffer<'a> {
+    fn parse_preprocess_defer(&mut self) -> Result<(), ZyxtError> {
+        self.reset_cursor();
+        while let Some(selected) = self.next() {
+            let (selected, kwd) = if let Either::Right(selected) = selected {
+                if let Some(TokenType::Keyword(kwd)) = &selected.ty {
+                    if [Keyword::Defer, Keyword::Pre].contains(kwd) {
+                        (selected, kwd)
+                    } else {
+                        continue
+                    }
+                } else {
+                    continue
+                }
+            } else {
+                continue
+            };
+            let mut raw = selected.get_raw();
+            let start = self.cursor;
+            let init_pos_raw = selected.pos_raw();
+            let selected = self.next_or_err(&selected.pos_raw())?;
+
+            raw += &*selected.pos_raw().raw;
+            let (content, end) = if let Either::Left(selected) = selected
+            {
+                if let ElementVariant::Block(_) = &*selected.data {
+                    (selected.to_owned(), self.next_cursor_pos())
+                } else {
+                    (self.rest_incl_curr().with_as_buffer(&|buffer| {
+                        buffer.parse_as_block()
+                    })?, self.content.len())
+                }
+            } else {
+                (self.rest_incl_curr().with_as_buffer(&|buffer| {
+                    buffer.parse_as_block()
+                })?, self.content.len())
+            };
+            let ele = Element {
+                pos_raw: init_pos_raw,
+                data: Box::new(if *kwd == Keyword::Pre {
+                    ElementVariant::Preprocess( Preprocess {
+                        content: Element {
+                            pos_raw: content.pos_raw,
+                            data: Box::new(*content.data.as_block().unwrap())
+                        }
+                    })
+                } else {
+                    ElementVariant::Defer( Defer {
+                        content: Element {
+                            pos_raw: content.pos_raw,
+                            data: Box::new(*content.data.as_block().unwrap())
+                        }
+                    })
+                })
+            };
+            let buffer_window = BufferWindow {
+                slice: Cow::Owned(vec![Either::Left(ele)]),
+                range: start..end
+            };
+            self.splice_buffer(buffer_window);
+        }
+        Ok(())
+    }
+}

@@ -4,7 +4,7 @@ use crate::{
         comments::{lex_block_comment, lex_line_comment},
     },
     types::{
-        element::PosRaw,
+        position::PosRaw,
         token::{OprType, Token, TokenType},
     },
     ZyxtError,
