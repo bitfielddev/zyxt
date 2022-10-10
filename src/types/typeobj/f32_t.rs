@@ -4,11 +4,11 @@ use std::{
 };
 
 use half::f16;
-use lazy_static::lazy_static;
 use num::{
     bigint::{ToBigInt, ToBigUint},
     ToPrimitive,
 };
+use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 
 use crate::{
@@ -70,12 +70,10 @@ fn f32_t() -> HashMap<SmolStr, Value> {
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
-lazy_static! {
-    pub static ref F32_T: TypeDefinition<Value> = TypeDefinition {
-        name: Some("{builtin f32}".into()),
-        inst_name: Some("f32".into()),
-        generics: vec![],
-        implementations: f32_t(),
-        inst_fields: HashMap::new(),
-    };
-}
+pub static F32_T: Lazy<TypeDefinition<Value>> = Lazy::new(|| TypeDefinition {
+    name: Some("{builtin f32}".into()),
+    inst_name: Some("f32".into()),
+    generics: vec![],
+    implementations: f32_t(),
+    inst_fields: HashMap::new(),
+});

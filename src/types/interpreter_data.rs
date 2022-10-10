@@ -3,8 +3,8 @@ use std::{
     fmt::{Debug, Display},
 };
 
-use lazy_static::lazy_static;
 use maplit::hashmap;
+use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 
 use crate::{
@@ -28,8 +28,8 @@ const PRIM_NAMES: [&str; 22] = [
     "str", "bool", "i8", "i16", "i32", "i64", "i128", "isize", "ibig", "u8", "u16", "u32", "u64",
     "u128", "usize", "ubig", "f16", "f32", "f64", "_unit", "_any", "type",
 ];
-lazy_static! {
-    static ref PRIMS: HashMap<&'static str, Type<Value>> = hashmap! {
+static PRIMS: Lazy<HashMap<&'static str, Type<Value>>> = Lazy::new(|| {
+    hashmap! {
         "str" => STR_T.as_type(),
         "bool" => BOOL_T.as_type(),
         "type" => TYPE_T.as_type(),
@@ -52,8 +52,8 @@ lazy_static! {
         "f32" => F32_T.as_type(),
         "f64" => F64_T.as_type(),
         "_any" => Type::Any
-    };
-}
+    }
+});
 
 #[derive(Debug)]
 pub struct FrameData<T: Clone + Display> {

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 
 use crate::{
@@ -69,12 +69,10 @@ fn bool_t() -> HashMap<SmolStr, Value> {
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
-lazy_static! {
-    pub static ref BOOL_T: TypeDefinition<Value> = TypeDefinition {
-        name: Some("{builtin bool}".into()),
-        inst_name: Some("bool".into()),
-        generics: vec![],
-        implementations: bool_t(),
-        inst_fields: HashMap::new(),
-    };
-}
+pub static BOOL_T: Lazy<TypeDefinition<Value>> = Lazy::new(|| TypeDefinition {
+    name: Some("{builtin bool}".into()),
+    inst_name: Some("bool".into()),
+    generics: vec![],
+    implementations: bool_t(),
+    inst_fields: HashMap::new(),
+});

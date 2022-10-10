@@ -6,7 +6,7 @@ mod text_literal;
 mod whitespace;
 mod word;
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use regex::Regex;
 
 use crate::{
@@ -25,12 +25,10 @@ use crate::{
     },
 };
 
-lazy_static! {
-    static ref ALPHANUMERIC: Regex = Regex::new(r"^[a-zA-Z0-9_]+$").unwrap();
-    static ref NUMERIC: Regex = Regex::new(r"^[0-9]+$").unwrap();
-    static ref WHITESPACE: Regex = Regex::new(r"^\s+$").unwrap();
-    static ref ALPHABETIC: Regex = Regex::new(r"^[a-zA-Z_]+$").unwrap();
-}
+static ALPHANUMERIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z0-9_]+$").unwrap());
+static NUMERIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[0-9]+$").unwrap());
+static WHITESPACE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s+$").unwrap());
+static ALPHABETIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z_]+$").unwrap());
 
 pub fn lex(preinput: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
     if preinput.trim().is_empty() {

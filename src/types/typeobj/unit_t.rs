@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 
 use crate::{
@@ -56,13 +56,11 @@ fn unit_t() -> HashMap<SmolStr, Value> {
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
-lazy_static! {
-    pub static ref UNIT_T: TypeDefinition<Value> = TypeDefinition {
-        name: Some("{builtin unit}".into()),
-        inst_name: Some("_unit".into()),
-        generics: vec![],
-        implementations: unit_t(),
-        inst_fields: HashMap::new(),
-    };
-    pub static ref UNIT_T_ELE: TypeDefinition<Element> = UNIT_T.as_type_element();
-}
+pub static UNIT_T: Lazy<TypeDefinition<Value>> = Lazy::new(|| TypeDefinition {
+    name: Some("{builtin unit}".into()),
+    inst_name: Some("_unit".into()),
+    generics: vec![],
+    implementations: unit_t(),
+    inst_fields: HashMap::new(),
+});
+static UNIT_T_ELE: Lazy<TypeDefinition<Element>> = Lazy::new(|| UNIT_T.as_type_element());

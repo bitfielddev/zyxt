@@ -1,8 +1,8 @@
 use std::{collections::HashMap, ops::Rem};
 
 use half::f16;
-use lazy_static::lazy_static;
 use num_traits::{CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, ToPrimitive};
+use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 
 use crate::{
@@ -71,12 +71,10 @@ fn ubig_t() -> HashMap<SmolStr, Value> {
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
-lazy_static! {
-    pub static ref UBIG_T: TypeDefinition<Value> = TypeDefinition {
-        name: Some("{builtin ubig}".into()),
-        inst_name: Some("ubig".into()),
-        generics: vec![],
-        implementations: ubig_t(),
-        inst_fields: HashMap::new(),
-    };
-}
+pub static UBIG_T: Lazy<TypeDefinition<Value>> = Lazy::new(|| TypeDefinition {
+    name: Some("{builtin ubig}".into()),
+    inst_name: Some("ubig".into()),
+    generics: vec![],
+    implementations: ubig_t(),
+    inst_fields: HashMap::new(),
+});

@@ -4,8 +4,8 @@ use std::{
 };
 
 use half::f16;
-use lazy_static::lazy_static;
 use num_traits::ToPrimitive;
+use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 
 use crate::{
@@ -77,12 +77,10 @@ fn ibig_t() -> HashMap<SmolStr, Value> {
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
-lazy_static! {
-    pub static ref IBIG_T: TypeDefinition<Value> = TypeDefinition {
-        name: Some("{builtin ibig}".into()),
-        inst_name: Some("ibig".into()),
-        generics: vec![],
-        implementations: ibig_t(),
-        inst_fields: HashMap::new(),
-    };
-}
+pub static IBIG_T: Lazy<TypeDefinition<Value>> = Lazy::new(|| TypeDefinition {
+    name: Some("{builtin ibig}".into()),
+    inst_name: Some("ibig".into()),
+    generics: vec![],
+    implementations: ibig_t(),
+    inst_fields: HashMap::new(),
+});

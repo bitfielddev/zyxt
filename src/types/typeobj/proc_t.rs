@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use lazy_static::lazy_static;
 use maplit::hashmap;
+use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 
 use crate::{
@@ -36,12 +36,10 @@ fn proc_t() -> HashMap<SmolStr, Value> {
     h.drain().map(|(k, v)| (k.into(), v)).collect()
 }
 
-lazy_static! {
-    pub static ref PROC_T: TypeDefinition<Value> = TypeDefinition {
-        name: Some("{builtin proc}".into()),
-        inst_name: Some("proc".into()),
-        generics: vec![],
-        implementations: proc_t(),
-        inst_fields: hashmap! {SmolStr::from("is_fn") => (Box::new(BOOL_T.as_type()), None)},
-    };
-}
+pub static PROC_T: Lazy<TypeDefinition<Value>> = Lazy::new(|| TypeDefinition {
+    name: Some("{builtin proc}".into()),
+    inst_name: Some("proc".into()),
+    generics: vec![],
+    implementations: proc_t(),
+    inst_fields: hashmap! {SmolStr::from("is_fn") => (Box::new(BOOL_T.as_type()), None)},
+});
