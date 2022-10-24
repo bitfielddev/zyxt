@@ -18,7 +18,7 @@ path = "src/lib.rs"
 [dependencies]
 ansi_term = "^0.12.1"
 regex = "^1.6.0"
-clap = { version = "^3.2.22", features = ["derive"] }
+clap = { version = "^4.0.18", features = ["derive"] }
 rustyline = "^10.0.0"
 dirs = "^4.0.0"
 backtrace = "^0.3.66"
