@@ -164,7 +164,6 @@ impl Buffer {
                 _ => clear_catcher(self, &mut catcher),
             }
         }
-        println!("{:#?}", self.content);
         clear_catcher(self, &mut catcher);
         Ok(())
     }

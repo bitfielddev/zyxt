@@ -26,9 +26,10 @@ impl Buffer {
             };
 
             let init_pos = selected.pos_raw().position;
+            let start = self.cursor;
             self.start_raw_collection();
             let mut args = vec![];
-            let mut start = self.cursor + 1;
+            let mut arg_start = self.cursor + 1;
             while let Some(selected) = self.next() {
                 if matches!(
                     selected,
@@ -37,14 +38,14 @@ impl Buffer {
                         ..
                     })
                 ) {
-                    if start == self.cursor {
+                    if arg_start == self.cursor {
                         todo!("error")
                     }
                     args.push(
-                        self.window(start..self.cursor)
+                        self.window(arg_start..self.cursor)
                             .with_as_buffer(&|buf| buf.parse_as_expr())?,
                     );
-                    start = self.cursor + 1
+                    arg_start = self.cursor + 1
                 }
             }
             if matches!(
