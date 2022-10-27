@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use itertools::Either;
 
 use crate::{
@@ -13,10 +11,11 @@ use crate::{
 };
 
 impl Buffer {
+    #[allow(unused_assignments)]
     pub fn parse_declaration(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         let mut flag_pos = None;
-        let mut start;
+        let mut start = 0;
         while let Some(selected) = self.next() {
             if matches!(
                 selected,

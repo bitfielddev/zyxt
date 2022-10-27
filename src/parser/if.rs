@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use itertools::Either;
 
 use crate::{
@@ -18,7 +16,7 @@ use crate::{
 impl Buffer {
     pub fn parse_if(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
-        while let Some(mut selected) = self.next() {
+        while let Some(selected) = self.next() {
             let kwd = if let Either::Right(Token {
                 ty: Some(TokenType::Keyword(kwd)),
                 ..
@@ -42,7 +40,8 @@ impl Buffer {
             let mut conditions: Vec<Condition> = vec![];
             let mut prev_kwd = Keyword::If;
             self.start_raw_collection();
-            while let mut selected = self.next_or_err()? {
+            loop {
+                let mut selected = self.next_or_err()?;
                 let kwd =
                     if let Either::Right(Token {
                         ty: Some(TokenType::Keyword(prekwd)),
@@ -80,7 +79,8 @@ impl Buffer {
                     Some(ele.to_owned())
                 } else {
                     let start = self.cursor;
-                    while let selected = self.next_or_err()? {
+                    loop {
+                        let selected = self.next_or_err()?;
                         if matches!(
                             selected,
                             Either::Left(Element {

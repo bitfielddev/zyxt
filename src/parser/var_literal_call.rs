@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use itertools::Either;
 use num::BigInt;
 
@@ -30,8 +28,8 @@ impl Buffer {
     pub fn parse_var_literal_call(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         let mut catcher: Option<(Element, usize)> = None;
-        let mut clear_catcher = |s: &mut Self, catcher: &mut Option<(Element, usize)>| {
-            if let Some((mut catcher, start)) = catcher.take() {
+        let clear_catcher = |s: &mut Self, catcher: &mut Option<(Element, usize)>| {
+            if let Some((catcher, start)) = catcher.take() {
                 let buffer_window = BufferWindow {
                     slice: vec![Either::Left(catcher)],
                     range: start..s.cursor,
@@ -149,7 +147,7 @@ impl Buffer {
                         TokenType::Comma,
                     )?;
                     let args = contents.with_as_buffers(&|f| {
-                        let mut ele = f.parse_as_expr()?;
+                        let ele = f.parse_as_expr()?;
                         Ok(ele)
                     })?;
                     *catcher = Element {

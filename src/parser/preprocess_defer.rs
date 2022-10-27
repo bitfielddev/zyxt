@@ -1,13 +1,11 @@
-use std::borrow::Cow;
-
 use itertools::Either;
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{defer::Defer, preprocess::Preprocess, ElementData, ElementVariant},
-        position::{GetPosRaw, PosRaw},
-        token::{Keyword, Token, TokenType},
+        element::{defer::Defer, preprocess::Preprocess, ElementVariant},
+        position::GetPosRaw,
+        token::{Keyword, TokenType},
     },
     Element, ZyxtError,
 };

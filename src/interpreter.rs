@@ -20,7 +20,7 @@ pub fn interpret_asts<O: Print>(
         last = *v
     }
     if last == Value::Unit {
-        last == Value::I32(0);
+        last = Value::I32(0);
     }
     return if let Value::I32(v) = last {
         Ok(v)

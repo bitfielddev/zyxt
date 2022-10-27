@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use itertools::Either;
 
 use crate::{
@@ -25,7 +23,7 @@ impl Buffer {
             ) {
                 continue;
             }
-            let mut value = self
+            let value = self
                 .rest_incl_curr()
                 .with_as_buffer(&|buf| buf.parse_as_expr())?;
             let ele = Element {

@@ -1,16 +1,6 @@
 use crate::{
-    types::{
-        element::Element,
-        interpreter_data::InterpreterData,
-        printer::Print,
-        token::{OprType, Token},
-        typeobj::{
-            bool_t::BOOL_T, proc_t::PROC_T, type_t::TYPE_T, unit_t::UNIT_T, Type, TypeDefinition,
-            TypeInstance,
-        },
-        value::Proc,
-    },
-    Value, ZyxtError,
+    types::{element::Element, interpreter_data::InterpreterData, printer::Print, typeobj::Type},
+    ZyxtError,
 };
 
 pub fn gen_instructions<O: Print>(

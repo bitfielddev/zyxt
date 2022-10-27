@@ -4,7 +4,7 @@ use smol_str::SmolStr;
 
 use crate::{
     types::{
-        element::{block::Block, ident::Ident, Element, ElementData, ElementVariant},
+        element::{block::Block, Element, ElementData, ElementVariant},
         interpreter_data::FrameType,
         position::PosRaw,
         typeobj::{proc_t::PROC_T, unit_t::UNIT_T, TypeInstance},
@@ -77,7 +77,7 @@ impl ElementData for Procedure {
             },
         );
         let return_type = self.return_type.process(typelist)?;
-        for mut arg in &mut self.args {
+        for arg in &mut self.args {
             let value = arg.ty.process(typelist)?;
             typelist.declare_val(&arg.name, &value);
         }

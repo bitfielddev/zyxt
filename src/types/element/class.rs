@@ -121,7 +121,7 @@ impl ElementData for Class {
             .as_mut()
             .map(|args| {
                 args.into_iter()
-                    .map(|mut arg| {
+                    .map(|arg| {
                         arg.desugar(pos_raw, out)?;
                         Ok(arg)
                     })

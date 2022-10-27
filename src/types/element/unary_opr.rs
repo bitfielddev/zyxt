@@ -4,7 +4,7 @@ use crate::{
         position::PosRaw,
         token::OprType,
     },
-    Print, Value, ZyxtError,
+    Print, ZyxtError,
 };
 
 #[derive(Clone, PartialEq, Debug)]

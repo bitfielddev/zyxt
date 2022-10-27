@@ -18,11 +18,7 @@ use crate::{
         whitespace::{clean_whitespaces, lex_whitespace},
         word::lex_word,
     },
-    types::{
-        errors::ZyxtError,
-        position::Position,
-        token::{Token, TokenType},
-    },
+    types::{errors::ZyxtError, position::Position, token::Token},
 };
 
 static ALPHANUMERIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z0-9_]+$").unwrap());

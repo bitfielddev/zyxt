@@ -1,6 +1,6 @@
 use crate::{
     types::{
-        element::{binary_opr::BinaryOpr, ident::Ident, Element, ElementData, ElementVariant},
+        element::{binary_opr::BinaryOpr, Element, ElementData, ElementVariant},
         position::PosRaw,
         token::{Flag, OprType},
     },

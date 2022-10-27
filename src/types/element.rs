@@ -19,7 +19,6 @@ use std::fmt::Debug;
 
 use enum_as_inner::EnumAsInner;
 use itertools::Itertools;
-use smol_str::SmolStr;
 
 use crate::types::{
     element::{
@@ -57,7 +56,7 @@ pub trait ElementData: Clone + PartialEq + Debug {
     }
     fn interpret_expr<O: Print>(
         &self,
-        i_data: &mut InterpreterData<Value, O>,
+        _: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
         unreachable!()
     }

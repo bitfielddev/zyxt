@@ -13,25 +13,17 @@ mod un_opr;
 mod unparen_call;
 mod var_literal_call;
 
-use std::{borrow::Cow, cmp::min, collections::HashMap};
-
 use itertools::Either;
-use num::BigInt;
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{
-            block::Block, comment::Comment, ident::Ident, procedure::Argument, r#if::Condition,
-            Element, ElementData, ElementVariant, VecElementRaw,
-        },
+        element::{block::Block, comment::Comment, Element},
         errors::ZyxtError,
-        position::{GetPosRaw, PosRaw},
-        token::{get_order, Keyword, OprType, Side, Token, TokenCategory, TokenType},
-        typeobj::unit_t::UNIT_T,
+        position::GetPosRaw,
+        token::{Token, TokenType},
         value::Value,
     },
-    Type,
 };
 
 impl Buffer {

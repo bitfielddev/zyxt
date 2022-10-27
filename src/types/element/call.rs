@@ -124,7 +124,7 @@ impl ElementData for Call {
     fn desugared(
         &self,
         _pos_raw: &PosRaw,
-        out: &mut impl Print,
+        _: &mut impl Print,
     ) -> Result<ElementVariant, ZyxtError> {
         todo!()
     }

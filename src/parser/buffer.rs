@@ -1,10 +1,10 @@
-use std::ops::{Range, RangeBounds};
+use std::ops::Range;
 
 use itertools::Either;
 
 use crate::{
     types::{
-        position::{GetPosRaw, PosRaw},
+        position::GetPosRaw,
         token::{Token, TokenType},
     },
     Element, ZyxtError,
@@ -116,7 +116,7 @@ impl Buffer {
         while let Some(ele) = self.next() {
             if let Either::Right(ele) = ele {
                 if start_token == end_token {
-                    nest_level == if nest_level == 1 { 0 } else { 1 };
+                    nest_level = if nest_level == 1 { 0 } else { 1 };
                 } else if ele.ty == Some(start_token) {
                     nest_level += 1
                 } else if ele.ty == Some(end_token) {
@@ -164,7 +164,7 @@ impl Buffer {
         while let Some(ele) = self.next() {
             if let Either::Right(ele) = ele {
                 if start_token == end_token {
-                    nest_level == if nest_level == 1 { 0 } else { 1 };
+                    nest_level = if nest_level == 1 { 0 } else { 1 };
                 } else if ele.ty == Some(start_token) {
                     nest_level += 1
                 } else if ele.ty == Some(end_token) {
@@ -191,20 +191,6 @@ impl Buffer {
         self.content = self.content.to_owned();
         self.cursor = buffer.range.end + buffer.slice.len() - buffer.range.len();
         self.content.splice(buffer.range, buffer.slice);
-    }
-    pub fn splice_buffers(&mut self, buffers: BufferWindows) {
-        self.content = self.content.to_owned();
-        self.cursor = buffers.range.end
-            + buffers
-                .buffer_windows
-                .iter()
-                .map(|b| b.slice.len())
-                .sum::<usize>()
-            - buffers.range.len();
-        self.content.splice(
-            buffers.range,
-            buffers.buffer_windows.into_iter().flat_map(|b| b.slice),
-        );
     }
 }
 
@@ -243,9 +229,6 @@ pub struct BufferWindows {
     pub range: Range<usize>,
 }
 impl BufferWindows {
-    pub fn as_buffers(&self) -> Vec<Buffer> {
-        self.buffer_windows.iter().map(|a| a.as_buffer()).collect()
-    }
     pub fn with_as_buffers<T>(
         &mut self,
         f: &dyn Fn(&mut Buffer) -> Result<T, ZyxtError>,
