@@ -36,7 +36,6 @@ impl Buffer {
                     slice: vec![Either::Left(catcher)],
                     range: start..s.cursor,
                 };
-                println!("{:#?}{}", s.content.len(), s.cursor);
                 s.splice_buffer(buffer_window);
             }
         };
@@ -165,7 +164,7 @@ impl Buffer {
                 _ => clear_catcher(self, &mut catcher),
             }
         }
-        self.cursor -= 1;
+        println!("{:#?}", self.content);
         clear_catcher(self, &mut catcher);
         Ok(())
     }
