@@ -16,7 +16,7 @@ use crate::{
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Call {
     pub called: Element,
     pub args: Vec<Element>,
@@ -29,7 +29,7 @@ impl ElementData for Call {
     }
     fn process<O: Print>(
         &mut self,
-        _pos_raw: &PosRaw,
+        pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> Result<Type<Element>, ZyxtError> {
         if let ElementVariant::Ident(Ident {
@@ -37,12 +37,12 @@ impl ElementData for Call {
             parent:
                 Some(Element {
                     data:
-                        ElementVariant::Ident(Ident {
+                        box ElementVariant::Ident(Ident {
                             name: parent_name, ..
                         }),
                     ..
                 }),
-        }) = &self.called.data
+        }) = &*self.called.data
         {
             if &**name == "out" && &**parent_name == "ter" {
                 self.args
@@ -117,7 +117,7 @@ impl ElementData for Call {
             } else {
                 unreachable!()
             };
-            self.process(typelist)
+            self.process(pos_raw, typelist)
         }
     }
 
@@ -138,14 +138,14 @@ impl ElementData for Call {
             parent:
                 Some(Element {
                     data:
-                        ElementVariant::Ident(Ident {
+                        box ElementVariant::Ident(Ident {
                             name: parent_name, ..
                         }),
                     ..
                 }),
-        }) = &self.called.data
+        }) = &*self.called.data
         {
-            if *name == "out" && parent_name == *"ter" {
+            if *name == "out" && *parent_name == "ter" {
                 let s = self
                     .args
                     .iter()

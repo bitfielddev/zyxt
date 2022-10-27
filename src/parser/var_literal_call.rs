@@ -20,20 +20,20 @@ impl<'a> Buffer<'a> {
             return None;
         }
         Some(Element {
-            pos_raw: selected.pos_raw(),
+            pos_raw: token.pos_raw(),
             data: Box::new(Ident {
-                name: selected.value.to_owned(),
+                name: token.value.to_owned(),
                 parent: None,
             }),
         })
     }
-    fn parse_var_literal_call(&mut self) -> Result<(), ZyxtError> {
+    pub(crate) fn parse_var_literal_call(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         let mut catcher: Option<(Element, usize)> = None;
         let clear_catcher = || {
             if let Some((mut catcher, start)) = catcher.take() {
                 let buffer_window = BufferWindow {
-                    slice: Cow::Owned(vec![catcher]),
+                    slice: Cow::Owned(vec![Either::Left(catcher)]),
                     range: start..self.cursor,
                 };
                 self.splice_buffer(buffer_window);
@@ -55,8 +55,11 @@ impl<'a> Buffer<'a> {
                     };
                     let selected = match self.next_or_err()? {
                         Either::Left(c) => {
-                            if let Some(ident) = c.as_ident() {
-                                ident
+                            if let ElementVariant::Ident(ident) = *c.data {
+                                Element {
+                                    pos_raw: c.pos_raw.to_owned(),
+                                    data: Box::new(ident.to_owned()),
+                                }
                             } else {
                                 todo!("get item")
                             }
@@ -79,7 +82,7 @@ impl<'a> Buffer<'a> {
                 }
                 Some(TokenType::Ident) => {
                     clear_catcher();
-                    *catcher = Some((
+                    catcher = Some((
                         Buffer::parse_ident(selected).unwrap().as_variant(),
                         self.cursor,
                     ))
@@ -88,42 +91,45 @@ impl<'a> Buffer<'a> {
                 | Some(TokenType::LiteralMisc)
                 | Some(TokenType::LiteralString) => {
                     clear_catcher();
-                    *catcher = Element {
-                        pos_raw: selected.pos_raw(),
-                        data: Box::new(ElementVariant::Literal(Literal {
-                            content: match selected.ty {
-                                Some(TokenType::LiteralMisc) => match &*selected.value {
-                                    "true" => Value::Bool(true),
-                                    "false" => Value::Bool(false),
-                                    "unit" => todo!(),
-                                    "inf" => Value::F64(f64::INFINITY),
-                                    _ => unreachable!("{}", selected.value),
-                                },
-                                Some(TokenType::LiteralNumber) => {
-                                    if selected.value.contains('.') {
-                                        Value::F64(selected.value.parse().unwrap())
-                                    // TODO Decimal
-                                    } else if let Ok(val) = selected.value.parse::<i32>() {
-                                        Value::I32(val)
-                                    } else if let Ok(val) = selected.value.parse::<i64>() {
-                                        Value::I64(val)
-                                    } else if let Ok(val) = selected.value.parse::<i128>() {
-                                        Value::I128(val)
-                                    } else if let Ok(val) = selected.value.parse::<u128>() {
-                                        Value::U128(val)
-                                    } else if let Ok(val) = selected.value.parse::<BigInt>() {
-                                        Value::Ibig(val)
-                                    } else {
-                                        unreachable!()
+                    catcher = Some((
+                        Element {
+                            pos_raw: selected.pos_raw(),
+                            data: Box::new(ElementVariant::Literal(Literal {
+                                content: match selected.ty {
+                                    Some(TokenType::LiteralMisc) => match &*selected.value {
+                                        "true" => Value::Bool(true),
+                                        "false" => Value::Bool(false),
+                                        "unit" => todo!(),
+                                        "inf" => Value::F64(f64::INFINITY),
+                                        _ => unreachable!("{}", selected.value),
+                                    },
+                                    Some(TokenType::LiteralNumber) => {
+                                        if selected.value.contains('.') {
+                                            Value::F64(selected.value.parse().unwrap())
+                                        // TODO Decimal
+                                        } else if let Ok(val) = selected.value.parse::<i32>() {
+                                            Value::I32(val)
+                                        } else if let Ok(val) = selected.value.parse::<i64>() {
+                                            Value::I64(val)
+                                        } else if let Ok(val) = selected.value.parse::<i128>() {
+                                            Value::I128(val)
+                                        } else if let Ok(val) = selected.value.parse::<u128>() {
+                                            Value::U128(val)
+                                        } else if let Ok(val) = selected.value.parse::<BigInt>() {
+                                            Value::Ibig(val)
+                                        } else {
+                                            unreachable!()
+                                        }
                                     }
-                                }
-                                Some(TokenType::LiteralString) => Value::Str(
-                                    selected.value[1..selected.value.len() - 1].to_string(),
-                                ),
-                                _ty => unreachable!("{_ty:?}"),
-                            },
-                        })),
-                    }
+                                    Some(TokenType::LiteralString) => Value::Str(
+                                        selected.value[1..selected.value.len() - 1].to_string(),
+                                    ),
+                                    _ty => unreachable!("{_ty:?}"),
+                                },
+                            })),
+                        },
+                        self.cursor,
+                    ))
                 }
                 Some(TokenType::CloseParen) => {
                     return Err(ZyxtError::error_2_0_2(')'.to_string()).with_token(selected))

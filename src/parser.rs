@@ -55,19 +55,19 @@ impl<'a> Buffer<'a> {
     }
     fn parse_as_expr(&mut self) -> Result<Element, ZyxtError> {
         self.parse_parentheses()?;
-        self.parse_if_expr()?;
-        self.parse_procs_and_fns()?;
-        self.parse_preprocess_and_defer()?;
-        self.parse_classes_structs_and_mixins()?;
-        //self.parse_enums()?;
-        self.parse_vars_literals_and_calls()?;
-        self.parse_delete_expr()?;
-        self.parse_return_expr()?;
-        self.parse_declaration_expr()?;
-        self.parse_assignment_oprs()?;
-        self.parse_normal_oprs()?;
-        self.parse_unparen_calls()?;
-        self.parse_un_oprs()?;
+        self.parse_if()?;
+        self.parse_proc_fn()?;
+        self.parse_preprocess_defer()?;
+        self.parse_class_struct()?;
+        //self.parse_enum()?;
+        self.parse_var_literal_call()?;
+        self.parse_delete()?;
+        self.parse_return()?;
+        self.parse_declaration()?;
+        self.parse_assignment_opr()?;
+        self.parse_bin_opr()?;
+        self.parse_un_opr()?;
+        self.parse_unparen_call()?;
         if let Some(ele) = self.content.get(2) {
             return Err(ZyxtError::error_2_1_0(ele.pos_raw().raw).with_pos_raw(&ele.pos_raw()));
         }

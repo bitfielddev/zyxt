@@ -8,12 +8,12 @@ use crate::{
         element::{call::Call, Element, ElementVariant},
         errors::ZyxtError,
         position::{GetPosRaw, PosRaw},
-        token::TokenType,
+        token::{Token, TokenType},
     },
 };
 
 impl<'a> Buffer<'a> {
-    fn parse_unparen_call(&mut self) -> Result<(), ZyxtError> {
+    pub(crate) fn parse_unparen_call(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             if self.cursor == self.content.len() - 1 {
@@ -33,7 +33,8 @@ impl<'a> Buffer<'a> {
                 if matches!(
                     selected,
                     Either::Right(Token {
-                        ty: Some(TokenType::Comma)
+                        ty: Some(TokenType::Comma),
+                        ..
                     })
                 ) {
                     if start == self.cursor {
@@ -47,9 +48,10 @@ impl<'a> Buffer<'a> {
                 }
             }
             if matches!(
-                self.content.last,
+                self.content.last(),
                 Some(Either::Right(Token {
-                    ty: Some(TokenType::Comma)
+                    ty: Some(TokenType::Comma),
+                    ..
                 }))
             ) {
                 todo!("error")

@@ -8,12 +8,12 @@ use crate::{
         element::{delete::Delete, ident::Ident, unary_opr::UnaryOpr, Element, ElementVariant},
         errors::ZyxtError,
         position::{GetPosRaw, PosRaw},
-        token::{OprType, TokenType},
+        token::{Keyword, OprType, Token, TokenType},
     },
 };
 
 impl<'a> Buffer<'a> {
-    fn parse_delete(&mut self) -> Result<(), ZyxtError> {
+    pub(crate) fn parse_delete(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             if !matches!(
@@ -31,16 +31,16 @@ impl<'a> Buffer<'a> {
             let vars: Vec<Element<Ident>> =
                 self.get_split(TokenType::Comma)?.with_as_buffers(&|buf| {
                     let ele = buf.parse_as_expr()?;
-                    if let Some(data) = ele.data.as_ident() {
+                    if let ElementVariant::Ident(data) = &*ele.data {
                         Ok(Element {
                             pos_raw: ele.pos_raw,
-                            data,
+                            data: Box::new(data.to_owned()),
                         })
                     } else if let ElementVariant::UnaryOpr(UnaryOpr {
                         ty: OprType::Deref, ..
-                    }) = ele
+                    }) = *ele.data
                     {
-                        Err(ZyxtError::error_2_1_12(raw.to_owned()).with_element(&ele))
+                        Err(ZyxtError::error_2_1_12(ele.pos_raw.raw).with_element(&ele))
                     } else {
                         Err(ZyxtError::error_2_1_11(ele.pos_raw.raw).with_element(&ele))
                     }

@@ -12,19 +12,15 @@ use crate::{
 
 pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), ZyxtError> {
     let (char, pos) = iter.next().unwrap();
+    let pos = pos.to_owned();
     let mut char = char.to_string();
     tokens.push(Token {
         ty: Some(match &*char {
-            "+" => match iter.peek().as_mut() {
+            "+" => match iter.peek() {
                 Some(("=", _)) => {
                     iter.next().unwrap();
                     char.push('=');
                     TokenType::AssignmentOpr(Some(OprType::Plus))
-                }
-                Some(("+", _)) => {
-                    iter.next().unwrap();
-                    char.push('+');
-                    TokenType::UnaryOpr(OprType::Increment)
                 }
                 Some(("-", _)) => {
                     iter.next().unwrap();
@@ -38,11 +34,6 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), Zyxt
                     iter.next().unwrap();
                     char.push('=');
                     TokenType::AssignmentOpr(Some(OprType::Minus))
-                }
-                Some(("-", _)) => {
-                    iter.next().unwrap();
-                    char.push('-');
-                    TokenType::UnaryOpr(OprType::Decrement)
                 }
                 Some(("+", _)) => {
                     iter.next().unwrap();
@@ -194,7 +185,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), Zyxt
             }
         }),
         value: char.into(),
-        position: pos.to_owned(),
+        position: pos,
         ..Default::default()
     });
     Ok(())

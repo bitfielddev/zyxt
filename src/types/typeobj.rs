@@ -242,16 +242,7 @@ impl TypeDefinition<Value> {
             implementations: self
                 .implementations
                 .iter()
-                .map(|(k, v)| {
-                    (
-                        k.to_owned(),
-                        Element::Literal {
-                            position: Default::default(),
-                            raw: "".into(),
-                            content: v.to_owned(),
-                        },
-                    )
-                })
+                .map(|(k, v)| (k.to_owned(), v.as_element()))
                 .collect(),
             inst_fields: self
                 .inst_fields
@@ -261,11 +252,7 @@ impl TypeDefinition<Value> {
                         k.to_owned(),
                         (
                             Box::new(v1.as_type_element()),
-                            v2.to_owned().map(|v2| Element::Literal {
-                                position: Default::default(),
-                                raw: "".into(),
-                                content: v2,
-                            }),
+                            v2.to_owned().map(|v2| v2.as_element()),
                         ),
                     )
                 })
@@ -276,11 +263,7 @@ impl TypeDefinition<Value> {
 
 impl Type<Element> {
     pub fn as_literal(&self) -> Element {
-        Element::Literal {
-            position: Default::default(),
-            raw: "".into(),
-            content: Value::PreType(self.to_owned()),
-        }
+        Value::PreType(self.to_owned()).as_element()
     }
     pub fn implementation(&self) -> &TypeDefinition<Element> {
         match &self {

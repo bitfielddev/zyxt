@@ -5,18 +5,15 @@ use itertools::Either;
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{
-            delete::Delete, ident::Ident, r#return::Return, unary_opr::UnaryOpr, Element,
-            ElementVariant,
-        },
+        element::{r#return::Return, Element, ElementVariant},
         errors::ZyxtError,
         position::{GetPosRaw, PosRaw},
-        token::{Keyword, OprType, TokenType},
+        token::{Keyword, Token, TokenType},
     },
 };
 
 impl<'a> Buffer<'a> {
-    fn parse_return(&mut self) -> Result<(), ZyxtError> {
+    pub(crate) fn parse_return(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             if !matches!(
@@ -40,7 +37,7 @@ impl<'a> Buffer<'a> {
             };
             let buffer_window = BufferWindow {
                 slice: Cow::Owned(vec![Either::Left(ele)]),
-                range: start..self.content.len(),
+                range: self.cursor..self.content.len(),
             };
             self.splice_buffer(buffer_window)
         }

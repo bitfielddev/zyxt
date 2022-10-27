@@ -6,7 +6,7 @@ use crate::{
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Set {
     pub variable: Element,
     pub content: Element,
@@ -26,12 +26,14 @@ impl ElementData for Set {
             return Err(ZyxtError::error_2_2(self.variable.to_owned()).with_element(&self.variable));
         }
         let content_type = self.content.process(typelist)?;
-        let var_type = typelist.get_val(&self.variable.data.name, pos_raw)?;
+        let name = if let ElementVariant::Ident(ident) = &*self.variable.data {
+            &ident.name
+        } else {
+            unimplemented!() // TODO
+        };
+        let var_type = typelist.get_val(name, pos_raw)?;
         if content_type != var_type {
-            Err(
-                ZyxtError::error_4_3(self.variable.data.name, var_type, content_type)
-                    .with_pos_raw(pos_raw),
-            )
+            Err(ZyxtError::error_4_3(name, var_type, content_type).with_pos_raw(pos_raw))
         } else {
             Ok(var_type)
         }
@@ -52,11 +54,12 @@ impl ElementData for Set {
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
         let var = self.content.interpret_expr(i_data);
-        i_data.set_val(
-            &self.variable.data.name,
-            &var.to_owned()?,
-            Default::default(),
-        )?; // TODO
+        let name = if let ElementVariant::Ident(ident) = &*self.variable.data {
+            &ident.name
+        } else {
+            unimplemented!() // TODO
+        };
+        i_data.set_val(name, &var.to_owned()?, &Default::default())?; // TODO
         var
     }
 }

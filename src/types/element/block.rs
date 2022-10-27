@@ -8,7 +8,7 @@ use crate::{
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Block {
     pub content: Vec<Element>,
 }
@@ -32,7 +32,11 @@ impl ElementData for Block {
         out: &mut impl Print,
     ) -> Result<ElementVariant, ZyxtError> {
         Ok(ElementVariant::Block(Self {
-            content: self.content.iter().map(|c| c.desugared(out)).collect(),
+            content: self
+                .content
+                .iter()
+                .map(|c| c.desugared(out))
+                .collect::<Result<_, _>>()?,
         }))
     }
 
@@ -60,16 +64,16 @@ impl Block {
                 if return_type.to_owned().is_none() {
                     return_type = Some(*value);
                 } else if last != return_type.to_owned().unwrap() {
-                    return Err(ZyxtError::error_4_t(last, return_type.unwrap())
-                        .with_pos_raw(ele.get_pos(), &ele.pos_raw.raw));
+                    return Err(
+                        ZyxtError::error_4_t(last, return_type.unwrap()).with_pos_raw(&ele.pos_raw)
+                    );
                 }
             }
         }
         if let Some(return_type) = return_type.to_owned() {
             if last != return_type {
                 let last_ele = self.content.last().unwrap();
-                return Err(ZyxtError::error_4_t(last, return_type)
-                    .with_pos_raw(last_ele.get_pos(), &last_ele.pos_raw.raw));
+                return Err(ZyxtError::error_4_t(last, return_type).with_pos_raw(&last_ele.pos_raw));
             }
         }
         if add_set {
@@ -100,7 +104,7 @@ impl Block {
             i_data.add_frame(None, FrameType::Normal);
         }
         for ele in self.content {
-            if let ElementVariant::Return(r#return) = &ele.data {
+            if let ElementVariant::Return(r#return) = &*ele.data {
                 if returnable {
                     last = r#return.value.interpret_expr(i_data)?
                 } else {

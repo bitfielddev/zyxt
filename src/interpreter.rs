@@ -25,6 +25,6 @@ pub fn interpret_asts<O: Print>(
     return if let Value::I32(v) = last {
         Ok(v)
     } else {
-        Err(ZyxtError::error_4_2(last).with_pos_raw(Default::default())) // TODO
+        Err(ZyxtError::error_4_2(last).with_pos_raw(&Default::default())) // TODO
     };
 }

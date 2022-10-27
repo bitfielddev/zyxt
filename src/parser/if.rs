@@ -16,7 +16,7 @@ use crate::{
 };
 
 impl<'a> Buffer<'a> {
-    fn parse_if(&mut self) -> Result<(), ZyxtError> {
+    pub(crate) fn parse_if(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(mut selected) = self.next() {
             let kwd = if let Either::Right(Token {
@@ -43,39 +43,41 @@ impl<'a> Buffer<'a> {
             };
 
             let init_pos = selected.pos_raw().position;
+            let start = self.cursor;
             let mut conditions: Vec<Condition> = vec![];
             let mut prev_kwd = Keyword::If;
             self.start_raw_collection();
             while let mut selected = self.next_or_err()? {
-                let kwd = if let Either::Right(Token {
-                    ty: Some(TokenType::Keyword(prekwd)),
-                    ..
-                }) = catcher_selected
-                {
-                    match prekwd {
-                        Keyword::If if *position == start_pos => Keyword::If,
-                        Keyword::Elif if prev_kwd != Keyword::Else => Keyword::Elif,
-                        Keyword::Else if prev_kwd != Keyword::Else => Keyword::Else,
-                        Keyword::Elif if prev_kwd == Keyword::Else => {
-                            return Err(ZyxtError::error_2_1_7(Keyword::Elif.to_string())
-                                .with_pos_raw(&selected.pos_raw()))
+                let kwd =
+                    if let Either::Right(Token {
+                        ty: Some(TokenType::Keyword(prekwd)),
+                        ..
+                    }) = selected
+                    {
+                        match prekwd {
+                            Keyword::If if self.cursor == start => Keyword::If,
+                            Keyword::Elif if prev_kwd != Keyword::Else => Keyword::Elif,
+                            Keyword::Else if prev_kwd != Keyword::Else => Keyword::Else,
+                            Keyword::Elif if prev_kwd == Keyword::Else => {
+                                return Err(ZyxtError::error_2_1_7("elif")
+                                    .with_pos_raw(&selected.pos_raw()))
+                            }
+                            Keyword::Else if prev_kwd == Keyword::Else => {
+                                return Err(ZyxtError::error_2_1_7("else")
+                                    .with_pos_raw(&selected.pos_raw()))
+                            }
+                            _ => break,
                         }
-                        Keyword::Else if prev_kwd == Keyword::Else => {
-                            return Err(ZyxtError::error_2_1_7(Keyword::Else.to_string())
-                                .with_pos_raw(&selected.pos_raw()))
-                        }
-                        _ => break,
-                    }
-                } else {
-                    break;
-                };
+                    } else {
+                        break;
+                    };
                 prev_kwd = kwd;
                 selected = self.next_or_err()?;
                 let condition = if kwd == Keyword::Else {
                     None
                 } else if let Either::Left(
                     ele @ Element {
-                        data: ElementVariant::Block(_),
+                        data: box ElementVariant::Block(_),
                         ..
                     },
                 ) = selected
@@ -87,7 +89,7 @@ impl<'a> Buffer<'a> {
                         if matches!(
                             selected,
                             Either::Left(Element {
-                                data: Box(ElementVariant::Block(_), ..),
+                                data: box ElementVariant::Block(_),
                                 ..
                             })
                         ) {
@@ -102,20 +104,19 @@ impl<'a> Buffer<'a> {
                 };
                 selected = self.next_or_err()?;
                 let block = if let Either::Left(Element {
-                    data: ElementVariant::Block(block),
+                    data: box ElementVariant::Block(block),
                     ..
                 }) = selected
                 {
                     block
                 } else {
-                    return Err(
-                        ZyxtError::error_2_1_8(catcher_selected.pos_raw.raw).with_element(selected)
-                    );
+                    return Err(ZyxtError::error_2_1_8(selected.pos_raw().raw)
+                        .with_pos_raw(&selected.pos_raw()));
                 };
                 conditions.push(Condition {
                     condition,
                     if_true: Element {
-                        pos_raw: catcher_selected.pos_raw.to_owned(),
+                        pos_raw: selected.pos_raw().to_owned(),
                         data: Box::new(block.to_owned()),
                     },
                 });
@@ -130,7 +131,7 @@ impl<'a> Buffer<'a> {
             };
             let buffer_window = BufferWindow {
                 slice: Cow::Owned(vec![Either::Left(ele)]),
-                range: start..self.content.len(),
+                range: start..self.next_cursor_pos(),
             };
             self.splice_buffer(buffer_window)
         }

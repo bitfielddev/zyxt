@@ -13,7 +13,7 @@ use crate::{
 };
 
 impl<'a> Buffer<'a> {
-    fn parse_preprocess_defer(&mut self) -> Result<(), ZyxtError> {
+    pub(crate) fn parse_preprocess_defer(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             let (selected, kwd) = if let Either::Right(selected) = selected {
@@ -41,14 +41,16 @@ impl<'a> Buffer<'a> {
                 } else {
                     (
                         self.rest_incl_curr()
-                            .with_as_buffer(&|buffer| buffer.parse_as_block())?,
+                            .with_as_buffer(&|buffer| buffer.parse_as_block())?
+                            .as_variant(),
                         self.content.len(),
                     )
                 }
             } else {
                 (
                     self.rest_incl_curr()
-                        .with_as_buffer(&|buffer| buffer.parse_as_block())?,
+                        .with_as_buffer(&|buffer| buffer.parse_as_block())?
+                        .as_variant(),
                     self.content.len(),
                 )
             };

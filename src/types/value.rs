@@ -10,7 +10,7 @@ use num::{BigInt, BigUint};
 
 use crate::{
     types::{
-        element::{block::Block, procedure::Argument},
+        element::{block::Block, literal::Literal, procedure::Argument, ElementVariant},
         typeobj::{
             bool_t::BOOL_T, f16_t::F16_T, f32_t::F32_T, f64_t::F64_T, i128_t::I128_T, i16_t::I16_T,
             i32_t::I32_T, i64_t::I64_T, i8_t::I8_T, ibig_t::IBIG_T, isize_t::ISIZE_T,
@@ -268,10 +268,11 @@ impl Value {
         Value::Type(self.get_type_obj())
     }
     pub fn as_element(&self) -> Element {
-        Element::Literal {
-            position: Default::default(),
-            raw: self.to_string(),
-            content: self.to_owned(),
+        Element {
+            pos_raw: Default::default(),
+            data: Box::new(ElementVariant::Literal(Literal {
+                content: self.to_owned(),
+            })),
         }
     }
 }

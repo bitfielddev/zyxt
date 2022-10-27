@@ -7,7 +7,7 @@ use crate::{
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Declare {
     pub variable: Element,
     pub content: Element,
@@ -29,7 +29,7 @@ impl ElementData for Declare {
             return Err(ZyxtError::error_2_2(self.variable.to_owned()).with_element(&self.variable));
         }
         let content_type = self.content.process(typelist)?;
-        let ty = if let ElementVariant::Literal(literal) = self.ty.data.as_ref() {
+        let ty = if let ElementVariant::Literal(literal) = &*self.ty.unwrap().data {
             if let Value::Type(t) = &literal.content {
                 t
             } else {
@@ -39,10 +39,15 @@ impl ElementData for Declare {
             todo!()
         }
         .as_type_element();
-        if ty == Type::Any {
-            typelist.declare_val(&self.variable.data.name, &content_type);
+        let name = if let ElementVariant::Ident(ident) = &*self.variable.data {
+            &ident.name
         } else {
-            typelist.declare_val(&self.variable.data.name, &ty);
+            unimplemented!() // TODO
+        };
+        if ty == Type::Any {
+            typelist.declare_val(name, &content_type);
+        } else {
+            typelist.declare_val(name, &ty);
             if content_type != ty {
                 let mut new_content = BinaryOpr {
                     ty: OprType::TypeCast,
@@ -50,7 +55,7 @@ impl ElementData for Declare {
                     operand2: ty.as_literal(),
                 }
                 .as_variant();
-                new_content.process(typelist)?;
+                new_content.process(pos_raw, typelist)?;
                 *self = Declare {
                     ty: self.ty.to_owned(),
                     content: Element {
@@ -80,8 +85,13 @@ impl ElementData for Declare {
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
+        let name = if let ElementVariant::Ident(ident) = &*self.variable.data {
+            &ident.name
+        } else {
+            unimplemented!() // TODO
+        };
         let var = self.content.interpret_expr(i_data);
-        i_data.declare_val(&self.variable.data.name, &var.to_owned()?);
+        i_data.declare_val(name, &var.to_owned()?);
         var
     }
 }

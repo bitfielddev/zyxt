@@ -15,7 +15,7 @@ pub mod r#return;
 pub mod set;
 pub mod unary_opr;
 
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::Debug;
 
 use enum_as_inner::EnumAsInner;
 use smol_str::SmolStr;
@@ -29,14 +29,13 @@ use crate::types::{
     },
     errors::ZyxtError,
     interpreter_data::InterpreterData,
-    position::{PosRaw, Position},
+    position::PosRaw,
     printer::Print,
-    token::{OprType, Token},
-    typeobj::{unit_t::UNIT_T, Type},
+    typeobj::Type,
     value::Value,
 };
 
-pub trait ElementData: Clone + PartialEq + Eq + Debug {
+pub trait ElementData: Clone + PartialEq + Debug {
     fn as_variant(&self) -> ElementVariant;
     fn is_pattern(&self) -> bool {
         false
@@ -70,7 +69,7 @@ pub struct Element<V: ElementData = ElementVariant> {
 }
 impl<V: ElementData> Element<V> {
     pub fn as_variant(&self) -> Element {
-        self.to_owned()
+        unimplemented!()
     }
     pub fn is_pattern(&self) -> bool {
         self.data.is_pattern()
@@ -79,12 +78,12 @@ impl<V: ElementData> Element<V> {
         &mut self,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> Result<Type<Element>, ZyxtError> {
-        self.data.process(pos_raw, typelist)
+        self.data.process(&self.pos_raw, typelist)
     }
     pub fn desugared(&self, out: &mut impl Print) -> Result<Element, ZyxtError> {
         Ok(Element {
             pos_raw: self.pos_raw.to_owned(),
-            data: self.data.desugared(&self.pos_raw, out)?,
+            data: Box::new(self.data.desugared(&self.pos_raw, out)?),
         })
     }
     pub fn interpret_expr<O: Print>(
@@ -97,7 +96,7 @@ impl<V: ElementData> Element<V> {
 
 macro_rules! for_all_variants {
     ($self:ident, $f:ident $(, $args:tt)*) => {
-        match &$self {
+        match &mut $self {
             ElementVariant::Comment(v) => v.$f($($args,)*),
             ElementVariant::Call(v) => v.$f($($args,)*),
             ElementVariant::UnaryOpr(v) => v.$f($($args,)*),
@@ -118,7 +117,7 @@ macro_rules! for_all_variants {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, EnumAsInner)]
+#[derive(Clone, PartialEq, Debug, EnumAsInner)]
 pub enum ElementVariant {
     Comment(Comment),
     Call(Call),

@@ -5,17 +5,16 @@ use itertools::Either;
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{block::Block, literal::Literal, procedure::Procedure, Element, ElementVariant},
+        element::{block::Block, procedure::Procedure, Element, ElementVariant},
         errors::ZyxtError,
         position::{GetPosRaw, PosRaw},
         token::{Keyword, Token, TokenType},
         typeobj::unit_t::UNIT_T,
-        value::Value,
     },
 };
 
 impl<'a> Buffer<'a> {
-    fn parse_proc_fn(&mut self) -> Result<(), ZyxtError> {
+    pub(crate) fn parse_proc_fn(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(mut selected) = self.next() {
             let (tok_selected, ty) = if let Either::Right(selected) = selected {
@@ -34,13 +33,14 @@ impl<'a> Buffer<'a> {
                 continue;
             };
             let init_pos = tok_selected.pos_raw();
+            let start = self.cursor;
             self.start_raw_collection();
-            let is_fn = if *ty != Some(TokenType::Bar) {
-                *ty == Some(TokenType::Keyword(Keyword::Fn))
+            let is_fn = if ty != TokenType::Bar {
+                ty == TokenType::Keyword(Keyword::Fn)
             } else {
                 false
             };
-            if *ty != Some(TokenType::Bar) {
+            if ty != TokenType::Bar {
                 selected = self.next_or_err()?;
             }
             let args = if let Either::Right(Token {
@@ -64,7 +64,8 @@ impl<'a> Buffer<'a> {
                 while !matches!(
                     selected,
                     Either::Left(Element {
-                        data: Box(ElementVariant::Block(..))
+                        data: box ElementVariant::Block(..),
+                        ..
                     })
                 ) {
                     selected = self.next_or_err()?;
@@ -83,27 +84,24 @@ impl<'a> Buffer<'a> {
             };
             let block: Element<Block> = if let Either::Left(
                 block @ Element {
-                    data: Box(ElementVariant::Block(_), ..),
+                    data: box ElementVariant::Block(_),
                     ..
                 },
             ) = selected
             {
                 Element {
                     pos_raw: block.pos_raw.to_owned(),
-                    data: Box::new(block.data.as_block().unwrap()),
+                    data: Box::new(block.data.as_block().unwrap().to_owned()),
                 }
             } else {
-                BufferWindow {
-                    slice: Cow::Borrowed(&self.content[self.cursor..self.content.len()]),
-                    range,
-                }
-                .with_as_buffer(&|buf| {
-                    let ele = buf.parse_as_expr()?;
-                    Ok(Element {
-                        pos_raw: ele.pos_raw,
-                        data: Box::new(Block { content: vec![ele] }),
-                    })
-                })?
+                self.window(self.cursor..self.content.len())
+                    .with_as_buffer(&|buf| {
+                        let ele = buf.parse_as_expr()?;
+                        Ok(Element {
+                            pos_raw: ele.pos_raw,
+                            data: Box::new(Block { content: vec![ele] }),
+                        })
+                    })?
             };
             let raw = self.end_raw_collection();
             let ele = Element {
@@ -119,7 +117,7 @@ impl<'a> Buffer<'a> {
                 })),
             };
             let buffer_window = BufferWindow {
-                slice: Cow::Owned[vec![Either::Left(ele)]],
+                slice: Cow::Owned(vec![Either::Left(ele)]),
                 range: start..self.next_cursor_pos(),
             };
             self.splice_buffer(buffer_window)

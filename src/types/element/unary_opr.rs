@@ -7,7 +7,7 @@ use crate::{
     Print, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct UnaryOpr {
     pub ty: OprType,
     pub operand: Element,

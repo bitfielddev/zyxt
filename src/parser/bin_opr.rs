@@ -13,7 +13,7 @@ use crate::{
 };
 
 impl<'a> Buffer<'a> {
-    fn parse_bin_opr(&mut self) -> Result<(), ZyxtError> {
+    pub(crate) fn parse_bin_opr(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         if self.content.is_empty() {
             return Ok(());
@@ -33,8 +33,9 @@ impl<'a> Buffer<'a> {
             } else {
                 continue;
             };
-            if i == 0 || i == elements.len() - 1 {
-                return Err(ZyxtError::error_2_1_3(value.to_owned()).with_element(ele));
+            if i == 0 || i == self.content.len() - 1 {
+                return Err(ZyxtError::error_2_1_3(selected.pos_raw().raw)
+                    .with_pos_raw(&selected.pos_raw()));
             }
             if get_order(&opr_type) >= highest_order {
                 highest_order_index = i;
@@ -53,7 +54,7 @@ impl<'a> Buffer<'a> {
                 raw: self.content.iter().map(|a| a.pos_raw().raw).join("").into(),
             },
             data: Box::new(ElementVariant::BinaryOpr(BinaryOpr {
-                ty: opr_type,
+                ty: *opr_type,
                 operand1: self
                     .window(0..highest_order_index)
                     .with_as_buffer(&|buf| buf.parse_as_expr())?,

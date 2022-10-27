@@ -13,10 +13,10 @@ use crate::{
 };
 
 impl<'a> Buffer<'a> {
-    fn parse_declaration(&mut self) -> Result<(), ZyxtError> {
+    pub(crate) fn parse_declaration(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         let mut flag_pos = None;
-        let mut init_pos;
+        let mut start;
         while let Some(selected) = self.next() {
             if matches!(
                 selected,
@@ -25,9 +25,9 @@ impl<'a> Buffer<'a> {
                     ..
                 })
             ) {
-                flag_pos = Some(cursor);
+                flag_pos = Some(self.cursor);
                 self.start_raw_collection();
-                init_pos = selected.pos_raw().position;
+                start = self.cursor;
                 continue;
             } else if !matches!(
                 selected,
@@ -41,12 +41,12 @@ impl<'a> Buffer<'a> {
             let declared_var = if let Some(Either::Left(d)) = self.prev() {
                 d
             } else {
-                return Err(ZyxtError::error_2_1_5().with_element(selected));
+                return Err(ZyxtError::error_2_1_5().with_pos_raw(&selected.pos_raw()));
             };
 
             self.cursor -= 1;
             self.start_raw_collection();
-            init_pos = selected.pos_raw().position;
+            start = self.cursor;
             self.cursor += 1;
 
             let flags = if let Some(flag_pos) = flag_pos {
@@ -60,7 +60,8 @@ impl<'a> Buffer<'a> {
                         {
                             Ok(flag.to_owned())
                         } else {
-                            return Err(ZyxtError::error_2_1_6(ele.pos_raw.raw).with_element(ele));
+                            return Err(ZyxtError::error_2_1_6(ele.pos_raw().raw)
+                                .with_pos_raw(&ele.pos_raw()));
                         }
                     })
                     .collect::<Result<_, _>>()?
@@ -73,7 +74,7 @@ impl<'a> Buffer<'a> {
                 .with_as_buffer(&|buf| buf.parse_as_expr())?;
             let ele = Element {
                 pos_raw: PosRaw {
-                    position: self.contents[init_pos].pos_raw().position,
+                    position: self.content[start].pos_raw().position,
                     raw: self.end_raw_collection().into(),
                 },
                 data: Box::new(ElementVariant::Declare(Declare {

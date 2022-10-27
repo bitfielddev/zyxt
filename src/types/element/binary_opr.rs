@@ -8,7 +8,7 @@ use crate::{
     InterpreterData, Print, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct BinaryOpr {
     pub ty: OprType,
     pub operand1: Element,

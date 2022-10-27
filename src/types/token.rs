@@ -30,13 +30,7 @@ impl Token {
 }
 pub fn get_order(opr: &OprType) -> u8 {
     match *opr {
-        OprType::Increment
-        | OprType::Decrement
-        | OprType::PlusSign
-        | OprType::MinusSign
-        | OprType::Not
-        | OprType::Ref
-        | OprType::Deref => 1,
+        OprType::PlusSign | OprType::MinusSign | OprType::Not | OprType::Ref | OprType::Deref => 1,
         OprType::TypeCast => 2,
         OprType::Power => 3,
         //OprType::Root |
@@ -231,10 +225,6 @@ impl TokenType {
             | TokenType::UnaryOpr(OprType::Ref, ..)
             | TokenType::UnaryOpr(OprType::Deref, ..) => {
                 vec![TokenCategory::Operator, TokenCategory::ValueStart]
-            }
-            TokenType::UnaryOpr(OprType::Increment, ..)
-            | TokenType::UnaryOpr(OprType::Decrement, ..) => {
-                vec![TokenCategory::Operator, TokenCategory::ValueEnd]
             }
             TokenType::BinaryOpr(..) | TokenType::DeclarationOpr => vec![TokenCategory::Operator],
             TokenType::Bar => vec![

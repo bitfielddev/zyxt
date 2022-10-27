@@ -8,7 +8,7 @@ use crate::{
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Ident {
     pub name: SmolStr,
     pub parent: Option<Element>,
@@ -44,6 +44,6 @@ impl ElementData for Ident {
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
-        i_data.get_val(&self.name, Default::default()) // TODO
+        i_data.get_val(&self.name, &Default::default()) // TODO
     }
 }

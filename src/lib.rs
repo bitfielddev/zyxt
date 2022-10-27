@@ -1,3 +1,5 @@
+#![feature(box_patterns)]
+
 pub mod instructor;
 pub mod interpreter;
 pub mod lexer;

@@ -13,7 +13,7 @@ use crate::{
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Argument {
     pub name: SmolStr,
     pub ty: Element,
@@ -25,8 +25,9 @@ impl Display for Argument {
             f,
             "{}{}{}",
             self.name,
-            if self.ty.get_name() != "_any" {
-                format!(": {}", self.ty.get_name())
+            if self.ty.pos_raw.raw != "_any" {
+                // TODO
+                format!(": {}", self.ty.pos_raw.raw)
             } else {
                 "".to_string()
             },
@@ -45,7 +46,7 @@ impl Argument {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Procedure {
     pub is_fn: bool,
     pub args: Vec<Argument>,
@@ -78,7 +79,7 @@ impl ElementData for Procedure {
         }
         let (res, block_return_type) = self.content.data.block_type(typelist, false)?;
         if return_type == UNIT_T.get_instance().as_type_element() || block_return_type.is_none() {
-            *self.return_type = Box::new(res.as_literal());
+            self.return_type = res.as_literal();
         } else if let Some(block_return_type) = block_return_type {
             if return_type != block_return_type {
                 return Err(
@@ -97,7 +98,7 @@ impl ElementData for Procedure {
 
     fn desugared(
         &self,
-        _pos_raw: &PosRaw,
+        pos_raw: &PosRaw,
         out: &mut impl Print,
     ) -> Result<ElementVariant, ZyxtError> {
         let mut new_self = self.to_owned();
@@ -105,13 +106,21 @@ impl ElementData for Procedure {
             .args
             .iter()
             .map(|a| {
-                a.desugared(out);
+                let mut a = a.to_owned();
+                a.desugar(pos_raw, out)?;
                 Ok(a)
             })
-            .collect()?;
+            .collect::<Result<Vec<_>, _>>()?;
         new_self.content = Element {
             pos_raw: self.content.pos_raw.to_owned(),
-            data: self.content.desugared(out)?.as_block().unwrap(),
+            data: Box::new(
+                self.content
+                    .desugared(out)?
+                    .data
+                    .as_block()
+                    .unwrap()
+                    .to_owned(),
+            ),
         };
         Ok(new_self.as_variant())
     }

@@ -13,7 +13,7 @@ use crate::{
 };
 
 impl<'a> Buffer<'a> {
-    fn parse_assignment_opr(&mut self) -> Result<(), ZyxtError> {
+    pub(crate) fn parse_assignment_opr(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             let opr_type = if let Either::Right(Token {
@@ -26,7 +26,7 @@ impl<'a> Buffer<'a> {
                 continue;
             };
             let var = if let Some(Either::Left(var)) = self.prev() {
-                var
+                var.to_owned()
             } else {
                 todo!("error")
             };

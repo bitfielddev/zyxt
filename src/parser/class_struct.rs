@@ -5,7 +5,7 @@ use itertools::Either;
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{block::Block, class::Class, Element, ElementVariant},
+        element::{class::Class, Element, ElementVariant},
         errors::ZyxtError,
         position::{GetPosRaw, PosRaw},
         token::{Keyword, Token, TokenType},
@@ -13,7 +13,7 @@ use crate::{
 };
 
 impl<'a> Buffer<'a> {
-    fn parse_class_struct(&mut self) -> Result<(), ZyxtError> {
+    pub(crate) fn parse_class_struct(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             let kwd = if let Either::Right(selected) = selected {
@@ -45,19 +45,19 @@ impl<'a> Buffer<'a> {
                 selected = self.next_or_err()?;
             }
             let content = if let Either::Left(Element {
-                data: Box(ElementVariant::Block(block), ..),
+                data: box ElementVariant::Block(block),
                 ..
             }) = selected
             {
                 Some(block)
             } else if *kwd == Keyword::Class {
-                return Err(ZyxtError::error_2_1_18(keyword).with_pos_raw(&selected.pos_raw()));
+                return Err(ZyxtError::error_2_1_18(kwd).with_pos_raw(&selected.pos_raw()));
             } else {
                 None
             };
             let ele = Element {
                 pos_raw: PosRaw {
-                    position: init_pos,
+                    position: init_pos_raw.position.to_owned(),
                     raw: self.end_raw_collection().into(),
                 },
                 data: Box::new({
@@ -74,7 +74,7 @@ impl<'a> Buffer<'a> {
                 }),
             };
             let buffer_window = BufferWindow {
-                slice: Cow::Owned[vec![Either::Left(ele)]],
+                slice: Cow::Owned(vec![Either::Left(ele)]),
                 range: start..self.next_cursor_pos(),
             };
             self.splice_buffer(buffer_window)

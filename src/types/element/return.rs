@@ -7,7 +7,7 @@ use crate::{
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Return {
     pub value: Element,
 }
@@ -22,7 +22,7 @@ impl ElementData for Return {
         _pos_raw: &PosRaw,
         _typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> Result<Type<Element>, ZyxtError> {
-        Ok(UNIT_T.to_type().to_type_element())
+        Ok(UNIT_T.as_type().as_type_element())
     }
 
     fn desugared(

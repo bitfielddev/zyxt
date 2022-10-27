@@ -6,7 +6,7 @@ use crate::{
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Defer {
     pub content: Element<Block>,
 }
@@ -32,7 +32,14 @@ impl ElementData for Defer {
         Ok(Defer {
             content: Element {
                 pos_raw: self.content.pos_raw.to_owned(),
-                data: self.content.desugared(out)?.as_block().unwrap(),
+                data: Box::new(
+                    self.content
+                        .desugared(out)?
+                        .data
+                        .as_block()
+                        .unwrap()
+                        .to_owned(),
+                ),
             },
         }
         .as_variant())

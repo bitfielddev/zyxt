@@ -16,7 +16,7 @@ use crate::{
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Class {
     pub is_struct: bool,
     pub implementations: HashMap<SmolStr, Element>,
@@ -36,7 +36,8 @@ impl ElementData for Class {
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> Result<Type<Element>, ZyxtError> {
         typelist.add_frame(None, FrameType::Normal);
-        for expr in self.content.data.content.iter_mut() {
+        for expr in self.content.unwrap().data.content.iter_mut() {
+            // TODO deal w unwrap
             expr.process(typelist)?;
             if let ElementVariant::Declare(Declare {
                 variable,
@@ -46,14 +47,29 @@ impl ElementData for Class {
                 ..
             }) = &*expr.data
             {
-                if flags.contains(&Flag::Inst) && self.args != &None {
+                if flags.contains(&Flag::Inst) && self.args.is_some() {
                     todo!("raise error here")
                 }
+                let name = if let ElementVariant::Ident(ident) = &*variable.data {
+                    &ident.name
+                } else {
+                    unimplemented!() // TODO
+                };
+                let ty = if let Some(ele) = ty {
+                    if let ElementVariant::Ident(ident) = &*ele.data {
+                        Element {
+                            pos_raw: ele.pos_raw.to_owned(),
+                            data: Box::new(ident.to_owned()),
+                        }
+                    } else {
+                        unimplemented!() // TODO
+                    }
+                } else {
+                    todo!("infer type")
+                };
                 if flags.contains(&Flag::Inst) {
-                    self.inst_fields.insert(
-                        variable.get_name(),
-                        (*ty.to_owned(), Some(content.to_owned())),
-                    );
+                    self.inst_fields
+                        .insert(name.to_owned(), (ty.to_owned(), Some(content.to_owned())));
                 }
             }
         }
@@ -73,10 +89,7 @@ impl ElementData for Class {
                         todo!("raise error")
                     }
                 }
-                Ok((
-                    ident.to_owned(),
-                    (Box::new(ty), default.to_owned().map(|a| *a)),
-                ))
+                Ok((ident.to_owned(), (Box::new(ty), default.to_owned())))
             })
             .collect::<Result<HashMap<_, _>, _>>()?;
         typelist.pop_frame();
@@ -98,7 +111,7 @@ impl ElementData for Class {
         new_self.content = if let Some(content) = new_self.content {
             Some(Element {
                 pos_raw: pos_raw.to_owned(),
-                data: content.desugared(out)?.as_block().unwrap(),
+                data: Box::new(content.desugared(out)?.data.as_block().unwrap().to_owned()),
             })
         } else {
             None
@@ -111,7 +124,7 @@ impl ElementData for Class {
                         arg.desugar(pos_raw, out)?;
                         Ok(arg)
                     })
-                    .collect()
+                    .collect::<Result<Vec<_>, _>>()
             })
             .transpose()?;
         Ok(new_self.as_variant())

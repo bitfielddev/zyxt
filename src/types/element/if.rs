@@ -6,7 +6,7 @@ use crate::{
     InterpreterData, Print, Type, Value, ZyxtError,
 };
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
     pub condition: Option<Element>,
     pub if_true: Element<Block>,
@@ -14,17 +14,19 @@ pub struct Condition {
 impl Condition {
     pub fn desugar(&mut self, pos_raw: &PosRaw, out: &mut impl Print) -> Result<(), ZyxtError> {
         self.condition.map(|e| e.desugared(out)).transpose()?;
-        self.if_true.data = self
-            .if_true
-            .data
-            .desugared(pos_raw, out)?
-            .as_block()
-            .unwrap();
+        self.if_true.data = Box::new(
+            self.if_true
+                .data
+                .desugared(pos_raw, out)?
+                .as_block()
+                .unwrap()
+                .to_owned(),
+        );
         Ok(())
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct If {
     pub conditions: Vec<Condition>,
 }
@@ -64,7 +66,7 @@ impl ElementData for If {
                     a.desugar(pos_raw, out)?;
                     Ok(a)
                 })
-                .collect()?,
+                .collect::<Result<_, _>>()?,
         }
         .as_variant())
     }
@@ -74,7 +76,7 @@ impl ElementData for If {
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
         for cond in &self.conditions {
-            if cond.condition == Element::NullElement {
+            if cond.condition.is_none() {
                 return cond.if_true.data.interpret_block(i_data, false, true);
             } else if let Some(Value::Bool(true)) = cond
                 .condition

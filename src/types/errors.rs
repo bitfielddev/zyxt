@@ -412,13 +412,15 @@ impl ZyxtError {
     pub fn get_surrounding_text(&self) -> String {
         self.position
             .iter()
-            .map(|(pos, raw)| {
+            .map(|pos_raw| {
                 format!(
                     "{}\n{}",
-                    Style::new().on(Red).bold().paint(format!(" {} ", pos)),
-                    White
-                        .dimmed()
-                        .paint(if let Ok(mut file) = File::open(&pos.filename) {
+                    Style::new()
+                        .on(Red)
+                        .bold()
+                        .paint(format!(" {} ", pos_raw.position)),
+                    White.dimmed().paint(
+                        if let Ok(mut file) = File::open(&pos_raw.position.filename) {
                             let mut contents = String::new();
                             if file.read_to_string(&mut contents).is_ok() {
                                 let mut contents = contents
@@ -426,9 +428,11 @@ impl ZyxtError {
                                     .map(|s| s.to_string())
                                     .collect::<Vec<_>>();
 
-                                let start = contents.get_mut(pos.line as usize - 1).unwrap();
+                                let start = contents
+                                    .get_mut(pos_raw.position.line as usize - 1)
+                                    .unwrap();
                                 let start_graphemes = start.graphemes(true).collect::<Vec<_>>();
-                                let index = pos.column as usize - 1;
+                                let index = pos_raw.position.column as usize - 1;
                                 *start = start_graphemes[0..index]
                                     .iter()
                                     .cloned()
@@ -437,11 +441,15 @@ impl ZyxtError {
                                     .collect::<Vec<_>>()
                                     .join("");
 
-                                let end_pos = pos.pos_after(raw);
+                                let end_pos = pos_raw.position.pos_after(&*pos_raw.raw);
                                 let end = contents.get_mut(end_pos.line as usize - 1).unwrap();
                                 let end_graphemes = end.graphemes(true).collect::<Vec<_>>();
                                 let index = end_pos.column as usize - 1
-                                    + if pos.line == end_pos.line { 1 } else { 0 };
+                                    + if pos_raw.position.line == end_pos.line {
+                                        1
+                                    } else {
+                                        0
+                                    };
                                 *end = end_graphemes[0..index - 1]
                                     .iter()
                                     .cloned()
@@ -454,18 +462,19 @@ impl ZyxtError {
                                     .into_iter()
                                     .enumerate()
                                     .filter(|(i, _)| {
-                                        pos.line as isize - 3 <= *i as isize
+                                        pos_raw.position.line as isize - 3 <= *i as isize
                                             && *i as u32 <= end_pos.line + 1
                                     })
                                     .map(|(_, s)| format!("  {}", s))
                                     .collect::<Vec<_>>()
                                     .join("\n")
                             } else {
-                                raw.to_owned()
+                                pos_raw.raw.to_owned().into()
                             }
                         } else {
-                            raw.to_owned()
-                        })
+                            pos_raw.raw.to_owned().into()
+                        }
+                    )
                 )
             })
             .collect::<Vec<_>>()
