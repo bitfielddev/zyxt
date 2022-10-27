@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::ops::{Range, RangeBounds};
 
 use itertools::Either;
 
@@ -10,7 +10,7 @@ use crate::{
     Element, ZyxtError,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Buffer {
     pub content: Vec<Either<Element, Token>>,
     pub cursor: usize,

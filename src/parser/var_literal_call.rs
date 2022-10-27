@@ -36,15 +36,18 @@ impl Buffer {
                     slice: vec![Either::Left(catcher)],
                     range: start..s.cursor,
                 };
+                println!("{:#?}{}", s.content.len(), s.cursor);
                 s.splice_buffer(buffer_window);
             }
         };
         while let Some(selected) = self.next() {
-            let selected = if let Either::Right(selected) = selected {
-                selected
-            } else {
-                clear_catcher(self, &mut catcher);
-                continue;
+            let selected = match selected {
+                Either::Left(s) => {
+                    clear_catcher(self, &mut catcher);
+                    catcher = Some((s.to_owned(), self.cursor));
+                    continue;
+                }
+                Either::Right(s) => s,
             };
             match selected.ty {
                 Some(TokenType::DotOpr) => {
@@ -162,6 +165,7 @@ impl Buffer {
                 _ => clear_catcher(self, &mut catcher),
             }
         }
+        self.cursor -= 1;
         clear_catcher(self, &mut catcher);
         Ok(())
     }

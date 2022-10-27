@@ -70,7 +70,10 @@ pub struct Element<V: ElementData = ElementVariant> {
 }
 impl<V: ElementData> Element<V> {
     pub fn as_variant(&self) -> Element {
-        unimplemented!()
+        Element {
+            pos_raw: self.pos_raw.to_owned(),
+            data: Box::new(self.data.as_variant()),
+        }
     }
     pub fn is_pattern(&self) -> bool {
         self.data.is_pattern()

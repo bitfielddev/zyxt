@@ -110,16 +110,7 @@ pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError
 
     input.retain(|token| token.ty != Some(TokenType::Comment));
 
-    let buffer = Buffer::new(input);
-    buffer
-        .content
-        .into_iter()
-        .map(|e| {
-            if let Either::Left(e) = e {
-                Ok(e.to_owned())
-            } else {
-                todo!("{e:#?}")
-            }
-        })
-        .collect::<Result<Vec<_>, ZyxtError>>()
+    Buffer::new(input)
+        .get_split(TokenType::StatementEnd)?
+        .with_as_buffers(&|buf| buf.parse_as_expr()) // TODO merge all errors into one here
 }
