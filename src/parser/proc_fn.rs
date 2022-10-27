@@ -14,7 +14,7 @@ use crate::{
 };
 
 impl<'a> Buffer<'a> {
-    pub(crate) fn parse_proc_fn(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_proc_fn(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(mut selected) = self.next() {
             let (tok_selected, ty) = if let Either::Right(selected) = selected {

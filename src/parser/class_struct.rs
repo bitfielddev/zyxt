@@ -13,7 +13,7 @@ use crate::{
 };
 
 impl<'a> Buffer<'a> {
-    pub(crate) fn parse_class_struct(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_class_struct(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             let kwd = if let Either::Right(selected) = selected {

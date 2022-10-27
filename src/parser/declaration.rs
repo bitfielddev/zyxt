@@ -13,7 +13,7 @@ use crate::{
 };
 
 impl<'a> Buffer<'a> {
-    pub(crate) fn parse_declaration(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_declaration(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         let mut flag_pos = None;
         let mut start;

@@ -27,7 +27,7 @@ impl<'a> Buffer<'a> {
             }),
         })
     }
-    pub(crate) fn parse_var_literal_call(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_var_literal_call(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         let mut catcher: Option<(Element, usize)> = None;
         let clear_catcher = || {

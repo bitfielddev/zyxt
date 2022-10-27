@@ -13,7 +13,7 @@ use crate::{
 };
 
 impl<'a> Buffer<'a> {
-    pub(crate) fn parse_bin_opr(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_bin_opr(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         if self.content.is_empty() {
             return Ok(());
