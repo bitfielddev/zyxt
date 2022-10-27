@@ -9,7 +9,7 @@ use crate::{
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Declare {
-    pub variable: Element<Ident>,
+    pub variable: Element,
     pub content: Element,
     pub flags: Vec<Flag>,
     pub ty: Option<Element>,

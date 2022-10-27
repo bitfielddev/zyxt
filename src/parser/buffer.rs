@@ -18,6 +18,19 @@ pub struct Buffer<'a> {
     raw: Option<String>,
 }
 impl<'a> Buffer<'a> {
+    pub fn new(input: Vec<Token>) -> Self {
+        Self {
+            content: Cow::Owned(
+                input
+                    .into_iter()
+                    .map(Either::Right)
+                    .collect::<Vec<Either<Element, _>>>(),
+            ),
+            cursor: 0,
+            started: false,
+            raw: None,
+        }
+    }
     pub fn next(&mut self) -> Option<&Either<Element, Token>> {
         if self.started {
             self.cursor += 1;
@@ -54,10 +67,7 @@ impl<'a> Buffer<'a> {
         }
     }
     pub fn rest_incl_curr(&mut self) -> BufferWindow {
-        BufferWindow {
-            slice: Cow::Borrowed(&self.content[self.cursor..]),
-            range: self.cursor..self.content.len(),
-        }
+        self.window(self.cursor..self.content.len())
     }
     pub fn next_cursor_pos(&self) -> usize {
         if self.started {
@@ -70,24 +80,11 @@ impl<'a> Buffer<'a> {
         self.started = false;
         self.cursor = 0;
     }
-    pub fn new(input: Vec<Token>) -> Self {
-        Self {
-            content: Cow::Owned(
-                input
-                    .into_iter()
-                    .map(Either::Right)
-                    .collect::<Vec<Either<Element, _>>>(),
-            ),
-            cursor: 0,
-            started: false,
-            raw: None,
-        }
-    }
     pub fn peek(&self) -> Option<&Either<Element, Token>> {
         self.content.get(self.next_cursor_pos())
     }
     pub fn start_raw_collection(&mut self) {
-        self.raw = Some(
+        self.raw.get_or_insert_with(|| {
             if self.started {
                 self.content
                     .get(self.cursor)
@@ -99,11 +96,17 @@ impl<'a> Buffer<'a> {
             } else {
                 ""
             }
-            .to_string(),
-        );
+            .to_string()
+        });
     }
     pub fn end_raw_collection(&mut self) -> String {
         self.raw.take().unwrap_or("".into())
+    }
+    pub fn window(&self, range: Range<usize>) -> BufferWindow {
+        BufferWindow {
+            slice: Cow::Borrowed(&self.content[range.to_owned()]),
+            range,
+        }
     }
     pub fn get_between(
         &mut self,
@@ -134,6 +137,22 @@ impl<'a> Buffer<'a> {
             range: start..self.next_cursor_pos(),
         })
     }
+    pub fn get_split(&mut self, divider: TokenType) -> Result<BufferWindows, ZyxtError> {
+        let mut start = self.cursor;
+        let mut buffer_windows = vec![];
+        while let Some(ele) = self.next() {
+            if let Either::Right(ele) = ele {
+                if ele.ty == Some(divider) {
+                    buffer_windows.push(self.window(start..self.cursor));
+                    start = self.next_cursor_pos();
+                }
+            }
+        }
+        Ok(BufferWindows {
+            buffer_windows,
+            range: start..self.next_cursor_pos(),
+        })
+    }
     pub fn get_split_between(
         &mut self,
         start_token: TokenType,
@@ -154,10 +173,7 @@ impl<'a> Buffer<'a> {
                     nest_level -= 1
                 }
                 if nest_level == 1 && ele.ty == Some(divider) {
-                    buffer_windows.push(BufferWindow {
-                        slice: Cow::Borrowed(&self.content[start..self.cursor]),
-                        range: start..self.cursor,
-                    });
+                    buffer_windows.push(self.window(start..self.cursor));
                     start = self.next_cursor_pos();
                 }
             }

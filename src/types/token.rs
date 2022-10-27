@@ -76,8 +76,6 @@ pub fn get_order(opr: &OprType) -> u8 {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[allow(dead_code)]
 pub enum OprType {
-    Increment,
-    Decrement,
     PlusSign,
     MinusSign,
     Not,
@@ -132,7 +130,6 @@ impl OprType {
             | OprType::Deref
             | OprType::PlusSign
             | OprType::MinusSign => Side::Left,
-            OprType::Increment | OprType::Decrement => Side::Right,
             _ => unreachable!(),
         }
     }
@@ -180,7 +177,7 @@ pub enum TokenType {
     Flag(Flag),                     // hoi, pub, priv, prot, const
     UnaryOpr(OprType),              // \~, ++, ! etc
     AssignmentOpr(Option<OprType>), // =, += etc
-    NormalOpr(OprType), // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
+    BinaryOpr(OprType), // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
     DotOpr,             // .
     DeclarationOpr,     // :=
     LiteralMisc,        // true, null, etc
@@ -239,7 +236,7 @@ impl TokenType {
             | TokenType::UnaryOpr(OprType::Decrement, ..) => {
                 vec![TokenCategory::Operator, TokenCategory::ValueEnd]
             }
-            TokenType::NormalOpr(..) | TokenType::DeclarationOpr => vec![TokenCategory::Operator],
+            TokenType::BinaryOpr(..) | TokenType::DeclarationOpr => vec![TokenCategory::Operator],
             TokenType::Bar => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,

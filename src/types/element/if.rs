@@ -26,7 +26,7 @@ impl Condition {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct If {
-    conditions: Vec<Condition>,
+    pub(crate) conditions: Vec<Condition>,
 }
 
 impl ElementData for If {
@@ -60,6 +60,7 @@ impl ElementData for If {
                 .conditions
                 .iter()
                 .map(|a| {
+                    let mut a = a.to_owned();
                     a.desugar(pos_raw, out)?;
                     Ok(a)
                 })

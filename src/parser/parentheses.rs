@@ -7,7 +7,7 @@ use crate::{
 };
 
 impl<'a> Buffer<'a> {
-    fn parse_parentheses(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_parentheses(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             let selected = if let Either::Right(selected) = selected {
