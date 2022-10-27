@@ -26,7 +26,7 @@ impl Condition {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct If {
-    pub(crate) conditions: Vec<Condition>,
+    pub conditions: Vec<Condition>,
 }
 
 impl ElementData for If {

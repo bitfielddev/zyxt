@@ -4,7 +4,7 @@ use crate::types::element::{ElementData, ElementVariant};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Comment {
-    pub(crate) content: SmolStr,
+    pub content: SmolStr,
 }
 
 impl ElementData for Comment {

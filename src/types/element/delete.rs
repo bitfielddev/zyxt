@@ -9,7 +9,7 @@ use crate::{
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Delete {
-    pub(crate) names: Vec<Element<Ident>>,
+    pub names: Vec<Element<Ident>>,
 }
 
 impl ElementData for Delete {

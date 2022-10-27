@@ -8,7 +8,7 @@ use crate::{
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Defer {
-    pub(crate) content: Element<Block>,
+    pub content: Element<Block>,
 }
 
 impl ElementData for Defer {

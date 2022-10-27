@@ -13,7 +13,7 @@ use crate::{
 #[derive(Clone)]
 pub struct Buffer<'a> {
     pub content: Cow<'a, [Either<Element, Token>]>,
-    pub(crate) cursor: usize,
+    pub cursor: usize,
     started: bool,
     raw: Option<String>,
 }

@@ -9,7 +9,7 @@ use crate::{
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Return {
-    pub(crate) value: Element,
+    pub value: Element,
 }
 
 impl ElementData for Return {

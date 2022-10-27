@@ -9,8 +9,8 @@ use crate::{
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct UnaryOpr {
-    pub(crate) ty: OprType,
-    pub(crate) operand: Element,
+    pub ty: OprType,
+    pub operand: Element,
 }
 
 impl ElementData for UnaryOpr {
