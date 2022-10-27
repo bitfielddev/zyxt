@@ -14,7 +14,7 @@ use crate::{
     },
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     fn parse_ident(token: &Token) -> Option<Element<Ident>> {
         if token.ty != Some(TokenType::Ident) {
             return None;
@@ -30,20 +30,20 @@ impl<'a> Buffer<'a> {
     pub fn parse_var_literal_call(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         let mut catcher: Option<(Element, usize)> = None;
-        let clear_catcher = || {
+        let mut clear_catcher = |s: &mut Self, catcher: &mut Option<(Element, usize)>| {
             if let Some((mut catcher, start)) = catcher.take() {
                 let buffer_window = BufferWindow {
-                    slice: Cow::Owned(vec![Either::Left(catcher)]),
-                    range: start..self.cursor,
+                    slice: vec![Either::Left(catcher)],
+                    range: start..s.cursor,
                 };
-                self.splice_buffer(buffer_window);
+                s.splice_buffer(buffer_window);
             }
         };
         while let Some(selected) = self.next() {
             let selected = if let Either::Right(selected) = selected {
                 selected
             } else {
-                clear_catcher();
+                clear_catcher(self, &mut catcher);
                 continue;
             };
             match selected.ty {
@@ -51,7 +51,7 @@ impl<'a> Buffer<'a> {
                     let catcher = if let Some((catcher, _)) = &mut catcher {
                         catcher
                     } else {
-                        return Err(ZyxtError::error_2_1_0(String::from(".")).with_token(selected));
+                        return Err(ZyxtError::error_2_1_0(String::from(".")).with_token(&selected));
                     };
                     let selected = match self.next_or_err()? {
                         Either::Left(c) => {
@@ -65,7 +65,7 @@ impl<'a> Buffer<'a> {
                             }
                         }
                         Either::Right(c) => {
-                            if let Some(ident) = Buffer::parse_ident(c) {
+                            if let Some(ident) = Buffer::parse_ident(&c) {
                                 ident
                             } else {
                                 todo!("get item")
@@ -81,16 +81,16 @@ impl<'a> Buffer<'a> {
                     }
                 }
                 Some(TokenType::Ident) => {
-                    clear_catcher();
+                    clear_catcher(self, &mut catcher);
                     catcher = Some((
-                        Buffer::parse_ident(selected).unwrap().as_variant(),
+                        Buffer::parse_ident(&selected).unwrap().as_variant(),
                         self.cursor,
                     ))
                 }
                 Some(TokenType::LiteralNumber)
                 | Some(TokenType::LiteralMisc)
                 | Some(TokenType::LiteralString) => {
-                    clear_catcher();
+                    clear_catcher(self, &mut catcher);
                     catcher = Some((
                         Element {
                             pos_raw: selected.pos_raw(),
@@ -132,13 +132,13 @@ impl<'a> Buffer<'a> {
                     ))
                 }
                 Some(TokenType::CloseParen) => {
-                    return Err(ZyxtError::error_2_0_2(')'.to_string()).with_token(selected))
+                    return Err(ZyxtError::error_2_0_2(')'.to_string()).with_token(&selected))
                 }
                 Some(TokenType::OpenParen) => {
                     let catcher = if let Some((catcher, _)) = &mut catcher {
                         catcher
                     } else {
-                        return Err(ZyxtError::error_2_1_0(String::from("(")).with_token(selected));
+                        return Err(ZyxtError::error_2_1_0(String::from("(")).with_token(&selected));
                         // parens should have been settled in the first part
                     };
                     let mut contents = self.get_split_between(
@@ -159,10 +159,10 @@ impl<'a> Buffer<'a> {
                         })),
                     }
                 }
-                _ => clear_catcher(),
+                _ => clear_catcher(self, &mut catcher),
             }
         }
-        clear_catcher();
+        clear_catcher(self, &mut catcher);
         Ok(())
     }
 }

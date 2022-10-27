@@ -34,7 +34,7 @@ use crate::{
     Type,
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     fn parse_as_block(&mut self) -> Result<Element<Block>, ZyxtError> {
         let mut buffers = self.get_split_between(
             TokenType::OpenCurlyParen,
@@ -47,7 +47,7 @@ impl<'a> Buffer<'a> {
             data: Box::new(Block { content: block }),
         };
         let buffer_window = BufferWindow {
-            slice: Cow::Owned(vec![Either::Left(ele.as_variant())]),
+            slice: vec![Either::Left(ele.as_variant())],
             range: buffers.range,
         };
         self.splice_buffer(buffer_window);

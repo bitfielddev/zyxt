@@ -499,7 +499,7 @@ impl ZyxtError {
         self
     }
     pub fn with_element(mut self, element: &Element<impl ElementData>) -> Self {
-        self.position = vec![element.pos_raw];
+        self.position = vec![element.pos_raw.to_owned()];
         self
     }
     pub fn with_token(mut self, token: &Token) -> Self {

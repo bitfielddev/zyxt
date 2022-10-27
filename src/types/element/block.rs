@@ -103,7 +103,7 @@ impl Block {
         if add_frame {
             i_data.add_frame(None, FrameType::Normal);
         }
-        for ele in self.content {
+        for ele in &self.content {
             if let ElementVariant::Return(r#return) = &*ele.data {
                 if returnable {
                     last = r#return.value.interpret_expr(i_data)?

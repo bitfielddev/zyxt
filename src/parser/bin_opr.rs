@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn parse_bin_opr(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         if self.content.is_empty() {
@@ -63,7 +63,7 @@ impl<'a> Buffer<'a> {
                     .with_as_buffer(&|buf| buf.parse_as_expr())?,
             })),
         };
-        self.content = Cow::Owned(vec![Either::Left(ele)]);
+        self.content = vec![Either::Left(ele)];
         Ok(())
     }
 }

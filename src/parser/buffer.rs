@@ -1,4 +1,4 @@
-use std::{borrow::Cow, ops::Range};
+use std::ops::Range;
 
 use itertools::Either;
 
@@ -11,52 +11,50 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct Buffer<'a> {
-    pub content: Cow<'a, [Either<Element, Token>]>,
+pub struct Buffer {
+    pub content: Vec<Either<Element, Token>>,
     pub cursor: usize,
     started: bool,
     raw: Option<String>,
 }
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn new(input: Vec<Token>) -> Self {
         Self {
-            content: Cow::Owned(
-                input
-                    .into_iter()
-                    .map(Either::Right)
-                    .collect::<Vec<Either<Element, _>>>(),
-            ),
+            content: input
+                .into_iter()
+                .map(Either::Right)
+                .collect::<Vec<Either<Element, _>>>(),
             cursor: 0,
             started: false,
             raw: None,
         }
     }
-    pub fn next(&mut self) -> Option<&Either<Element, Token>> {
+    pub fn next(&mut self) -> Option<Either<Element, Token>> {
         if self.started {
             self.cursor += 1;
         } else {
             self.started = true;
         }
-        self.content.get(self.cursor).map(|c| {
-            self.raw = self.raw.map(|mut raw| {
-                raw.push_str(match c {
-                    Either::Left(c) => &*c.pos_raw.raw,
-                    Either::Right(c) => &*c.get_raw(),
+        let next = self.content.get(self.cursor).cloned();
+        if let Some(raw) = &mut self.raw {
+            if let Some(next) = &next {
+                raw.push_str(&*match next {
+                    Either::Left(c) => c.pos_raw.raw.to_owned(),
+                    Either::Right(c) => c.get_raw().into(),
                 });
-                raw
-            });
-            c
-        })
+            }
+        }
+        next
     }
-    pub fn next_or_err(&mut self) -> Result<&Either<Element, Token>, ZyxtError> {
+    pub fn next_or_err(&mut self) -> Result<Either<Element, Token>, ZyxtError> {
         if let Some(c) = self.next() {
             Ok(c)
         } else {
             let curr_pos_raw = match &self.content.last().unwrap() {
-                Either::Left(c) => &c.pos_raw,
-                Either::Right(c) => &c.pos_raw(),
+                Either::Left(c) => c.pos_raw(),
+                Either::Right(c) => c.pos_raw(),
             };
-            Err(ZyxtError::error_2_1_0(&curr_pos_raw.raw).with_pos_raw(curr_pos_raw))
+            Err(ZyxtError::error_2_1_0(&curr_pos_raw.raw).with_pos_raw(&curr_pos_raw))
         }
     }
     pub fn prev(&mut self) -> Option<&Either<Element, Token>> {
@@ -89,12 +87,12 @@ impl<'a> Buffer<'a> {
                 self.content
                     .get(self.cursor)
                     .map(|c| match c {
-                        Either::Left(c) => &*c.pos_raw.raw,
-                        Either::Right(c) => &*c.get_raw(),
+                        Either::Left(c) => c.pos_raw.raw.to_owned(),
+                        Either::Right(c) => c.get_raw().into(),
                     })
-                    .unwrap_or("")
+                    .unwrap_or("".into())
             } else {
-                ""
+                "".into()
             }
             .to_string()
         });
@@ -104,7 +102,7 @@ impl<'a> Buffer<'a> {
     }
     pub fn window(&self, range: Range<usize>) -> BufferWindow {
         BufferWindow {
-            slice: Cow::Borrowed(&self.content[range.to_owned()]),
+            slice: self.content[range.to_owned()].to_owned(),
             range,
         }
     }
@@ -133,7 +131,7 @@ impl<'a> Buffer<'a> {
             todo!("err")
         }
         Ok(BufferWindow {
-            slice: Cow::Borrowed(&self.content[start + 1..self.cursor]),
+            slice: self.content[start + 1..self.cursor].to_owned(),
             range: start..self.next_cursor_pos(),
         })
     }
@@ -143,7 +141,7 @@ impl<'a> Buffer<'a> {
         while let Some(ele) = self.next() {
             if let Either::Right(ele) = ele {
                 if ele.ty == Some(divider) {
-                    buffer_windows.push(self.window(start..self.cursor));
+                    buffer_windows.push(self.window(start..self.cursor).to_owned());
                     start = self.next_cursor_pos();
                 }
             }
@@ -173,7 +171,7 @@ impl<'a> Buffer<'a> {
                     nest_level -= 1
                 }
                 if nest_level == 1 && ele.ty == Some(divider) {
-                    buffer_windows.push(self.window(start..self.cursor));
+                    buffer_windows.push(self.window(start..self.cursor).to_owned());
                     start = self.next_cursor_pos();
                 }
             }
@@ -212,14 +210,15 @@ impl<'a> Buffer<'a> {
     }
 }
 
-pub struct BufferWindow<'a> {
-    pub slice: Cow<'a, [Either<Element, Token>]>,
+#[derive(Clone)]
+pub struct BufferWindow {
+    pub slice: Vec<Either<Element, Token>>,
     pub range: Range<usize>,
 }
-impl<'a> BufferWindow<'a> {
+impl BufferWindow {
     pub fn as_buffer(&self) -> Buffer {
         Buffer {
-            content: Cow::Borrowed(self.slice.as_ref()),
+            content: self.slice.to_owned(),
             cursor: 0,
             started: false,
             raw: None,
@@ -231,19 +230,21 @@ impl<'a> BufferWindow<'a> {
     ) -> Result<T, ZyxtError> {
         let mut buffer = self.as_buffer();
         let res = f(&mut buffer)?;
-        *self = BufferWindow {
-            slice: buffer.content,
+        let bw = BufferWindow {
+            slice: buffer.content.to_owned(),
             range: self.range.to_owned(),
         };
+        *self = bw;
         Ok(res)
     }
 }
 
-pub struct BufferWindows<'a> {
-    pub buffer_windows: Vec<BufferWindow<'a>>,
+#[derive(Clone)]
+pub struct BufferWindows {
+    pub buffer_windows: Vec<BufferWindow>,
     pub range: Range<usize>,
 }
-impl<'a> BufferWindows<'a> {
+impl BufferWindows {
     pub fn as_buffers(&self) -> Vec<Buffer> {
         self.buffer_windows.iter().map(|a| a.as_buffer()).collect()
     }

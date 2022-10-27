@@ -18,6 +18,7 @@ pub mod unary_opr;
 use std::fmt::Debug;
 
 use enum_as_inner::EnumAsInner;
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::types::{
@@ -95,8 +96,8 @@ impl<V: ElementData> Element<V> {
 }
 
 macro_rules! for_all_variants {
-    ($self:ident, $f:ident $(, $args:tt)*) => {
-        match &mut $self {
+    ($self:expr, $f:ident $(, $args:tt)*) => {
+        match $self {
             ElementVariant::Comment(v) => v.$f($($args,)*),
             ElementVariant::Call(v) => v.$f($($args,)*),
             ElementVariant::UnaryOpr(v) => v.$f($($args,)*),
@@ -141,7 +142,7 @@ impl ElementData for ElementVariant {
         self.to_owned()
     }
     fn is_pattern(&self) -> bool {
-        for_all_variants!(self, is_pattern)
+        for_all_variants!(&self, is_pattern)
     }
     fn process<O: Print>(
         &mut self,
@@ -155,13 +156,13 @@ impl ElementData for ElementVariant {
         pos_raw: &PosRaw,
         out: &mut impl Print,
     ) -> Result<ElementVariant, ZyxtError> {
-        for_all_variants!(self, desugared, pos_raw, out)
+        for_all_variants!(&self, desugared, pos_raw, out)
     }
     fn interpret_expr<O: Print>(
         &self,
         i_data: &mut InterpreterData<Value, O>,
     ) -> Result<Value, ZyxtError> {
-        for_all_variants!(self, interpret_expr, i_data)
+        for_all_variants!(&self, interpret_expr, i_data)
     }
 }
 
@@ -170,9 +171,6 @@ pub trait VecElementRaw {
 }
 impl VecElementRaw for Vec<Element> {
     fn get_raw(&self) -> String {
-        self.iter()
-            .map(|e| e.pos_raw.raw)
-            .collect::<Vec<SmolStr>>()
-            .join("\n")
+        self.iter().map(|e| &e.pos_raw.raw).join("\n")
     }
 }

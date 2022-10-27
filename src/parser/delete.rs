@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn parse_delete(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
@@ -25,8 +25,8 @@ impl<'a> Buffer<'a> {
             ) {
                 continue;
             }
-            let start = self.cursor;
             let init_pos = selected.pos_raw().position;
+            let start = self.cursor;
             self.start_raw_collection();
             let vars: Vec<Element<Ident>> =
                 self.get_split(TokenType::Comma)?.with_as_buffers(&|buf| {
@@ -40,9 +40,9 @@ impl<'a> Buffer<'a> {
                         ty: OprType::Deref, ..
                     }) = *ele.data
                     {
-                        Err(ZyxtError::error_2_1_12(ele.pos_raw.raw).with_element(&ele))
+                        Err(ZyxtError::error_2_1_12(&ele.pos_raw.raw).with_element(&ele))
                     } else {
-                        Err(ZyxtError::error_2_1_11(ele.pos_raw.raw).with_element(&ele))
+                        Err(ZyxtError::error_2_1_11(&ele.pos_raw.raw).with_element(&ele))
                     }
                 })?;
             let ele = Element {
@@ -53,7 +53,7 @@ impl<'a> Buffer<'a> {
                 data: Box::new(ElementVariant::Delete(Delete { names: vars })),
             };
             let buffer_window = BufferWindow {
-                slice: Cow::Owned(vec![Either::Left(ele)]),
+                slice: vec![Either::Left(ele)],
                 range: start..self.content.len(),
             };
             self.splice_buffer(buffer_window)

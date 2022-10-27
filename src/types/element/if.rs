@@ -13,8 +13,11 @@ pub struct Condition {
 }
 impl Condition {
     pub fn desugar(&mut self, pos_raw: &PosRaw, out: &mut impl Print) -> Result<(), ZyxtError> {
-        self.condition.map(|e| e.desugared(out)).transpose()?;
-        self.if_true.data = Box::new(
+        self.condition
+            .as_mut()
+            .map(|e| e.desugared(out))
+            .transpose()?;
+        (&mut self.if_true).data = Box::new(
             self.if_true
                 .data
                 .desugared(pos_raw, out)?
@@ -80,6 +83,7 @@ impl ElementData for If {
                 return cond.if_true.data.interpret_block(i_data, false, true);
             } else if let Some(Value::Bool(true)) = cond
                 .condition
+                .as_ref()
                 .map(|cond| cond.interpret_expr(i_data))
                 .transpose()?
             {

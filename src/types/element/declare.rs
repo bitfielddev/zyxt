@@ -29,7 +29,7 @@ impl ElementData for Declare {
             return Err(ZyxtError::error_2_2(self.variable.to_owned()).with_element(&self.variable));
         }
         let content_type = self.content.process(typelist)?;
-        let ty = if let ElementVariant::Literal(literal) = &*self.ty.unwrap().data {
+        let ty = if let ElementVariant::Literal(literal) = &*self.ty.as_ref().unwrap().data {
             if let Value::Type(t) = &literal.content {
                 t
             } else {
@@ -77,7 +77,7 @@ impl ElementData for Declare {
     ) -> Result<ElementVariant, ZyxtError> {
         let mut new_self = self.to_owned();
         new_self.content = self.content.desugared(out)?;
-        new_self.ty = self.ty.map(|a| a.desugared(out)).transpose()?;
+        new_self.ty = self.ty.as_ref().map(|a| a.desugared(out)).transpose()?;
         Ok(new_self.as_variant())
     }
 

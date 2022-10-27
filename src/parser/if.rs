@@ -15,7 +15,7 @@ use crate::{
     },
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn parse_if(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(mut selected) = self.next() {
@@ -28,17 +28,12 @@ impl<'a> Buffer<'a> {
             } else {
                 continue;
             };
-            if [Keyword::Elif, Keyword::Else].contains(kwd) {
+            if [Keyword::Elif, Keyword::Else].contains(&kwd) {
                 return Err(ZyxtError::error_2_1_9(
-                    if *kwd == Keyword::Elif {
-                        "elif"
-                    } else {
-                        "else"
-                    }
-                    .to_string(),
+                    if kwd == Keyword::Elif { "elif" } else { "else" }.to_string(),
                 )
                 .with_pos_raw(&selected.pos_raw()));
-            } else if *kwd != Keyword::If {
+            } else if kwd != Keyword::If {
                 continue;
             };
 
@@ -106,9 +101,9 @@ impl<'a> Buffer<'a> {
                 let block = if let Either::Left(Element {
                     data: box ElementVariant::Block(block),
                     ..
-                }) = selected
+                }) = &selected
                 {
-                    block
+                    block.to_owned()
                 } else {
                     return Err(ZyxtError::error_2_1_8(selected.pos_raw().raw)
                         .with_pos_raw(&selected.pos_raw()));
@@ -130,7 +125,7 @@ impl<'a> Buffer<'a> {
                 data: Box::new(ElementVariant::If(If { conditions })),
             };
             let buffer_window = BufferWindow {
-                slice: Cow::Owned(vec![Either::Left(ele)]),
+                slice: vec![Either::Left(ele)],
                 range: start..self.next_cursor_pos(),
             };
             self.splice_buffer(buffer_window)

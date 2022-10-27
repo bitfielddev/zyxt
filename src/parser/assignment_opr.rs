@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn parse_assignment_opr(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
@@ -40,9 +40,9 @@ impl<'a> Buffer<'a> {
             })?;
             if let Some(opr_type) = opr_type {
                 content = Element {
-                    pos_raw: content.pos_raw,
+                    pos_raw: content.pos_raw.to_owned(),
                     data: Box::new(ElementVariant::BinaryOpr(BinaryOpr {
-                        ty: *opr_type,
+                        ty: opr_type,
                         operand1: var.to_owned(),
                         operand2: content.to_owned(),
                     })),
@@ -63,7 +63,7 @@ impl<'a> Buffer<'a> {
                 })),
             };
             let buffer_window = BufferWindow {
-                slice: Cow::Owned(vec![Either::Left(ele)]),
+                slice: vec![Either::Left(ele)],
                 range: self.cursor - 1..self.content.len(),
             };
             self.splice_buffer(buffer_window);

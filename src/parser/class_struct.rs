@@ -12,14 +12,14 @@ use crate::{
     },
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn parse_class_struct(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
-            let kwd = if let Either::Right(selected) = selected {
+            let kwd = if let Either::Right(selected) = &selected {
                 if let Some(TokenType::Keyword(kwd)) = &selected.ty {
                     if [Keyword::Class, Keyword::Struct].contains(kwd) {
-                        kwd
+                        *kwd
                     } else {
                         continue;
                     }
@@ -29,8 +29,8 @@ impl<'a> Buffer<'a> {
             } else {
                 continue;
             };
-            let start = self.cursor;
             let init_pos_raw = selected.pos_raw();
+            let start = self.cursor;
             self.start_raw_collection();
             let mut selected = self.next_or_err()?;
             if let Either::Right(Token {
@@ -38,7 +38,7 @@ impl<'a> Buffer<'a> {
                 ..
             }) = selected
             {
-                if *kwd == Keyword::Class {
+                if kwd == Keyword::Class {
                     return Err(ZyxtError::error_2_1_17().with_pos_raw(&selected.pos_raw()));
                 }
                 // TODO get_arguments
@@ -50,8 +50,8 @@ impl<'a> Buffer<'a> {
             }) = selected
             {
                 Some(block)
-            } else if *kwd == Keyword::Class {
-                return Err(ZyxtError::error_2_1_18(kwd).with_pos_raw(&selected.pos_raw()));
+            } else if kwd == Keyword::Class {
+                return Err(ZyxtError::error_2_1_18(&kwd).with_pos_raw(&selected.pos_raw()));
             } else {
                 None
             };
@@ -62,7 +62,7 @@ impl<'a> Buffer<'a> {
                 },
                 data: Box::new({
                     ElementVariant::Class(Class {
-                        is_struct: *kwd == Keyword::Class,
+                        is_struct: kwd == Keyword::Class,
                         implementations: Default::default(),
                         inst_fields: Default::default(), // TODO
                         content: content.map(|block| Element {
@@ -74,7 +74,7 @@ impl<'a> Buffer<'a> {
                 }),
             };
             let buffer_window = BufferWindow {
-                slice: Cow::Owned(vec![Either::Left(ele)]),
+                slice: vec![Either::Left(ele)],
                 range: start..self.next_cursor_pos(),
             };
             self.splice_buffer(buffer_window)

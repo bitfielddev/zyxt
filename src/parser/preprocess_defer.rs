@@ -12,14 +12,14 @@ use crate::{
     Element, ZyxtError,
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn parse_preprocess_defer(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             let (selected, kwd) = if let Either::Right(selected) = selected {
                 if let Some(TokenType::Keyword(kwd)) = &selected.ty {
                     if [Keyword::Defer, Keyword::Pre].contains(kwd) {
-                        (selected, kwd)
+                        (selected.to_owned(), *kwd)
                     } else {
                         continue;
                     }
@@ -56,24 +56,24 @@ impl<'a> Buffer<'a> {
             };
             let ele = Element {
                 pos_raw: init_pos_raw,
-                data: Box::new(if *kwd == Keyword::Pre {
+                data: Box::new(if kwd == Keyword::Pre {
                     ElementVariant::Preprocess(Preprocess {
                         content: Element {
                             pos_raw: content.pos_raw,
-                            data: Box::new(*content.data.as_block().unwrap()),
+                            data: Box::new(content.data.as_block().unwrap().to_owned()),
                         },
                     })
                 } else {
                     ElementVariant::Defer(Defer {
                         content: Element {
                             pos_raw: content.pos_raw,
-                            data: Box::new(*content.data.as_block().unwrap()),
+                            data: Box::new(content.data.as_block().unwrap().to_owned()),
                         },
                     })
                 }),
             };
             let buffer_window = BufferWindow {
-                slice: Cow::Owned(vec![Either::Left(ele)]),
+                slice: vec![Either::Left(ele)],
                 range: start..end,
             };
             self.splice_buffer(buffer_window);

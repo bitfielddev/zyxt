@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn parse_declaration(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         let mut flag_pos = None;
@@ -39,7 +39,7 @@ impl<'a> Buffer<'a> {
                 continue;
             }
             let declared_var = if let Some(Either::Left(d)) = self.prev() {
-                d
+                d.to_owned()
             } else {
                 return Err(ZyxtError::error_2_1_5().with_pos_raw(&selected.pos_raw()));
             };
@@ -85,7 +85,7 @@ impl<'a> Buffer<'a> {
                 })),
             };
             let buffer_window = BufferWindow {
-                slice: Cow::Owned(vec![Either::Left(ele)]),
+                slice: vec![Either::Left(ele)],
                 range: start..self.content.len(),
             };
             self.splice_buffer(buffer_window)

@@ -36,7 +36,7 @@ impl ElementData for Class {
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> Result<Type<Element>, ZyxtError> {
         typelist.add_frame(None, FrameType::Normal);
-        for expr in self.content.unwrap().data.content.iter_mut() {
+        for expr in &mut self.content.as_mut().unwrap().data.content {
             // TODO deal w unwrap
             expr.process(typelist)?;
             if let ElementVariant::Declare(Declare {
@@ -118,6 +118,7 @@ impl ElementData for Class {
         };
         new_self
             .args
+            .as_mut()
             .map(|args| {
                 args.into_iter()
                     .map(|mut arg| {

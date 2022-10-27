@@ -12,15 +12,15 @@ use crate::{
     },
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn parse_unparen_call(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             if self.cursor == self.content.len() - 1 {
                 continue;
             }
-            let function = if let Either::Left(selected) = selected {
-                selected
+            let function = if let Either::Left(selected) = &selected {
+                selected.to_owned()
             } else {
                 continue;
             };
@@ -72,7 +72,7 @@ impl<'a> Buffer<'a> {
                 })),
             };
             let buffer_window = BufferWindow {
-                slice: Cow::Owned(vec![Either::Left(ele)]),
+                slice: vec![Either::Left(ele)],
                 range: start..self.content.len(),
             };
             self.splice_buffer(buffer_window)

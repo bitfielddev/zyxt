@@ -13,11 +13,11 @@ use crate::{
     },
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn parse_proc_fn(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(mut selected) = self.next() {
-            let (tok_selected, ty) = if let Either::Right(selected) = selected {
+            let (tok_selected, ty) = if let Either::Right(selected) = &selected {
                 if [
                     Some(TokenType::Keyword(Keyword::Proc)),
                     Some(TokenType::Keyword(Keyword::Fn)),
@@ -25,7 +25,7 @@ impl<'a> Buffer<'a> {
                 ]
                 .contains(&selected.ty)
                 {
-                    (selected, selected.ty.unwrap())
+                    (selected.to_owned(), selected.ty.unwrap())
                 } else {
                     continue;
                 }
@@ -46,7 +46,7 @@ impl<'a> Buffer<'a> {
             let args = if let Either::Right(Token {
                 ty: Some(TokenType::Bar),
                 ..
-            }) = selected
+            }) = &selected
             {
                 // TODO get arguments
                 vec![]
@@ -72,7 +72,7 @@ impl<'a> Buffer<'a> {
                 }
                 let range = start..self.cursor;
                 BufferWindow {
-                    slice: Cow::Borrowed(&self.content[range.to_owned()]),
+                    slice: self.content[range.to_owned()].to_owned(),
                     range,
                 }
                 .with_as_buffer(&|buf| {
@@ -98,7 +98,7 @@ impl<'a> Buffer<'a> {
                     .with_as_buffer(&|buf| {
                         let ele = buf.parse_as_expr()?;
                         Ok(Element {
-                            pos_raw: ele.pos_raw,
+                            pos_raw: ele.pos_raw.to_owned(),
                             data: Box::new(Block { content: vec![ele] }),
                         })
                     })?
@@ -117,7 +117,7 @@ impl<'a> Buffer<'a> {
                 })),
             };
             let buffer_window = BufferWindow {
-                slice: Cow::Owned(vec![Either::Left(ele)]),
+                slice: vec![Either::Left(ele)],
                 range: start..self.next_cursor_pos(),
             };
             self.splice_buffer(buffer_window)

@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn parse_un_opr(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
@@ -39,12 +39,12 @@ impl<'a> Buffer<'a> {
                         .into(),
                 },
                 data: Box::new(ElementVariant::UnaryOpr(UnaryOpr {
-                    ty: *opr_type,
+                    ty: opr_type,
                     operand,
                 })),
             };
             let buffer_window = BufferWindow {
-                slice: Cow::Owned(vec![Either::Left(ele)]),
+                slice: vec![Either::Left(ele)],
                 range: self.cursor - 1..self.content.len(),
             };
             self.splice_buffer(buffer_window);

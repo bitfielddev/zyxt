@@ -6,7 +6,7 @@ use crate::{
     ZyxtError,
 };
 
-impl<'a> Buffer<'a> {
+impl Buffer {
     pub fn parse_parentheses(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
@@ -40,9 +40,9 @@ impl<'a> Buffer<'a> {
                 let mut paren_window =
                     self.get_between(TokenType::OpenParen, TokenType::CloseParen)?;
                 let raw = self.end_raw_collection();
-                paren_window.with_as_buffer(&|f| {
+                paren_window.with_as_buffer(&move |f| {
                     let mut ele = f.parse_as_expr()?;
-                    ele.pos_raw.raw = raw.into();
+                    ele.pos_raw.raw = raw.to_owned().into();
                     Ok(ele)
                 })?;
                 self.splice_buffer(paren_window);
@@ -52,9 +52,9 @@ impl<'a> Buffer<'a> {
                 let mut paren_window =
                     self.get_between(TokenType::OpenCurlyParen, TokenType::CloseCurlyParen)?;
                 let raw = self.end_raw_collection();
-                paren_window.with_as_buffer(&|f| {
+                paren_window.with_as_buffer(&move |f| {
                     let mut ele = f.parse_as_block()?;
-                    ele.pos_raw.raw = raw.into();
+                    ele.pos_raw.raw = raw.to_owned().into();
                     Ok(ele)
                 })?;
                 self.splice_buffer(paren_window);

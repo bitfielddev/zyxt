@@ -21,13 +21,14 @@ impl ElementData for Preprocess {
         _pos_raw: &PosRaw,
         out: &mut impl Print,
     ) -> Result<ElementVariant, ZyxtError> {
-        let mut pre_typelist = InterpreterData::<Type<Element>, _>::new(out);
-        let mut pre_instructions: &Block = self
+        let mut pre_instructions: Block = self
             .content
             .data
             .desugared(&Default::default(), out)?
             .as_block()
-            .unwrap();
+            .unwrap()
+            .to_owned();
+        let mut pre_typelist = InterpreterData::<Type<Element>, _>::new(out);
         pre_instructions.process(&Default::default(), &mut pre_typelist)?;
         let mut i_data = InterpreterData::<Value, _>::new(out);
         let pre_value = pre_instructions.interpret_block(&mut i_data, true, false)?;

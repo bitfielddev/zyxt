@@ -41,7 +41,11 @@ impl Display for Argument {
 }
 impl Argument {
     pub fn desugar(&mut self, _pos_raw: &PosRaw, out: &mut impl Print) -> Result<(), ZyxtError> {
-        self.default = self.default.map(|e| e.desugared(out)).transpose()?;
+        self.default = self
+            .default
+            .as_ref()
+            .map(|e| e.desugared(out))
+            .transpose()?;
         Ok(())
     }
 }
@@ -73,7 +77,7 @@ impl ElementData for Procedure {
             },
         );
         let return_type = self.return_type.process(typelist)?;
-        for mut arg in self.args {
+        for mut arg in &mut self.args {
             let value = arg.ty.process(typelist)?;
             typelist.declare_val(&arg.name, &value);
         }
