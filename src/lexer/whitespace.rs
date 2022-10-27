@@ -12,8 +12,8 @@ pub fn lex_whitespace(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), 
         return Ok(());
     };
     while let Some((char, _)) = iter.peek() {
-        if WHITESPACE.is_match(char) {
-            raw.push_str(char);
+        if WHITESPACE.is_match(&*char.to_string()) {
+            raw.push(char);
             iter.next().unwrap();
         } else {
             tokens.push(Token {

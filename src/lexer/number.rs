@@ -9,12 +9,12 @@ pub fn lex_number(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), Zyxt
     let pos = iter.peek().unwrap().1;
     let mut dotted = false;
     while let Some((char, _)) = iter.peek() {
-        if NUMERIC.is_match(char) {
-            raw.push_str(char);
+        if NUMERIC.is_match(&*char.to_string()) {
+            raw.push(char);
             iter.next().unwrap();
-        } else if char == "." && !dotted {
+        } else if char == '.' && !dotted {
             dotted = true;
-            raw.push_str(char);
+            raw.push(char);
             iter.next().unwrap();
         } else {
             tokens.push(Token {

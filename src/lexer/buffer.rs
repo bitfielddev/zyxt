@@ -1,21 +1,19 @@
-use unicode_segmentation::UnicodeSegmentation;
-
 use crate::types::position::Position;
 
 #[derive(Clone)]
-pub struct Buffer<'a> {
-    content: Vec<(&'a str, Position)>,
+pub struct Buffer {
+    content: Vec<(char, Position)>,
     cursor: usize,
     started: bool,
 }
-impl<'a> Buffer<'a> {
-    pub fn new(input: &'a String, mut pos: Position) -> Self {
+impl Buffer {
+    pub fn new(input: &str, mut pos: Position) -> Self {
         Self {
             content: input
-                .graphemes(true)
+                .chars()
                 .map(|c| {
                     let this_pos = pos.clone();
-                    pos.next_str(c);
+                    pos.next_char(c);
                     (c, this_pos)
                 })
                 .collect::<Vec<_>>(),
@@ -23,7 +21,7 @@ impl<'a> Buffer<'a> {
             started: false,
         }
     }
-    pub fn next(&mut self) -> Option<&(&'a str, Position)> {
+    pub fn next(&mut self) -> Option<&(char, Position)> {
         if self.started {
             self.cursor += 1;
         } else {
@@ -31,7 +29,7 @@ impl<'a> Buffer<'a> {
         }
         self.content.get(self.cursor)
     }
-    pub fn peek(&self) -> Option<(&str, Position)> {
+    pub fn peek(&self) -> Option<(char, Position)> {
         self.content
             .get(if self.started { self.cursor + 1 } else { 0 })
             .cloned()

@@ -2,7 +2,6 @@ use std::fmt::{Debug, Display, Formatter};
 
 use itertools::Either;
 use smol_str::SmolStr;
-use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{types::token::Token, Element};
 
@@ -39,11 +38,11 @@ impl Position {
     pub fn pos_after(&self, string: &str) -> Position {
         Position {
             filename: self.filename.to_owned(),
-            line: self.line + string.graphemes(true).filter(|c| *c == "\n").count() as u32,
+            line: self.line + string.chars().filter(|c| *c == '\n').count() as u32,
             column: if string.contains('\n') {
-                string.split('\n').last().unwrap().graphemes(true).count() as u32
+                string.split('\n').last().unwrap().chars().count() as u32
             } else {
-                self.column + string.graphemes(true).count() as u32
+                self.column + string.chars().count() as u32
             },
         }
     }

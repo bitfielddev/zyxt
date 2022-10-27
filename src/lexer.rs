@@ -39,13 +39,13 @@ pub fn lex(preinput: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
     let mut iter = Buffer::new(&input, pos);
     let mut tokens = vec![];
     while let Some((char, _)) = iter.to_owned().peek() {
-        if char == "\"" {
+        if char == '"' {
             lex_text_literal(&mut iter, &mut tokens)?;
-        } else if ALPHABETIC.is_match(char) {
+        } else if ALPHABETIC.is_match(&*char.to_string()) {
             lex_word(&mut iter, &mut tokens)?;
-        } else if WHITESPACE.is_match(char) {
+        } else if WHITESPACE.is_match(&*char.to_string()) {
             lex_whitespace(&mut iter, &mut tokens)?;
-        } else if NUMERIC.is_match(char) {
+        } else if NUMERIC.is_match(&*char.to_string()) {
             lex_number(&mut iter, &mut tokens)?;
         } else {
             lex_symbol(&mut iter, &mut tokens)?;

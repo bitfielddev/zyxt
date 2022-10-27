@@ -1,7 +1,5 @@
 use std::{
     fmt::{Debug, Display},
-    fs::File,
-    io::Read,
     process::exit,
 };
 
@@ -10,7 +8,7 @@ use ansi_term::{
     Style,
 };
 use backtrace::Backtrace;
-use unicode_segmentation::UnicodeSegmentation;
+use itertools::Itertools;
 
 use crate::{
     types::{
@@ -413,71 +411,60 @@ impl ZyxtError {
         self.position
             .iter()
             .map(|pos_raw| {
-                format!(
-                    "{}\n{}",
-                    Style::new()
-                        .on(Red)
-                        .bold()
-                        .paint(format!(" {} ", pos_raw.position)),
-                    White.dimmed().paint(
-                        if let Ok(mut file) = File::open(&pos_raw.position.filename) {
-                            let mut contents = String::new();
-                            if file.read_to_string(&mut contents).is_ok() {
-                                let mut contents = contents
-                                    .split('\n')
-                                    .map(|s| s.to_string())
-                                    .collect::<Vec<_>>();
+                let pos = Style::new()
+                    .on(Red)
+                    .bold()
+                    .paint(format!(" {} ", pos_raw.position));
+                let mut contents =
+                    if let Ok(contents) = std::fs::read_to_string(&pos_raw.position.filename) {
+                        contents
+                            .split('\n')
+                            .map(|a| a.to_string())
+                            .collect::<Vec<_>>()
+                    } else {
+                        todo!()
+                    };
+                let start = contents
+                    .get_mut(pos_raw.position.line as usize - 1)
+                    .unwrap();
+                let start_chars = start.chars().collect::<Vec<_>>();
+                let index = pos_raw.position.column as usize - 1;
+                *start = start_chars[0..index]
+                    .iter()
+                    .cloned()
+                    .chain("\u{001b}[0;1;4;31m".chars())
+                    .chain(start_chars[index..].iter().cloned())
+                    .join("");
 
-                                let start = contents
-                                    .get_mut(pos_raw.position.line as usize - 1)
-                                    .unwrap();
-                                let start_graphemes = start.graphemes(true).collect::<Vec<_>>();
-                                let index = pos_raw.position.column as usize - 1;
-                                *start = start_graphemes[0..index]
-                                    .iter()
-                                    .cloned()
-                                    .chain(vec!["\u{001b}[0;1;4;31m"])
-                                    .chain(start_graphemes[index..].iter().cloned())
-                                    .collect::<Vec<_>>()
-                                    .join("");
+                let end_pos = pos_raw.position.pos_after(&*pos_raw.raw);
+                let end = contents.get_mut(end_pos.line as usize - 1).unwrap();
+                let end_chars = end.chars().collect::<Vec<_>>();
+                let index = end_pos.column as usize - 1
+                    + if pos_raw.position.line == end_pos.line {
+                        1
+                    } else {
+                        0
+                    };
+                *end = end_chars[0..index - 1]
+                    .iter()
+                    .cloned()
+                    .chain("\u{001b}[0;37;2m".chars())
+                    .chain(end_chars[index..].iter().cloned())
+                    .join("");
 
-                                let end_pos = pos_raw.position.pos_after(&*pos_raw.raw);
-                                let end = contents.get_mut(end_pos.line as usize - 1).unwrap();
-                                let end_graphemes = end.graphemes(true).collect::<Vec<_>>();
-                                let index = end_pos.column as usize - 1
-                                    + if pos_raw.position.line == end_pos.line {
-                                        1
-                                    } else {
-                                        0
-                                    };
-                                *end = end_graphemes[0..index - 1]
-                                    .iter()
-                                    .cloned()
-                                    .chain(vec!["\u{001b}[0;37;2m"])
-                                    .chain(end_graphemes[index..].iter().cloned())
-                                    .collect::<Vec<_>>()
-                                    .join("");
+                let surrounding = contents
+                    .into_iter()
+                    .enumerate()
+                    .filter(|(i, _)| {
+                        pos_raw.position.line as isize - 3 <= *i as isize
+                            && *i as u32 <= end_pos.line + 1
+                    })
+                    .map(|(_, s)| format!("  {}", s))
+                    .collect::<Vec<_>>()
+                    .join("\n");
 
-                                contents
-                                    .into_iter()
-                                    .enumerate()
-                                    .filter(|(i, _)| {
-                                        pos_raw.position.line as isize - 3 <= *i as isize
-                                            && *i as u32 <= end_pos.line + 1
-                                    })
-                                    .map(|(_, s)| format!("  {}", s))
-                                    .collect::<Vec<_>>()
-                                    .join("\n")
-                            } else {
-                                pos_raw.raw.to_owned().into()
-                            }
-                        } else {
-                            pos_raw.raw.to_owned().into()
-                        }
-                    )
-                )
+                format!("{}\n{}", pos, White.dimmed().paint(surrounding))
             })
-            .collect::<Vec<_>>()
             .join("\n")
     }
     pub fn print_exit(self, out: &mut impl Print) -> ! {

@@ -8,8 +8,8 @@ pub fn lex_word(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), ZyxtEr
     let mut raw = "".to_string();
     let pos = iter.peek().unwrap().1;
     while let Some((char, _)) = iter.peek() {
-        if ALPHANUMERIC.is_match(char) {
-            raw.push_str(char);
+        if ALPHANUMERIC.is_match(&*char.to_string()) {
+            raw.push(char);
             iter.next().unwrap();
         } else {
             tokens.push(Token {
