@@ -1,6 +1,10 @@
+mod assignment_opr;
 mod buffer;
+mod class_struct;
 mod parentheses;
 mod preprocess_defer;
+mod proc_fn;
+mod var_literal_call;
 
 use std::{borrow::Cow, cmp::min, collections::HashMap};
 
@@ -1280,7 +1284,7 @@ fn parse_block(input: Vec<Element>) -> Result<Vec<Element>, ZyxtError> {
 }
 
 impl<'a> Buffer<'a> {
-    fn parse_as_block(&mut self) -> Result<Element, ZyxtError> {
+    fn parse_as_block(&mut self) -> Result<Element<Block>, ZyxtError> {
         let mut buffers = self.get_split_between(
             TokenType::OpenCurlyParen,
             TokenType::CloseCurlyParen,
@@ -1289,10 +1293,10 @@ impl<'a> Buffer<'a> {
         let block = buffers.with_as_buffers(&|buffer| buffer.parse_as_expr())?;
         let ele = Element {
             pos_raw: self.content.get(0).map(|c| c.pos_raw()).unwrap_or_default(),
-            data: Box::new(Block { content: block }.as_variant()),
+            data: Box::new(Block { content: block }),
         };
         let buffer_window = BufferWindow {
-            slice: Cow::Owned(vec![Either::Left(ele.to_owned())]),
+            slice: Cow::Owned(vec![Either::Left(ele.as_variant())]),
             range: buffers.range,
         };
         self.splice_buffer(buffer_window);

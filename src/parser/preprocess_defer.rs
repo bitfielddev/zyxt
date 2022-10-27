@@ -32,7 +32,7 @@ impl<'a> Buffer<'a> {
             let mut raw = selected.get_raw();
             let start = self.cursor;
             let init_pos_raw = selected.pos_raw();
-            let selected = self.next_or_err(&selected.pos_raw())?;
+            let selected = self.next_or_err()?;
 
             raw += &*selected.pos_raw().raw;
             let (content, end) = if let Either::Left(selected) = selected {

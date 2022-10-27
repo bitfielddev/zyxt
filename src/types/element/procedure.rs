@@ -49,7 +49,7 @@ impl Argument {
 pub struct Procedure {
     pub is_fn: bool,
     pub args: Vec<Argument>,
-    pub return_type: Element<Ident>,
+    pub return_type: Element,
     pub content: Element<Block>,
 }
 

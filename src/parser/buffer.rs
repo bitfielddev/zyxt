@@ -4,7 +4,7 @@ use itertools::Either;
 
 use crate::{
     types::{
-        position::PosRaw,
+        position::{GetPosRaw, PosRaw},
         token::{Token, TokenType},
     },
     Element, ZyxtError,
@@ -35,13 +35,14 @@ impl<'a> Buffer<'a> {
             c
         })
     }
-    pub fn next_or_err(
-        &mut self,
-        curr_pos_raw: &PosRaw,
-    ) -> Result<&Either<Element, Token>, ZyxtError> {
+    pub fn next_or_err(&mut self) -> Result<&Either<Element, Token>, ZyxtError> {
         if let Some(c) = self.next() {
             Ok(c)
         } else {
+            let curr_pos_raw = match &self.content.last().unwrap() {
+                Either::Left(c) => &c.pos_raw,
+                Either::Right(c) => &c.pos_raw(),
+            };
             Err(ZyxtError::error_2_1_0(&curr_pos_raw.raw).with_pos_raw(curr_pos_raw))
         }
     }

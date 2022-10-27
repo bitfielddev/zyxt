@@ -18,11 +18,11 @@ use crate::{
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Class {
-    is_struct: bool,
-    implementations: HashMap<SmolStr, Element>,
-    inst_fields: HashMap<SmolStr, (Element<Ident>, Option<Element>)>,
-    content: Element<Block>,
-    args: Option<Vec<Argument>>,
+    pub is_struct: bool,
+    pub implementations: HashMap<SmolStr, Element>,
+    pub inst_fields: HashMap<SmolStr, (Element<Ident>, Option<Element>)>,
+    pub content: Option<Element<Block>>,
+    pub args: Option<Vec<Argument>>,
 }
 
 impl ElementData for Class {
@@ -95,9 +95,13 @@ impl ElementData for Class {
         out: &mut impl Print,
     ) -> Result<ElementVariant, ZyxtError> {
         let mut new_self = self.to_owned();
-        new_self.content = Element {
-            pos_raw: pos_raw.to_owned(),
-            data: self.content.desugared(out)?.as_block().unwrap(),
+        new_self.content = if let Some(content) = new_self.content {
+            Some(Element {
+                pos_raw: pos_raw.to_owned(),
+                data: content.desugared(out)?.as_block().unwrap(),
+            })
+        } else {
+            None
         };
         new_self
             .args

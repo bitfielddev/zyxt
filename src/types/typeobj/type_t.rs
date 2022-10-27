@@ -67,4 +67,5 @@ pub static TYPE_T: Lazy<TypeDefinition<Value>> = Lazy::new(|| TypeDefinition {
     implementations: type_t(),
     inst_fields: HashMap::new(),
 });
-static TYPE_T_ELE: Lazy<TypeDefinition<Element>> = Lazy::new(|| TYPE_T.as_type_element());
+pub(crate) static TYPE_T_ELE: Lazy<TypeDefinition<Element>> =
+    Lazy::new(|| TYPE_T.as_type_element());

@@ -8,8 +8,8 @@ use crate::{
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Set {
-    variable: Element<Ident>, // variable
-    content: Element,
+    pub variable: Element,
+    pub content: Element,
 }
 
 impl ElementData for Set {
