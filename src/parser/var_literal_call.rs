@@ -99,7 +99,7 @@ impl Buffer {
                                     Some(TokenType::LiteralMisc) => match &*selected.value {
                                         "true" => Value::Bool(true),
                                         "false" => Value::Bool(false),
-                                        "unit" => todo!(),
+                                        "unit" => Value::Unit,
                                         "inf" => Value::F64(f64::INFINITY),
                                         _ => unreachable!("{}", selected.value),
                                     },

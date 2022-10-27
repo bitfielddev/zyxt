@@ -33,7 +33,7 @@ impl Buffer {
             let start = self.cursor;
             self.start_raw_collection();
             let mut selected = self.next_or_err()?;
-            if let Either::Right(Token {
+            let args = if let Either::Right(Token {
                 ty: Some(TokenType::Bar),
                 ..
             }) = selected
@@ -41,9 +41,12 @@ impl Buffer {
                 if kwd == Keyword::Class {
                     return Err(ZyxtError::error_2_1_17().with_pos_raw(&selected.pos_raw()));
                 }
-                // TODO get_arguments
+                let args = self.parse_args()?;
                 selected = self.next_or_err()?;
-            }
+                Some(args)
+            } else {
+                None
+            };
             let content = if let Either::Left(Element {
                 data: box ElementVariant::Block(block),
                 ..
@@ -69,7 +72,7 @@ impl Buffer {
                             pos_raw: init_pos_raw,
                             data: Box::new(block.to_owned()),
                         }),
-                        args: None,
+                        args,
                     })
                 }),
             };

@@ -118,7 +118,7 @@ pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError
             if let Either::Left(e) = e {
                 Ok(e.to_owned())
             } else {
-                todo!()
+                todo!("{e:#?}")
             }
         })
         .collect::<Result<Vec<_>, ZyxtError>>()

@@ -190,23 +190,15 @@ impl Buffer {
     pub fn splice_buffer(&mut self, buffer: BufferWindow) {
         self.content = self.content.to_owned();
         self.cursor = buffer.range.end - 1;
-        self.content
-            .to_vec()
-            .splice(buffer.range, buffer.slice.to_vec());
+        self.content.splice(buffer.range, buffer.slice);
     }
     pub fn splice_buffers(&mut self, buffers: BufferWindows) {
         self.content = self.content.to_owned();
         self.cursor = buffers.range.end - 1;
-        self.content
-            .to_vec()
-            .splice(
-                buffers.range,
-                buffers
-                    .buffer_windows
-                    .into_iter()
-                    .flat_map(|b| b.slice.to_vec()),
-            )
-            .collect::<Vec<_>>();
+        self.content.splice(
+            buffers.range,
+            buffers.buffer_windows.into_iter().flat_map(|b| b.slice),
+        );
     }
 }
 

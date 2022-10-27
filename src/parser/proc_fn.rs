@@ -5,7 +5,11 @@ use itertools::Either;
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{block::Block, procedure::Procedure, Element, ElementVariant},
+        element::{
+            block::Block,
+            procedure::{Argument, Procedure},
+            Element, ElementVariant,
+        },
         errors::ZyxtError,
         position::{GetPosRaw, PosRaw},
         token::{Keyword, Token, TokenType},
@@ -14,6 +18,31 @@ use crate::{
 };
 
 impl Buffer {
+    pub fn parse_args(&mut self) -> Result<Vec<Argument>, ZyxtError> {
+        let mut windows =
+            self.get_split_between(TokenType::Bar, TokenType::Bar, TokenType::Comma)?;
+        windows.with_as_buffers(&|buf| {
+            let arg_sections = buf
+                .get_split(TokenType::Colon)?
+                .with_as_buffers(&|buf| buf.parse_as_expr())?;
+            let name = if let Some(name) = arg_sections.first() {
+                if let ElementVariant::Ident(ident) = &*name.data {
+                    ident.name.to_owned()
+                } else {
+                    todo!()
+                }
+            } else {
+                todo!()
+            };
+            let ty = if let Some(ele) = arg_sections.get(1) {
+                ele.to_owned()
+            } else {
+                todo!()
+            };
+            let default = arg_sections.get(2).cloned();
+            Ok(Argument { name, ty, default })
+        })
+    }
     pub fn parse_proc_fn(&mut self) -> Result<(), ZyxtError> {
         self.reset_cursor();
         while let Some(mut selected) = self.next() {
@@ -48,8 +77,7 @@ impl Buffer {
                 ..
             }) = &selected
             {
-                // TODO get arguments
-                vec![]
+                self.parse_args()?
             } else {
                 self.cursor -= 1;
                 vec![]
