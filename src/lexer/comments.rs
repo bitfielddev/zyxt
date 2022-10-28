@@ -16,16 +16,14 @@ pub fn lex_line_comment(iter: &mut Buffer, tokens: &mut [Token]) -> Result<(), Z
 pub fn lex_block_comment(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), ZyxtError> {
     let mut raw = "".to_string();
     while let Some((char, _)) = iter.next() {
-        raw.push(*char);
         if *char == '*' {
             raw.push(*char);
             let (char, _) = iter.next().unwrap();
+            raw.push(*char);
             if *char == '/' {
                 tokens.last_mut().unwrap().value =
                     format!("{}{raw}", tokens.last().unwrap().value).into();
                 return Ok(());
-            } else {
-                raw.push(*char);
             }
         } else if *char == '/' {
             raw.push(*char);
