@@ -4,14 +4,14 @@ use crate::{
     parser::buffer::Buffer,
     types::{
         element::{binary_opr::BinaryOpr, Element, ElementVariant},
-        errors::ZyxtError,
+        errors::{ZError, ZResult},
         position::{GetPosRaw, PosRaw},
         token::{Token, TokenType},
     },
 };
 
 impl Buffer {
-    pub fn parse_bin_opr(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_bin_opr(&mut self) -> ZResult<()> {
         self.reset_cursor();
         if self.content.is_empty() {
             return Ok(());
@@ -32,8 +32,9 @@ impl Buffer {
                 continue;
             };
             if i == 0 || i == self.content.len() - 1 {
-                return Err(ZyxtError::error_2_1_3(selected.pos_raw().raw)
-                    .with_pos_raw(&selected.pos_raw()));
+                return Err(
+                    ZError::error_2_1_3(selected.pos_raw().raw).with_pos_raw(&selected.pos_raw())
+                );
             }
             if opr_type.order() >= highest_order {
                 highest_order_index = i;

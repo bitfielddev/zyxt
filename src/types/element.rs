@@ -27,7 +27,7 @@ use crate::types::{
         preprocess::Preprocess, procedure::Procedure, r#if::If, r#return::Return, set::Set,
         unary_opr::UnaryOpr,
     },
-    errors::ZyxtError,
+    errors::ZResult,
     interpreter_data::InterpreterData,
     position::PosRaw,
     printer::Print,
@@ -44,20 +44,13 @@ pub trait ElementData: Clone + PartialEq + Debug {
         &mut self,
         _pos_raw: &PosRaw,
         _typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         Ok(Type::Any)
     }
-    fn desugared(
-        &self,
-        _pos_raw: &PosRaw,
-        _out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, _pos_raw: &PosRaw, _out: &mut impl Print) -> ZResult<ElementVariant> {
         Ok(self.as_variant())
     }
-    fn interpret_expr<O: Print>(
-        &self,
-        _: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, _: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         unreachable!()
     }
 }
@@ -80,10 +73,10 @@ impl<V: ElementData> Element<V> {
     pub fn process<O: Print>(
         &mut self,
         typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         self.data.process(&self.pos_raw, typelist)
     }
-    pub fn desugared(&self, out: &mut impl Print) -> Result<Element, ZyxtError> {
+    pub fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
         Ok(Element {
             pos_raw: self.pos_raw.to_owned(),
             data: Box::new(self.data.desugared(&self.pos_raw, out)?),
@@ -92,7 +85,7 @@ impl<V: ElementData> Element<V> {
     pub fn interpret_expr<O: Print>(
         &self,
         i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    ) -> ZResult<Value> {
         self.data.interpret_expr(i_data)
     }
 }
@@ -150,20 +143,13 @@ impl ElementData for ElementVariant {
         &mut self,
         pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         for_all_variants!(self, process, pos_raw, typelist)
     }
-    fn desugared(
-        &self,
-        pos_raw: &PosRaw,
-        out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         for_all_variants!(&self, desugared, pos_raw, out)
     }
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         for_all_variants!(&self, interpret_expr, i_data)
     }
 }

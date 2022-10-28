@@ -5,7 +5,7 @@ use crate::{
         token::OprType,
         typeobj::bool_t::BOOL_T,
     },
-    InterpreterData, Print, Value, ZyxtError,
+    InterpreterData, Print, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -20,11 +20,7 @@ impl ElementData for BinaryOpr {
         ElementVariant::BinaryOpr(self.to_owned())
     }
 
-    fn desugared(
-        &self,
-        pos_raw: &PosRaw,
-        out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         Ok(match self.ty {
             OprType::And | OprType::Or => {
                 let mut new_self = self.to_owned();
@@ -88,10 +84,7 @@ impl ElementData for BinaryOpr {
         })
     }
 
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         match self.ty {
             OprType::And => {
                 if let Value::Bool(b) = self.operand1.interpret_expr(i_data)? {

@@ -5,7 +5,7 @@ use crate::{
         position::PosRaw,
         typeobj::unit_t::UNIT_T,
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Type, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -22,15 +22,11 @@ impl ElementData for Block {
         &mut self,
         _pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         Ok(self.block_type(typelist, true)?.0)
     }
 
-    fn desugared(
-        &self,
-        _pos_raw: &PosRaw,
-        out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, _pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         Ok(ElementVariant::Block(Self {
             content: self
                 .content
@@ -40,10 +36,7 @@ impl ElementData for Block {
         }))
     }
 
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         self.interpret_block(i_data, true, true)
     }
 }
@@ -52,7 +45,7 @@ impl Block {
         &mut self,
         typelist: &mut InterpreterData<Type<Element>, O>,
         add_set: bool,
-    ) -> Result<(Type<Element>, Option<Type<Element>>), ZyxtError> {
+    ) -> ZResult<(Type<Element>, Option<Type<Element>>)> {
         let mut last = UNIT_T.as_type().as_type_element();
         let mut return_type = None;
         if add_set {
@@ -65,7 +58,7 @@ impl Block {
                     return_type = Some(*value);
                 } else if last != return_type.to_owned().unwrap() {
                     return Err(
-                        ZyxtError::error_4_t(last, return_type.unwrap()).with_pos_raw(&ele.pos_raw)
+                        ZError::error_4_t(last, return_type.unwrap()).with_pos_raw(&ele.pos_raw)
                     );
                 }
             }
@@ -73,7 +66,7 @@ impl Block {
         if let Some(return_type) = return_type.to_owned() {
             if last != return_type {
                 let last_ele = self.content.last().unwrap();
-                return Err(ZyxtError::error_4_t(last, return_type).with_pos_raw(&last_ele.pos_raw));
+                return Err(ZError::error_4_t(last, return_type).with_pos_raw(&last_ele.pos_raw));
             }
         }
         if add_set {
@@ -86,7 +79,7 @@ impl Block {
         i_data: &mut InterpreterData<Value, O>,
         returnable: bool,
         add_frame: bool,
-    ) -> Result<Value, ZyxtError> {
+    ) -> ZResult<Value> {
         let mut last = Value::Unit;
 
         macro_rules! pop {

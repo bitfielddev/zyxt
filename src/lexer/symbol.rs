@@ -7,10 +7,10 @@ use crate::{
         position::PosRaw,
         token::{OprType, Token, TokenType},
     },
-    ZyxtError,
+    ZError, ZResult,
 };
 
-pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), ZyxtError> {
+pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
     let (char, pos) = iter.next().unwrap();
     let pos = pos.to_owned();
     let mut char = char.to_string();
@@ -176,12 +176,10 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), Zyxt
             ']' => TokenType::CloseSquareParen,
             '}' => TokenType::CloseCurlyParen,
             _ => {
-                return Err(
-                    ZyxtError::error_2_1_1(char.to_owned()).with_pos_raw(&PosRaw {
-                        position: pos,
-                        raw: char.into(),
-                    }),
-                )
+                return Err(ZError::error_2_1_1(char.to_owned()).with_pos_raw(&PosRaw {
+                    position: pos,
+                    raw: char.into(),
+                }))
             }
         }),
         value: char.into(),

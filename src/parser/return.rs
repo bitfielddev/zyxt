@@ -4,14 +4,14 @@ use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
         element::{r#return::Return, Element, ElementVariant},
-        errors::ZyxtError,
+        errors::ZResult,
         position::{GetPosRaw, PosRaw},
         token::{Keyword, Token, TokenType},
     },
 };
 
 impl Buffer {
-    pub fn parse_return(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_return(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             if !matches!(

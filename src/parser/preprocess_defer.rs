@@ -7,11 +7,11 @@ use crate::{
         position::GetPosRaw,
         token::{Keyword, TokenType},
     },
-    Element, ZyxtError,
+    Element, ZResult,
 };
 
 impl Buffer {
-    pub fn parse_preprocess_defer(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_preprocess_defer(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             let (selected, kwd) = if let Either::Right(selected) = selected {

@@ -5,7 +5,7 @@ use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
         element::{call::Call, ident::Ident, literal::Literal, Element, ElementVariant},
-        errors::ZyxtError,
+        errors::{ZError, ZResult},
         position::GetPosRaw,
         token::{Token, TokenType},
         value::Value,
@@ -25,7 +25,7 @@ impl Buffer {
             }),
         })
     }
-    pub fn parse_var_literal_call(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_var_literal_call(&mut self) -> ZResult<()> {
         self.reset_cursor();
         let mut catcher: Option<(Element, usize)> = None;
         let clear_catcher = |s: &mut Self, catcher: &mut Option<(Element, usize)>| {
@@ -51,7 +51,7 @@ impl Buffer {
                     let catcher = if let Some((catcher, _)) = &mut catcher {
                         catcher
                     } else {
-                        return Err(ZyxtError::error_2_1_0(String::from(".")).with_token(&selected));
+                        return Err(ZError::error_2_1_0(String::from(".")).with_token(&selected));
                     };
                     let selected = match self.next_or_err()? {
                         Either::Left(c) => {
@@ -132,13 +132,13 @@ impl Buffer {
                     ))
                 }
                 Some(TokenType::CloseParen) => {
-                    return Err(ZyxtError::error_2_0_2(')'.to_string()).with_token(&selected))
+                    return Err(ZError::error_2_0_2(')'.to_string()).with_token(&selected))
                 }
                 Some(TokenType::OpenParen) => {
                     let catcher = if let Some((catcher, _)) = &mut catcher {
                         catcher
                     } else {
-                        return Err(ZyxtError::error_2_1_0(String::from("(")).with_token(&selected));
+                        return Err(ZError::error_2_1_0(String::from("(")).with_token(&selected));
                         // parens should have been settled in the first part
                     };
                     let mut contents = self.get_split_between(

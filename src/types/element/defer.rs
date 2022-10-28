@@ -3,7 +3,7 @@ use crate::{
         element::{block::Block, Element, ElementData, ElementVariant},
         position::PosRaw,
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -20,15 +20,11 @@ impl ElementData for Defer {
         &mut self,
         _pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         Ok(self.content.data.block_type(typelist, false)?.0)
     }
 
-    fn desugared(
-        &self,
-        _pos_raw: &PosRaw,
-        out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, _pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         Ok(Defer {
             content: Element {
                 pos_raw: self.content.pos_raw.to_owned(),
@@ -45,10 +41,7 @@ impl ElementData for Defer {
         .as_variant())
     }
 
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         i_data.add_defer(self.content.to_owned());
         Ok(Value::Unit)
     }

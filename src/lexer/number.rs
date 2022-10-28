@@ -1,10 +1,10 @@
 use crate::{
     lexer::{buffer::Buffer, NUMERIC},
     types::token::{Token, TokenType},
-    ZyxtError,
+    ZResult,
 };
 
-pub fn lex_number(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), ZyxtError> {
+pub fn lex_number(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
     let mut raw = "".to_string();
     let pos = iter.peek().unwrap().1;
     let mut dotted = false;

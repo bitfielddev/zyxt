@@ -7,7 +7,7 @@ use crate::{
         position::GetPosRaw,
         token::{Token, TokenType},
     },
-    Element, ZyxtError,
+    Element, ZError, ZResult,
 };
 
 #[derive(Clone, Debug)]
@@ -46,7 +46,7 @@ impl Buffer {
         }
         next
     }
-    pub fn next_or_err(&mut self) -> Result<Either<Element, Token>, ZyxtError> {
+    pub fn next_or_err(&mut self) -> ZResult<Either<Element, Token>> {
         if let Some(c) = self.next() {
             Ok(c)
         } else {
@@ -54,7 +54,7 @@ impl Buffer {
                 Either::Left(c) => c.pos_raw(),
                 Either::Right(c) => c.pos_raw(),
             };
-            Err(ZyxtError::error_2_1_0(&curr_pos_raw.raw).with_pos_raw(&curr_pos_raw))
+            Err(ZError::error_2_1_0(&curr_pos_raw.raw).with_pos_raw(&curr_pos_raw))
         }
     }
     pub fn prev(&mut self) -> Option<&Either<Element, Token>> {
@@ -110,7 +110,7 @@ impl Buffer {
         &mut self,
         start_token: TokenType,
         end_token: TokenType,
-    ) -> Result<BufferWindow, ZyxtError> {
+    ) -> ZResult<BufferWindow> {
         let mut nest_level = 1usize;
         let start = self.cursor;
         while let Some(ele) = self.next() {
@@ -135,7 +135,7 @@ impl Buffer {
             range: start..self.next_cursor_pos(),
         })
     }
-    pub fn get_split(&mut self, divider: TokenType) -> Result<BufferWindows, ZyxtError> {
+    pub fn get_split(&mut self, divider: TokenType) -> ZResult<BufferWindows> {
         let mut start = self.cursor;
         let mut buffer_windows = vec![];
         while let Some(ele) = self.next() {
@@ -156,7 +156,7 @@ impl Buffer {
         start_token: TokenType,
         end_token: TokenType,
         divider: TokenType,
-    ) -> Result<BufferWindows, ZyxtError> {
+    ) -> ZResult<BufferWindows> {
         let mut nest_level = 1usize;
         let bet_start = self.cursor;
         let mut start = self.cursor + 1;
@@ -208,10 +208,7 @@ impl BufferWindow {
             raw: None,
         }
     }
-    pub fn with_as_buffer<T>(
-        &mut self,
-        f: &dyn Fn(&mut Buffer) -> Result<T, ZyxtError>,
-    ) -> Result<T, ZyxtError> {
+    pub fn with_as_buffer<T>(&mut self, f: &dyn Fn(&mut Buffer) -> ZResult<T>) -> ZResult<T> {
         let mut buffer = self.as_buffer();
         let res = f(&mut buffer)?;
         let bw = BufferWindow {
@@ -229,13 +226,10 @@ pub struct BufferWindows {
     pub range: Range<usize>,
 }
 impl BufferWindows {
-    pub fn with_as_buffers<T>(
-        &mut self,
-        f: &dyn Fn(&mut Buffer) -> Result<T, ZyxtError>,
-    ) -> Result<Vec<T>, ZyxtError> {
+    pub fn with_as_buffers<T>(&mut self, f: &dyn Fn(&mut Buffer) -> ZResult<T>) -> ZResult<Vec<T>> {
         self.buffer_windows
             .iter_mut()
             .map(|b| b.with_as_buffer(f))
-            .collect::<Result<Vec<_>, ZyxtError>>()
+            .collect::<ZResult<Vec<_>>>()
     }
 }

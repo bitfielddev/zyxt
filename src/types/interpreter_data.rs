@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 use crate::{
     types::{
         element::block::Block,
-        errors::ZyxtError,
+        errors::{ZError, ZResult},
         position::{PosRaw, Position},
         printer::Print,
         typeobj::{
@@ -112,7 +112,7 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
             .collect::<Vec<String>>()
             .join("\n-------\n")
     }
-    pub fn pop_frame(&mut self) -> Result<Option<Value>, ZyxtError> {
+    pub fn pop_frame(&mut self) -> ZResult<Option<Value>> {
         for content in self.frames.front_mut().unwrap().defer.clone() {
             if let Value::Return(v) = content.data.interpret_block(self, false, false)? {
                 self.frames.pop_front();
@@ -185,12 +185,7 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
         self.frames.front_mut().unwrap()
     }
 
-    pub fn set_val(
-        &mut self,
-        name: &SmolStr,
-        value: &T,
-        pos_raw: &PosRaw,
-    ) -> Result<(), ZyxtError> {
+    pub fn set_val(&mut self, name: &SmolStr, value: &T, pos_raw: &PosRaw) -> ZResult<()> {
         let mut only_consts = false;
         for frame in self.frames.iter_mut() {
             if (only_consts && frame.ty == FrameType::Constants) || frame.heap.contains_key(name) {
@@ -205,9 +200,9 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
                 only_consts = true;
             }
         }
-        Err(ZyxtError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
+        Err(ZError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
     }
-    pub fn get_val(&mut self, name: &SmolStr, pos_raw: &PosRaw) -> Result<T, ZyxtError> {
+    pub fn get_val(&mut self, name: &SmolStr, pos_raw: &PosRaw) -> ZResult<T> {
         let mut only_consts = false;
         for frame in self.frames.iter() {
             if (only_consts && frame.ty == FrameType::Constants) || frame.heap.contains_key(name) {
@@ -217,13 +212,13 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
                 only_consts = true;
             }
         }
-        Err(ZyxtError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
+        Err(ZError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
     }
-    pub fn delete_val(&mut self, name: &SmolStr, pos_raw: &PosRaw) -> Result<T, ZyxtError> {
+    pub fn delete_val(&mut self, name: &SmolStr, pos_raw: &PosRaw) -> ZResult<T> {
         if let Some(v) = self.frames.front_mut().unwrap().heap.remove(name) {
             Ok(v)
         } else {
-            Err(ZyxtError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
+            Err(ZError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
         }
     }
     pub fn add_defer(&mut self, content: Element<Block>) {

@@ -1,10 +1,10 @@
 use crate::{
     lexer::{buffer::Buffer, WHITESPACE},
     types::token::{Token, TokenType},
-    ZyxtError,
+    ZResult,
 };
 
-pub fn lex_whitespace(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), ZyxtError> {
+pub fn lex_whitespace(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
     let mut raw = "".to_string();
     let pos = if let Some((_, pos)) = iter.peek() {
         pos

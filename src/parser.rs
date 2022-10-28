@@ -19,7 +19,7 @@ use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
         element::{block::Block, comment::Comment, Element},
-        errors::ZyxtError,
+        errors::{ZError, ZResult},
         position::GetPosRaw,
         token::{Token, TokenType},
         value::Value,
@@ -27,7 +27,7 @@ use crate::{
 };
 
 impl Buffer {
-    fn parse_as_block(&mut self) -> Result<Element<Block>, ZyxtError> {
+    fn parse_as_block(&mut self) -> ZResult<Element<Block>> {
         let mut buffers = self.get_split_between(
             TokenType::OpenCurlyParen,
             TokenType::CloseCurlyParen,
@@ -45,7 +45,7 @@ impl Buffer {
         self.splice_buffer(buffer_window);
         Ok(ele)
     }
-    fn parse_as_expr(&mut self) -> Result<Element, ZyxtError> {
+    fn parse_as_expr(&mut self) -> ZResult<Element> {
         self.parse_parentheses()?;
         self.parse_if()?;
         self.parse_proc_fn()?;
@@ -61,7 +61,7 @@ impl Buffer {
         self.parse_un_opr()?;
         self.parse_unparen_call()?;
         if let Some(ele) = self.content.get(2) {
-            return Err(ZyxtError::error_2_1_0(ele.pos_raw().raw).with_pos_raw(&ele.pos_raw()));
+            return Err(ZError::error_2_1_0(ele.pos_raw().raw).with_pos_raw(&ele.pos_raw()));
         }
         match self
             .content
@@ -70,13 +70,13 @@ impl Buffer {
         {
             Either::Left(c) => Ok(c.to_owned()),
             Either::Right(c) => {
-                Err(ZyxtError::error_2_1_0(c.pos_raw().raw).with_pos_raw(&c.pos_raw()))
+                Err(ZError::error_2_1_0(c.pos_raw().raw).with_pos_raw(&c.pos_raw()))
             }
         }
     }
 }
 
-pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError> {
+pub fn parse_token_list(mut input: Vec<Token>) -> ZResult<Vec<Element>> {
     let mut comments: Vec<Element<Comment>> = vec![];
 
     // detect & remove comments
@@ -96,7 +96,7 @@ pub fn parse_token_list(mut input: Vec<Token>) -> Result<Vec<Element>, ZyxtError
         ]
         .contains(&token.ty)
         {
-            return Err(ZyxtError::error_2_1_10(token.value.to_owned()).with_token(token));
+            return Err(ZError::error_2_1_10(token.value.to_owned()).with_token(token));
         }
     }
 

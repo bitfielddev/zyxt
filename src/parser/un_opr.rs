@@ -4,14 +4,14 @@ use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
         element::{unary_opr::UnaryOpr, Element, ElementVariant},
-        errors::ZyxtError,
+        errors::ZResult,
         position::{GetPosRaw, PosRaw},
         token::{Token, TokenType},
     },
 };
 
 impl Buffer {
-    pub fn parse_un_opr(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_un_opr(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             let opr_type = if let Either::Right(Token {

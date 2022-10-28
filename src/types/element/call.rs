@@ -13,7 +13,7 @@ use crate::{
         typeobj::{unit_t::UNIT_T, TypeDefinition, TypeInstance},
         value::Proc,
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -31,7 +31,7 @@ impl ElementData for Call {
         &mut self,
         pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         if let ElementVariant::Ident(Ident {
             name,
             parent:
@@ -48,7 +48,7 @@ impl ElementData for Call {
                 self.args
                     .iter_mut()
                     .map(|a| a.process(typelist))
-                    .collect::<Result<Vec<_>, ZyxtError>>()?;
+                    .collect::<ZResult<Vec<_>>>()?;
                 return Ok(UNIT_T.get_instance().as_type_element());
             }
         }
@@ -121,18 +121,11 @@ impl ElementData for Call {
         }
     }
 
-    fn desugared(
-        &self,
-        _pos_raw: &PosRaw,
-        _: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, _pos_raw: &PosRaw, _: &mut impl Print) -> ZResult<ElementVariant> {
         todo!()
     }
 
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         if let ElementVariant::Ident(Ident {
             name,
             parent:

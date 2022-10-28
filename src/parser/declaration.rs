@@ -4,7 +4,7 @@ use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
         element::{declare::Declare, Element, ElementVariant},
-        errors::ZyxtError,
+        errors::{ZError, ZResult},
         position::{GetPosRaw, PosRaw},
         token::{Token, TokenType},
     },
@@ -12,7 +12,7 @@ use crate::{
 
 impl Buffer {
     #[allow(unused_assignments)]
-    pub fn parse_declaration(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_declaration(&mut self) -> ZResult<()> {
         self.reset_cursor();
         let mut flag_pos = None;
         let mut start = 0;
@@ -40,7 +40,7 @@ impl Buffer {
             let declared_var = if let Some(Either::Left(d)) = self.prev() {
                 d.to_owned()
             } else {
-                return Err(ZyxtError::error_2_1_5().with_pos_raw(&selected.pos_raw()));
+                return Err(ZError::error_2_1_5().with_pos_raw(&selected.pos_raw()));
             };
 
             self.cursor -= 1;
@@ -59,8 +59,7 @@ impl Buffer {
                         {
                             Ok(flag.to_owned())
                         } else {
-                            Err(ZyxtError::error_2_1_6(ele.pos_raw().raw)
-                                .with_pos_raw(&ele.pos_raw()))
+                            Err(ZError::error_2_1_6(ele.pos_raw().raw).with_pos_raw(&ele.pos_raw()))
                         }
                     })
                     .collect::<Result<_, _>>()?

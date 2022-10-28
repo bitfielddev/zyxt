@@ -10,7 +10,10 @@ pub mod types;
 use std::time::Instant;
 
 use ansi_term::Color::{White, Yellow};
-use types::{errors::ZyxtError, printer::Print};
+use types::{
+    errors::{ZError, ZResult},
+    printer::Print,
+};
 
 use crate::{
     instructor::gen_instructions,
@@ -24,7 +27,7 @@ pub fn compile(
     input: String,
     filename: &str,
     typelist: &mut InterpreterData<Type<Element>, impl Print>,
-) -> Result<Vec<Element>, ZyxtError> {
+) -> ZResult<Vec<Element>> {
     if typelist.out.verbosity() == 0 {
         return gen_instructions(parse_token_list(lex(input, filename)?)?, typelist);
     }
@@ -76,7 +79,7 @@ pub fn compile(
 pub fn interpret(
     input: &Vec<Element>,
     i_data: &mut InterpreterData<Value, impl Print>,
-) -> Result<i32, ZyxtError> {
+) -> ZResult<i32> {
     if i_data.out.verbosity() == 0 {
         return interpret_asts(input, i_data);
     }

@@ -3,11 +3,11 @@ use itertools::Either;
 use crate::{
     parser::buffer::Buffer,
     types::token::{TokenCategory, TokenType},
-    ZyxtError,
+    ZResult,
 };
 
 impl Buffer {
-    pub fn parse_parentheses(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_parentheses(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             let selected = if let Either::Right(selected) = selected {

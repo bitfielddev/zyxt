@@ -8,7 +8,7 @@ use crate::{
             procedure::{Argument, Procedure},
             Element, ElementVariant,
         },
-        errors::ZyxtError,
+        errors::ZResult,
         position::{GetPosRaw, PosRaw},
         token::{Keyword, Token, TokenType},
         typeobj::unit_t::UNIT_T,
@@ -16,7 +16,7 @@ use crate::{
 };
 
 impl Buffer {
-    pub fn parse_args(&mut self) -> Result<Vec<Argument>, ZyxtError> {
+    pub fn parse_args(&mut self) -> ZResult<Vec<Argument>> {
         let mut windows =
             self.get_split_between(TokenType::Bar, TokenType::Bar, TokenType::Comma)?;
         windows.with_as_buffers(&|buf| {
@@ -41,7 +41,7 @@ impl Buffer {
             Ok(Argument { name, ty, default })
         })
     }
-    pub fn parse_proc_fn(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_proc_fn(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(mut selected) = self.next() {
             let (tok_selected, ty) = if let Either::Right(selected) = &selected {

@@ -4,7 +4,7 @@ use crate::{
         position::PosRaw,
         typeobj::unit_t::UNIT_T,
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -21,14 +21,11 @@ impl ElementData for Delete {
         &mut self,
         _pos_raw: &PosRaw,
         _typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         Ok(UNIT_T.get_instance().as_type_element())
     }
 
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         for name in &self.names {
             i_data.delete_val(&name.data.name, &Default::default())?; // TODO
         }

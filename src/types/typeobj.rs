@@ -38,7 +38,7 @@ use crate::{
             unit_t::{UNIT_T, UNIT_T_ELE},
         },
     },
-    Element, InterpreterData, Print, Value, ZyxtError,
+    Element, InterpreterData, Print, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq)]
@@ -180,7 +180,7 @@ impl TypeDefinition<Element> {
     pub fn as_type_value(
         &self,
         i_data: &mut InterpreterData<Value, impl Print>,
-    ) -> Result<TypeDefinition<Value>, ZyxtError> {
+    ) -> ZResult<TypeDefinition<Value>> {
         Ok(TypeDefinition {
             inst_name: self.inst_name.to_owned(),
             name: self.name.to_owned(),
@@ -212,7 +212,7 @@ impl TypeInstance<Element> {
     pub fn as_type_value(
         &self,
         i_data: &mut InterpreterData<Value, impl Print>,
-    ) -> Result<TypeInstance<Value>, ZyxtError> {
+    ) -> ZResult<TypeInstance<Value>> {
         Ok(TypeInstance {
             name: self.name.to_owned(),
             type_args: self
@@ -276,7 +276,7 @@ impl Type<Element> {
     pub fn as_type_value(
         &self,
         i_data: &mut InterpreterData<Value, impl Print>,
-    ) -> Result<Type<Value>, ZyxtError> {
+    ) -> ZResult<Type<Value>> {
         Ok(match &self {
             Type::Instance(inst) => Type::Instance(inst.as_type_value(i_data)?),
             Type::Definition(def) => Type::Definition(def.as_type_value(i_data)?),

@@ -3,7 +3,7 @@ use crate::{
         element::{block::Block, Element, ElementData, ElementVariant},
         position::PosRaw,
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -16,11 +16,7 @@ impl ElementData for Preprocess {
         ElementVariant::Preprocess(self.to_owned())
     }
 
-    fn desugared(
-        &self,
-        _pos_raw: &PosRaw,
-        out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, _pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         let mut pre_instructions: Block = self
             .content
             .data

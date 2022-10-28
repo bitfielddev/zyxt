@@ -4,14 +4,14 @@ use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
         element::{delete::Delete, ident::Ident, unary_opr::UnaryOpr, Element, ElementVariant},
-        errors::ZyxtError,
+        errors::{ZError, ZResult},
         position::{GetPosRaw, PosRaw},
         token::{Keyword, OprType, Token, TokenType},
     },
 };
 
 impl Buffer {
-    pub fn parse_delete(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_delete(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             if !matches!(
@@ -38,9 +38,9 @@ impl Buffer {
                         ty: OprType::Deref, ..
                     }) = *ele.data
                     {
-                        Err(ZyxtError::error_2_1_12(&ele.pos_raw.raw).with_element(&ele))
+                        Err(ZError::error_2_1_12(&ele.pos_raw.raw).with_element(&ele))
                     } else {
-                        Err(ZyxtError::error_2_1_11(&ele.pos_raw.raw).with_element(&ele))
+                        Err(ZError::error_2_1_11(&ele.pos_raw.raw).with_element(&ele))
                     }
                 })?;
             let ele = Element {

@@ -4,14 +4,14 @@ use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
         element::{class::Class, Element, ElementVariant},
-        errors::ZyxtError,
+        errors::{ZError, ZResult},
         position::{GetPosRaw, PosRaw},
         token::{Keyword, Token, TokenType},
     },
 };
 
 impl Buffer {
-    pub fn parse_class_struct(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_class_struct(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             let kwd = if let Either::Right(selected) = &selected {
@@ -37,7 +37,7 @@ impl Buffer {
             }) = selected
             {
                 if kwd == Keyword::Class {
-                    return Err(ZyxtError::error_2_1_17().with_pos_raw(&selected.pos_raw()));
+                    return Err(ZError::error_2_1_17().with_pos_raw(&selected.pos_raw()));
                 }
                 let args = self.parse_args()?;
                 selected = self.next_or_err()?;
@@ -52,7 +52,7 @@ impl Buffer {
             {
                 Some(block)
             } else if kwd == Keyword::Class {
-                return Err(ZyxtError::error_2_1_18(&kwd).with_pos_raw(&selected.pos_raw()));
+                return Err(ZError::error_2_1_18(&kwd).with_pos_raw(&selected.pos_raw()));
             } else {
                 None
             };

@@ -1,10 +1,10 @@
 use crate::{
     lexer::{buffer::Buffer, ALPHANUMERIC},
     types::token::{Keyword, Token, TokenType},
-    ZyxtError,
+    ZResult,
 };
 
-pub fn lex_word(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), ZyxtError> {
+pub fn lex_word(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
     let mut raw = "".to_string();
     let pos = iter.peek().unwrap().1;
     while let Some((char, _)) = iter.peek() {

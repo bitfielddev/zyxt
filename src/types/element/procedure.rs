@@ -10,7 +10,7 @@ use crate::{
         typeobj::{proc_t::PROC_T, unit_t::UNIT_T, TypeInstance},
         value::Proc,
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Type, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -40,7 +40,7 @@ impl Display for Argument {
     }
 }
 impl Argument {
-    pub fn desugar(&mut self, _pos_raw: &PosRaw, out: &mut impl Print) -> Result<(), ZyxtError> {
+    pub fn desugar(&mut self, _pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<()> {
         self.default = self
             .default
             .as_ref()
@@ -67,7 +67,7 @@ impl ElementData for Procedure {
         &mut self,
         pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         typelist.add_frame(
             None,
             if self.is_fn {
@@ -86,9 +86,7 @@ impl ElementData for Procedure {
             self.return_type = res.as_literal();
         } else if let Some(block_return_type) = block_return_type {
             if return_type != block_return_type {
-                return Err(
-                    ZyxtError::error_4_t(return_type, block_return_type).with_pos_raw(pos_raw)
-                );
+                return Err(ZError::error_4_t(return_type, block_return_type).with_pos_raw(pos_raw));
             }
         }
         typelist.pop_frame();
@@ -100,11 +98,7 @@ impl ElementData for Procedure {
         }))
     }
 
-    fn desugared(
-        &self,
-        pos_raw: &PosRaw,
-        out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         let mut new_self = self.to_owned();
         new_self.args = self
             .args
@@ -129,10 +123,7 @@ impl ElementData for Procedure {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         Ok(Value::Proc(Proc::Defined {
             is_fn: self.is_fn,
             args: self.args.to_owned(),

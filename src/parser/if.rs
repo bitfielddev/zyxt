@@ -7,14 +7,14 @@ use crate::{
             r#if::{Condition, If},
             Element, ElementVariant,
         },
-        errors::ZyxtError,
+        errors::{ZError, ZResult},
         position::{GetPosRaw, PosRaw},
         token::{Keyword, Token, TokenType},
     },
 };
 
 impl Buffer {
-    pub fn parse_if(&mut self) -> Result<(), ZyxtError> {
+    pub fn parse_if(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
             let kwd = if let Either::Right(Token {
@@ -27,7 +27,7 @@ impl Buffer {
                 continue;
             };
             if [Keyword::Elif, Keyword::Else].contains(&kwd) {
-                return Err(ZyxtError::error_2_1_9(
+                return Err(ZError::error_2_1_9(
                     if kwd == Keyword::Elif { "elif" } else { "else" }.to_string(),
                 )
                 .with_pos_raw(&selected.pos_raw()));
@@ -42,29 +42,30 @@ impl Buffer {
             self.start_raw_collection();
             loop {
                 let mut selected = self.next_or_err()?;
-                let kwd =
-                    if let Either::Right(Token {
-                        ty: Some(TokenType::Keyword(prekwd)),
-                        ..
-                    }) = selected
-                    {
-                        match prekwd {
-                            Keyword::If if self.cursor == start => Keyword::If,
-                            Keyword::Elif if prev_kwd != Keyword::Else => Keyword::Elif,
-                            Keyword::Else if prev_kwd != Keyword::Else => Keyword::Else,
-                            Keyword::Elif if prev_kwd == Keyword::Else => {
-                                return Err(ZyxtError::error_2_1_7("elif")
-                                    .with_pos_raw(&selected.pos_raw()))
-                            }
-                            Keyword::Else if prev_kwd == Keyword::Else => {
-                                return Err(ZyxtError::error_2_1_7("else")
-                                    .with_pos_raw(&selected.pos_raw()))
-                            }
-                            _ => break,
+                let kwd = if let Either::Right(Token {
+                    ty: Some(TokenType::Keyword(prekwd)),
+                    ..
+                }) = selected
+                {
+                    match prekwd {
+                        Keyword::If if self.cursor == start => Keyword::If,
+                        Keyword::Elif if prev_kwd != Keyword::Else => Keyword::Elif,
+                        Keyword::Else if prev_kwd != Keyword::Else => Keyword::Else,
+                        Keyword::Elif if prev_kwd == Keyword::Else => {
+                            return Err(
+                                ZError::error_2_1_7("elif").with_pos_raw(&selected.pos_raw())
+                            )
                         }
-                    } else {
-                        break;
-                    };
+                        Keyword::Else if prev_kwd == Keyword::Else => {
+                            return Err(
+                                ZError::error_2_1_7("else").with_pos_raw(&selected.pos_raw())
+                            )
+                        }
+                        _ => break,
+                    }
+                } else {
+                    break;
+                };
                 prev_kwd = kwd;
                 selected = self.next_or_err()?;
                 let condition = if kwd == Keyword::Else {
@@ -105,7 +106,7 @@ impl Buffer {
                 {
                     block.to_owned()
                 } else {
-                    return Err(ZyxtError::error_2_1_8(selected.pos_raw().raw)
+                    return Err(ZError::error_2_1_8(selected.pos_raw().raw)
                         .with_pos_raw(&selected.pos_raw()));
                 };
                 conditions.push(Condition {

@@ -18,7 +18,7 @@ use crate::{
         whitespace::{clean_whitespaces, lex_whitespace},
         word::lex_word,
     },
-    types::{errors::ZyxtError, position::Position, token::Token},
+    types::{errors::ZResult, position::Position, token::Token},
 };
 
 static ALPHANUMERIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z0-9_]+$").unwrap());
@@ -26,7 +26,7 @@ static NUMERIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[0-9]+$").unwrap());
 static WHITESPACE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s+$").unwrap());
 static ALPHABETIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z_]+$").unwrap());
 
-pub fn lex(preinput: String, filename: &str) -> Result<Vec<Token>, ZyxtError> {
+pub fn lex(preinput: String, filename: &str) -> ZResult<Vec<Token>> {
     if preinput.trim().is_empty() {
         return Ok(vec![]);
     };

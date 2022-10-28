@@ -8,6 +8,7 @@ use ansi_term::{
     Style,
 };
 use backtrace::Backtrace;
+use color_eyre::eyre::Result;
 use itertools::Itertools;
 
 use crate::{
@@ -21,17 +22,19 @@ use crate::{
     Type,
 };
 
+pub type ZResult<T> = Result<T, ZError>;
+
 #[derive(Clone)]
-pub struct ZyxtError {
+pub struct ZError {
     pub position: Vec<PosRaw>,
     pub code: &'static str,
     pub message: String,
 }
-impl ZyxtError {
+impl ZError {
     /* 0. Internal errors, have to do with the compiler-interpreter itself */
     /// Rust error
     pub fn error_0_0(error: impl Display, backtrace: Backtrace) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "0.0",
             message: format!("Internal error: \n{error}\n{backtrace:?}\n\nThis shouldn't happen! Open an issue on our Github repo page: [TODO]")
@@ -40,7 +43,7 @@ impl ZyxtError {
 
     /// No file given
     pub fn error_0_1() -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "0.1",
             message: "No file given".to_string(),
@@ -50,7 +53,7 @@ impl ZyxtError {
     /* 1. File and I/O errors */
     /// File does not exist
     pub fn error_1_0(filename: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "1.0",
             message: format!("File `{filename}` does not exist"),
@@ -59,7 +62,7 @@ impl ZyxtError {
 
     /// file cannot be opened
     pub fn error_1_1(filename: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "1.1",
             message: format!("File `{filename}` cannot be opened"),
@@ -67,7 +70,7 @@ impl ZyxtError {
     }
 
     pub fn error_1_2(dirname: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "1.2",
             message: format!("Directory given (Got `{dirname}`)"),
@@ -77,7 +80,7 @@ impl ZyxtError {
     /* 2. Syntax errors */
     /// parentheses not closed properly (try swapping)
     pub fn error_2_0_0(paren1: impl Display, paren2: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.0.0",
             message: format!(
@@ -88,7 +91,7 @@ impl ZyxtError {
     }
     /// parentheses not closed properly (not closed)
     pub fn error_2_0_1(paren: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.0.1",
             message: format!("Parenthesis `{paren}` not closed"),
@@ -96,7 +99,7 @@ impl ZyxtError {
     }
     /// parentheses not closed properly (not opened)
     pub fn error_2_0_2(paren: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.0.2",
             message: format!("Parenthesis `{paren}` not opened"),
@@ -105,7 +108,7 @@ impl ZyxtError {
 
     /// unexpected ident (generic)
     pub fn error_2_1_0(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.0",
             message: format!("Unexpected ident `{ident}`"),
@@ -113,7 +116,7 @@ impl ZyxtError {
     }
     /// unexpected ident (lexer didnt recognise)
     pub fn error_2_1_1(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.1",
             message: format!("Ident `{ident}` not recognised by lexer"),
@@ -121,7 +124,7 @@ impl ZyxtError {
     }
     /// unexpected ident (dot at end of expression)
     pub fn error_2_1_2() -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.2",
             message: "Stray `.` at end of expression".to_string(),
@@ -129,7 +132,7 @@ impl ZyxtError {
     }
     /// unexpected ident (binary operator at start/end of expression)
     pub fn error_2_1_3(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.3",
             message: format!(
@@ -140,7 +143,7 @@ impl ZyxtError {
     }
     /// unexpected ident (unary operator at start/end of expression)
     pub fn error_2_1_4(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.4",
             message: format!(
@@ -151,7 +154,7 @@ impl ZyxtError {
     }
     /// unexpected ident (declaration expr at start/end of expression)
     pub fn error_2_1_5() -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.5",
             message: "Stray `:=` at start/end of expression".to_string(),
@@ -159,7 +162,7 @@ impl ZyxtError {
     }
     /// unexpected ident (non-flag between first flag and declared variable)
     pub fn error_2_1_6(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.6",
             message: format!("Stray `{ident}` between first flag and declared variable"),
@@ -167,7 +170,7 @@ impl ZyxtError {
     }
     /// unexpected ident ('else/elif'  found after 'else' keyword)
     pub fn error_2_1_7(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.7",
             message: format!("`{ident}` detected after `else` keyword"),
@@ -175,7 +178,7 @@ impl ZyxtError {
     }
     /// unexpected ident (block expected, not ident)
     pub fn error_2_1_8(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.8",
             message: format!("Block expected, not `{ident}`"),
@@ -183,7 +186,7 @@ impl ZyxtError {
     }
     /// unexpected ident ('else/elif' found without 'if' keyword)
     pub fn error_2_1_9(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.9",
             message: format!("Stray `{ident}` without starting `if`"),
@@ -191,7 +194,7 @@ impl ZyxtError {
     }
     /// unexpected ident (stray comment start / end)
     pub fn error_2_1_10(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.10",
             message: format!("Stray unclosed/unopened `{ident}`"),
@@ -199,7 +202,7 @@ impl ZyxtError {
     }
     /// unexpected ident (must be variable)
     pub fn error_2_1_11(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.11",
             message: format!("Only variables can be deleted (Got `{ident}`)"),
@@ -207,7 +210,7 @@ impl ZyxtError {
     }
     /// unexpected ident (cannot delete dereferenced variable)
     pub fn error_2_1_12(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.12",
             message: format!("Cannot delete dereferenced variable (Got `{ident}`)"),
@@ -215,7 +218,7 @@ impl ZyxtError {
     }
     /// unexpected ident (bar not closed)
     pub fn error_2_1_13() -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.13",
             message: "Opening bar not closed".to_string(),
@@ -223,7 +226,7 @@ impl ZyxtError {
     }
     /// unexpected ident (Extra values past default value)
     pub fn error_2_1_14(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.14",
             message: format!("Extra values past default value (Got `{ident}`)"),
@@ -231,7 +234,7 @@ impl ZyxtError {
     }
     /// unexpected ident (Variable name isn't variable)
     pub fn error_2_1_15(ident: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.15",
             message: format!("Variable name isn't variable (Got `{ident}`)"),
@@ -239,7 +242,7 @@ impl ZyxtError {
     }
     /// unexpected ident (pre keyword at end of expression)
     pub fn error_2_1_16() -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.16",
             message: "`pre` at end of line".to_string(),
@@ -247,7 +250,7 @@ impl ZyxtError {
     }
     /// unexpected ident (parameters with class keyword)
     pub fn error_2_1_17() -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.17",
             message: "Parameters found after `class` keyword".to_string(),
@@ -255,7 +258,7 @@ impl ZyxtError {
     }
     /// unexpected ident (parameters with class keyword)
     pub fn error_2_1_18(kwd: &Keyword) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.1.18",
             message: format!("Block expected after `{kwd:?}`"),
@@ -264,7 +267,7 @@ impl ZyxtError {
 
     /// expected pattern, got something else
     pub fn error_2_2(ele: Element<impl ElementData>) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.2",
             message: format!("Expected pattern, got `{}`", ele.pos_raw.raw),
@@ -273,7 +276,7 @@ impl ZyxtError {
 
     /// unfilled argument
     pub fn error_2_3(arg: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "2.3",
             message: format!("Unfilled argument `{arg}`"),
@@ -283,7 +286,7 @@ impl ZyxtError {
     /* 3. Variable & attribute errors */
     /// Variable not defined
     pub fn error_3_0(varname: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "3.0",
             message: format!("Undefined variable `{varname}`"),
@@ -296,7 +299,7 @@ impl ZyxtError {
         parent_type: Type<T>,
         attribute: impl Display,
     ) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "3.1.0",
             message: format!(
@@ -309,7 +312,7 @@ impl ZyxtError {
     }
     /// Type has no attribute (interpreter)
     pub fn error_3_1_1(parent: Value, attribute: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "3.1.1",
             message: format!(
@@ -324,7 +327,7 @@ impl ZyxtError {
     /* 4. Type errors */
     /// Binary operator not implemented for type
     pub fn error_4_0_0(operator: impl Display, type1: impl Display, type2: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "4.0.0",
             message: format!(
@@ -335,7 +338,7 @@ impl ZyxtError {
     }
     /// Unary operator not implemented for type
     pub fn error_4_0_1(operator: impl Display, ty: impl Display) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "4.0.1",
             message: format!("Operator {operator} not implemented for type `{ty}`"),
@@ -344,7 +347,7 @@ impl ZyxtError {
 
     /// Binary operation unsuccessful
     pub fn error_4_1_0(operator: impl Display, value1: Value, value2: Value) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "4.1.0",
             message: format!(
@@ -359,7 +362,7 @@ impl ZyxtError {
     }
     /// Unary operation unsuccessful
     pub fn error_4_1_1(operator: impl Display, value: Value) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "4.1.1",
             message: format!(
@@ -373,7 +376,7 @@ impl ZyxtError {
 
     /// Non-i32 script return value
     pub fn error_4_2(value: Value) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "4.2",
             message: format!("Non-i32 script return value detected (Got `{value}`)"),
@@ -386,7 +389,7 @@ impl ZyxtError {
         var_type: Type<T1>,
         value_type: Type<T2>,
     ) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "4.3",
             message: format!(
@@ -401,7 +404,7 @@ impl ZyxtError {
         block_type: Type<T1>,
         return_type: Type<T2>,
     ) -> Self {
-        ZyxtError {
+        ZError {
             position: vec![],
             code: "4.4",
             message: format!("Block returns variable of type `{block_type}` earlier on, but also returns variable of type `{return_type}`")

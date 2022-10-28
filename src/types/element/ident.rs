@@ -5,7 +5,7 @@ use crate::{
         element::{Element, ElementData, ElementVariant},
         position::PosRaw,
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -26,24 +26,17 @@ impl ElementData for Ident {
         &mut self,
         pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         typelist.get_val(&self.name, pos_raw)
     }
 
-    fn desugared(
-        &self,
-        _pos_raw: &PosRaw,
-        out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, _pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         let mut new_self = self.to_owned();
         new_self.parent = new_self.parent.map(|a| a.desugared(out)).transpose()?;
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         i_data.get_val(&self.name, &Default::default()) // TODO
     }
 }

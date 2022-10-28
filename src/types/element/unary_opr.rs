@@ -4,7 +4,7 @@ use crate::{
         position::PosRaw,
         token::OprType,
     },
-    Print, ZyxtError,
+    Print, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -18,11 +18,7 @@ impl ElementData for UnaryOpr {
         ElementVariant::UnaryOpr(self.to_owned())
     }
 
-    fn desugared(
-        &self,
-        pos_raw: &PosRaw,
-        out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         Ok(Call {
             called: Element {
                 pos_raw: pos_raw.to_owned(),

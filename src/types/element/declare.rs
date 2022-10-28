@@ -4,7 +4,7 @@ use crate::{
         position::PosRaw,
         token::{Flag, OprType},
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Type, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -24,9 +24,9 @@ impl ElementData for Declare {
         &mut self,
         pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         if !self.variable.is_pattern() {
-            return Err(ZyxtError::error_2_2(self.variable.to_owned()).with_element(&self.variable));
+            return Err(ZError::error_2_2(self.variable.to_owned()).with_element(&self.variable));
         }
         let content_type = self.content.process(typelist)?;
         let ty = if let ElementVariant::Literal(literal) = &*self.ty.as_ref().unwrap().data {
@@ -70,21 +70,14 @@ impl ElementData for Declare {
         Ok(content_type)
     }
 
-    fn desugared(
-        &self,
-        _pos_raw: &PosRaw,
-        out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, _pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         let mut new_self = self.to_owned();
         new_self.content = self.content.desugared(out)?;
         new_self.ty = self.ty.as_ref().map(|a| a.desugared(out)).transpose()?;
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         let name = if let ElementVariant::Ident(ident) = &*self.variable.data {
             &ident.name
         } else {

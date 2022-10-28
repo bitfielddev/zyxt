@@ -3,7 +3,7 @@ use crate::{
         element::{Element, ElementData, ElementVariant},
         position::PosRaw,
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -23,14 +23,11 @@ impl ElementData for Literal {
         &mut self,
         _pos_raw: &PosRaw,
         _typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         Ok(self.content.get_type_obj().as_type_element())
     }
 
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         Ok(if let Value::PreType(v) = &self.content {
             Value::Type(v.as_type_value(i_data)?)
         } else {

@@ -8,7 +8,7 @@ use rustyline::{error::ReadlineError, Editor};
 use crate::{
     compile,
     types::{interpreter_data::InterpreterData, printer::StdIoPrint, value::Value},
-    Element, Type, ZyxtError,
+    Element, Type, ZError,
 };
 
 pub fn repl(verbosity: u8) {
@@ -97,7 +97,7 @@ pub fn repl(verbosity: u8) {
                 println!("{}", Cyan.paint("`;exit` to exit"));
             }
             Err(err) => {
-                ZyxtError::error_0_0(err.to_string(), Backtrace::new());
+                ZError::error_0_0(err.to_string(), Backtrace::new());
             }
         }
     }

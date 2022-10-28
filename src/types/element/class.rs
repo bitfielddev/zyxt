@@ -13,7 +13,7 @@ use crate::{
         token::Flag,
         typeobj::TypeDefinition,
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -34,7 +34,7 @@ impl ElementData for Class {
         &mut self,
         _pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         typelist.add_frame(None, FrameType::Normal);
         for expr in &mut self.content.as_mut().unwrap().data.content {
             // TODO deal w unwrap
@@ -102,11 +102,7 @@ impl ElementData for Class {
         }))
     }
 
-    fn desugared(
-        &self,
-        pos_raw: &PosRaw,
-        out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         let mut new_self = self.to_owned();
         new_self.content = if let Some(content) = new_self.content {
             Some(Element {
@@ -131,10 +127,7 @@ impl ElementData for Class {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         Ok(Value::Type(Type::Definition(TypeDefinition {
             name: Some(if self.is_struct { "struct" } else { "class" }.into()),
             inst_name: None,

@@ -1,12 +1,12 @@
 use std::{fs::File, io::Read, panic, process::exit};
 
-use backtrace::Backtrace;
 use clap::Parser;
+use color_eyre::config::HookBuilder;
 use zyxt::{
     repl,
     types::{
-        element::Element, errors::ZyxtError, interpreter_data::InterpreterData,
-        printer::StdIoPrint, typeobj::Type, value::Value,
+        element::Element, errors::ZError, interpreter_data::InterpreterData, printer::StdIoPrint,
+        typeobj::Type, value::Value,
     },
 };
 
@@ -32,12 +32,11 @@ struct Run {
 }
 
 fn main() {
+    HookBuilder::new()
+        .panic_section("This shouldn't happen!\nOpen an issue on our GitHub: https://github.com/Segmential/zyxt/issues/new")
+        .install().unwrap();
     let args = Args::parse();
     let verbose = args.verbose;
-
-    panic::set_hook(Box::new(|a| {
-        ZyxtError::error_0_0(a.to_string(), Backtrace::new()).print(&mut StdIoPrint(2));
-    }));
 
     match args.subcmd {
         Subcmd::Run(sargs) => {
@@ -47,7 +46,7 @@ fn main() {
                 Ok(mut file) => {
                     file.read_to_string(&mut content).unwrap_or_else(|e| {
                         if e.to_string() == *"Is a directory (os error 21)" {
-                            ZyxtError::error_1_2(filename.to_owned())
+                            ZError::error_1_2(filename.to_owned())
                                 .print_exit(&mut StdIoPrint(verbose))
                         } else {
                             panic!("{}", e.to_string())
@@ -55,7 +54,7 @@ fn main() {
                     });
                 }
                 Err(_) => {
-                    ZyxtError::error_1_1(filename.to_owned()).print_exit(&mut StdIoPrint(verbose))
+                    ZError::error_1_1(filename.to_owned()).print_exit(&mut StdIoPrint(verbose))
                 }
             };
             let mut sip1 = StdIoPrint(verbose);

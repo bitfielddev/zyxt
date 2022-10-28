@@ -5,13 +5,13 @@ use crate::{
         printer::Print,
         value::Value,
     },
-    ZyxtError,
+    ZError, ZResult,
 };
 
 pub fn interpret_asts<O: Print>(
     input: &Vec<Element>,
     i_data: &mut InterpreterData<Value, O>,
-) -> Result<i32, ZyxtError> {
+) -> ZResult<i32> {
     let input = Block {
         content: input.to_owned(),
     };
@@ -25,6 +25,6 @@ pub fn interpret_asts<O: Print>(
     if let Value::I32(v) = last {
         Ok(v)
     } else {
-        Err(ZyxtError::error_4_2(last).with_pos_raw(&Default::default())) // TODO
+        Err(ZError::error_4_2(last).with_pos_raw(&Default::default())) // TODO
     }
 }

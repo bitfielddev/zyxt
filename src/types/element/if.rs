@@ -3,7 +3,7 @@ use crate::{
         element::{block::Block, Element, ElementData, ElementVariant},
         position::PosRaw,
     },
-    InterpreterData, Print, Type, Value, ZyxtError,
+    InterpreterData, Print, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -12,7 +12,7 @@ pub struct Condition {
     pub if_true: Element<Block>,
 }
 impl Condition {
-    pub fn desugar(&mut self, pos_raw: &PosRaw, out: &mut impl Print) -> Result<(), ZyxtError> {
+    pub fn desugar(&mut self, pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<()> {
         self.condition
             .as_mut()
             .map(|e| e.desugared(out))
@@ -46,7 +46,7 @@ impl ElementData for If {
         &mut self,
         _pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> Result<Type<Element>, ZyxtError> {
+    ) -> ZResult<Type<Element>> {
         Ok(self.conditions[0]
             .if_true
             .data
@@ -55,11 +55,7 @@ impl ElementData for If {
         // TODO consider all returns
     }
 
-    fn desugared(
-        &self,
-        pos_raw: &PosRaw,
-        out: &mut impl Print,
-    ) -> Result<ElementVariant, ZyxtError> {
+    fn desugared(&self, pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         Ok(Self {
             conditions: self
                 .conditions
@@ -74,10 +70,7 @@ impl ElementData for If {
         .as_variant())
     }
 
-    fn interpret_expr<O: Print>(
-        &self,
-        i_data: &mut InterpreterData<Value, O>,
-    ) -> Result<Value, ZyxtError> {
+    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         for cond in &self.conditions {
             if cond.condition.is_none() {
                 return cond.if_true.data.interpret_block(i_data, false, true);
