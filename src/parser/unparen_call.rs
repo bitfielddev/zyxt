@@ -60,7 +60,7 @@ impl Buffer {
                 todo!("error")
             }
             args.push(
-                self.window(start..self.cursor)
+                self.window(arg_start..self.cursor)
                     .with_as_buffer(&|buf| buf.parse_as_expr())?,
             );
             let ele = Element {

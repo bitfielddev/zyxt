@@ -37,6 +37,7 @@ impl Buffer {
                     range: start..s.cursor,
                 };
                 s.splice_buffer(buffer_window);
+                s.cursor += 1;
             }
         };
         while let Some(selected) = self.next() {
@@ -75,6 +76,7 @@ impl Buffer {
                             }
                         }
                     };
+                    debug!(pos = ?selected.pos_raw.pos, "Parsing ident");
                     *catcher = Element {
                         pos_raw: selected.pos_raw.to_owned(),
                         data: Box::new(ElementVariant::Ident(Ident {
@@ -96,7 +98,6 @@ impl Buffer {
                 Some(TokenType::LiteralNumber)
                 | Some(TokenType::LiteralMisc)
                 | Some(TokenType::LiteralString) => {
-                    debug!(pos = ?selected.pos, "Parsing literal");
                     clear_catcher(self, &mut catcher);
                     catcher = Some((
                         Element {

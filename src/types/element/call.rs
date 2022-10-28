@@ -122,7 +122,8 @@ impl ElementData for Call {
     }
 
     fn desugared(&self, _pos_raw: &PosRaw, _: &mut impl Print) -> ZResult<ElementVariant> {
-        todo!()
+        // TODO
+        Ok(self.as_variant())
     }
 
     fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {

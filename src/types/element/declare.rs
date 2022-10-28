@@ -29,24 +29,23 @@ impl ElementData for Declare {
             return Err(ZError::error_2_2(self.variable.to_owned()).with_element(&self.variable));
         }
         let content_type = self.content.process(typelist)?;
-        let ty = if let ElementVariant::Literal(literal) = &*self.ty.as_ref().unwrap().data {
-            if let Value::Type(t) = &literal.content {
-                t
+        let ty = self.ty.as_ref().map(|ty| {
+            if let ElementVariant::Literal(literal) = &*ty.data {
+                if let Value::Type(t) = &literal.content {
+                    t.as_type_element()
+                } else {
+                    todo!()
+                }
             } else {
                 todo!()
             }
-        } else {
-            todo!()
-        }
-        .as_type_element();
+        });
         let name = if let ElementVariant::Ident(ident) = &*self.variable.data {
             &ident.name
         } else {
             unimplemented!() // TODO
         };
-        if ty == Type::Any {
-            typelist.declare_val(name, &content_type);
-        } else {
+        if let Some(ty) = ty {
             typelist.declare_val(name, &ty);
             if content_type != ty {
                 let mut new_content = BinaryOpr {
@@ -66,7 +65,9 @@ impl ElementData for Declare {
                     flags: self.flags.to_owned(),
                 };
             }
-        };
+        } else {
+            typelist.declare_val(name, &content_type);
+        }
         Ok(content_type)
     }
 
