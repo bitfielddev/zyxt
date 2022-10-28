@@ -68,7 +68,7 @@ impl Buffer {
                         inst_fields: Default::default(), // TODO
                         content: content.map(|block| Element {
                             pos_raw: init_pos_raw,
-                            data: Box::new(block.to_owned()),
+                            data: Box::new(block),
                         }),
                         args,
                     })

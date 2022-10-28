@@ -62,7 +62,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), Zyxt
                     tokens.push(Token {
                         ty: Some(TokenType::Comment),
                         value: "/*".into(),
-                        position: pos.to_owned(),
+                        position: pos,
                         ..Default::default()
                     });
                     lex_block_comment(iter, tokens)?;
@@ -73,7 +73,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), Zyxt
                     tokens.push(Token {
                         ty: Some(TokenType::Comment),
                         value: "//".into(),
-                        position: pos.to_owned(),
+                        position: pos,
                         ..Default::default()
                     });
                     lex_line_comment(iter, tokens)?;
@@ -178,7 +178,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), Zyxt
             _ => {
                 return Err(
                     ZyxtError::error_2_1_1(char.to_owned()).with_pos_raw(&PosRaw {
-                        position: pos.to_owned(),
+                        position: pos,
                         raw: char.into(),
                     }),
                 )

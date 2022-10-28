@@ -6,7 +6,7 @@ use crate::{
         element::{binary_opr::BinaryOpr, Element, ElementVariant},
         errors::ZyxtError,
         position::{GetPosRaw, PosRaw},
-        token::{get_order, Token, TokenType},
+        token::{Token, TokenType},
     },
 };
 
@@ -35,9 +35,9 @@ impl Buffer {
                 return Err(ZyxtError::error_2_1_3(selected.pos_raw().raw)
                     .with_pos_raw(&selected.pos_raw()));
             }
-            if get_order(&opr_type) >= highest_order {
+            if opr_type.order() >= highest_order {
                 highest_order_index = i;
-                highest_order = get_order(&opr_type);
+                highest_order = opr_type.order();
                 opr_ref = Some((tok, opr_type))
             }
         }

@@ -123,7 +123,7 @@ impl ElementData for BinaryOpr {
                     panic!()
                 }
             }
-            opr => panic!("{:?}", opr),
+            _opr => panic!("{_opr:?}"),
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::{lexer::buffer::Buffer, types::token::Token, ZyxtError};
 
-pub fn lex_line_comment(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), ZyxtError> {
+pub fn lex_line_comment(iter: &mut Buffer, tokens: &mut [Token]) -> Result<(), ZyxtError> {
     let mut raw = "".to_string();
     while let Some((char, _)) = iter.next() {
         raw.push(*char);

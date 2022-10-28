@@ -35,7 +35,7 @@ pub fn compile(
     let lex_time = lex_start.elapsed().as_micros();
     typelist
         .out
-        .debug(White.dimmed().paint(format!("{:#?}", lexed)));
+        .debug(White.dimmed().paint(format!("{lexed:#?}")));
 
     typelist.out.debug(Yellow.bold().paint("\nParsing"));
     let parse_start = Instant::now();
@@ -43,7 +43,7 @@ pub fn compile(
     let parse_time = parse_start.elapsed().as_micros();
     typelist
         .out
-        .debug(White.dimmed().paint(format!("{:#?}", parsed)));
+        .debug(White.dimmed().paint(format!("{parsed:#?}")));
 
     typelist
         .out
@@ -53,18 +53,18 @@ pub fn compile(
     let check_time = check_start.elapsed().as_micros();
     typelist
         .out
-        .debug(White.dimmed().paint(format!("{:#?}", instructions)));
+        .debug(White.dimmed().paint(format!("{instructions:#?}")));
 
     typelist.out.info(Yellow.bold().paint("\nStats"));
     typelist
         .out
-        .info(Yellow.paint(format!("Lexing time: {}µs", lex_time)));
+        .info(Yellow.paint(format!("Lexing time: {lex_time}µs")));
     typelist
         .out
-        .info(Yellow.paint(format!("Parsing time: {}µs", parse_time)));
+        .info(Yellow.paint(format!("Parsing time: {parse_time}µs")));
     typelist
         .out
-        .info(Yellow.paint(format!("Instruction generation time: {}µs", check_time)));
+        .info(Yellow.paint(format!("Instruction generation time: {check_time}µs")));
     typelist.out.info(Yellow.paint(format!(
         "Total time: {}µs\n",
         lex_time + parse_time + check_time
@@ -84,12 +84,10 @@ pub fn interpret(
     let interpret_start = Instant::now();
     let exit_code = interpret_asts(input, i_data)?;
     let interpret_time = interpret_start.elapsed().as_micros();
-    i_data
-        .out
-        .debug(format!("\nExited with code {}", exit_code));
+    i_data.out.debug(format!("\nExited with code {exit_code}"));
     i_data.out.info(Yellow.bold().paint("\nStats"));
     i_data
         .out
-        .info(Yellow.paint(format!("Interpreting time: {}µs", interpret_time)));
+        .info(Yellow.paint(format!("Interpreting time: {interpret_time}µs")));
     Ok(exit_code)
 }

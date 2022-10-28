@@ -22,11 +22,13 @@ use crate::{
     Element,
 };
 
+type BuiltinFunction = Vec<&'static (dyn Fn() -> (Vec<Type<Value>>, Type<Value>) + Sync)>;
+
 #[derive(Clone)]
 pub enum Proc {
     Builtin {
         f: fn(&Vec<Value>) -> Option<Value>,
-        signature: Vec<&'static (dyn Fn() -> (Vec<Type<Value>>, Type<Value>) + Sync)>,
+        signature: BuiltinFunction,
     },
     Defined {
         is_fn: bool,
@@ -104,7 +106,7 @@ pub enum Value {
 
 impl Debug for Proc {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{self}")
     }
 }
 impl Debug for Value {
@@ -116,26 +118,26 @@ impl Debug for Value {
             f,
             "{}",
             match self {
-                Value::I8(v) => format!("{}@i8", v),
-                Value::I16(v) => format!("{}@i16", v),
-                Value::I32(v) => format!("{}@i32", v),
-                Value::I64(v) => format!("{}@i64", v),
-                Value::I128(v) => format!("{}@i128", v),
-                Value::Isize(v) => format!("{}@isize", v),
-                Value::Ibig(v) => format!("{}@ibig", v),
-                Value::U8(v) => format!("{}@u8", v),
-                Value::U16(v) => format!("{}@u16", v),
-                Value::U32(v) => format!("{}@u32", v),
-                Value::U64(v) => format!("{}@u64", v),
-                Value::U128(v) => format!("{}@u128", v),
-                Value::Usize(v) => format!("{}@usize", v),
-                Value::Ubig(v) => format!("{}@ubig", v),
-                Value::F16(v) => format!("{}@f16", v),
-                Value::F32(v) => format!("{}@f32", v),
-                Value::F64(v) => format!("{}@f64", v),
-                Value::Str(v) => format!("\"{}\"", v),
-                Value::Type(v) => format!("{:?}", v),
-                Value::PreType(v) => format!("{:?}", v),
+                Value::I8(v) => format!("{v}@i8"),
+                Value::I16(v) => format!("{v}@i16"),
+                Value::I32(v) => format!("{v}@i32"),
+                Value::I64(v) => format!("{v}@i64"),
+                Value::I128(v) => format!("{v}@i128"),
+                Value::Isize(v) => format!("{v}@isize"),
+                Value::Ibig(v) => format!("{v}@ibig"),
+                Value::U8(v) => format!("{v}@u8"),
+                Value::U16(v) => format!("{v}@u16"),
+                Value::U32(v) => format!("{v}@u32"),
+                Value::U64(v) => format!("{v}@u64"),
+                Value::U128(v) => format!("{v}@u128"),
+                Value::Usize(v) => format!("{v}@usize"),
+                Value::Ubig(v) => format!("{v}@ubig"),
+                Value::F16(v) => format!("{v}@f16"),
+                Value::F32(v) => format!("{v}@f32"),
+                Value::F64(v) => format!("{v}@f64"),
+                Value::Str(v) => format!("\"{v}\""),
+                Value::Type(v) => format!("{v:?}"),
+                Value::PreType(v) => format!("{v:?}"),
                 Value::Bool(_) | Value::ClassInstance { .. } | Value::Proc { .. } | Value::Unit =>
                     self.to_string(),
                 Value::Return(_) => unreachable!(),
@@ -202,8 +204,8 @@ impl Display for Value {
                 Value::F64(v) => v.to_string(),
                 Value::Str(v) => v.to_owned(),
                 Value::Bool(v) => v.to_string(),
-                Value::Type(v) | Value::ClassInstance { ty: v, .. } => format!("<{}>", v),
-                Value::PreType(v) => format!("<{}>", v),
+                Value::Type(v) | Value::ClassInstance { ty: v, .. } => format!("<{v}>"),
+                Value::PreType(v) => format!("<{v}>"),
                 Value::Unit => "()".to_string(),
                 Value::Return(v) => v.to_string(),
                 Value::Proc(v) => v.to_string(),

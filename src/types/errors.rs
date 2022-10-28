@@ -34,7 +34,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "0.0",
-            message: format!("Internal error: \n{}\n{:?}\n\nThis shouldn't happen! Open an issue on our Github repo page: [TODO]", error, backtrace)
+            message: format!("Internal error: \n{error}\n{backtrace:?}\n\nThis shouldn't happen! Open an issue on our Github repo page: [TODO]")
         }
     }
 
@@ -53,7 +53,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "1.0",
-            message: format!("File `{}` does not exist", filename),
+            message: format!("File `{filename}` does not exist"),
         }
     }
 
@@ -62,7 +62,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "1.1",
-            message: format!("File `{}` cannot be opened", filename),
+            message: format!("File `{filename}` cannot be opened"),
         }
     }
 
@@ -70,7 +70,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "1.2",
-            message: format!("Directory given (Got `{}`)", dirname),
+            message: format!("Directory given (Got `{dirname}`)"),
         }
     }
 
@@ -91,7 +91,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.0.1",
-            message: format!("Parenthesis `{}` not closed", paren),
+            message: format!("Parenthesis `{paren}` not closed"),
         }
     }
     /// parentheses not closed properly (not opened)
@@ -99,7 +99,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.0.2",
-            message: format!("Parenthesis `{}` not opened", paren),
+            message: format!("Parenthesis `{paren}` not opened"),
         }
     }
 
@@ -108,7 +108,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.0",
-            message: format!("Unexpected ident `{}`", ident),
+            message: format!("Unexpected ident `{ident}`"),
         }
     }
     /// unexpected ident (lexer didnt recognise)
@@ -116,7 +116,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.1",
-            message: format!("Ident `{}` not recognised by lexer", ident),
+            message: format!("Ident `{ident}` not recognised by lexer"),
         }
     }
     /// unexpected ident (dot at end of expression)
@@ -162,7 +162,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.6",
-            message: format!("Stray `{}` between first flag and declared variable", ident),
+            message: format!("Stray `{ident}` between first flag and declared variable"),
         }
     }
     /// unexpected ident ('else/elif'  found after 'else' keyword)
@@ -170,7 +170,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.7",
-            message: format!("`{}` detected after `else` keyword", ident),
+            message: format!("`{ident}` detected after `else` keyword"),
         }
     }
     /// unexpected ident (block expected, not ident)
@@ -178,7 +178,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.8",
-            message: format!("Block expected, not `{}`", ident),
+            message: format!("Block expected, not `{ident}`"),
         }
     }
     /// unexpected ident ('else/elif' found without 'if' keyword)
@@ -186,7 +186,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.9",
-            message: format!("Stray `{}` without starting `if`", ident),
+            message: format!("Stray `{ident}` without starting `if`"),
         }
     }
     /// unexpected ident (stray comment start / end)
@@ -194,7 +194,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.10",
-            message: format!("Stray unclosed/unopened `{}`", ident),
+            message: format!("Stray unclosed/unopened `{ident}`"),
         }
     }
     /// unexpected ident (must be variable)
@@ -202,7 +202,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.11",
-            message: format!("Only variables can be deleted (Got `{}`)", ident),
+            message: format!("Only variables can be deleted (Got `{ident}`)"),
         }
     }
     /// unexpected ident (cannot delete dereferenced variable)
@@ -210,7 +210,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.12",
-            message: format!("Cannot delete dereferenced variable (Got `{}`)", ident),
+            message: format!("Cannot delete dereferenced variable (Got `{ident}`)"),
         }
     }
     /// unexpected ident (bar not closed)
@@ -226,7 +226,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.14",
-            message: format!("Extra values past default value (Got `{}`)", ident),
+            message: format!("Extra values past default value (Got `{ident}`)"),
         }
     }
     /// unexpected ident (Variable name isn't variable)
@@ -234,7 +234,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.15",
-            message: format!("Variable name isn't variable (Got `{}`)", ident),
+            message: format!("Variable name isn't variable (Got `{ident}`)"),
         }
     }
     /// unexpected ident (pre keyword at end of expression)
@@ -258,7 +258,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.1.18",
-            message: format!("Block expected after `{:?}`", kwd),
+            message: format!("Block expected after `{kwd:?}`"),
         }
     }
 
@@ -276,7 +276,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "2.3",
-            message: format!("Unfilled argument `{}`", arg),
+            message: format!("Unfilled argument `{arg}`"),
         }
     }
 
@@ -286,7 +286,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "3.0",
-            message: format!("Undefined variable `{}`", varname),
+            message: format!("Undefined variable `{varname}`"),
         }
     }
 
@@ -338,7 +338,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "4.0.1",
-            message: format!("Operator {} not implemented for type `{}`", operator, ty),
+            message: format!("Operator {operator} not implemented for type `{ty}`"),
         }
     }
 
@@ -376,7 +376,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "4.2",
-            message: format!("Non-i32 script return value detected (Got `{}`)", value),
+            message: format!("Non-i32 script return value detected (Got `{value}`)"),
         }
     }
 
@@ -404,7 +404,7 @@ impl ZyxtError {
         ZyxtError {
             position: vec![],
             code: "4.4",
-            message: format!("Block returns variable of type `{}` earlier on, but also returns variable of type `{}`", block_type, return_type)
+            message: format!("Block returns variable of type `{block_type}` earlier on, but also returns variable of type `{return_type}`")
         }
     }
     pub fn get_surrounding_text(&self) -> String {
@@ -436,15 +436,11 @@ impl ZyxtError {
                     .chain(start_chars[index..].iter().cloned())
                     .join("");
 
-                let end_pos = pos_raw.position.pos_after(&*pos_raw.raw);
+                let end_pos = pos_raw.position.pos_after(&pos_raw.raw);
                 let end = contents.get_mut(end_pos.line as usize - 1).unwrap();
                 let end_chars = end.chars().collect::<Vec<_>>();
                 let index = end_pos.column as usize - 1
-                    + if pos_raw.position.line == end_pos.line {
-                        1
-                    } else {
-                        0
-                    };
+                    + usize::from(pos_raw.position.line == end_pos.line);
                 *end = end_chars[0..index - 1]
                     .iter()
                     .cloned()
@@ -459,11 +455,11 @@ impl ZyxtError {
                         pos_raw.position.line as isize - 3 <= *i as isize
                             && *i as u32 <= end_pos.line + 1
                     })
-                    .map(|(_, s)| format!("  {}", s))
+                    .map(|(_, s)| format!("  {s}"))
                     .collect::<Vec<_>>()
                     .join("\n");
 
-                format!("{}\n{}", pos, White.dimmed().paint(surrounding))
+                format!("{pos}\n{}", White.dimmed().paint(surrounding))
             })
             .join("\n")
     }

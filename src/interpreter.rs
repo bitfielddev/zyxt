@@ -22,9 +22,9 @@ pub fn interpret_asts<O: Print>(
     if last == Value::Unit {
         last = Value::I32(0);
     }
-    return if let Value::I32(v) = last {
+    if let Value::I32(v) = last {
         Ok(v)
     } else {
         Err(ZyxtError::error_4_2(last).with_pos_raw(&Default::default())) // TODO
-    };
+    }
 }

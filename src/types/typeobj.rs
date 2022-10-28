@@ -68,7 +68,7 @@ pub enum Type<T: Clone + PartialEq + Debug> {
 }
 impl<T: Clone + PartialEq + Debug> Debug for TypeInstance<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} (implementation: {:?})", self, self.implementation)
+        write!(f, "{self} (implementation: {:?})", self.implementation)
     }
 }
 impl<T: Clone + PartialEq + Debug> Debug for TypeDefinition<T> {
@@ -80,8 +80,8 @@ impl<T: Clone + PartialEq + Debug> Debug for TypeDefinition<T> {
             self.inst_name
                 .to_owned()
                 .unwrap_or_else(|| "{unknown}".into()),
-            self.implementations.iter().map(|(k, _)| k).join(", "),
-            self.inst_fields.iter().map(|(k, _)| k).join(", ")
+            self.implementations.keys().join(", "),
+            self.inst_fields.keys().join(", ")
         )
     }
 }
@@ -116,7 +116,7 @@ impl<T: Clone + PartialEq + Debug> Display for TypeInstance<T> {
             self.name.as_ref().unwrap_or(&"{unknown}".into()),
             self.type_args
                 .iter()
-                .map(|arg| format!("{}", arg))
+                .map(|arg| format!("{arg}"))
                 .collect::<Vec<String>>()
                 .join(", ")
         )
@@ -290,8 +290,8 @@ impl Type<Value> {
     pub fn implementation(&self) -> &TypeDefinition<Value> {
         match &self {
             Type::Instance(TypeInstance { implementation, .. }) => implementation,
-            Type::Definition { .. } => &*TYPE_T,
-            Type::Any => &*UNIT_T,
+            Type::Definition { .. } => &TYPE_T,
+            Type::Any => &UNIT_T,
             Type::Return(ty) => ty.implementation(),
         }
     }

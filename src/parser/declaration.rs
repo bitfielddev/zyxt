@@ -59,8 +59,8 @@ impl Buffer {
                         {
                             Ok(flag.to_owned())
                         } else {
-                            return Err(ZyxtError::error_2_1_6(ele.pos_raw().raw)
-                                .with_pos_raw(&ele.pos_raw()));
+                            Err(ZyxtError::error_2_1_6(ele.pos_raw().raw)
+                                .with_pos_raw(&ele.pos_raw()))
                         }
                     })
                     .collect::<Result<_, _>>()?

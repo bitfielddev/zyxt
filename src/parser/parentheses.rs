@@ -21,7 +21,7 @@ impl Buffer {
                     if prev_ele
                         .ty
                         .map(|ty| ty.categories())
-                        .unwrap_or(vec![])
+                        .unwrap_or_default()
                         .contains(&TokenCategory::ValueEnd)
                     {
                         continue;

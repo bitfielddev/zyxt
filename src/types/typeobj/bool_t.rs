@@ -37,7 +37,7 @@ fn bool_t() -> HashMap<SmolStr, Value> {
             p if p == TYPE_T.as_type() => typecast_to_type!(BOOL_T),
             p if p == STR_T.as_type() => Value::Str(get_param!(x, 0, Bool).to_string()),
             p if p == BOOL_T.as_type() => x[0].to_owned(),
-            p if p == I8_T.as_type() => Value::I8(if get_param!(x, 0, Bool) { 1i8 } else { 0i8 }),
+            p if p == I8_T.as_type() => Value::I8(get_param!(x, 0, Bool).into()),
             p if p == I16_T.as_type() => typecast_bool_to_num!(I16, x),
             p if p == I32_T.as_type() => typecast_bool_to_num!(I32, x),
             p if p == I64_T.as_type() => typecast_bool_to_num!(I64, x),

@@ -139,7 +139,7 @@ impl ElementData for Procedure {
             return_type: if let Value::Type(value) = self.return_type.interpret_expr(i_data)? {
                 value
             } else {
-                panic!("{:#?}", self)
+                panic!("{self:#?}")
             },
             content: self.content.to_owned(),
         }))

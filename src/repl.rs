@@ -34,9 +34,9 @@ pub fn repl(verbosity: u8) {
     println!("{}", Cyan.paint("`;exit` to exit"));
     println!("{}", Cyan.paint("`;help` for more commands"));
     loop {
-        print!("{} ", in_symbol);
+        print!("{in_symbol} ");
         io::stdout().flush().unwrap();
-        let input = rl.readline(&*in_symbol.to_string());
+        let input = rl.readline(&in_symbol);
         match input {
             Ok(input) => {
                 if input == *";exit" {
@@ -78,13 +78,13 @@ pub fn repl(verbosity: u8) {
                             let interpret_start = Instant::now();
                             let result = instr.interpret_expr(&mut varlist);
                             let interpret_time = interpret_start.elapsed().as_micros();
-                            println!("{}", White.dimmed().paint(format!("{}µs", interpret_time)));
+                            println!("{}", White.dimmed().paint(format!("{interpret_time}µs")));
                             result
                         }
                     } {
                         Ok(result) => {
                             if result != Value::Unit && i == instr_len - 1 {
-                                println!("{}{}", out_symbol, Yellow.paint(format!("{:?}", result)))
+                                println!("{out_symbol}{}", Yellow.paint(format!("{result:?}")))
                             }
                         }
                         Err(e) => {

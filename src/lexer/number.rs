@@ -9,7 +9,7 @@ pub fn lex_number(iter: &mut Buffer, tokens: &mut Vec<Token>) -> Result<(), Zyxt
     let pos = iter.peek().unwrap().1;
     let mut dotted = false;
     while let Some((char, _)) = iter.peek() {
-        if NUMERIC.is_match(&*char.to_string()) {
+        if NUMERIC.is_match(&char.to_string()) {
             raw.push(char);
             iter.next().unwrap();
         } else if char == '.' && !dotted {

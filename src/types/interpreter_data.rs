@@ -105,7 +105,7 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
                 frame
                     .heap
                     .iter()
-                    .map(|(k, v)| format!("{}: {} = {}", k, v.get_type_obj(), v))
+                    .map(|(k, v)| format!("{k}: {} = {v}", v.get_type_obj()))
                     .collect::<Vec<String>>()
                     .join("\n")
             })

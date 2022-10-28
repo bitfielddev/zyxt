@@ -17,7 +17,7 @@ impl Condition {
             .as_mut()
             .map(|e| e.desugared(out))
             .transpose()?;
-        (&mut self.if_true).data = Box::new(
+        self.if_true.data = Box::new(
             self.if_true
                 .data
                 .desugared(pos_raw, out)?

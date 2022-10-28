@@ -28,7 +28,7 @@ impl StdIoPrint {
             self.eprintln(
                 msg.to_string()
                     .split('\n')
-                    .map(|s| format!("{} {}", color.paint(prefix), s))
+                    .map(|s| format!("{} {s}", color.paint(prefix)))
                     .collect::<Vec<_>>()
                     .join("\n"),
             );
@@ -38,16 +38,16 @@ impl StdIoPrint {
 
 impl Print for StdIoPrint {
     fn println(&mut self, s: impl Display) {
-        println!("{}", s)
+        println!("{s}")
     }
     fn print(&mut self, s: impl Display) {
-        print!("{}", s)
+        print!("{s}")
     }
     fn eprintln(&mut self, s: impl Display) {
-        eprintln!("{}", s)
+        eprintln!("{s}")
     }
     fn eprint(&mut self, s: impl Display) {
-        eprint!("{}", s)
+        eprint!("{s}")
     }
 
     fn debug(&mut self, msg: impl Display) {

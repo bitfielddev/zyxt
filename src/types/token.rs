@@ -28,45 +28,6 @@ impl Token {
         format!("{}{}", &self.whitespace, &self.value)
     }
 }
-pub fn get_order(opr: &OprType) -> u8 {
-    match *opr {
-        OprType::PlusSign | OprType::MinusSign | OprType::Not | OprType::Ref | OprType::Deref => 1,
-        OprType::TypeCast => 2,
-        OprType::Power => 3,
-        //OprType::Root |
-        //OprType::Logarithm => 4,
-        OprType::DotMult => 5,
-        OprType::AstMult
-        | OprType::FractDiv
-        | OprType::FloorfractDiv
-        | OprType::CeilfractDiv
-        | OprType::RoundfractDiv
-        | OprType::Modulo => 6,
-        OprType::CrossMult
-        | OprType::Div
-        | OprType::FloorDiv
-        | OprType::CeilDiv
-        | OprType::RoundDiv => 7,
-        OprType::Plus | OprType::Minus | OprType::PlusMinus | OprType::MinusPlus => 8,
-        OprType::Gt
-        | OprType::Lt
-        | OprType::Gteq
-        | OprType::Lteq
-        | OprType::Eq
-        | OprType::Noteq
-        | OprType::Istype
-        | OprType::Isnttype
-        | OprType::Is
-        | OprType::Isnt
-        | OprType::Iseq
-        | OprType::Isnteq => 10,
-        OprType::And => 14,
-        OprType::Xor => 15,
-        OprType::Or => 16,
-        OprType::Concat => 18,
-        OprType::Swap => 19,
-    }
-}
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[allow(dead_code)]
 pub enum OprType {
@@ -113,18 +74,49 @@ pub enum OprType {
 }
 impl Display for OprType {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 impl OprType {
-    pub fn side(&self) -> Side {
+    pub fn order(&self) -> usize {
         match self {
-            OprType::Not
+            OprType::PlusSign
+            | OprType::MinusSign
+            | OprType::Not
             | OprType::Ref
-            | OprType::Deref
-            | OprType::PlusSign
-            | OprType::MinusSign => Side::Left,
-            _ => unreachable!(),
+            | OprType::Deref => 1,
+            OprType::TypeCast => 2,
+            OprType::Power => 3,
+            OprType::DotMult => 5,
+            OprType::AstMult
+            | OprType::FractDiv
+            | OprType::FloorfractDiv
+            | OprType::CeilfractDiv
+            | OprType::RoundfractDiv
+            | OprType::Modulo => 6,
+            OprType::CrossMult
+            | OprType::Div
+            | OprType::FloorDiv
+            | OprType::CeilDiv
+            | OprType::RoundDiv => 7,
+            OprType::Plus | OprType::Minus | OprType::PlusMinus | OprType::MinusPlus => 8,
+            OprType::Gt
+            | OprType::Lt
+            | OprType::Gteq
+            | OprType::Lteq
+            | OprType::Eq
+            | OprType::Noteq
+            | OprType::Istype
+            | OprType::Isnttype
+            | OprType::Is
+            | OprType::Isnt
+            | OprType::Iseq
+            | OprType::Isnteq => 10,
+            OprType::And => 14,
+            OprType::Xor => 15,
+            OprType::Or => 16,
+            OprType::Concat => 18,
+            OprType::Swap => 19,
         }
     }
 }
@@ -155,11 +147,6 @@ pub enum Keyword {
     Defer,
     Class,
     Struct,
-}
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Side {
-    Left,
-    Right,
 }
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(dead_code)]

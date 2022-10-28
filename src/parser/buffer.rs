@@ -38,7 +38,7 @@ impl Buffer {
         let next = self.content.get(self.cursor).cloned();
         if let Some(raw) = &mut self.raw {
             if let Some(next) = &next {
-                raw.push_str(&*match next {
+                raw.push_str(&match next {
                     Either::Left(c) => c.pos_raw.raw.to_owned(),
                     Either::Right(c) => c.get_raw().into(),
                 });
@@ -90,7 +90,7 @@ impl Buffer {
                         Either::Left(c) => c.pos_raw.raw.to_owned(),
                         Either::Right(c) => c.get_raw().into(),
                     })
-                    .unwrap_or("".into())
+                    .unwrap_or_else(|| "".into())
             } else {
                 "".into()
             }
@@ -98,7 +98,7 @@ impl Buffer {
         });
     }
     pub fn end_raw_collection(&mut self) -> String {
-        self.raw.take().unwrap_or("".into())
+        self.raw.take().unwrap_or_else(|| "".into())
     }
     pub fn window(&self, range: Range<usize>) -> BufferWindow {
         BufferWindow {
@@ -116,7 +116,7 @@ impl Buffer {
         while let Some(ele) = self.next() {
             if let Either::Right(ele) = ele {
                 if start_token == end_token {
-                    nest_level = if nest_level == 1 { 0 } else { 1 };
+                    nest_level = usize::from(nest_level != 1);
                 } else if ele.ty == Some(start_token) {
                     nest_level += 1
                 } else if ele.ty == Some(end_token) {
@@ -164,7 +164,7 @@ impl Buffer {
         while let Some(ele) = self.next() {
             if let Either::Right(ele) = ele {
                 if start_token == end_token {
-                    nest_level = if nest_level == 1 { 0 } else { 1 };
+                    nest_level = usize::from(nest_level != 1);
                 } else if ele.ty == Some(start_token) {
                     nest_level += 1
                 } else if ele.ty == Some(end_token) {
@@ -215,7 +215,7 @@ impl BufferWindow {
         let mut buffer = self.as_buffer();
         let res = f(&mut buffer)?;
         let bw = BufferWindow {
-            slice: buffer.content.to_owned(),
+            slice: buffer.content,
             range: self.range.to_owned(),
         };
         *self = bw;
