@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 use itertools::Either;
+use tracing::{debug, trace};
 
 use crate::{
     types::{
@@ -36,6 +37,7 @@ impl Buffer {
             self.started = true;
         }
         let next = self.content.get(self.cursor).cloned();
+        trace!(?next);
         if let Some(raw) = &mut self.raw {
             if let Some(next) = &next {
                 raw.push_str(&match next {
@@ -83,6 +85,7 @@ impl Buffer {
     }
     pub fn start_raw_collection(&mut self) {
         self.raw.get_or_insert_with(|| {
+            debug!("Starting raw collection");
             if self.started {
                 self.content
                     .get(self.cursor)
@@ -98,6 +101,7 @@ impl Buffer {
         });
     }
     pub fn end_raw_collection(&mut self) -> String {
+        debug!("Ending raw collection");
         self.raw.take().unwrap_or_else(|| "".into())
     }
     pub fn window(&self, range: Range<usize>) -> BufferWindow {
@@ -106,6 +110,7 @@ impl Buffer {
             range,
         }
     }
+    #[tracing::instrument(skip(self))]
     pub fn get_between(
         &mut self,
         start_token: TokenType,
@@ -114,15 +119,16 @@ impl Buffer {
         let mut nest_level = 1usize;
         let start = self.cursor;
         while let Some(ele) = self.next() {
-            if let Either::Right(ele) = ele {
+            if let Either::Right(ele) = &ele {
                 if start_token == end_token {
-                    nest_level = usize::from(nest_level != 1);
+                    nest_level = 0 /*usize::from(nest_level != 1)*/;
                 } else if ele.ty == Some(start_token) {
                     nest_level += 1
                 } else if ele.ty == Some(end_token) {
                     nest_level -= 1
                 }
             }
+            trace!(?ele, nest_level);
             if nest_level == 0 {
                 break;
             }
@@ -141,6 +147,7 @@ impl Buffer {
         while let Some(ele) = self.next() {
             if let Either::Right(ele) = ele {
                 if ele.ty == Some(divider) {
+                    trace!(pos = ?ele.pos_raw().pos, "Split");
                     buffer_windows.push(self.window(start..self.cursor).to_owned());
                     start = self.next_cursor_pos();
                 }
@@ -162,19 +169,21 @@ impl Buffer {
         let mut start = self.cursor + 1;
         let mut buffer_windows = vec![];
         while let Some(ele) = self.next() {
-            if let Either::Right(ele) = ele {
+            if let Either::Right(ele) = &ele {
                 if start_token == end_token {
-                    nest_level = usize::from(nest_level != 1);
+                    nest_level = 0 /*usize::from(nest_level != 1)*/;
                 } else if ele.ty == Some(start_token) {
                     nest_level += 1
                 } else if ele.ty == Some(end_token) {
                     nest_level -= 1
                 }
                 if nest_level == 1 && ele.ty == Some(divider) {
+                    trace!(pos = ?ele.pos_raw().pos, "Split");
                     buffer_windows.push(self.window(start..self.cursor).to_owned());
                     start = self.next_cursor_pos();
                 }
             }
+            trace!(?ele, nest_level);
             if nest_level == 0 {
                 break;
             }
@@ -189,7 +198,7 @@ impl Buffer {
     }
     pub fn splice_buffer(&mut self, buffer: BufferWindow) {
         self.content = self.content.to_owned();
-        self.cursor = buffer.range.end + buffer.slice.len() - buffer.range.len();
+        self.cursor = buffer.range.end - 1 + buffer.slice.len() - buffer.range.len();
         self.content.splice(buffer.range, buffer.slice);
     }
 }

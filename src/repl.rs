@@ -13,8 +13,8 @@ use crate::{
 
 pub fn repl(verbosity: u8) {
     let filename = "[stdin]".to_string();
-    let mut sip1 = StdIoPrint(verbosity);
-    let mut sip2 = StdIoPrint(verbosity);
+    let mut sip1 = StdIoPrint;
+    let mut sip2 = StdIoPrint;
     let mut typelist = InterpreterData::<Type<Element>, _>::new(&mut sip1);
     let mut varlist = InterpreterData::<Value, _>::new(&mut sip2);
     let mut rl = Editor::<()>::new().unwrap();
@@ -61,7 +61,7 @@ pub fn repl(verbosity: u8) {
                 let instructions = match compile(input, &filename, &mut typelist) {
                     Ok(v) => v,
                     Err(e) => {
-                        e.print(&mut StdIoPrint(verbosity));
+                        e.print(&mut StdIoPrint);
                         continue;
                     }
                 };
@@ -88,7 +88,7 @@ pub fn repl(verbosity: u8) {
                             }
                         }
                         Err(e) => {
-                            e.print(&mut StdIoPrint(verbosity));
+                            e.print(&mut StdIoPrint);
                         }
                     }
                 }

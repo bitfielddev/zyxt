@@ -1,4 +1,5 @@
 use itertools::Either;
+use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
@@ -11,6 +12,7 @@ use crate::{
 };
 
 impl Buffer {
+    #[tracing::instrument(skip_all)]
     pub fn parse_preprocess_defer(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
@@ -30,13 +32,16 @@ impl Buffer {
             let mut raw = selected.get_raw();
             let start = self.cursor;
             let init_pos_raw = selected.pos_raw();
+            debug!(pos = ?init_pos_raw.pos, ?kwd, "Parsing preprocess/defer");
             let selected = self.next_or_err()?;
 
             raw += &*selected.pos_raw().raw;
             let (content, end) = if let Either::Left(selected) = selected {
                 if let ElementVariant::Block(_) = &*selected.data {
+                    debug!(pos = ?selected.pos_raw.pos, "Block detected");
                     (selected.to_owned(), self.next_cursor_pos())
                 } else {
+                    debug!(pos = ?selected.pos_raw.pos, "Expression not in {{}} detected");
                     (
                         self.rest_incl_curr()
                             .with_as_buffer(&|buffer| buffer.parse_as_block())?
@@ -45,6 +50,7 @@ impl Buffer {
                     )
                 }
             } else {
+                debug!(pos = ?selected.pos_raw().pos, "Block not in {{}} detected");
                 (
                     self.rest_incl_curr()
                         .with_as_buffer(&|buffer| buffer.parse_as_block())?
@@ -70,6 +76,7 @@ impl Buffer {
                     })
                 }),
             };
+            trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
                 range: start..end,

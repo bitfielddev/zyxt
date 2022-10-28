@@ -1,4 +1,5 @@
 use itertools::Either;
+use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
@@ -11,6 +12,7 @@ use crate::{
 };
 
 impl Buffer {
+    #[tracing::instrument(skip_all)]
     pub fn parse_delete(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
@@ -23,7 +25,8 @@ impl Buffer {
             ) {
                 continue;
             }
-            let init_pos = selected.pos_raw().position;
+            let init_pos = selected.pos_raw().pos;
+            debug!(pos = ?init_pos, "Parsing delete");
             let start = self.cursor;
             self.start_raw_collection();
             let vars: Vec<Element<Ident>> =
@@ -45,11 +48,12 @@ impl Buffer {
                 })?;
             let ele = Element {
                 pos_raw: PosRaw {
-                    position: init_pos,
+                    pos: init_pos,
                     raw: self.end_raw_collection().into(),
                 },
                 data: Box::new(ElementVariant::Delete(Delete { names: vars })),
             };
+            trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
                 range: start..self.content.len(),

@@ -1,4 +1,5 @@
 use itertools::Either;
+use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
@@ -16,6 +17,7 @@ use crate::{
 };
 
 impl Buffer {
+    #[tracing::instrument(skip_all)]
     pub fn parse_args(&mut self) -> ZResult<Vec<Argument>> {
         let mut windows =
             self.get_split_between(TokenType::Bar, TokenType::Bar, TokenType::Comma)?;
@@ -25,6 +27,7 @@ impl Buffer {
                 .with_as_buffers(&|buf| buf.parse_as_expr())?;
             let name = if let Some(name) = arg_sections.first() {
                 if let ElementVariant::Ident(ident) = &*name.data {
+                    debug!(pos = ?name.pos_raw.pos, "Name detected");
                     ident.name.to_owned()
                 } else {
                     todo!()
@@ -33,14 +36,17 @@ impl Buffer {
                 todo!()
             };
             let ty = if let Some(ele) = arg_sections.get(1) {
+                debug!(pos = ?ele.pos_raw.pos, "Type detected");
                 ele.to_owned()
             } else {
                 todo!()
             };
             let default = arg_sections.get(2).cloned();
+            debug!(pos = ?default.as_ref().map(|d| &d.pos_raw.pos), "Default may be detected");
             Ok(Argument { name, ty, default })
         })
     }
+    #[tracing::instrument(skip_all)]
     pub fn parse_proc_fn(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(mut selected) = self.next() {
@@ -61,6 +67,7 @@ impl Buffer {
             };
             let init_pos = tok_selected.pos_raw();
             let start = self.cursor;
+            debug!(pos = ?init_pos.pos, "Parsing proc / fn");
             self.start_raw_collection();
             let is_fn = if ty != TokenType::Bar {
                 ty == TokenType::Keyword(Keyword::Fn)
@@ -70,11 +77,14 @@ impl Buffer {
             if ty != TokenType::Bar {
                 selected = self.next_or_err()?;
             }
+            debug!(is_fn);
             let args = if let Either::Right(Token {
                 ty: Some(TokenType::Bar),
+                pos,
                 ..
             }) = &selected
             {
+                debug!(?pos, "Argument list detected");
                 self.parse_args()?
             } else {
                 self.cursor -= 1;
@@ -83,10 +93,12 @@ impl Buffer {
             selected = self.next_or_err()?;
             let return_type = if let Either::Right(Token {
                 ty: Some(TokenType::Colon),
+                pos,
                 ..
-            }) = selected
+            }) = &selected
             {
-                let start = self.cursor;
+                debug!(?pos, "Return type detected");
+                let start = self.cursor + 1;
                 while !matches!(
                     selected,
                     Either::Left(Element {
@@ -110,16 +122,18 @@ impl Buffer {
             };
             let block: Element<Block> = if let Either::Left(
                 block @ Element {
+                    pos_raw,
                     data: box ElementVariant::Block(_),
-                    ..
                 },
-            ) = selected
+            ) = &selected
             {
+                debug!(pos = ?pos_raw.pos, "Block detected");
                 Element {
                     pos_raw: block.pos_raw.to_owned(),
                     data: Box::new(block.data.as_block().unwrap().to_owned()),
                 }
             } else {
+                debug!(pos = ?selected.pos_raw().pos, "Expression detected");
                 self.window(self.cursor..self.content.len())
                     .with_as_buffer(&|buf| {
                         let ele = buf.parse_as_expr()?;
@@ -132,7 +146,7 @@ impl Buffer {
             let raw = self.end_raw_collection();
             let ele = Element {
                 pos_raw: PosRaw {
-                    position: init_pos.position,
+                    pos: init_pos.pos,
                     raw: raw.into(),
                 },
                 data: Box::new(ElementVariant::Procedure(Procedure {
@@ -142,6 +156,7 @@ impl Buffer {
                     content: block,
                 })),
             };
+            trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
                 range: start..self.next_cursor_pos(),

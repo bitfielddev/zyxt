@@ -1,4 +1,5 @@
 use itertools::{Either, Itertools};
+use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::Buffer,
@@ -11,6 +12,7 @@ use crate::{
 };
 
 impl Buffer {
+    #[tracing::instrument(skip_all)]
     pub fn parse_bin_opr(&mut self) -> ZResult<()> {
         self.reset_cursor();
         if self.content.is_empty() {
@@ -47,9 +49,10 @@ impl Buffer {
         } else {
             return Ok(());
         };
+        debug!(pos = ?tok.pos, "Parsing binary operator");
         let ele = Element {
             pos_raw: PosRaw {
-                position: tok.position.to_owned(),
+                pos: tok.pos.to_owned(),
                 raw: self.content.iter().map(|a| a.pos_raw().raw).join("").into(),
             },
             data: Box::new(ElementVariant::BinaryOpr(BinaryOpr {
@@ -62,6 +65,7 @@ impl Buffer {
                     .with_as_buffer(&|buf| buf.parse_as_expr())?,
             })),
         };
+        trace!(?ele);
         self.content = vec![Either::Left(ele)];
         Ok(())
     }

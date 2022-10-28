@@ -1,5 +1,6 @@
 use itertools::Either;
 use num::BigInt;
+use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
@@ -25,6 +26,7 @@ impl Buffer {
             }),
         })
     }
+    #[tracing::instrument(skip_all)]
     pub fn parse_var_literal_call(&mut self) -> ZResult<()> {
         self.reset_cursor();
         let mut catcher: Option<(Element, usize)> = None;
@@ -48,6 +50,7 @@ impl Buffer {
             };
             match selected.ty {
                 Some(TokenType::DotOpr) => {
+                    debug!(pos = ?selected.pos, "Parsing dot operator");
                     let catcher = if let Some((catcher, _)) = &mut catcher {
                         catcher
                     } else {
@@ -78,18 +81,22 @@ impl Buffer {
                             name: selected.data.name,
                             parent: Some(catcher.to_owned()),
                         })),
-                    }
+                    };
+                    trace!(?catcher);
                 }
                 Some(TokenType::Ident) => {
+                    debug!(pos = ?selected.pos, "Parsing ident");
                     clear_catcher(self, &mut catcher);
                     catcher = Some((
                         Buffer::parse_ident(&selected).unwrap().as_variant(),
                         self.cursor,
-                    ))
+                    ));
+                    trace!(catcher = ?catcher.as_ref().unwrap().0)
                 }
                 Some(TokenType::LiteralNumber)
                 | Some(TokenType::LiteralMisc)
                 | Some(TokenType::LiteralString) => {
+                    debug!(pos = ?selected.pos, "Parsing literal");
                     clear_catcher(self, &mut catcher);
                     catcher = Some((
                         Element {
@@ -129,12 +136,14 @@ impl Buffer {
                             })),
                         },
                         self.cursor,
-                    ))
+                    ));
+                    trace!(catcher = ?catcher.as_ref().unwrap().0)
                 }
                 Some(TokenType::CloseParen) => {
                     return Err(ZError::error_2_0_2(')'.to_string()).with_token(&selected))
                 }
                 Some(TokenType::OpenParen) => {
+                    debug!(pos = ?selected.pos, "Parsing call");
                     let catcher = if let Some((catcher, _)) = &mut catcher {
                         catcher
                     } else {
@@ -157,7 +166,8 @@ impl Buffer {
                             args,
                             kwargs: Default::default(),
                         })),
-                    }
+                    };
+                    trace!(?catcher)
                 }
                 _ => clear_catcher(self, &mut catcher),
             }

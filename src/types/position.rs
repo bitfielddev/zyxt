@@ -66,7 +66,7 @@ impl Position {
 
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub struct PosRaw {
-    pub position: Position,
+    pub pos: Position,
     pub raw: SmolStr,
 }
 pub trait GetPosRaw {
@@ -80,7 +80,7 @@ impl GetPosRaw for Element {
 impl GetPosRaw for Token {
     fn pos_raw(&self) -> PosRaw {
         PosRaw {
-            position: self.position.to_owned(),
+            pos: self.pos.to_owned(),
             raw: self.get_raw().into(),
         }
     }

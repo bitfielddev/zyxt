@@ -14,6 +14,7 @@ mod unparen_call;
 mod var_literal_call;
 
 use itertools::Either;
+use tracing::{debug, info};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
@@ -76,12 +77,14 @@ impl Buffer {
     }
 }
 
+#[tracing::instrument(skip_all)]
 pub fn parse_token_list(mut input: Vec<Token>) -> ZResult<Vec<Element>> {
     let mut comments: Vec<Element<Comment>> = vec![];
 
-    // detect & remove comments
+    info!("Removing comments");
     for token in input.iter() {
         if token.ty == Some(TokenType::Comment) {
+            debug!(?token.pos, "Comment detected");
             comments.push(Element {
                 pos_raw: token.pos_raw(),
                 data: Box::new(Comment {
@@ -99,7 +102,6 @@ pub fn parse_token_list(mut input: Vec<Token>) -> ZResult<Vec<Element>> {
             return Err(ZError::error_2_1_10(token.value.to_owned()).with_token(token));
         }
     }
-
     input.retain(|token| token.ty != Some(TokenType::Comment));
 
     Buffer::new(input)

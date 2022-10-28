@@ -1,4 +1,5 @@
 use itertools::Either;
+use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
@@ -14,6 +15,7 @@ use crate::{
 };
 
 impl Buffer {
+    #[tracing::instrument(skip_all)]
     pub fn parse_if(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
@@ -35,13 +37,13 @@ impl Buffer {
                 continue;
             };
 
-            let init_pos = selected.pos_raw().position;
+            let init_pos = selected.pos_raw().pos;
+            debug!(pos = ?init_pos, "Parsing if");
             let start = self.cursor;
             let mut conditions: Vec<Condition> = vec![];
             let mut prev_kwd = Keyword::If;
             self.start_raw_collection();
-            loop {
-                let mut selected = self.next_or_err()?;
+            while let Some(mut selected) = self.next() {
                 let kwd = if let Either::Right(Token {
                     ty: Some(TokenType::Keyword(prekwd)),
                     ..
@@ -66,6 +68,7 @@ impl Buffer {
                 } else {
                     break;
                 };
+                debug!(?kwd, pos = ?selected.pos_raw().pos, "Parsing condition");
                 prev_kwd = kwd;
                 selected = self.next_or_err()?;
                 let condition = if kwd == Keyword::Else {
@@ -77,8 +80,10 @@ impl Buffer {
                     },
                 ) = selected
                 {
+                    debug!(pos = ?ele.pos_raw.pos, "Detected condition expr in {{}}");
                     Some(ele.to_owned())
                 } else {
+                    debug!(pos = ?selected.pos_raw().pos, "Detected condition expr not in {{}}");
                     let start = self.cursor;
                     loop {
                         let selected = self.next_or_err()?;
@@ -104,6 +109,7 @@ impl Buffer {
                     ..
                 }) = &selected
                 {
+                    debug!(pos = ?selected.pos_raw().pos, "Detected block");
                     block.to_owned()
                 } else {
                     return Err(ZError::error_2_1_8(selected.pos_raw().raw)
@@ -120,11 +126,12 @@ impl Buffer {
             self.cursor -= 1;
             let ele = Element {
                 pos_raw: PosRaw {
-                    position: init_pos,
+                    pos: init_pos,
                     raw: self.end_raw_collection().into(),
                 },
                 data: Box::new(ElementVariant::If(If { conditions })),
             };
+            trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
                 range: start..self.next_cursor_pos(),

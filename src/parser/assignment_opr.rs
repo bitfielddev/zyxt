@@ -1,4 +1,5 @@
 use itertools::{Either, Itertools};
+use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
@@ -11,6 +12,7 @@ use crate::{
 };
 
 impl Buffer {
+    #[tracing::instrument(skip_all)]
     pub fn parse_assignment_opr(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
@@ -23,12 +25,13 @@ impl Buffer {
             } else {
                 continue;
             };
+            debug!(pos = ?selected.pos_raw().pos, "Parsing assignment operator");
             let var = if let Some(Either::Left(var)) = self.prev() {
                 var.to_owned()
             } else {
                 todo!("error")
             };
-            let init_pos = var.pos_raw.position.to_owned();
+            let init_pos = var.pos_raw.pos.to_owned();
             self.next_or_err()?;
             let mut content = self.rest_incl_curr().with_as_buffer(&|buf| {
                 if buf.content.is_empty() {
@@ -37,6 +40,7 @@ impl Buffer {
                 buf.parse_as_expr()
             })?;
             if let Some(opr_type) = opr_type {
+                debug!(?opr_type, "Desugaring");
                 content = Element {
                     pos_raw: content.pos_raw.to_owned(),
                     data: Box::new(ElementVariant::BinaryOpr(BinaryOpr {
@@ -48,7 +52,7 @@ impl Buffer {
             }
             let ele = Element {
                 pos_raw: PosRaw {
-                    position: init_pos,
+                    pos: init_pos,
                     raw: self.content[self.cursor - 1..]
                         .iter()
                         .map(|a| a.pos_raw().raw)
@@ -60,6 +64,7 @@ impl Buffer {
                     content,
                 })),
             };
+            trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
                 range: self.cursor - 1..self.content.len(),

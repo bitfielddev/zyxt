@@ -57,7 +57,7 @@ static PRIMS: Lazy<HashMap<&'static str, Type<Value>>> = Lazy::new(|| {
 
 #[derive(Debug)]
 pub struct FrameData<T: Clone + Display> {
-    pub position: Position,
+    pub pos: Position,
     pub raw_call: String,
     pub args: HashMap<SmolStr, T>,
 }

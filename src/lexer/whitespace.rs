@@ -1,17 +1,21 @@
+use tracing::trace;
+
 use crate::{
     lexer::{buffer::Buffer, WHITESPACE},
     types::token::{Token, TokenType},
     ZResult,
 };
 
+#[tracing::instrument(skip_all)]
 pub fn lex_whitespace(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
     let mut raw = "".to_string();
-    let pos = if let Some((_, pos)) = iter.peek() {
+    let init_pos = if let Some((_, pos)) = iter.peek() {
         pos
     } else {
         return Ok(());
     };
-    while let Some((char, _)) = iter.peek() {
+    while let Some((char, pos)) = iter.peek() {
+        trace!(?char, ?pos);
         if WHITESPACE.is_match(&char.to_string()) {
             raw.push(char);
             iter.next().unwrap();
@@ -19,7 +23,7 @@ pub fn lex_whitespace(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()>
             tokens.push(Token {
                 ty: Some(TokenType::Whitespace),
                 value: raw.into(),
-                position: pos,
+                pos: init_pos,
                 ..Default::default()
             });
             return Ok(());

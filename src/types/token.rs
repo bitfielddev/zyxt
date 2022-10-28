@@ -8,7 +8,7 @@ use crate::types::position::Position;
 pub struct Token {
     pub value: SmolStr,
     pub ty: Option<TokenType>,
-    pub position: Position,
+    pub pos: Position,
     pub whitespace: SmolStr,
 }
 impl Default for Token {
@@ -16,7 +16,7 @@ impl Default for Token {
         Token {
             value: "".into(),
             ty: None,
-            position: Position {
+            pos: Position {
                 ..Default::default()
             },
             whitespace: "".into(),

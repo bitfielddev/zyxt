@@ -1,4 +1,5 @@
 use itertools::Either;
+use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
@@ -11,6 +12,7 @@ use crate::{
 };
 
 impl Buffer {
+    #[tracing::instrument(skip_all)]
     pub fn parse_class_struct(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
@@ -28,6 +30,7 @@ impl Buffer {
                 continue;
             };
             let init_pos_raw = selected.pos_raw();
+            debug!(pos = ?init_pos_raw.pos, "Parsing");
             let start = self.cursor;
             self.start_raw_collection();
             let mut selected = self.next_or_err()?;
@@ -36,6 +39,7 @@ impl Buffer {
                 ..
             }) = selected
             {
+                debug!(pos = ?selected.pos_raw().pos, "Argument list detected");
                 if kwd == Keyword::Class {
                     return Err(ZError::error_2_1_17().with_pos_raw(&selected.pos_raw()));
                 }
@@ -47,9 +51,10 @@ impl Buffer {
             };
             let content = if let Either::Left(Element {
                 data: box ElementVariant::Block(block),
-                ..
+                pos_raw,
             }) = selected
             {
+                debug!(pos = ?pos_raw.pos, "Block detected");
                 Some(block)
             } else if kwd == Keyword::Class {
                 return Err(ZError::error_2_1_18(&kwd).with_pos_raw(&selected.pos_raw()));
@@ -58,7 +63,7 @@ impl Buffer {
             };
             let ele = Element {
                 pos_raw: PosRaw {
-                    position: init_pos_raw.position.to_owned(),
+                    pos: init_pos_raw.pos.to_owned(),
                     raw: self.end_raw_collection().into(),
                 },
                 data: Box::new({
@@ -74,6 +79,7 @@ impl Buffer {
                     })
                 }),
             };
+            trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
                 range: start..self.next_cursor_pos(),

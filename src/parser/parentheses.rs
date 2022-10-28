@@ -1,4 +1,5 @@
 use itertools::Either;
+use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::Buffer,
@@ -7,6 +8,7 @@ use crate::{
 };
 
 impl Buffer {
+    #[tracing::instrument(skip_all)]
     pub fn parse_parentheses(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
@@ -24,12 +26,11 @@ impl Buffer {
                         .unwrap_or_default()
                         .contains(&TokenCategory::ValueEnd)
                     {
+                        debug!(pos = ?selected.pos, prev_ty = ?prev_ele.ty, "Found value call");
                         continue;
                     }
-                    prev_ele
-                } else {
-                    continue;
                 };
+                debug!(pos = ?selected.pos, "Parsing parentheses");
                 if let Some(Either::Right(next_ele)) = self.peek() {
                     if next_ele.ty == Some(TokenType::CloseParen) {
                         todo!("Unit")
@@ -42,18 +43,20 @@ impl Buffer {
                 let raw = self.end_raw_collection();
                 paren_window.with_as_buffer(&move |f| {
                     let mut ele = f.parse_as_expr()?;
+                    trace!(?ele);
                     ele.pos_raw.raw = raw.to_owned().into();
                     Ok(ele)
                 })?;
                 self.splice_buffer(paren_window);
             } else if selected.ty == Some(TokenType::OpenCurlyParen) {
-                // blocks, {
+                debug!(pos = ?selected.pos, "Parsing curly braces");
                 self.start_raw_collection();
                 let mut paren_window =
                     self.get_between(TokenType::OpenCurlyParen, TokenType::CloseCurlyParen)?;
                 let raw = self.end_raw_collection();
                 paren_window.with_as_buffer(&move |f| {
                     let mut ele = f.parse_as_block()?;
+                    trace!(?ele);
                     ele.pos_raw.raw = raw.to_owned().into();
                     Ok(ele)
                 })?;

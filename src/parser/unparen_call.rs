@@ -1,4 +1,5 @@
 use itertools::Either;
+use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
@@ -11,6 +12,7 @@ use crate::{
 };
 
 impl Buffer {
+    #[tracing::instrument(skip_all)]
     pub fn parse_unparen_call(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
@@ -23,7 +25,8 @@ impl Buffer {
                 continue;
             };
 
-            let init_pos = selected.pos_raw().position;
+            let init_pos = function.pos_raw().pos;
+            debug!(pos = ?function.pos_raw.pos, "Parsing unparenthesised call");
             let start = self.cursor;
             self.start_raw_collection();
             let mut args = vec![];
@@ -39,6 +42,7 @@ impl Buffer {
                     if arg_start == self.cursor {
                         todo!("error")
                     }
+                    debug!(pos = ?selected.pos_raw().pos, "Comma detected");
                     args.push(
                         self.window(arg_start..self.cursor)
                             .with_as_buffer(&|buf| buf.parse_as_expr())?,
@@ -61,7 +65,7 @@ impl Buffer {
             );
             let ele = Element {
                 pos_raw: PosRaw {
-                    position: init_pos.to_owned(),
+                    pos: init_pos.to_owned(),
                     raw: self.end_raw_collection().into(),
                 },
                 data: Box::new(ElementVariant::Call(Call {
@@ -70,6 +74,7 @@ impl Buffer {
                     kwargs: Default::default(),
                 })),
             };
+            trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
                 range: start..self.content.len(),

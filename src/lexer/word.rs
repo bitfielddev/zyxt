@@ -1,3 +1,5 @@
+use tracing::trace;
+
 use crate::{
     lexer::{buffer::Buffer, ALPHANUMERIC},
     types::token::{Keyword, Token, TokenType},
@@ -6,8 +8,9 @@ use crate::{
 
 pub fn lex_word(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
     let mut raw = "".to_string();
-    let pos = iter.peek().unwrap().1;
-    while let Some((char, _)) = iter.peek() {
+    let init_pos = iter.peek().unwrap().1;
+    while let Some((char, pos)) = iter.peek() {
+        trace!(?char, ?pos);
         if ALPHANUMERIC.is_match(&char.to_string()) {
             raw.push(char);
             iter.next().unwrap();
@@ -33,7 +36,7 @@ pub fn lex_word(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
                     _ => TokenType::Ident,
                 }),
                 value: raw.into(),
-                position: pos,
+                pos: init_pos,
                 ..Default::default()
             });
             return Ok(());
