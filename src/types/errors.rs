@@ -10,6 +10,7 @@ use ansi_term::{
 use backtrace::Backtrace;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use tracing::debug;
 
 use crate::{
     types::{
@@ -410,6 +411,7 @@ impl ZError {
             message: format!("Block returns variable of type `{block_type}` earlier on, but also returns variable of type `{return_type}`")
         }
     }
+    #[tracing::instrument(skip_all)]
     pub fn get_surrounding_text(&self) -> String {
         self.pos
             .iter()
@@ -427,38 +429,33 @@ impl ZError {
                     } else {
                         todo!()
                     };
-                let start = contents.get_mut(pos_raw.pos.line as usize - 1).unwrap();
-                let start_chars = start.chars().collect::<Vec<_>>();
-                let index = pos_raw.pos.column as usize - 1;
-                *start = start_chars[0..index]
+                let end_pos = pos_raw.pos.pos_after(&pos_raw.raw);
+                debug!(start = ?pos_raw.pos, end = ?end_pos, "Generating surrounding text");
+                let start_line = (pos_raw.pos.line - 1).saturating_sub(2) as usize;
+                let end_line = (end_pos.line as usize - 1 + 3).min(contents.len());
+
+                let start_vec = contents[pos_raw.pos.line as usize - 1]
+                    .chars()
+                    .collect::<Vec<_>>();
+                contents[pos_raw.pos.line as usize - 1] = start_vec
+                    [..pos_raw.pos.column as usize - 1]
                     .iter()
                     .cloned()
                     .chain("\u{001b}[0;1;4;31m".chars())
-                    .chain(start_chars[index..].iter().cloned())
+                    .chain(start_vec[pos_raw.pos.column as usize - 1..].iter().cloned())
                     .join("");
 
-                let end_pos = pos_raw.pos.pos_after(&pos_raw.raw);
-                let end = contents.get_mut(end_pos.line as usize - 1).unwrap();
-                let end_chars = end.chars().collect::<Vec<_>>();
-                let index =
-                    end_pos.column as usize - 1 + usize::from(pos_raw.pos.line == end_pos.line);
-                *end = end_chars[0..index - 1]
+                let end_vec = contents[end_pos.line as usize - 1]
+                    .chars()
+                    .collect::<Vec<_>>();
+                contents[end_pos.line as usize - 1] = end_vec[..end_pos.column as usize - 1]
                     .iter()
                     .cloned()
                     .chain("\u{001b}[0;37;2m".chars())
-                    .chain(end_chars[index..].iter().cloned())
+                    .chain(end_vec[end_pos.column as usize - 1..].iter().cloned())
                     .join("");
 
-                let surrounding = contents
-                    .into_iter()
-                    .enumerate()
-                    .filter(|(i, _)| {
-                        pos_raw.pos.line as isize - 3 <= *i as isize
-                            && *i as u32 <= end_pos.line + 1
-                    })
-                    .map(|(_, s)| format!("  {s}"))
-                    .collect::<Vec<_>>()
-                    .join("\n");
+                let surrounding = contents[start_line..=end_line].join("\n");
 
                 format!("{pos}\n{}", White.dimmed().paint(surrounding))
             })

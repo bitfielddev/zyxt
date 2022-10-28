@@ -50,19 +50,21 @@ impl Buffer {
             return Ok(());
         };
         debug!(pos = ?tok.pos, "Parsing binary operator");
+        let operand1 = self
+            .window(0..highest_order_index)
+            .with_as_buffer(&|buf| buf.parse_as_expr())?;
+        let operand2 = self
+            .window(highest_order_index + 1..self.content.len())
+            .with_as_buffer(&|buf| buf.parse_as_expr())?;
         let ele = Element {
             pos_raw: PosRaw {
-                pos: tok.pos.to_owned(),
+                pos: operand1.pos_raw.pos.to_owned(),
                 raw: self.content.iter().map(|a| a.pos_raw().raw).join("").into(),
             },
             data: Box::new(ElementVariant::BinaryOpr(BinaryOpr {
                 ty: *opr_type,
-                operand1: self
-                    .window(0..highest_order_index)
-                    .with_as_buffer(&|buf| buf.parse_as_expr())?,
-                operand2: self
-                    .window(highest_order_index + 1..self.content.len())
-                    .with_as_buffer(&|buf| buf.parse_as_expr())?,
+                operand1,
+                operand2,
             })),
         };
         trace!(?ele);
