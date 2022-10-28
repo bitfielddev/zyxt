@@ -25,7 +25,7 @@ use crate::{
 
 pub type ZResult<T> = Result<T, ZError>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ZError {
     pub pos: Vec<PosRaw>,
     pub code: &'static str,

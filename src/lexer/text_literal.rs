@@ -22,7 +22,8 @@ pub fn lex_text_literal(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<(
                 ..Default::default()
             });
             return Ok(());
-        } else if *char == '\\' {
+        }
+        /* else if *char == '\\' { TODO move this to parsing
             if let Some((char, pos)) = iter.next() {
                 trace!(?char, ?pos);
                 let new = match *char {
@@ -40,7 +41,8 @@ pub fn lex_text_literal(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<(
             } else {
                 todo!()
             }
-        } else {
+        }*/
+        else {
             raw.push(*char);
         }
     }

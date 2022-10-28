@@ -18,7 +18,6 @@ pub mod unary_opr;
 use std::fmt::Debug;
 
 use enum_as_inner::EnumAsInner;
-use itertools::Itertools;
 
 use crate::types::{
     element::{
@@ -151,14 +150,5 @@ impl ElementData for ElementVariant {
     }
     fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         for_all_variants!(&self, interpret_expr, i_data)
-    }
-}
-
-pub trait VecElementRaw {
-    fn get_raw(&self) -> String;
-}
-impl VecElementRaw for Vec<Element> {
-    fn get_raw(&self) -> String {
-        self.iter().map(|e| &e.pos_raw.raw).join("\n")
     }
 }
