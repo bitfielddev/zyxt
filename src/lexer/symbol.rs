@@ -63,7 +63,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
                     tokens.push(Token {
                         ty: Some(TokenType::Comment),
                         value: "/*".into(),
-                        pos: pos,
+                        pos,
                         ..Default::default()
                     });
                     lex_block_comment(iter, tokens)?;
@@ -74,7 +74,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
                     tokens.push(Token {
                         ty: Some(TokenType::Comment),
                         value: "//".into(),
-                        pos: pos,
+                        pos,
                         ..Default::default()
                     });
                     lex_line_comment(iter, tokens)?;
@@ -178,13 +178,13 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             '}' => TokenType::CloseCurlyParen,
             _ => {
                 return Err(ZError::error_2_1_1(char.to_owned()).with_pos_raw(&PosRaw {
-                    pos: pos,
+                    pos,
                     raw: char.into(),
                 }))
             }
         }),
         value: char.into(),
-        pos: pos,
+        pos,
         ..Default::default()
     });
     Ok(())

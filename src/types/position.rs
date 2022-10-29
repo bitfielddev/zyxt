@@ -46,14 +46,6 @@ impl Position {
             },
         }
     }
-    pub fn next_str(&mut self, c: &str) {
-        if c == "\n" {
-            self.line += 1;
-            self.column = 1;
-        } else {
-            self.column += 1
-        }
-    }
     pub fn next_char(&mut self, c: char) {
         if c == '\n' {
             self.line += 1;

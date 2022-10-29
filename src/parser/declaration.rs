@@ -17,7 +17,7 @@ impl Buffer {
     pub fn parse_declaration(&mut self) -> ZResult<()> {
         self.reset_cursor();
         let mut flag_pos = None;
-        let mut start = 0;
+        let mut start = None;
         while let Some(selected) = self.next() {
             if matches!(
                 selected,
@@ -29,7 +29,7 @@ impl Buffer {
                 debug!(pos = ?selected.pos_raw().pos, "Flag detected");
                 flag_pos = Some(self.cursor);
                 self.start_raw_collection();
-                start = self.cursor;
+                start = Some(self.cursor);
                 continue;
             } else if !matches!(
                 selected,
@@ -40,17 +40,19 @@ impl Buffer {
             ) {
                 continue;
             }
-            let declared_var = if let Some(Either::Left(d)) = self.prev() {
-                d.to_owned()
+
+            start.get_or_insert(self.cursor - 1);
+
+            let (declared_var, prev_raw) = if let Some(Either::Left(d)) = self.prev() {
+                (d.to_owned(), d.pos_raw.raw.to_owned())
             } else {
                 return Err(ZError::error_2_1_5().with_pos_raw(&selected.pos_raw()));
             };
+            if self.raw.is_none() {
+                self.start_raw_collection();
+                self.raw = self.raw.as_ref().map(|raw| format!("{prev_raw}{raw}"));
+            }
             debug!(pos = ?declared_var.pos_raw.pos, "Parsing declaration");
-
-            self.cursor -= 1;
-            self.start_raw_collection();
-            start = self.cursor;
-            self.cursor += 1;
 
             let flags = if let Some(flag_pos) = flag_pos {
                 self.content[flag_pos..self.cursor - 1]
@@ -77,8 +79,8 @@ impl Buffer {
                 .with_as_buffer(&|buf| buf.parse_as_expr())?;
             let ele = Element {
                 pos_raw: PosRaw {
-                    pos: self.content[start].pos_raw().pos,
-                    raw: self.end_raw_collection().into(),
+                    pos: self.content[start.unwrap()].pos_raw().pos,
+                    raw: self.end_raw_collection().into(), // TODO
                 },
                 data: Box::new(ElementVariant::Declare(Declare {
                     variable: declared_var.to_owned(),
@@ -90,9 +92,9 @@ impl Buffer {
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
-                range: start..self.content.len(),
+                range: start.take().unwrap()..self.content.len(),
             };
-            self.splice_buffer(buffer_window)
+            self.splice_buffer(buffer_window);
         }
         Ok(())
     }

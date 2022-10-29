@@ -53,7 +53,7 @@ impl Buffer {
             let ele = Element {
                 pos_raw: PosRaw {
                     pos: init_pos,
-                    raw: self.content[self.cursor - 1..]
+                    raw: self.content[self.cursor - 2..]
                         .iter()
                         .map(|a| a.pos_raw().raw)
                         .join("")
@@ -67,7 +67,7 @@ impl Buffer {
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
-                range: self.cursor - 1..self.content.len(),
+                range: self.cursor - 2..self.content.len(),
             };
             self.splice_buffer(buffer_window);
         }

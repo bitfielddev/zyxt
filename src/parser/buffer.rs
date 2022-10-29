@@ -15,8 +15,8 @@ use crate::{
 pub struct Buffer {
     pub content: Vec<Either<Element, Token>>,
     pub cursor: usize,
-    started: bool,
-    raw: Option<String>,
+    pub started: bool,
+    pub raw: Option<String>,
 }
 impl Buffer {
     pub fn new(input: Vec<Token>) -> Self {
@@ -153,6 +153,7 @@ impl Buffer {
                 }
             }
         }
+        buffer_windows.push(self.window(start..self.cursor));
         Ok(BufferWindows {
             buffer_windows,
             range: start..self.next_cursor_pos(),

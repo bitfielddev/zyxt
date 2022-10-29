@@ -2,7 +2,7 @@ use tracing::trace;
 
 use crate::{
     lexer::{buffer::Buffer, ALPHANUMERIC},
-    types::token::{Keyword, Token, TokenType},
+    types::token::{Flag, Keyword, Token, TokenType},
     ZResult,
 };
 
@@ -33,6 +33,12 @@ pub fn lex_word(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
                     "defer" => TokenType::Keyword(Keyword::Defer),
                     "class" => TokenType::Keyword(Keyword::Class),
                     "struct" => TokenType::Keyword(Keyword::Struct),
+                    "const" => TokenType::Flag(Flag::Const),
+                    "hoi" => TokenType::Flag(Flag::Hoi),
+                    "pub" => TokenType::Flag(Flag::Pub),
+                    "inst" => TokenType::Flag(Flag::Inst),
+                    "priv" => TokenType::Flag(Flag::Priv),
+                    "prot" => TokenType::Flag(Flag::Prot),
                     _ => TokenType::Ident,
                 }),
                 value: raw.into(),
