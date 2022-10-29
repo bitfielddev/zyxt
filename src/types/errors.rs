@@ -431,28 +431,23 @@ impl ZError {
                     };
                 let end_pos = pos_raw.pos.pos_after(&pos_raw.raw);
                 debug!(start = ?pos_raw.pos, end = ?end_pos, "Generating surrounding text");
-                let start_line = (pos_raw.pos.line - 1).saturating_sub(2) as usize;
-                let end_line = (end_pos.line as usize - 1 + 3).min(contents.len());
+                let start_line = (pos_raw.pos.line - 1).saturating_sub(2);
+                let end_line = (end_pos.line - 1 + 3).min(contents.len());
 
-                let start_vec = contents[pos_raw.pos.line as usize - 1]
-                    .chars()
-                    .collect::<Vec<_>>();
-                contents[pos_raw.pos.line as usize - 1] = start_vec
-                    [..pos_raw.pos.column as usize - 1]
+                let start_vec = contents[pos_raw.pos.line - 1].chars().collect::<Vec<_>>();
+                contents[pos_raw.pos.line - 1] = start_vec[..pos_raw.pos.column - 1]
                     .iter()
                     .cloned()
                     .chain("\u{001b}[0;1;4;31m".chars())
-                    .chain(start_vec[pos_raw.pos.column as usize - 1..].iter().cloned())
+                    .chain(start_vec[pos_raw.pos.column - 1..].iter().cloned())
                     .join("");
 
-                let end_vec = contents[end_pos.line as usize - 1]
-                    .chars()
-                    .collect::<Vec<_>>();
-                contents[end_pos.line as usize - 1] = end_vec[..end_pos.column as usize - 1]
+                let end_vec = contents[end_pos.line - 1].chars().collect::<Vec<_>>();
+                contents[end_pos.line - 1] = end_vec[..end_pos.column - 1]
                     .iter()
                     .cloned()
                     .chain("\u{001b}[0;37;2m".chars())
-                    .chain(end_vec[end_pos.column as usize - 1..].iter().cloned())
+                    .chain(end_vec[end_pos.column - 1..].iter().cloned())
                     .join("");
 
                 let surrounding = contents[start_line..=end_line].join("\n");

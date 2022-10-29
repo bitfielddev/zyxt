@@ -26,8 +26,8 @@ impl ElementData for UnaryOpr {
                     Ident {
                         name: match self.ty {
                             OprType::Not => "_not",
-                            OprType::PlusSign => "_un_plus",
-                            OprType::MinusSign => "_un_minus",
+                            OprType::UnPlus => "_un_plus",
+                            OprType::UnMinus => "_un_minus",
                             _ => panic!(),
                         }
                         .into(),

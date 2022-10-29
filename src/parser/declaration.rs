@@ -80,7 +80,7 @@ impl Buffer {
             let ele = Element {
                 pos_raw: PosRaw {
                     pos: self.content[start.unwrap()].pos_raw().pos,
-                    raw: self.end_raw_collection().into(), // TODO
+                    raw: self.end_raw_collection_at_end().into(),
                 },
                 data: Box::new(ElementVariant::Declare(Declare {
                     variable: declared_var.to_owned(),

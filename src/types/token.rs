@@ -31,35 +31,25 @@ impl Token {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[allow(dead_code)]
 pub enum OprType {
-    PlusSign,
-    MinusSign,
+    UnPlus,
+    UnMinus,
     Not,
-    Power,
-    DotMult,
-    AstMult,
-    CrossMult,
+    Pow,
+    Mul,
     Div,
-    FloorDiv,
-    CeilDiv,
-    RoundDiv,
-    FractDiv,
-    FloorfractDiv,
-    CeilfractDiv,
-    RoundfractDiv,
-    Modulo,
-    Plus,
-    Minus,
-    PlusMinus,
-    MinusPlus,
+    Mod,
+    Add,
+    Sub,
+    AddSub,
+    SubAdd,
     And,
     Or,
-    Xor,
     Gt,
     Lt,
-    Gteq,
-    Lteq,
+    Ge,
+    Le,
     Eq,
-    Noteq,
+    Ne,
     Istype,
     Isnttype,
     Is,
@@ -67,7 +57,6 @@ pub enum OprType {
     Iseq,
     Isnteq,
     Concat,
-    Swap,
     Ref,
     Deref,
     TypeCast,
@@ -80,32 +69,17 @@ impl Display for OprType {
 impl OprType {
     pub fn order(&self) -> usize {
         match self {
-            OprType::PlusSign
-            | OprType::MinusSign
-            | OprType::Not
-            | OprType::Ref
-            | OprType::Deref => 1,
+            OprType::UnPlus | OprType::UnMinus | OprType::Not | OprType::Ref | OprType::Deref => 1,
             OprType::TypeCast => 2,
-            OprType::Power => 3,
-            OprType::DotMult => 5,
-            OprType::AstMult
-            | OprType::FractDiv
-            | OprType::FloorfractDiv
-            | OprType::CeilfractDiv
-            | OprType::RoundfractDiv
-            | OprType::Modulo => 6,
-            OprType::CrossMult
-            | OprType::Div
-            | OprType::FloorDiv
-            | OprType::CeilDiv
-            | OprType::RoundDiv => 7,
-            OprType::Plus | OprType::Minus | OprType::PlusMinus | OprType::MinusPlus => 8,
+            OprType::Pow => 3,
+            OprType::Mul | OprType::Div | OprType::Mod => 6,
+            OprType::Add | OprType::Sub | OprType::AddSub | OprType::SubAdd => 8,
             OprType::Gt
             | OprType::Lt
-            | OprType::Gteq
-            | OprType::Lteq
+            | OprType::Ge
+            | OprType::Le
             | OprType::Eq
-            | OprType::Noteq
+            | OprType::Ne
             | OprType::Istype
             | OprType::Isnttype
             | OprType::Is
@@ -113,10 +87,8 @@ impl OprType {
             | OprType::Iseq
             | OprType::Isnteq => 10,
             OprType::And => 14,
-            OprType::Xor => 15,
             OprType::Or => 16,
             OprType::Concat => 18,
-            OprType::Swap => 19,
         }
     }
 }

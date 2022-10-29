@@ -8,8 +8,8 @@ use crate::{types::token::Token, Element};
 #[derive(Clone, PartialEq, Eq)]
 pub struct Position {
     pub filename: String,
-    pub line: u32,
-    pub column: u32,
+    pub line: usize,
+    pub column: usize,
 }
 
 impl Default for Position {
@@ -38,11 +38,11 @@ impl Position {
     pub fn pos_after(&self, string: &str) -> Position {
         Position {
             filename: self.filename.to_owned(),
-            line: self.line + string.chars().filter(|c| *c == '\n').count() as u32,
+            line: self.line + string.chars().filter(|c| *c == '\n').count(),
             column: if string.contains('\n') {
-                string.split('\n').last().unwrap().chars().count() as u32
+                string.split('\n').last().unwrap().chars().count()
             } else {
-                self.column + string.chars().count() as u32
+                self.column + string.chars().count()
             },
         }
     }

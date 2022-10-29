@@ -13,7 +13,7 @@ macro_rules! parse {
     };
 }
 macro_rules! pos_raw {
-    ($line:literal, $column:literal, $raw:expr) => {
+    ($line:expr, $column:expr, $raw:expr) => {
         PosRaw {
             pos: Position {
                 filename: "".into(),
@@ -27,11 +27,11 @@ macro_rules! pos_raw {
 
 #[test]
 fn assignment() {
-    let ast = parse!("x = foo");
+    let ast = parse!("x = y");
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x = foo"),
+            pos_raw: pos_raw!(1, 1, "x = y"),
             data: Box::new(ElementVariant::Set(Set {
                 variable: Element {
                     pos_raw: pos_raw!(1, 1, "x"),
@@ -41,9 +41,9 @@ fn assignment() {
                     }))
                 },
                 content: Element {
-                    pos_raw: pos_raw!(1, 5, " foo"),
+                    pos_raw: pos_raw!(1, 5, " y"),
                     data: Box::new(ElementVariant::Ident(Ident {
-                        name: "foo".into(),
+                        name: "y".into(),
                         parent: None
                     }))
                 }
@@ -54,11 +54,11 @@ fn assignment() {
 
 #[test]
 fn assignment_bin() {
-    let ast = parse!("x += foo");
+    let ast = parse!("x += y");
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x += foo"),
+            pos_raw: pos_raw!(1, 1, "x += y"),
             data: Box::new(ElementVariant::Set(Set {
                 variable: Element {
                     pos_raw: pos_raw!(1, 1, "x"),
@@ -68,9 +68,9 @@ fn assignment_bin() {
                     }))
                 },
                 content: Element {
-                    pos_raw: pos_raw!(1, 6, " foo"),
+                    pos_raw: pos_raw!(1, 6, " y"),
                     data: Box::new(ElementVariant::BinaryOpr(BinaryOpr {
-                        ty: OprType::Plus,
+                        ty: OprType::Add,
                         operand1: Element {
                             pos_raw: pos_raw!(1, 1, "x"),
                             data: Box::new(ElementVariant::Ident(Ident {
@@ -79,9 +79,9 @@ fn assignment_bin() {
                             })),
                         },
                         operand2: Element {
-                            pos_raw: pos_raw!(1, 6, " foo"),
+                            pos_raw: pos_raw!(1, 6, " y"),
                             data: Box::new(ElementVariant::Ident(Ident {
-                                name: "foo".into(),
+                                name: "y".into(),
                                 parent: None
                             })),
                         }
@@ -93,12 +93,96 @@ fn assignment_bin() {
 }
 
 #[test]
+fn bin_opr() {
+    for (sy, ty) in [
+        ("+", OprType::Add),
+        ("-", OprType::Sub),
+        ("*", OprType::Mul),
+        ("/", OprType::Div),
+        ("^", OprType::Pow),
+        ("%", OprType::Mod),
+        ("~", OprType::Concat),
+        ("@", OprType::TypeCast),
+        ("==", OprType::Eq),
+        ("!=", OprType::Ne),
+        (">", OprType::Gt),
+        (">=", OprType::Ge),
+        ("<", OprType::Lt),
+        ("<=", OprType::Le),
+        ("&&", OprType::And),
+        ("||", OprType::Or),
+    ] {
+        let s = format!("x {sy} y");
+        let ast = parse!(s);
+        assert_eq!(
+            ast[0],
+            Element {
+                pos_raw: pos_raw!(1, 1, s),
+                data: Box::new(ElementVariant::BinaryOpr(BinaryOpr {
+                    ty,
+                    operand1: Element {
+                        pos_raw: pos_raw!(1, 1, "x"),
+                        data: Box::new(ElementVariant::Ident(Ident {
+                            name: "x".into(),
+                            parent: None
+                        }))
+                    },
+                    operand2: Element {
+                        pos_raw: pos_raw!(1, 4 + sy.len(), " y"),
+                        data: Box::new(ElementVariant::Ident(Ident {
+                            name: "y".into(),
+                            parent: None
+                        }))
+                    }
+                }))
+            }
+        )
+    }
+}
+
+#[test]
+#[ignore]
+fn class_no_params() {
+    let ast = parse!("class { }");
+}
+
+#[test]
+#[ignore]
+fn class_params() {
+    let ast = parse!("class |x: i32| { }");
+}
+
+#[test]
+#[ignore]
+fn struct_content() {
+    let ast = parse!("struct |x: i32| { }");
+}
+
+#[test]
+#[ignore]
+fn struct_no_content() {
+    let ast = parse!("struct |x: i32|");
+}
+
+#[test]
+#[ignore]
+fn struct_no_params() {
+    let ast = parse!("struct { }");
+}
+
+#[test]
+#[ignore]
+fn struct_no_content_no_params() {
+    let ast = parse!("struct");
+}
+
+#[test]
 fn declaration() {
-    let ast = parse!("x := foo");
+    let ast = parse!("x := y");
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x := foo"),
+            pos_raw: pos_raw!(1, 1, "x := y"),
             data: Box::new(ElementVariant::Declare(Declare {
                 variable: Element {
                     pos_raw: pos_raw!(1, 1, "x"),
@@ -108,9 +192,9 @@ fn declaration() {
                     }))
                 },
                 content: Element {
-                    pos_raw: pos_raw!(1, 6, " foo"),
+                    pos_raw: pos_raw!(1, 6, " y"),
                     data: Box::new(ElementVariant::Ident(Ident {
-                        name: "foo".into(),
+                        name: "y".into(),
                         parent: None
                     }))
                 },
@@ -122,11 +206,11 @@ fn declaration() {
 }
 #[test]
 fn declaration_flags() {
-    let ast = parse!("pub x := foo");
+    let ast = parse!("pub x := y");
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "pub x := foo"),
+            pos_raw: pos_raw!(1, 1, "pub x := y"),
             data: Box::new(ElementVariant::Declare(Declare {
                 variable: Element {
                     pos_raw: pos_raw!(1, 5, " x"),
@@ -136,9 +220,9 @@ fn declaration_flags() {
                     }))
                 },
                 content: Element {
-                    pos_raw: pos_raw!(1, 10, " foo"),
+                    pos_raw: pos_raw!(1, 10, " y"),
                     data: Box::new(ElementVariant::Ident(Ident {
-                        name: "foo".into(),
+                        name: "y".into(),
                         parent: None
                     }))
                 },

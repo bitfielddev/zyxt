@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use itertools::Either;
+use itertools::{Either, Itertools};
 use tracing::{debug, trace};
 
 use crate::{
@@ -104,6 +104,15 @@ impl Buffer {
         debug!("Ending raw collection");
         self.raw.take().unwrap_or_else(|| "".into())
     }
+    pub fn end_raw_collection_at_end(&mut self) -> String {
+        debug!("Ending raw collection at end");
+        let raw = self.raw.take().unwrap_or_else(|| "".into());
+        let rest_raw = self.content[self.cursor + 1..]
+            .iter()
+            .map(|r| r.pos_raw().raw)
+            .join("");
+        format!("{raw}{rest_raw}")
+    }
     pub fn window(&self, range: Range<usize>) -> BufferWindow {
         BufferWindow {
             slice: self.content[range.to_owned()].to_owned(),
@@ -192,6 +201,7 @@ impl Buffer {
         if nest_level != 0 {
             todo!("err")
         }
+        buffer_windows.push(self.window(start..self.cursor));
         Ok(BufferWindows {
             buffer_windows,
             range: bet_start..self.next_cursor_pos(),
