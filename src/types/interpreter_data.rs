@@ -9,7 +9,7 @@ use smol_str::SmolStr;
 
 use crate::{
     types::{
-        element::block::Block,
+        element::ElementData,
         errors::{ZError, ZResult},
         position::{PosRaw, Position},
         printer::Print,
@@ -72,7 +72,7 @@ pub enum FrameType {
 #[derive(Debug)]
 pub struct Frame<T: Clone + Display + Debug> {
     pub heap: HashMap<SmolStr, T>,
-    pub defer: Vec<Element<Block>>,
+    pub defer: Vec<Element>,
     pub frame_data: Option<FrameData<T>>,
     pub typedefs: HashMap<SmolStr, Type<Element>>,
     pub ty: FrameType,
@@ -114,7 +114,7 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
     }
     pub fn pop_frame(&mut self) -> ZResult<Option<Value>> {
         for content in self.frames.front_mut().unwrap().defer.clone() {
-            if let Value::Return(v) = content.data.interpret_block(self, false, false)? {
+            if let Value::Return(v) = content.data.interpret_expr(self)? {
                 self.frames.pop_front();
                 return Ok(Some(*v));
             }
@@ -221,7 +221,7 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
             Err(ZError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
         }
     }
-    pub fn add_defer(&mut self, content: Element<Block>) {
+    pub fn add_defer(&mut self, content: Element) {
         self.frames.front_mut().unwrap().defer.push(content);
     }
 }

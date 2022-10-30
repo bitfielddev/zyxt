@@ -12,7 +12,6 @@ use crate::{
         errors::ZResult,
         position::{GetPosRaw, PosRaw},
         token::{Keyword, Token, TokenType},
-        typeobj::unit_t::UNIT_T,
     },
 };
 
@@ -109,16 +108,18 @@ impl Buffer {
                     selected = self.next_or_err()?;
                 }
                 let range = start..self.cursor;
-                BufferWindow {
-                    slice: self.content[range.to_owned()].to_owned(),
-                    range,
-                }
-                .with_as_buffer(&|buf| {
-                    let ele = buf.parse_as_expr()?;
-                    Ok(ele)
-                })?
+                Some(
+                    BufferWindow {
+                        slice: self.content[range.to_owned()].to_owned(),
+                        range,
+                    }
+                    .with_as_buffer(&|buf| {
+                        let ele = buf.parse_as_expr()?;
+                        Ok(ele)
+                    })?,
+                )
             } else {
-                UNIT_T.as_type_element().as_type().as_literal()
+                None
             };
             let block: Element<Block> = if let Either::Left(
                 block @ Element {

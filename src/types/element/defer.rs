@@ -1,6 +1,6 @@
 use crate::{
     types::{
-        element::{block::Block, Element, ElementData, ElementVariant},
+        element::{Element, ElementData, ElementVariant},
         position::PosRaw,
     },
     InterpreterData, Print, Type, Value, ZResult,
@@ -8,7 +8,7 @@ use crate::{
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Defer {
-    pub content: Element<Block>,
+    pub content: Element,
 }
 
 impl ElementData for Defer {
@@ -18,25 +18,15 @@ impl ElementData for Defer {
 
     fn process<O: Print>(
         &mut self,
-        _pos_raw: &PosRaw,
+        pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> ZResult<Type<Element>> {
-        Ok(self.content.data.block_type(typelist, false)?.0)
+        self.content.data.process(pos_raw, typelist)
     }
 
     fn desugared(&self, _pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
         Ok(Defer {
-            content: Element {
-                pos_raw: self.content.pos_raw.to_owned(),
-                data: Box::new(
-                    self.content
-                        .desugared(out)?
-                        .data
-                        .as_block()
-                        .unwrap()
-                        .to_owned(),
-                ),
-            },
+            content: self.content.desugared(out)?.as_variant(),
         }
         .as_variant())
     }

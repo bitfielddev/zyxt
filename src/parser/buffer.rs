@@ -60,7 +60,7 @@ impl Buffer {
         }
     }
     pub fn prev(&mut self) -> Option<&Either<Element, Token>> {
-        if !self.started {
+        if !self.started || self.cursor == 0 {
             None
         } else {
             self.content.get(self.cursor - 1)
@@ -162,10 +162,12 @@ impl Buffer {
                 }
             }
         }
-        buffer_windows.push(self.window(start..self.cursor));
+        if start != self.cursor {
+            buffer_windows.push(self.window(start..self.cursor));
+        }
         Ok(BufferWindows {
             buffer_windows,
-            range: start..self.next_cursor_pos(),
+            range: start..self.cursor,
         })
     }
     pub fn get_split_between(
@@ -201,7 +203,9 @@ impl Buffer {
         if nest_level != 0 {
             todo!("err")
         }
-        buffer_windows.push(self.window(start..self.cursor));
+        if start != self.cursor {
+            buffer_windows.push(self.window(start..self.cursor));
+        }
         Ok(BufferWindows {
             buffer_windows,
             range: bet_start..self.next_cursor_pos(),

@@ -29,6 +29,7 @@ impl Buffer {
             debug!(pos = ?init_pos, "Parsing delete");
             let start = self.cursor;
             self.start_raw_collection();
+            self.next_or_err()?;
             let vars: Vec<Element<Ident>> =
                 self.get_split(TokenType::Comma)?.with_as_buffers(&|buf| {
                     let ele = buf.parse_as_expr()?;

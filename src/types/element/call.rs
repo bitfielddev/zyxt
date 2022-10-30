@@ -61,7 +61,11 @@ impl ElementData for Call {
                     todo!("errors")
                 }
             }
-            procedure.return_type.process(typelist)
+            if let Some(ty) = &mut procedure.return_type {
+                ty.process(typelist)
+            } else {
+                Ok(UNIT_T.as_type_element().as_type())
+            }
         } else if let ElementVariant::Literal(Literal {
             content: Value::Proc(proc),
         }) = self.called.data.as_mut()

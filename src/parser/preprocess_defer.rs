@@ -1,11 +1,11 @@
-use itertools::Either;
+use itertools::{Either, Itertools};
 use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
         element::{defer::Defer, preprocess::Preprocess, ElementVariant},
-        position::GetPosRaw,
+        position::{GetPosRaw, PosRaw},
         token::{Keyword, TokenType},
     },
     Element, ZResult,
@@ -44,7 +44,7 @@ impl Buffer {
                     debug!(pos = ?selected.pos_raw.pos, "Expression not in {{}} detected");
                     (
                         self.rest_incl_curr()
-                            .with_as_buffer(&|buffer| buffer.parse_as_block())?
+                            .with_as_buffer(&|buffer| buffer.parse_as_expr())?
                             .as_variant(),
                         self.content.len(),
                     )
@@ -53,27 +53,24 @@ impl Buffer {
                 debug!(pos = ?selected.pos_raw().pos, "Block not in {{}} detected");
                 (
                     self.rest_incl_curr()
-                        .with_as_buffer(&|buffer| buffer.parse_as_block())?
+                        .with_as_buffer(&|buffer| buffer.parse_as_expr())?
                         .as_variant(),
                     self.content.len(),
                 )
             };
             let ele = Element {
-                pos_raw: init_pos_raw,
+                pos_raw: PosRaw {
+                    pos: init_pos_raw.pos,
+                    raw: self.content[start..end]
+                        .iter()
+                        .map(|a| a.pos_raw().raw)
+                        .join("")
+                        .into(),
+                },
                 data: Box::new(if kwd == Keyword::Pre {
-                    ElementVariant::Preprocess(Preprocess {
-                        content: Element {
-                            pos_raw: content.pos_raw,
-                            data: Box::new(content.data.as_block().unwrap().to_owned()),
-                        },
-                    })
+                    ElementVariant::Preprocess(Preprocess { content })
                 } else {
-                    ElementVariant::Defer(Defer {
-                        content: Element {
-                            pos_raw: content.pos_raw,
-                            data: Box::new(content.data.as_block().unwrap().to_owned()),
-                        },
-                    })
+                    ElementVariant::Defer(Defer { content })
                 }),
             };
             trace!(?ele);

@@ -54,7 +54,7 @@ impl Argument {
 pub struct Procedure {
     pub is_fn: bool,
     pub args: Vec<Argument>,
-    pub return_type: Element,
+    pub return_type: Option<Element>,
     pub content: Element<Block>,
 }
 
@@ -76,14 +76,18 @@ impl ElementData for Procedure {
                 FrameType::Normal
             },
         );
-        let return_type = self.return_type.process(typelist)?;
+        let return_type = if let Some(ty) = &mut self.return_type {
+            ty.process(typelist)?
+        } else {
+            UNIT_T.as_type().as_type_element()
+        };
         for arg in &mut self.args {
             let value = arg.ty.process(typelist)?;
             typelist.declare_val(&arg.name, &value);
         }
         let (res, block_return_type) = self.content.data.block_type(typelist, false)?;
         if return_type == UNIT_T.get_instance().as_type_element() || block_return_type.is_none() {
-            self.return_type = res.as_literal();
+            self.return_type = Some(res.as_literal());
         } else if let Some(block_return_type) = block_return_type {
             if return_type != block_return_type {
                 return Err(ZError::error_4_t(return_type, block_return_type).with_pos_raw(pos_raw));
@@ -127,7 +131,9 @@ impl ElementData for Procedure {
         Ok(Value::Proc(Proc::Defined {
             is_fn: self.is_fn,
             args: self.args.to_owned(),
-            return_type: if let Value::Type(value) = self.return_type.interpret_expr(i_data)? {
+            return_type: if let Value::Type(value) =
+                self.return_type.as_ref().unwrap().interpret_expr(i_data)?
+            {
                 value
             } else {
                 panic!("{self:#?}")

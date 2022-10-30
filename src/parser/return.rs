@@ -1,4 +1,4 @@
-use itertools::Either;
+use itertools::{Either, Itertools};
 use tracing::{debug, trace};
 
 use crate::{
@@ -8,6 +8,7 @@ use crate::{
         errors::ZResult,
         position::{GetPosRaw, PosRaw},
         token::{Keyword, Token, TokenType},
+        typeobj::unit_t::UNIT_T,
     },
 };
 
@@ -25,21 +26,30 @@ impl Buffer {
             ) {
                 continue;
             }
-            debug!(pos = ?selected.pos_raw().pos);
-            let value = self
-                .rest_incl_curr()
-                .with_as_buffer(&|buf| buf.parse_as_expr())?;
+            let init_pos = selected.pos_raw().pos;
+            debug!(pos = ?init_pos, "Parsing return");
+            let value = if self.next().is_some() {
+                self.rest_incl_curr()
+                    .with_as_buffer(&|buf| buf.parse_as_expr())?
+            } else {
+                UNIT_T.as_type().as_type_element().as_literal()
+            };
+
             let ele = Element {
                 pos_raw: PosRaw {
-                    pos: selected.pos_raw().pos,
-                    raw: self.end_raw_collection().into(),
+                    pos: init_pos,
+                    raw: self.content[self.cursor - 1..self.content.len()]
+                        .iter()
+                        .map(|a| a.pos_raw().raw)
+                        .join("")
+                        .into(),
                 },
                 data: Box::new(ElementVariant::Return(Return { value })),
             };
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
-                range: self.cursor..self.content.len(),
+                range: self.cursor - 1..self.content.len(),
             };
             self.splice_buffer(buffer_window)
         }
