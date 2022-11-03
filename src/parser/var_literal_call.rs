@@ -7,7 +7,7 @@ use crate::{
     types::{
         element::{call::Call, ident::Ident, literal::Literal, Element, ElementVariant},
         errors::{ZError, ZResult},
-        position::GetPosRaw,
+        position::{GetPosRaw, PosRaw},
         token::{Token, TokenType},
         value::Value,
     },
@@ -30,21 +30,30 @@ impl Buffer {
     pub fn parse_var_literal_call(&mut self) -> ZResult<()> {
         self.reset_cursor();
         let mut catcher: Option<(Element, usize)> = None;
-        let clear_catcher = |s: &mut Self, catcher: &mut Option<(Element, usize)>| {
-            if let Some((catcher, start)) = catcher.take() {
+        let clear_catcher = |s: &mut Self, catcher: &mut Option<(Element, usize)>, end: bool| {
+            if let Some((mut catcher, start)) = catcher.take() {
+                if let Some(raw) = &mut s.raw {
+                    if !end {
+                        raw.pop_back();
+                    }
+                }
+                catcher.pos_raw.raw = s.end_raw_collection().into();
                 let buffer_window = BufferWindow {
                     slice: vec![Either::Left(catcher)],
                     range: start..s.cursor,
                 };
                 s.splice_buffer(buffer_window);
                 s.cursor += 1;
+            } else {
+                s.end_raw_collection();
             }
         };
         while let Some(selected) = self.next() {
             let selected = match selected {
                 Either::Left(s) => {
-                    clear_catcher(self, &mut catcher);
+                    clear_catcher(self, &mut catcher, false);
                     catcher = Some((s.to_owned(), self.cursor));
+                    self.start_raw_collection();
                     continue;
                 }
                 Either::Right(s) => s,
@@ -78,7 +87,10 @@ impl Buffer {
                     };
                     debug!(pos = ?selected.pos_raw.pos, "Parsing ident");
                     *catcher = Element {
-                        pos_raw: selected.pos_raw.to_owned(),
+                        pos_raw: PosRaw {
+                            pos: catcher.pos_raw.pos.to_owned(),
+                            raw: self.get_raw_collection().into(),
+                        },
                         data: Box::new(ElementVariant::Ident(Ident {
                             name: selected.data.name,
                             parent: Some(catcher.to_owned()),
@@ -88,17 +100,16 @@ impl Buffer {
                 }
                 Some(TokenType::Ident) => {
                     debug!(pos = ?selected.pos, "Parsing ident");
-                    clear_catcher(self, &mut catcher);
-                    catcher = Some((
-                        Buffer::parse_ident(&selected).unwrap().as_variant(),
-                        self.cursor,
-                    ));
+                    clear_catcher(self, &mut catcher, false);
+                    let ident = Buffer::parse_ident(&selected).unwrap().as_variant();
+                    catcher = Some((ident, self.cursor));
+                    self.start_raw_collection();
                     trace!(catcher = ?catcher.as_ref().unwrap().0)
                 }
                 Some(TokenType::LiteralNumber)
                 | Some(TokenType::LiteralMisc)
                 | Some(TokenType::LiteralString) => {
-                    clear_catcher(self, &mut catcher);
+                    clear_catcher(self, &mut catcher, false);
                     catcher = Some((
                         Element {
                             pos_raw: selected.pos_raw(),
@@ -161,7 +172,10 @@ impl Buffer {
                         Ok(ele)
                     })?;
                     *catcher = Element {
-                        pos_raw: catcher.pos_raw.to_owned(),
+                        pos_raw: PosRaw {
+                            pos: catcher.pos_raw.pos.to_owned(),
+                            raw: self.get_raw_collection().into(),
+                        },
                         data: Box::new(ElementVariant::Call(Call {
                             called: catcher.to_owned(),
                             args,
@@ -170,10 +184,10 @@ impl Buffer {
                     };
                     trace!(?catcher)
                 }
-                _ => clear_catcher(self, &mut catcher),
+                _ => clear_catcher(self, &mut catcher, false),
             }
         }
-        clear_catcher(self, &mut catcher);
+        clear_catcher(self, &mut catcher, true);
         Ok(())
     }
 }

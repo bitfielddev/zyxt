@@ -49,6 +49,7 @@ impl Buffer {
             } else {
                 None
             };
+            let content_pos_raw = selected.pos_raw();
             let content = if let Either::Left(Element {
                 data: box ElementVariant::Block(block),
                 pos_raw,
@@ -59,6 +60,7 @@ impl Buffer {
             } else if kwd == Keyword::Class {
                 return Err(ZError::error_2_1_18(&kwd).with_pos_raw(&selected.pos_raw()));
             } else {
+                self.prev();
                 None
             };
             let ele = Element {
@@ -68,11 +70,11 @@ impl Buffer {
                 },
                 data: Box::new({
                     ElementVariant::Class(Class {
-                        is_struct: kwd == Keyword::Class,
+                        is_struct: kwd == Keyword::Struct,
                         implementations: Default::default(),
                         inst_fields: Default::default(), // TODO
                         content: content.map(|block| Element {
-                            pos_raw: init_pos_raw,
+                            pos_raw: content_pos_raw,
                             data: Box::new(block),
                         }),
                         args,

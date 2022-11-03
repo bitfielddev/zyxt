@@ -4,13 +4,14 @@ use zyxt::types::{
         binary_opr::BinaryOpr,
         block::Block,
         call::Call,
+        class::Class,
         declare::Declare,
         defer::Defer,
         delete::Delete,
         ident::Ident,
         literal::Literal,
         preprocess::Preprocess,
-        procedure::Procedure,
+        procedure::{Argument, Procedure},
         r#if::{Condition, If},
         r#return::Return,
         set::Set,
@@ -150,39 +151,120 @@ fn bin_opr() {
 }
 
 #[test]
-#[ignore]
-fn class_no_params() {
+fn class() {
     let ast = parse!("class { }");
+    assert_eq!(
+        ast[0],
+        Element {
+            pos_raw: pos_raw!(1, 1, "class { }"),
+            data: Box::new(ElementVariant::Class(Class {
+                is_struct: false,
+                implementations: Default::default(),
+                inst_fields: Default::default(),
+                content: Some(Element {
+                    pos_raw: pos_raw!(1, 7, " { }"),
+                    data: Box::new(Block { content: vec![] })
+                }),
+                args: None
+            }))
+        }
+    )
 }
 
 #[test]
 #[ignore]
-fn class_params() {
-    let ast = parse!("class |x: i32| { }");
-}
-
-#[test]
-#[ignore]
-fn struct_content() {
+fn struct_params() {
     let ast = parse!("struct |x: i32| { }");
+    assert_eq!(
+        ast[0],
+        Element {
+            pos_raw: pos_raw!(1, 1, "struct |x: i32| { }"),
+            data: Box::new(ElementVariant::Class(Class {
+                is_struct: true,
+                implementations: Default::default(),
+                inst_fields: Default::default(),
+                content: Some(Element {
+                    pos_raw: pos_raw!(1, 7, " { }"),
+                    data: Box::new(Block { content: vec![] })
+                }),
+                args: Some(vec![Argument {
+                    name: "x".into(),
+                    ty: Element {
+                        pos_raw: pos_raw!(1, 11, "i32"),
+                        data: ident!("i32")
+                    },
+                    default: None
+                }])
+            }))
+        }
+    )
 }
 
 #[test]
 #[ignore]
 fn struct_no_content() {
     let ast = parse!("struct |x: i32|");
+    assert_eq!(
+        ast[0],
+        Element {
+            pos_raw: pos_raw!(1, 1, "struct |x: i32|"),
+            data: Box::new(ElementVariant::Class(Class {
+                is_struct: true,
+                implementations: Default::default(),
+                inst_fields: Default::default(),
+                content: None,
+                args: Some(vec![Argument {
+                    name: "x".into(),
+                    ty: Element {
+                        pos_raw: pos_raw!(1, 11, "i32"),
+                        data: ident!("i32")
+                    },
+                    default: None
+                }])
+            }))
+        }
+    )
 }
 
 #[test]
 #[ignore]
 fn struct_no_params() {
     let ast = parse!("struct { }");
+    assert_eq!(
+        ast[0],
+        Element {
+            pos_raw: pos_raw!(1, 1, "struct { }"),
+            data: Box::new(ElementVariant::Class(Class {
+                is_struct: true,
+                implementations: Default::default(),
+                inst_fields: Default::default(),
+                content: Some(Element {
+                    pos_raw: pos_raw!(1, 7, " { }"),
+                    data: Box::new(Block { content: vec![] })
+                }),
+                args: None
+            }))
+        }
+    )
 }
 
 #[test]
 #[ignore]
 fn struct_no_content_no_params() {
     let ast = parse!("struct");
+    assert_eq!(
+        ast[0],
+        Element {
+            pos_raw: pos_raw!(1, 1, "struct"),
+            data: Box::new(ElementVariant::Class(Class {
+                is_struct: true,
+                implementations: Default::default(),
+                inst_fields: Default::default(),
+                content: None,
+                args: None
+            }))
+        }
+    )
 }
 
 #[test]
@@ -278,7 +360,6 @@ fn delete_multiple() {
 }
 
 #[test]
-#[ignore]
 fn if_() {
     let ast = parse!("if x { }");
     assert_eq!(
@@ -292,15 +373,8 @@ fn if_() {
                         data: ident!("x")
                     }),
                     if_true: Element {
-                        pos_raw: pos_raw!(1, 6, "{ }"),
-                        data: Box::new(Block {
-                            content: vec![Element {
-                                pos_raw: pos_raw!(0, 0, ""),
-                                data: Box::new(ElementVariant::Literal(Literal {
-                                    content: Value::Unit
-                                }))
-                            }]
-                        })
+                        pos_raw: pos_raw!(1, 6, " { }"),
+                        data: Box::new(Block { content: vec![] })
                     }
                 }]
             }))
@@ -309,16 +383,113 @@ fn if_() {
 }
 
 #[test]
-#[ignore]
-fn if_else() {}
+fn if_else() {
+    let ast = parse!("if x { } else { }");
+    assert_eq!(
+        ast[0],
+        Element {
+            pos_raw: pos_raw!(1, 1, "if x { } else { }"),
+            data: Box::new(ElementVariant::If(If {
+                conditions: vec![
+                    Condition {
+                        condition: Some(Element {
+                            pos_raw: pos_raw!(1, 4, " x"),
+                            data: ident!("x")
+                        }),
+                        if_true: Element {
+                            pos_raw: pos_raw!(1, 6, " { }"),
+                            data: Box::new(Block { content: vec![] })
+                        }
+                    },
+                    Condition {
+                        condition: None,
+                        if_true: Element {
+                            pos_raw: pos_raw!(1, 15, " { }"),
+                            data: Box::new(Block { content: vec![] })
+                        }
+                    }
+                ]
+            }))
+        }
+    )
+}
 
 #[test]
-#[ignore]
-fn if_elif() {}
+fn if_elif() {
+    let ast = parse!("if x { } elif y { }");
+    assert_eq!(
+        ast[0],
+        Element {
+            pos_raw: pos_raw!(1, 1, "if x { } elif y { }"),
+            data: Box::new(ElementVariant::If(If {
+                conditions: vec![
+                    Condition {
+                        condition: Some(Element {
+                            pos_raw: pos_raw!(1, 4, " x"),
+                            data: ident!("x")
+                        }),
+                        if_true: Element {
+                            pos_raw: pos_raw!(1, 6, " { }"),
+                            data: Box::new(Block { content: vec![] })
+                        }
+                    },
+                    Condition {
+                        condition: Some(Element {
+                            pos_raw: pos_raw!(1, 15, " y"),
+                            data: ident!("y")
+                        }),
+                        if_true: Element {
+                            pos_raw: pos_raw!(1, 17, " { }"),
+                            data: Box::new(Block { content: vec![] })
+                        }
+                    }
+                ]
+            }))
+        }
+    )
+}
 
 #[test]
-#[ignore]
-fn if_elif_else() {}
+fn if_elif_else() {
+    let ast = parse!("if x { } elif y { } else { }");
+    assert_eq!(
+        ast[0],
+        Element {
+            pos_raw: pos_raw!(1, 1, "if x { } elif y { } else { }"),
+            data: Box::new(ElementVariant::If(If {
+                conditions: vec![
+                    Condition {
+                        condition: Some(Element {
+                            pos_raw: pos_raw!(1, 4, " x"),
+                            data: ident!("x")
+                        }),
+                        if_true: Element {
+                            pos_raw: pos_raw!(1, 6, " { }"),
+                            data: Box::new(Block { content: vec![] })
+                        }
+                    },
+                    Condition {
+                        condition: Some(Element {
+                            pos_raw: pos_raw!(1, 15, " y"),
+                            data: ident!("y")
+                        }),
+                        if_true: Element {
+                            pos_raw: pos_raw!(1, 17, " { }"),
+                            data: Box::new(Block { content: vec![] })
+                        }
+                    },
+                    Condition {
+                        condition: None,
+                        if_true: Element {
+                            pos_raw: pos_raw!(1, 26, " { }"),
+                            data: Box::new(Block { content: vec![] })
+                        }
+                    }
+                ]
+            }))
+        }
+    )
+}
 
 #[test]
 fn parentheses() {
@@ -677,7 +848,7 @@ fn dot() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 3, "y"),
+            pos_raw: pos_raw!(1, 1, "x.y"),
             data: Box::new(ElementVariant::Ident(Ident {
                 name: "y".into(),
                 parent: Some(Element {
@@ -739,7 +910,7 @@ fn dot_call() {
             pos_raw: pos_raw!(1, 1, "x.y()"),
             data: Box::new(ElementVariant::Call(Call {
                 called: Element {
-                    pos_raw: pos_raw!(1, 3, "y"),
+                    pos_raw: pos_raw!(1, 1, "x.y"),
                     data: Box::new(ElementVariant::Ident(Ident {
                         name: "y".into(),
                         parent: Some(Element {

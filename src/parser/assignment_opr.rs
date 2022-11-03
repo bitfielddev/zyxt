@@ -26,7 +26,7 @@ impl Buffer {
                 continue;
             };
             debug!(pos = ?selected.pos_raw().pos, "Parsing assignment operator");
-            let var = if let Some(Either::Left(var)) = self.prev() {
+            let var = if let Some(Either::Left(var)) = self.peek_prev() {
                 var.to_owned()
             } else {
                 todo!("error")

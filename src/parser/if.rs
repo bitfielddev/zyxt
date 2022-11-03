@@ -42,7 +42,11 @@ impl Buffer {
             let start = self.cursor;
             let mut conditions: Vec<Condition> = vec![];
             let mut prev_kwd = Keyword::If;
+            self.prev();
             self.start_raw_collection();
+            if let Some(raw) = &mut self.raw {
+                raw.pop_back();
+            }
             while let Some(mut selected) = self.next() {
                 let kwd = if let Either::Right(Token {
                     ty: Some(TokenType::Keyword(prekwd)),
@@ -78,7 +82,7 @@ impl Buffer {
                         data: box ElementVariant::Block(_),
                         ..
                     },
-                ) = selected
+                ) = &selected
                 {
                     debug!(pos = ?ele.pos_raw.pos, "Detected condition expr in {{}}");
                     Some(ele.to_owned())
@@ -97,13 +101,18 @@ impl Buffer {
                             break;
                         }
                     }
-                    self.cursor -= 1;
+                    self.prev();
+
+                    if let Some(raw) = &mut self.raw {
+                        raw.pop_back();
+                    }
+
+                    selected = self.next_or_err()?;
                     Some(
-                        self.window(start..self.cursor + 1)
+                        self.window(start..self.cursor)
                             .with_as_buffer(&|buf| buf.parse_as_expr())?,
                     )
                 };
-                selected = self.next_or_err()?;
                 let block = if let Either::Left(Element {
                     data: box ElementVariant::Block(block),
                     ..
@@ -123,7 +132,7 @@ impl Buffer {
                     },
                 });
             }
-            self.cursor -= 1;
+            self.prev();
             let ele = Element {
                 pos_raw: PosRaw {
                     pos: init_pos,

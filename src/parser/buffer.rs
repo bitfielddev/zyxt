@@ -1,6 +1,7 @@
-use std::ops::Range;
+use std::{collections::VecDeque, ops::Range};
 
 use itertools::{Either, Itertools};
+use smol_str::SmolStr;
 use tracing::{debug, trace};
 
 use crate::{
@@ -16,7 +17,7 @@ pub struct Buffer {
     pub content: Vec<Either<Element, Token>>,
     pub cursor: usize,
     pub started: bool,
-    pub raw: Option<String>,
+    pub raw: Option<VecDeque<SmolStr>>,
 }
 impl Buffer {
     pub fn new(input: Vec<Token>) -> Self {
@@ -40,7 +41,7 @@ impl Buffer {
         trace!(?next);
         if let Some(raw) = &mut self.raw {
             if let Some(next) = &next {
-                raw.push_str(&match next {
+                raw.push_back(match next {
                     Either::Left(c) => c.pos_raw.raw.to_owned(),
                     Either::Right(c) => c.get_raw().into(),
                 });
@@ -59,11 +60,22 @@ impl Buffer {
             Err(ZError::error_2_1_0(&curr_pos_raw.raw).with_pos_raw(&curr_pos_raw))
         }
     }
-    pub fn prev(&mut self) -> Option<&Either<Element, Token>> {
+    pub fn peek_prev(&mut self) -> Option<&Either<Element, Token>> {
         if !self.started || self.cursor == 0 {
             None
         } else {
             self.content.get(self.cursor - 1)
+        }
+    }
+    pub fn prev(&mut self) {
+        if self.cursor == 0 {
+            if self.started {
+                self.started = false
+            } else {
+                todo!()
+            }
+        } else {
+            self.cursor -= 1
         }
     }
     pub fn rest_incl_curr(&mut self) -> BufferWindow {
@@ -87,26 +99,30 @@ impl Buffer {
         self.raw.get_or_insert_with(|| {
             debug!("Starting raw collection");
             if self.started {
-                self.content
+                vec![self
+                    .content
                     .get(self.cursor)
                     .map(|c| match c {
                         Either::Left(c) => c.pos_raw.raw.to_owned(),
                         Either::Right(c) => c.get_raw().into(),
                     })
-                    .unwrap_or_else(|| "".into())
+                    .unwrap_or_else(|| "".into())]
             } else {
-                "".into()
+                vec!["".into()]
             }
-            .to_string()
+            .into()
         });
+    }
+    pub fn get_raw_collection(&self) -> String {
+        self.raw.clone().unwrap_or_default().iter().join("")
     }
     pub fn end_raw_collection(&mut self) -> String {
         debug!("Ending raw collection");
-        self.raw.take().unwrap_or_else(|| "".into())
+        self.raw.take().unwrap_or_default().iter().join("")
     }
     pub fn end_raw_collection_at_end(&mut self) -> String {
         debug!("Ending raw collection at end");
-        let raw = self.raw.take().unwrap_or_else(|| "".into());
+        let raw = self.raw.take().unwrap_or_default().iter().join("");
         let rest_raw = self.content[self.cursor + 1..]
             .iter()
             .map(|r| r.pos_raw().raw)

@@ -19,7 +19,7 @@ impl Buffer {
             };
 
             if selected.ty == Some(TokenType::OpenParen) {
-                if let Some(Either::Right(prev_ele)) = self.prev() {
+                if let Some(Either::Right(prev_ele)) = self.peek_prev() {
                     if prev_ele
                         .ty
                         .map(|ty| ty.categories())

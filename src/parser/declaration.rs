@@ -43,14 +43,16 @@ impl Buffer {
 
             start.get_or_insert(self.cursor - 1);
 
-            let (declared_var, prev_raw) = if let Some(Either::Left(d)) = self.prev() {
+            let (declared_var, prev_raw) = if let Some(Either::Left(d)) = self.peek_prev() {
                 (d.to_owned(), d.pos_raw.raw.to_owned())
             } else {
                 return Err(ZError::error_2_1_5().with_pos_raw(&selected.pos_raw()));
             };
             if self.raw.is_none() {
                 self.start_raw_collection();
-                self.raw = self.raw.as_ref().map(|raw| format!("{prev_raw}{raw}"));
+                if let Some(a) = self.raw.as_mut() {
+                    a.push_front(prev_raw)
+                }
             }
             debug!(pos = ?declared_var.pos_raw.pos, "Parsing declaration");
 

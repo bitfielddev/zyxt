@@ -49,9 +49,9 @@ impl Buffer {
     fn parse_as_expr(&mut self) -> ZResult<Element> {
         self.parse_parentheses()?;
         self.parse_if()?;
+        self.parse_class_struct()?;
         self.parse_proc_fn()?;
         self.parse_preprocess_defer()?;
-        self.parse_class_struct()?;
         //self.parse_enum()?;
         self.parse_var_literal_call()?;
         self.parse_delete()?;
