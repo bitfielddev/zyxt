@@ -33,7 +33,7 @@ impl Buffer {
             };
             let init_pos = var.pos_raw.pos.to_owned();
             self.next_or_err()?;
-            let mut content = self.rest_incl_curr().with_as_buffer(|buf| {
+            let mut content = self.rest_incl_curr().with_as_buffer(&|buf| {
                 if buf.content.is_empty() {
                     todo!("error")
                 }

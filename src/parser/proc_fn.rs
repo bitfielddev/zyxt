@@ -20,10 +20,10 @@ impl Buffer {
     pub fn parse_args(&mut self) -> ZResult<Vec<Argument>> {
         let mut windows =
             self.get_split_between(TokenType::Bar, TokenType::Bar, TokenType::Comma)?;
-        windows.with_as_buffers(|buf| {
+        windows.with_as_buffers(&|buf| {
             let arg_sections = buf
                 .get_split(TokenType::Colon)?
-                .with_as_buffers(|buf| buf.parse_as_expr())?;
+                .with_as_buffers(&|buf| buf.parse_as_expr())?;
             let name = if let Some(name) = arg_sections.first() {
                 if let ElementVariant::Ident(ident) = &*name.data {
                     debug!(pos = ?name.pos_raw.pos, "Name detected");
@@ -113,7 +113,7 @@ impl Buffer {
                         slice: self.content[range.to_owned()].to_owned(),
                         range,
                     }
-                    .with_as_buffer(|buf| {
+                    .with_as_buffer(&|buf| {
                         let ele = buf.parse_as_expr()?;
                         Ok(ele)
                     })?,
@@ -136,7 +136,7 @@ impl Buffer {
             } else {
                 debug!(pos = ?selected.pos_raw().pos, "Expression detected");
                 self.window(self.cursor..self.content.len())
-                    .with_as_buffer(|buf| {
+                    .with_as_buffer(&|buf| {
                         let ele = buf.parse_as_expr()?;
                         Ok(Element {
                             pos_raw: ele.pos_raw.to_owned(),

@@ -30,7 +30,7 @@ impl Buffer {
             debug!(pos = ?init_pos, "Parsing return");
             let value = if self.next().is_some() {
                 self.rest_incl_curr()
-                    .with_as_buffer(|buf| buf.parse_as_expr())?
+                    .with_as_buffer(&|buf| buf.parse_as_expr())?
             } else {
                 UNIT_T.as_type().as_type_element().as_literal()
             };

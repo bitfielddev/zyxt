@@ -44,7 +44,7 @@ impl Buffer {
                     debug!(pos = ?selected.pos_raw.pos, "Expression not in {{}} detected");
                     (
                         self.rest_incl_curr()
-                            .with_as_buffer(|buffer| buffer.parse_as_expr())?
+                            .with_as_buffer(&|buffer| buffer.parse_as_expr())?
                             .as_variant(),
                         self.content.len(),
                     )
@@ -53,7 +53,7 @@ impl Buffer {
                 debug!(pos = ?selected.pos_raw().pos, "Block not in {{}} detected");
                 (
                     self.rest_incl_curr()
-                        .with_as_buffer(|buffer| buffer.parse_as_expr())?
+                        .with_as_buffer(&|buffer| buffer.parse_as_expr())?
                         .as_variant(),
                     self.content.len(),
                 )

@@ -45,7 +45,7 @@ impl Buffer {
                     debug!(pos = ?selected.pos_raw().pos, "Comma detected");
                     args.push(
                         self.window(arg_start..self.cursor)
-                            .with_as_buffer(|buf| buf.parse_as_expr())?,
+                            .with_as_buffer(&|buf| buf.parse_as_expr())?,
                     );
                     arg_start = self.cursor + 1
                 }
@@ -61,7 +61,7 @@ impl Buffer {
             }
             args.push(
                 self.window(arg_start..self.cursor)
-                    .with_as_buffer(|buf| buf.parse_as_expr())?,
+                    .with_as_buffer(&|buf| buf.parse_as_expr())?,
             );
             let ele = Element {
                 pos_raw: PosRaw {

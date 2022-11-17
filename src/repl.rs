@@ -1,8 +1,8 @@
 use std::{io, io::Write, time::Instant};
 
-use ansi_term::Color::{Cyan, Green, Red, White, Yellow};
 use backtrace::Backtrace;
 use dirs::home_dir;
+use owo_colors::OwoColorize;
 use rustyline::{error::ReadlineError, Editor};
 
 use crate::{
@@ -23,16 +23,16 @@ pub fn repl(verbosity: u8) {
     rl.load_history(history_path.to_str().unwrap())
         .unwrap_or(());
 
-    let in_symbol = Cyan.bold().paint(">>] ");
-    let out_symbol = Green.bold().paint("[>> ");
+    let in_symbol = ">>] ".bold().cyan().to_string();
+    let out_symbol = "[>> ".bold().green().to_string();
     println!(
         "{}",
-        Yellow
+        format!("Zyxt Repl (v{})", env!("CARGO_PKG_VERSION"))
             .bold()
-            .paint(format!("Zyxt Repl (v{})", env!("CARGO_PKG_VERSION")))
+            .yellow()
     );
-    println!("{}", Cyan.paint("`;exit` to exit"));
-    println!("{}", Cyan.paint("`;help` for more commands"));
+    println!("{}", "`;exit` to exit".cyan());
+    println!("{}", "`;help` for more commands".cyan());
     loop {
         print!("{in_symbol} ");
         io::stdout().flush().unwrap();
@@ -49,12 +49,12 @@ pub fn repl(verbosity: u8) {
                         ";vars" => println!("{}", varlist.heap_to_string()),
                         ";exit" => unreachable!(),
                         ";help" => {
-                            println!("{}", Yellow.bold().paint("All commands start wih `;`"));
-                            println!("{}", Cyan.paint("help\tView this help page"));
-                            println!("{}", Cyan.paint("exit\tExit the repl"));
-                            println!("{}", Cyan.paint("vars\tView all variables"))
+                            println!("{}", "All commands start wih `;`".bold().yellow());
+                            println!("{}", "help\tView this help page".cyan());
+                            println!("{}", "exit\tExit the repl".cyan());
+                            println!("{}", "vars\tView all variables".cyan())
                         }
-                        _ => println!("{}", Red.bold().paint("Invalid command")),
+                        _ => println!("{}", "Invalid command".red()),
                     };
                     continue;
                 }
@@ -68,7 +68,7 @@ pub fn repl(verbosity: u8) {
 
                 let instr_len = instructions.len();
                 if verbosity >= 2 {
-                    println!("{}", Yellow.bold().paint("\nInterpreting"));
+                    println!("{}", "\nInterpreting".bold().yellow());
                 }
                 for (i, instr) in instructions.into_iter().enumerate() {
                     match {
@@ -78,13 +78,13 @@ pub fn repl(verbosity: u8) {
                             let interpret_start = Instant::now();
                             let result = instr.interpret_expr(&mut varlist);
                             let interpret_time = interpret_start.elapsed().as_micros();
-                            println!("{}", White.dimmed().paint(format!("{interpret_time}µs")));
+                            println!("{}", format!("{interpret_time}µs").dimmed().white());
                             result
                         }
                     } {
                         Ok(result) => {
                             if result != Value::Unit && i == instr_len - 1 {
-                                println!("{out_symbol}{}", Yellow.paint(format!("{result:?}")))
+                                println!("{out_symbol}{}", format!("{result:?}").yellow())
                             }
                         }
                         Err(e) => {
@@ -94,7 +94,7 @@ pub fn repl(verbosity: u8) {
                 }
             }
             Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
-                println!("{}", Cyan.paint("`;exit` to exit"));
+                println!("{}", "`;exit` to exit".cyan());
             }
             Err(err) => {
                 ZError::error_0_0(err.to_string(), Backtrace::new());

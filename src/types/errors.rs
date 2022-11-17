@@ -3,13 +3,10 @@ use std::{
     process::exit,
 };
 
-use ansi_term::{
-    Color::{Black, Red, White, Yellow},
-    Style,
-};
 use backtrace::Backtrace;
 use color_eyre::eyre::Result;
 use itertools::Itertools;
+use owo_colors::OwoColorize;
 use tracing::debug;
 
 use crate::{
@@ -416,10 +413,7 @@ impl ZError {
         self.pos
             .iter()
             .map(|pos_raw| {
-                let pos = Style::new()
-                    .on(Red)
-                    .bold()
-                    .paint(format!(" {} ", pos_raw.pos));
+                let pos = format!(" {} ", pos_raw.pos).bold().on_red().to_string();
                 let mut contents =
                     if let Ok(contents) = std::fs::read_to_string(&pos_raw.pos.filename) {
                         contents
@@ -452,7 +446,7 @@ impl ZError {
 
                 let surrounding = contents[start_line..=end_line].join("\n");
 
-                format!("{pos}\n{}", White.dimmed().paint(surrounding))
+                format!("{pos}\n{}", surrounding.white().dimmed())
             })
             .join("\n")
     }
@@ -463,11 +457,11 @@ impl ZError {
     pub fn print(&self, out: &mut impl Print) {
         out.println(self.get_surrounding_text());
         out.println(
-            Black
-                .on(Yellow)
-                .paint(format!(" Error {} ", self.code))
+            format!(" Error {} ", self.code)
+                .black()
+                .on_yellow()
                 .to_string()
-                + &*Red.bold().paint(format!(" {}", self.message)).to_string(),
+                + &*format!(" {}", self.message).bold().red().to_string(),
         );
     }
     pub fn with_pos_raw(mut self, pos_raw: &PosRaw) -> Self {
