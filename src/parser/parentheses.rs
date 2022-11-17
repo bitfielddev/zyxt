@@ -41,7 +41,7 @@ impl Buffer {
                 let mut paren_window =
                     self.get_between(TokenType::OpenParen, TokenType::CloseParen)?;
                 let raw = self.end_raw_collection();
-                paren_window.with_as_buffer(&move |f| {
+                paren_window.with_as_buffer(move |f| {
                     let mut ele = f.parse_as_expr()?;
                     ele.pos_raw.raw = raw.to_owned().into();
                     trace!(?ele);
@@ -56,7 +56,7 @@ impl Buffer {
                     self.get_between(TokenType::OpenCurlyParen, TokenType::CloseCurlyParen)?;
                 let mut paren_window = self.window(paren_window.range); // TODO clean this up
                 let raw = self.end_raw_collection();
-                paren_window.with_as_buffer(&move |f| {
+                paren_window.with_as_buffer(move |f| {
                     f.next_or_err()?;
                     let mut ele = f.parse_as_block()?;
                     trace!(?ele);

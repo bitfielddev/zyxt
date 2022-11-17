@@ -78,7 +78,7 @@ impl Buffer {
             self.next_or_err()?;
             let content = self
                 .rest_incl_curr()
-                .with_as_buffer(&|buf| buf.parse_as_expr())?;
+                .with_as_buffer(|buf| buf.parse_as_expr())?;
             let ele = Element {
                 pos_raw: PosRaw {
                     pos: self.content[start.unwrap()].pos_raw().pos,

@@ -248,7 +248,7 @@ impl BufferWindow {
             raw: None,
         }
     }
-    pub fn with_as_buffer<T>(&mut self, f: &dyn Fn(&mut Buffer) -> ZResult<T>) -> ZResult<T> {
+    pub fn with_as_buffer<T>(&mut self, f: impl Fn(&mut Buffer) -> ZResult<T>) -> ZResult<T> {
         let mut buffer = self.as_buffer();
         let res = f(&mut buffer)?;
         let bw = BufferWindow {
@@ -266,7 +266,7 @@ pub struct BufferWindows {
     pub range: Range<usize>,
 }
 impl BufferWindows {
-    pub fn with_as_buffers<T>(&mut self, f: &dyn Fn(&mut Buffer) -> ZResult<T>) -> ZResult<Vec<T>> {
+    pub fn with_as_buffers<T>(&mut self, f: impl Fn(&mut Buffer) -> ZResult<T>) -> ZResult<Vec<T>> {
         self.buffer_windows
             .iter_mut()
             .map(|b| b.with_as_buffer(f))

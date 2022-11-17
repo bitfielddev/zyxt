@@ -52,10 +52,10 @@ impl Buffer {
         debug!(pos = ?tok.pos, "Parsing binary operator");
         let operand1 = self
             .window(0..highest_order_index)
-            .with_as_buffer(&|buf| buf.parse_as_expr())?;
+            .with_as_buffer(|buf| buf.parse_as_expr())?;
         let operand2 = self
             .window(highest_order_index + 1..self.content.len())
-            .with_as_buffer(&|buf| buf.parse_as_expr())?;
+            .with_as_buffer(|buf| buf.parse_as_expr())?;
         let ele = Element {
             pos_raw: PosRaw {
                 pos: operand1.pos_raw.pos.to_owned(),

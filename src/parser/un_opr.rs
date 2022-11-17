@@ -29,7 +29,7 @@ impl Buffer {
             debug!(pos = ?init_pos);
             let operand = self
                 .rest_incl_curr()
-                .with_as_buffer(&|buf| buf.parse_as_expr())?;
+                .with_as_buffer(|buf| buf.parse_as_expr())?;
             let ele = Element {
                 pos_raw: PosRaw {
                     pos: init_pos,

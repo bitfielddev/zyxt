@@ -167,7 +167,7 @@ impl Buffer {
                         TokenType::CloseParen,
                         TokenType::Comma,
                     )?;
-                    let args = contents.with_as_buffers(&|f| {
+                    let args = contents.with_as_buffers(|f| {
                         let ele = f.parse_as_expr()?;
                         Ok(ele)
                     })?;

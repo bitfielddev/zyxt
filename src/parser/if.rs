@@ -110,7 +110,7 @@ impl Buffer {
                     selected = self.next_or_err()?;
                     Some(
                         self.window(start..self.cursor)
-                            .with_as_buffer(&|buf| buf.parse_as_expr())?,
+                            .with_as_buffer(|buf| buf.parse_as_expr())?,
                     )
                 };
                 let block = if let Either::Left(Element {

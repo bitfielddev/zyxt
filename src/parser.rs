@@ -34,7 +34,7 @@ impl Buffer {
             TokenType::CloseCurlyParen,
             TokenType::StatementEnd,
         )?;
-        let block = buffers.with_as_buffers(&|buffer| buffer.parse_as_expr())?;
+        let block = buffers.with_as_buffers(|buffer| buffer.parse_as_expr())?;
         let ele = Element {
             pos_raw: self.content.get(0).map(|c| c.pos_raw()).unwrap_or_default(),
             data: Box::new(Block { content: block }),
@@ -106,5 +106,5 @@ pub fn parse_token_list(mut input: Vec<Token>) -> ZResult<Vec<Element>> {
 
     Buffer::new(input)
         .get_split(TokenType::StatementEnd)?
-        .with_as_buffers(&|buf| buf.parse_as_expr()) // TODO merge all errors into one here
+        .with_as_buffers(|buf| buf.parse_as_expr()) // TODO merge all errors into one here
 }
