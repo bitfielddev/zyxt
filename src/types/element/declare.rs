@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::{
     types::{
         element::{binary_opr::BinaryOpr, Element, ElementData},
@@ -20,7 +18,7 @@ pub struct Declare {
 impl GetSpan for Declare {
     fn span(&self) -> Option<Span> {
         self.variable
-            .merge_span(&self.flags.iter().map(|a| &a.1).collect::<Vec<_>>())
+            .merge_span(self.flags.iter().map(|a| &a.1).collect::<Vec<_>>())
             .merge_span(&self.ty)
             .merge_span(&self.content)
             .merge_span(&self.eq_span)

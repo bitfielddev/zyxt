@@ -1,11 +1,8 @@
-use std::{
-    borrow::Cow,
-    fmt::{Display, Formatter, Result},
-};
+use std::fmt::{Display, Formatter, Result};
 
 use smol_str::SmolStr;
 
-use crate::types::position::{GetSpan, Position, Span};
+use crate::types::position::{GetSpan, Span};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Token {

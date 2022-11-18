@@ -8,7 +8,7 @@ use crate::{
     ZResult,
 };
 
-pub fn gen_instructions<'a, O: Print>(
+pub fn gen_instructions<O: Print>(
     mut input: Vec<Element>,
     typelist: &mut InterpreterData<Type<Element>, O>,
 ) -> ZResult<Vec<Element>> {

@@ -127,7 +127,7 @@ pub trait GetSpan: Clone {
         })
     }
 }
-impl<'a, T: GetSpan, U: GetSpan> GetSpan for Either<T, U> {
+impl<T: GetSpan, U: GetSpan> GetSpan for Either<T, U> {
     fn span(&self) -> Option<Span> {
         match self {
             Either::Left(t) => t.span(),
@@ -140,22 +140,22 @@ impl GetSpan for Span {
         Some(self.to_owned())
     }
 }
-impl<'a, T: GetSpan> GetSpan for Box<T> {
+impl<T: GetSpan> GetSpan for Box<T> {
     fn span(&self) -> Option<Span> {
         (**self).span()
     }
 }
-impl<'a, T: GetSpan> GetSpan for &T {
+impl<T: GetSpan> GetSpan for &T {
     fn span(&self) -> Option<Span> {
         (*self).span()
     }
 }
-impl<'a, T: GetSpan> GetSpan for Option<T> {
+impl<T: GetSpan> GetSpan for Option<T> {
     fn span(&self) -> Option<Span> {
         self.as_ref().and_then(|a| a.span())
     }
 }
-impl<'a, T: GetSpan> GetSpan for &[T] {
+impl<T: GetSpan> GetSpan for &[T] {
     fn span(&self) -> Option<Span> {
         let mut s: Option<Option<Span>> = None;
         for i in self.iter() {
@@ -170,7 +170,7 @@ impl<'a, T: GetSpan> GetSpan for &[T] {
         s.unwrap_or(None)
     }
 }
-impl<'a, T: GetSpan> GetSpan for Vec<T> {
+impl<T: GetSpan> GetSpan for Vec<T> {
     fn span(&self) -> Option<Span> {
         self.as_slice().span()
     }

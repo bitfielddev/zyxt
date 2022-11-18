@@ -60,7 +60,7 @@ impl Buffer {
         self.parse_bin_opr()?;
         self.parse_un_opr()?;
         self.parse_unparen_call()?;
-        if let Some(ele) = self.content.get(2) {
+        if let Some(_ele) = self.content.get(2) {
             todo!()
             //return Err(ZError::error_2_1_0(ele.span().raw));
         }
@@ -70,7 +70,7 @@ impl Buffer {
             .unwrap_or(&Either::Left(Value::Unit.as_element()))
         {
             Either::Left(c) => Ok(c.to_owned()),
-            Either::Right(c) => {
+            Either::Right(_c) => {
                 todo!()
                 //Err(ZError::error_2_1_0(c.span().raw))
             }

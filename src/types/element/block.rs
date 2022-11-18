@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::{
     types::{
         element::{Element, ElementData},
@@ -75,7 +73,7 @@ impl Block {
         }
         if let Some(return_type) = return_type.to_owned() {
             if last != return_type {
-                let last_ele = self.content.last().unwrap();
+                let _last_ele = self.content.last().unwrap();
                 return Err(ZError::error_4_t(last, return_type)); // TODO
             }
         }
@@ -107,7 +105,7 @@ impl Block {
             i_data.add_frame(None, FrameType::Normal);
         }
         for ele in &self.content {
-            if let Element::Return(r#return) = &*ele {
+            if let Element::Return(r#return) = ele {
                 if returnable {
                     last = r#return.value.interpret_expr(i_data)?
                 } else {

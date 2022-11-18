@@ -29,8 +29,8 @@ impl Buffer {
     pub fn parse_var_literal_call(&mut self) -> ZResult<()> {
         self.reset_cursor();
         let mut catcher: Option<(Element, usize)> = None;
-        let clear_catcher = |s: &mut Self, catcher: &mut Option<(Element, usize)>, end: bool| {
-            if let Some((mut catcher, start)) = catcher.take() {
+        let clear_catcher = |s: &mut Self, catcher: &mut Option<(Element, usize)>, _end: bool| {
+            if let Some((catcher, start)) = catcher.take() {
                 let buffer_window = BufferWindow {
                     slice: vec![Either::Left(catcher)],
                     range: start..s.cursor,

@@ -8,7 +8,7 @@ use crate::{
         position::GetSpan,
         token::{Token, TokenType},
     },
-    Element, ZError, ZResult,
+    Element, ZResult,
 };
 
 #[derive(Clone, Debug)]
@@ -43,7 +43,7 @@ impl Buffer {
         if let Some(c) = self.next() {
             Ok(c)
         } else {
-            let curr_span = match &self.content.last().unwrap() {
+            let _curr_span = match &self.content.last().unwrap() {
                 Either::Left(c) => c.span(),
                 Either::Right(c) => c.span(),
             };

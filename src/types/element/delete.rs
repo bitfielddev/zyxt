@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::{
     types::{
         element::{ident::Ident, Element, ElementData},

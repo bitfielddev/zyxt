@@ -165,12 +165,12 @@ impl TypeDefinition<Value> {
     }
 }
 
-impl<'a, T: Clone + PartialEq + Debug> TypeDefinition<T> {
+impl<T: Clone + PartialEq + Debug> TypeDefinition<T> {
     pub fn as_type(&self) -> Type<T> {
         Type::Definition(self.to_owned())
     }
 }
-impl<'a, T: Clone + PartialEq + Debug> TypeInstance<T> {
+impl<T: Clone + PartialEq + Debug> TypeInstance<T> {
     pub fn as_type(&self) -> Type<T> {
         Type::Instance(self.to_owned())
     }

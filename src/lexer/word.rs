@@ -11,7 +11,7 @@ use crate::{
 
 pub fn lex_word(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
     let mut raw = "".to_string();
-    let init_pos = iter.peek().unwrap().1;
+    let _init_pos = iter.peek().unwrap().1;
     while let Some((char, pos)) = iter.peek() {
         trace!(?char, ?pos);
         if ALPHANUMERIC.is_match(&char.to_string()) {

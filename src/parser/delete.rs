@@ -5,7 +5,7 @@ use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
         element::{delete::Delete, ident::Ident, unary_opr::UnaryOpr, Element},
-        errors::{ZError, ZResult},
+        errors::ZResult,
         position::GetSpan,
         token::{Keyword, OprType, Token, TokenType},
     },

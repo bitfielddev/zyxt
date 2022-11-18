@@ -15,7 +15,7 @@ use crate::{
         element::{Element, ElementData},
         position::{GetSpan, Span},
         printer::Print,
-        token::{Keyword, Token},
+        token::Keyword,
         value::Value,
     },
     Type,
@@ -265,7 +265,7 @@ impl ZError {
     }
 
     /// expected pattern, got something else
-    pub fn error_2_2(ele: impl ElementData) -> Self {
+    pub fn error_2_2(_ele: impl ElementData) -> Self {
         ZError {
             pos: vec![],
             code: "2.2",
@@ -294,7 +294,7 @@ impl ZError {
 
     /// Type has no attribute (typechecker)
     pub fn error_3_1_0<T: Clone + PartialEq + Debug>(
-        parent: Element,
+        _parent: Element,
         parent_type: Type<T>,
         attribute: impl Display,
     ) -> Self {

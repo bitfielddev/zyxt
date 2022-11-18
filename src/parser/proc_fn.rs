@@ -25,7 +25,7 @@ impl Buffer {
                 .get_split(TokenType::Colon)?
                 .with_as_buffers(&|buf| buf.parse_as_expr())?;
             let name = if let Some(name) = arg_sections.first() {
-                if let Element::Ident(ident) = &*name {
+                if let Element::Ident(ident) = name {
                     debug!(pos = ?name.span(), "Name detected");
                     ident.to_owned()
                 } else {

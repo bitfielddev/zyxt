@@ -6,7 +6,7 @@ mod text_literal;
 mod whitespace;
 mod word;
 
-use std::{path::Path, sync::Arc};
+use std::sync::Arc;
 
 use once_cell::sync::Lazy;
 use regex::Regex;

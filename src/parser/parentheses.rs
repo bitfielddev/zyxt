@@ -43,7 +43,7 @@ impl Buffer {
                 let mut paren_window =
                     self.get_between(TokenType::OpenParen, TokenType::CloseParen)?;
                 paren_window.with_as_buffer(&move |f| {
-                    let mut ele = f.parse_as_expr()?;
+                    let ele = f.parse_as_expr()?;
                     trace!(?ele);
                     f.content = vec![Either::Left(ele)];
                     Ok(())
@@ -56,7 +56,7 @@ impl Buffer {
                 let mut paren_window = self.window(paren_window.range); // TODO clean this up
                 paren_window.with_as_buffer(&move |f| {
                     f.next_or_err()?;
-                    let mut ele = f.parse_as_block()?;
+                    let ele = f.parse_as_block()?;
                     trace!(?ele);
                     f.content = vec![Either::Left(ele.as_variant())];
                     Ok(())

@@ -36,10 +36,7 @@ impl Buffer {
             }
             .into();
 
-            let ele = Element::Return(Return {
-                kwd_span: kwd_span,
-                value,
-            });
+            let ele = Element::Return(Return { kwd_span, value });
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],

@@ -15,7 +15,7 @@ pub fn import_file(file: &Path) -> Arc<String> {
         .lock()
         .unwrap()
         .entry(file.to_string_lossy().into())
-        .or_insert(Arc::new(std::fs::read_to_string(file).unwrap()))
+        .or_insert_with(|| Arc::new(std::fs::read_to_string(file).unwrap()))
         .clone()
 }
 
@@ -27,7 +27,7 @@ pub fn register_input(name: SmolStr, input: String) -> Arc<String> {
 
 pub fn get_input(name: &SmolStr) -> Option<Arc<String>> {
     let cache = FILE_CACHE.lock().unwrap();
-    let res = cache.get(&*name).cloned();
+    let res = cache.get(name).cloned();
     drop(cache);
     res.or_else(|| {
         PathBuf::try_from(name.to_string())

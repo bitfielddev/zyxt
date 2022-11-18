@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use smol_str::SmolStr;
 
 use crate::{

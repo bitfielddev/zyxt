@@ -5,8 +5,7 @@ use crate::{
     parser::buffer::Buffer,
     types::{
         element::{binary_opr::BinaryOpr, Element},
-        errors::{ZError, ZResult},
-        position::GetSpan,
+        errors::ZResult,
         token::{Token, TokenType},
     },
 };

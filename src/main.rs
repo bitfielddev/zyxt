@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read, panic, path::PathBuf, process::exit};
+use std::{path::PathBuf, process::exit};
 
 use clap::Parser;
 use color_eyre::config::HookBuilder;
@@ -7,8 +7,8 @@ use tracing_subscriber::EnvFilter;
 use zyxt::{
     repl,
     types::{
-        element::Element, errors::ZError, interpreter_data::InterpreterData, printer::StdIoPrint,
-        typeobj::Type, value::Value,
+        element::Element, interpreter_data::InterpreterData, printer::StdIoPrint, typeobj::Type,
+        value::Value,
     },
 };
 

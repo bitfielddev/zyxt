@@ -9,7 +9,7 @@ use crate::{
     ZError, ZResult,
 };
 
-pub fn interpret_asts<'a, O: Print>(
+pub fn interpret_asts<O: Print>(
     input: &Vec<Element>,
     i_data: &mut InterpreterData<Value, O>,
 ) -> ZResult<i32> {

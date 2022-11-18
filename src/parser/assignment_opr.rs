@@ -47,8 +47,7 @@ impl Buffer {
                     operand1: var.to_owned().into(),
                     operand2: content.into(),
                 }
-                .as_variant()
-                .into();
+                .as_variant();
             }
             let ele = Element::Set(Set {
                 variable: var.to_owned().into(),

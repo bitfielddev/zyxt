@@ -1,7 +1,4 @@
-use std::{
-    borrow::Cow,
-    fmt::{Display, Formatter},
-};
+use std::fmt::{Display, Formatter};
 
 use crate::{
     types::{

@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
 use smol_str::SmolStr;
 
@@ -131,7 +131,7 @@ impl ElementData for Call {
         }
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, _out: &mut impl Print) -> ZResult<Element> {
         // TODO
         Ok(self.as_variant())
     }
