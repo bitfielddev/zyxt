@@ -1,19 +1,27 @@
+use std::borrow::Cow;
+
 use crate::{
     types::{
-        element::{Element, ElementData, ElementVariant},
-        position::PosRaw,
+        element::{Element, ElementData},
+        position::{GetSpan, Span},
     },
     InterpreterData, Print, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Literal {
+    pub span: Option<Span>,
     pub content: Value,
+}
+impl GetSpan for Literal {
+    fn span(&self) -> Option<Span> {
+        self.span.span()
+    }
 }
 
 impl ElementData for Literal {
-    fn as_variant(&self) -> ElementVariant {
-        ElementVariant::Literal(self.to_owned())
+    fn as_variant(&self) -> Element {
+        Element::Literal(self.to_owned())
     }
 
     fn is_pattern(&self) -> bool {
@@ -21,7 +29,6 @@ impl ElementData for Literal {
     }
     fn process<O: Print>(
         &mut self,
-        _pos_raw: &PosRaw,
         _typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> ZResult<Type<Element>> {
         Ok(self.content.get_type_obj().as_type_element())

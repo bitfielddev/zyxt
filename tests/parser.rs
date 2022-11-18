@@ -16,9 +16,9 @@ use zyxt::types::{
         r#return::Return,
         set::Set,
         unary_opr::UnaryOpr,
-        Element, ElementVariant,
+        Element,
     },
-    position::{PosRaw, Position},
+    position::{Position, Span},
     token::{Flag, OprType},
     typeobj::unit_t::UNIT_T,
     value::Value,
@@ -29,21 +29,21 @@ macro_rules! parse {
         zyxt::parser::parse_token_list(zyxt::lexer::lex($str.to_owned(), "").unwrap()).unwrap()
     };
 }
-macro_rules! pos_raw {
+macro_rules! span {
     ($line:expr, $column:expr, $raw:expr) => {
-        PosRaw {
-            pos: Position {
-                filename: "".into(),
+        Span::new(
+            Position {
+                filename: Some("".into()),
                 line: $line,
                 column: $column,
             },
-            raw: $raw.into(),
-        }
+            $raw.into(),
+        )
     };
 }
 macro_rules! ident {
     ($name:expr) => {
-        Box::new(ElementVariant::Ident(Ident {
+        Box::new(Element::Ident(Ident {
             name: $name.into(),
             parent: None,
         }))
@@ -62,14 +62,14 @@ fn assignment() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x = y"),
-            data: Box::new(ElementVariant::Set(Set {
+            span: span!(1, 1, "x = y"),
+            data: Box::new(Element::Set(Set {
                 variable: Element {
-                    pos_raw: pos_raw!(1, 1, "x"),
+                    span: span!(1, 1, "x"),
                     data: ident!("x")
                 },
                 content: Element {
-                    pos_raw: pos_raw!(1, 5, " y"),
+                    span: span!(1, 5, " y"),
                     data: ident!("y")
                 }
             }))
@@ -83,22 +83,22 @@ fn assignment_bin() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x += y"),
-            data: Box::new(ElementVariant::Set(Set {
+            span: span!(1, 1, "x += y"),
+            data: Box::new(Element::Set(Set {
                 variable: Element {
-                    pos_raw: pos_raw!(1, 1, "x"),
+                    span: span!(1, 1, "x"),
                     data: ident!("x")
                 },
                 content: Element {
-                    pos_raw: pos_raw!(1, 6, " y"),
-                    data: Box::new(ElementVariant::BinaryOpr(BinaryOpr {
+                    span: span!(1, 6, " y"),
+                    data: Box::new(Element::BinaryOpr(BinaryOpr {
                         ty: OprType::Add,
                         operand1: Element {
-                            pos_raw: pos_raw!(1, 1, "x"),
+                            span: span!(1, 1, "x"),
                             data: ident!("x")
                         },
                         operand2: Element {
-                            pos_raw: pos_raw!(1, 6, " y"),
+                            span: span!(1, 6, " y"),
                             data: ident!("y"),
                         }
                     })),
@@ -133,15 +133,15 @@ fn bin_opr() {
         assert_eq!(
             ast[0],
             Element {
-                pos_raw: pos_raw!(1, 1, s),
-                data: Box::new(ElementVariant::BinaryOpr(BinaryOpr {
+                span: span!(1, 1, s),
+                data: Box::new(Element::BinaryOpr(BinaryOpr {
                     ty,
                     operand1: Element {
-                        pos_raw: pos_raw!(1, 1, "x"),
+                        span: span!(1, 1, "x"),
                         data: ident!("x")
                     },
                     operand2: Element {
-                        pos_raw: pos_raw!(1, 4 + sy.len(), " y"),
+                        span: span!(1, 4 + sy.len(), " y"),
                         data: ident!("y")
                     }
                 }))
@@ -156,13 +156,13 @@ fn class() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "class { }"),
-            data: Box::new(ElementVariant::Class(Class {
+            span: span!(1, 1, "class { }"),
+            data: Box::new(Element::Class(Class {
                 is_struct: false,
                 implementations: Default::default(),
                 inst_fields: Default::default(),
                 content: Some(Element {
-                    pos_raw: pos_raw!(1, 7, " { }"),
+                    span: span!(1, 7, " { }"),
                     data: Box::new(Block { content: vec![] })
                 }),
                 args: None
@@ -178,19 +178,19 @@ fn struct_params() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "struct |x: i32| { }"),
-            data: Box::new(ElementVariant::Class(Class {
+            span: span!(1, 1, "struct |x: i32| { }"),
+            data: Box::new(Element::Class(Class {
                 is_struct: true,
                 implementations: Default::default(),
                 inst_fields: Default::default(),
                 content: Some(Element {
-                    pos_raw: pos_raw!(1, 7, " { }"),
+                    span: span!(1, 7, " { }"),
                     data: Box::new(Block { content: vec![] })
                 }),
                 args: Some(vec![Argument {
                     name: "x".into(),
                     ty: Element {
-                        pos_raw: pos_raw!(1, 11, "i32"),
+                        span: span!(1, 11, "i32"),
                         data: ident!("i32")
                     },
                     default: None
@@ -207,8 +207,8 @@ fn struct_no_content() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "struct |x: i32|"),
-            data: Box::new(ElementVariant::Class(Class {
+            span: span!(1, 1, "struct |x: i32|"),
+            data: Box::new(Element::Class(Class {
                 is_struct: true,
                 implementations: Default::default(),
                 inst_fields: Default::default(),
@@ -216,7 +216,7 @@ fn struct_no_content() {
                 args: Some(vec![Argument {
                     name: "x".into(),
                     ty: Element {
-                        pos_raw: pos_raw!(1, 11, "i32"),
+                        span: span!(1, 11, "i32"),
                         data: ident!("i32")
                     },
                     default: None
@@ -233,13 +233,13 @@ fn struct_no_params() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "struct { }"),
-            data: Box::new(ElementVariant::Class(Class {
+            span: span!(1, 1, "struct { }"),
+            data: Box::new(Element::Class(Class {
                 is_struct: true,
                 implementations: Default::default(),
                 inst_fields: Default::default(),
                 content: Some(Element {
-                    pos_raw: pos_raw!(1, 7, " { }"),
+                    span: span!(1, 7, " { }"),
                     data: Box::new(Block { content: vec![] })
                 }),
                 args: None
@@ -255,8 +255,8 @@ fn struct_no_content_no_params() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "struct"),
-            data: Box::new(ElementVariant::Class(Class {
+            span: span!(1, 1, "struct"),
+            data: Box::new(Element::Class(Class {
                 is_struct: true,
                 implementations: Default::default(),
                 inst_fields: Default::default(),
@@ -273,14 +273,14 @@ fn declaration() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x := y"),
-            data: Box::new(ElementVariant::Declare(Declare {
+            span: span!(1, 1, "x := y"),
+            data: Box::new(Element::Declare(Declare {
                 variable: Element {
-                    pos_raw: pos_raw!(1, 1, "x"),
+                    span: span!(1, 1, "x"),
                     data: ident!("x")
                 },
                 content: Element {
-                    pos_raw: pos_raw!(1, 6, " y"),
+                    span: span!(1, 6, " y"),
                     data: ident!("y")
                 },
                 flags: vec![],
@@ -295,14 +295,14 @@ fn declaration_flags() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "pub x := y"),
-            data: Box::new(ElementVariant::Declare(Declare {
+            span: span!(1, 1, "pub x := y"),
+            data: Box::new(Element::Declare(Declare {
                 variable: Element {
-                    pos_raw: pos_raw!(1, 5, " x"),
+                    span: span!(1, 5, " x"),
                     data: ident!("x")
                 },
                 content: Element {
-                    pos_raw: pos_raw!(1, 10, " y"),
+                    span: span!(1, 10, " y"),
                     data: ident!("y")
                 },
                 flags: vec![Flag::Pub],
@@ -318,10 +318,10 @@ fn delete_single() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "del x"),
-            data: Box::new(ElementVariant::Delete(Delete {
+            span: span!(1, 1, "del x"),
+            data: Box::new(Element::Delete(Delete {
                 names: vec![Element {
-                    pos_raw: pos_raw!(1, 5, " x"),
+                    span: span!(1, 5, " x"),
                     data: Box::new(Ident {
                         name: "x".into(),
                         parent: None
@@ -338,19 +338,19 @@ fn delete_multiple() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "del x, y, z"),
-            data: Box::new(ElementVariant::Delete(Delete {
+            span: span!(1, 1, "del x, y, z"),
+            data: Box::new(Element::Delete(Delete {
                 names: vec![
                     Element {
-                        pos_raw: pos_raw!(1, 5, " x"),
+                        span: span!(1, 5, " x"),
                         data: ident!(notvar "x")
                     },
                     Element {
-                        pos_raw: pos_raw!(1, 8, " y"),
+                        span: span!(1, 8, " y"),
                         data: ident!(notvar "y")
                     },
                     Element {
-                        pos_raw: pos_raw!(1, 11, " z"),
+                        span: span!(1, 11, " z"),
                         data: ident!(notvar "z")
                     }
                 ]
@@ -365,15 +365,15 @@ fn if_() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "if x { }"),
-            data: Box::new(ElementVariant::If(If {
+            span: span!(1, 1, "if x { }"),
+            data: Box::new(Element::If(If {
                 conditions: vec![Condition {
                     condition: Some(Element {
-                        pos_raw: pos_raw!(1, 4, " x"),
+                        span: span!(1, 4, " x"),
                         data: ident!("x")
                     }),
                     if_true: Element {
-                        pos_raw: pos_raw!(1, 6, " { }"),
+                        span: span!(1, 6, " { }"),
                         data: Box::new(Block { content: vec![] })
                     }
                 }]
@@ -388,23 +388,23 @@ fn if_else() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "if x { } else { }"),
-            data: Box::new(ElementVariant::If(If {
+            span: span!(1, 1, "if x { } else { }"),
+            data: Box::new(Element::If(If {
                 conditions: vec![
                     Condition {
                         condition: Some(Element {
-                            pos_raw: pos_raw!(1, 4, " x"),
+                            span: span!(1, 4, " x"),
                             data: ident!("x")
                         }),
                         if_true: Element {
-                            pos_raw: pos_raw!(1, 6, " { }"),
+                            span: span!(1, 6, " { }"),
                             data: Box::new(Block { content: vec![] })
                         }
                     },
                     Condition {
                         condition: None,
                         if_true: Element {
-                            pos_raw: pos_raw!(1, 15, " { }"),
+                            span: span!(1, 15, " { }"),
                             data: Box::new(Block { content: vec![] })
                         }
                     }
@@ -420,26 +420,26 @@ fn if_elif() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "if x { } elif y { }"),
-            data: Box::new(ElementVariant::If(If {
+            span: span!(1, 1, "if x { } elif y { }"),
+            data: Box::new(Element::If(If {
                 conditions: vec![
                     Condition {
                         condition: Some(Element {
-                            pos_raw: pos_raw!(1, 4, " x"),
+                            span: span!(1, 4, " x"),
                             data: ident!("x")
                         }),
                         if_true: Element {
-                            pos_raw: pos_raw!(1, 6, " { }"),
+                            span: span!(1, 6, " { }"),
                             data: Box::new(Block { content: vec![] })
                         }
                     },
                     Condition {
                         condition: Some(Element {
-                            pos_raw: pos_raw!(1, 15, " y"),
+                            span: span!(1, 15, " y"),
                             data: ident!("y")
                         }),
                         if_true: Element {
-                            pos_raw: pos_raw!(1, 17, " { }"),
+                            span: span!(1, 17, " { }"),
                             data: Box::new(Block { content: vec![] })
                         }
                     }
@@ -455,33 +455,33 @@ fn if_elif_else() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "if x { } elif y { } else { }"),
-            data: Box::new(ElementVariant::If(If {
+            span: span!(1, 1, "if x { } elif y { } else { }"),
+            data: Box::new(Element::If(If {
                 conditions: vec![
                     Condition {
                         condition: Some(Element {
-                            pos_raw: pos_raw!(1, 4, " x"),
+                            span: span!(1, 4, " x"),
                             data: ident!("x")
                         }),
                         if_true: Element {
-                            pos_raw: pos_raw!(1, 6, " { }"),
+                            span: span!(1, 6, " { }"),
                             data: Box::new(Block { content: vec![] })
                         }
                     },
                     Condition {
                         condition: Some(Element {
-                            pos_raw: pos_raw!(1, 15, " y"),
+                            span: span!(1, 15, " y"),
                             data: ident!("y")
                         }),
                         if_true: Element {
-                            pos_raw: pos_raw!(1, 17, " { }"),
+                            span: span!(1, 17, " { }"),
                             data: Box::new(Block { content: vec![] })
                         }
                     },
                     Condition {
                         condition: None,
                         if_true: Element {
-                            pos_raw: pos_raw!(1, 26, " { }"),
+                            span: span!(1, 26, " { }"),
                             data: Box::new(Block { content: vec![] })
                         }
                     }
@@ -497,8 +497,8 @@ fn parentheses() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 2, "(x)"),
-            data: Box::new(ElementVariant::Ident(Ident {
+            span: span!(1, 2, "(x)"),
+            data: Box::new(Element::Ident(Ident {
                 name: "x".into(),
                 parent: None
             }))
@@ -512,10 +512,10 @@ fn block() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "{x}"),
-            data: Box::new(ElementVariant::Block(Block {
+            span: span!(1, 1, "{x}"),
+            data: Box::new(Element::Block(Block {
                 content: vec![Element {
-                    pos_raw: pos_raw!(1, 2, "x"),
+                    span: span!(1, 2, "x"),
                     data: ident!("x")
                 }]
             }))
@@ -529,13 +529,13 @@ fn preprocess_block() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "pre {x}"),
-            data: Box::new(ElementVariant::Preprocess(Preprocess {
+            span: span!(1, 1, "pre {x}"),
+            data: Box::new(Element::Preprocess(Preprocess {
                 content: Element {
-                    pos_raw: pos_raw!(1, 5, " {x}"),
-                    data: Box::new(ElementVariant::Block(Block {
+                    span: span!(1, 5, " {x}"),
+                    data: Box::new(Element::Block(Block {
                         content: vec![Element {
-                            pos_raw: pos_raw!(1, 6, "x"),
+                            span: span!(1, 6, "x"),
                             data: ident!("x")
                         }]
                     }))
@@ -551,10 +551,10 @@ fn preprocess_expr() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "pre x"),
-            data: Box::new(ElementVariant::Preprocess(Preprocess {
+            span: span!(1, 1, "pre x"),
+            data: Box::new(Element::Preprocess(Preprocess {
                 content: Element {
-                    pos_raw: pos_raw!(1, 5, " x"),
+                    span: span!(1, 5, " x"),
                     data: ident!("x")
                 }
             }))
@@ -568,13 +568,13 @@ fn defer_block() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "defer {x}"),
-            data: Box::new(ElementVariant::Defer(Defer {
+            span: span!(1, 1, "defer {x}"),
+            data: Box::new(Element::Defer(Defer {
                 content: Element {
-                    pos_raw: pos_raw!(1, 7, " {x}"),
-                    data: Box::new(ElementVariant::Block(Block {
+                    span: span!(1, 7, " {x}"),
+                    data: Box::new(Element::Block(Block {
                         content: vec![Element {
-                            pos_raw: pos_raw!(1, 8, "x"),
+                            span: span!(1, 8, "x"),
                             data: ident!("x")
                         }]
                     }))
@@ -590,10 +590,10 @@ fn defer_expr() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "defer x"),
-            data: Box::new(ElementVariant::Defer(Defer {
+            span: span!(1, 1, "defer x"),
+            data: Box::new(Element::Defer(Defer {
                 content: Element {
-                    pos_raw: pos_raw!(1, 7, " x"),
+                    span: span!(1, 7, " x"),
                     data: ident!("x")
                 }
             }))
@@ -607,16 +607,16 @@ fn proc_kwd() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "proc | | x"),
-            data: Box::new(ElementVariant::Procedure(Procedure {
+            span: span!(1, 1, "proc | | x"),
+            data: Box::new(Element::Procedure(Procedure {
                 is_fn: false,
                 args: vec![],
                 return_type: None,
                 content: Element {
-                    pos_raw: pos_raw!(1, 10, " x"),
+                    span: span!(1, 10, " x"),
                     data: Box::new(Block {
                         content: vec![Element {
-                            pos_raw: pos_raw!(1, 10, " x"),
+                            span: span!(1, 10, " x"),
                             data: ident!("x")
                         }]
                     })
@@ -632,16 +632,16 @@ fn proc_nokwd() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "| | x"),
-            data: Box::new(ElementVariant::Procedure(Procedure {
+            span: span!(1, 1, "| | x"),
+            data: Box::new(Element::Procedure(Procedure {
                 is_fn: false,
                 args: vec![],
                 return_type: None,
                 content: Element {
-                    pos_raw: pos_raw!(1, 5, " x"),
+                    span: span!(1, 5, " x"),
                     data: Box::new(Block {
                         content: vec![Element {
-                            pos_raw: pos_raw!(1, 5, " x"),
+                            span: span!(1, 5, " x"),
                             data: ident!("x")
                         }]
                     })
@@ -657,16 +657,16 @@ fn fn_kwd() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "fn | | x"),
-            data: Box::new(ElementVariant::Procedure(Procedure {
+            span: span!(1, 1, "fn | | x"),
+            data: Box::new(Element::Procedure(Procedure {
                 is_fn: true,
                 args: vec![],
                 return_type: None,
                 content: Element {
-                    pos_raw: pos_raw!(1, 8, " x"),
+                    span: span!(1, 8, " x"),
                     data: Box::new(Block {
                         content: vec![Element {
-                            pos_raw: pos_raw!(1, 8, " x"),
+                            span: span!(1, 8, " x"),
                             data: ident!("x")
                         }]
                     })
@@ -682,16 +682,16 @@ fn fn_arg() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "fn | | x"),
-            data: Box::new(ElementVariant::Procedure(Procedure {
+            span: span!(1, 1, "fn | | x"),
+            data: Box::new(Element::Procedure(Procedure {
                 is_fn: true,
                 args: vec![],
                 return_type: None,
                 content: Element {
-                    pos_raw: pos_raw!(1, 8, " x"),
+                    span: span!(1, 8, " x"),
                     data: Box::new(Block {
                         content: vec![Element {
-                            pos_raw: pos_raw!(1, 8, " x"),
+                            span: span!(1, 8, " x"),
                             data: ident!("x")
                         }]
                     })
@@ -707,8 +707,8 @@ fn return_nothing() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "ret"),
-            data: Box::new(ElementVariant::Return(Return {
+            span: span!(1, 1, "ret"),
+            data: Box::new(Element::Return(Return {
                 value: UNIT_T.as_type().as_type_element().as_literal()
             }))
         }
@@ -721,10 +721,10 @@ fn return_something() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "ret x"),
-            data: Box::new(ElementVariant::Return(Return {
+            span: span!(1, 1, "ret x"),
+            data: Box::new(Element::Return(Return {
                 value: Element {
-                    pos_raw: pos_raw!(1, 5, " x"),
+                    span: span!(1, 5, " x"),
                     data: ident!("x")
                 }
             }))
@@ -747,11 +747,11 @@ fn un_opr() {
         assert_eq!(
             ast[0],
             Element {
-                pos_raw: pos_raw!(1, 1, s),
-                data: Box::new(ElementVariant::UnaryOpr(UnaryOpr {
+                span: span!(1, 1, s),
+                data: Box::new(Element::UnaryOpr(UnaryOpr {
                     ty,
                     operand: Element {
-                        pos_raw: pos_raw!(1, 2, "x"),
+                        span: span!(1, 2, "x"),
                         data: ident!("x")
                     },
                 }))
@@ -766,14 +766,14 @@ fn unparen_call_single() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x y"),
-            data: Box::new(ElementVariant::Call(Call {
+            span: span!(1, 1, "x y"),
+            data: Box::new(Element::Call(Call {
                 called: Element {
-                    pos_raw: pos_raw!(1, 1, "x"),
+                    span: span!(1, 1, "x"),
                     data: ident!("x")
                 },
                 args: vec![Element {
-                    pos_raw: pos_raw!(1, 3, " y"),
+                    span: span!(1, 3, " y"),
                     data: ident!("y")
                 }],
                 kwargs: Default::default()
@@ -788,19 +788,19 @@ fn unparen_call_multiple() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x y, z"),
-            data: Box::new(ElementVariant::Call(Call {
+            span: span!(1, 1, "x y, z"),
+            data: Box::new(Element::Call(Call {
                 called: Element {
-                    pos_raw: pos_raw!(1, 1, "x"),
+                    span: span!(1, 1, "x"),
                     data: ident!("x")
                 },
                 args: vec![
                     Element {
-                        pos_raw: pos_raw!(1, 3, " y"),
+                        span: span!(1, 3, " y"),
                         data: ident!("y")
                     },
                     Element {
-                        pos_raw: pos_raw!(1, 6, " z"),
+                        span: span!(1, 6, " z"),
                         data: ident!("z")
                     }
                 ],
@@ -816,21 +816,21 @@ fn unparen_call_nested() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x y z"),
-            data: Box::new(ElementVariant::Call(Call {
+            span: span!(1, 1, "x y z"),
+            data: Box::new(Element::Call(Call {
                 called: Element {
-                    pos_raw: pos_raw!(1, 1, "x"),
+                    span: span!(1, 1, "x"),
                     data: ident!("x")
                 },
                 args: vec![Element {
-                    pos_raw: pos_raw!(1, 3, " y z"),
-                    data: Box::new(ElementVariant::Call(Call {
+                    span: span!(1, 3, " y z"),
+                    data: Box::new(Element::Call(Call {
                         called: Element {
-                            pos_raw: pos_raw!(1, 3, " y"),
+                            span: span!(1, 3, " y"),
                             data: ident!("y")
                         },
                         args: vec![Element {
-                            pos_raw: pos_raw!(1, 5, " z"),
+                            span: span!(1, 5, " z"),
                             data: ident!("z")
                         }],
                         kwargs: Default::default()
@@ -848,11 +848,11 @@ fn dot() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x.y"),
-            data: Box::new(ElementVariant::Ident(Ident {
+            span: span!(1, 1, "x.y"),
+            data: Box::new(Element::Ident(Ident {
                 name: "y".into(),
                 parent: Some(Element {
-                    pos_raw: pos_raw!(1, 1, "x"),
+                    span: span!(1, 1, "x"),
                     data: ident!("x")
                 })
             }))
@@ -866,10 +866,10 @@ fn call_no_args() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x()"),
-            data: Box::new(ElementVariant::Call(Call {
+            span: span!(1, 1, "x()"),
+            data: Box::new(Element::Call(Call {
                 called: Element {
-                    pos_raw: pos_raw!(1, 1, "x"),
+                    span: span!(1, 1, "x"),
                     data: ident!("x")
                 },
                 args: vec![],
@@ -885,14 +885,14 @@ fn call_with_args() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x(y)"),
-            data: Box::new(ElementVariant::Call(Call {
+            span: span!(1, 1, "x(y)"),
+            data: Box::new(Element::Call(Call {
                 called: Element {
-                    pos_raw: pos_raw!(1, 1, "x"),
+                    span: span!(1, 1, "x"),
                     data: ident!("x")
                 },
                 args: vec![Element {
-                    pos_raw: pos_raw!(1, 3, "y"),
+                    span: span!(1, 3, "y"),
                     data: ident!("y")
                 }],
                 kwargs: Default::default()
@@ -907,14 +907,14 @@ fn dot_call() {
     assert_eq!(
         ast[0],
         Element {
-            pos_raw: pos_raw!(1, 1, "x.y()"),
-            data: Box::new(ElementVariant::Call(Call {
+            span: span!(1, 1, "x.y()"),
+            data: Box::new(Element::Call(Call {
                 called: Element {
-                    pos_raw: pos_raw!(1, 1, "x.y"),
-                    data: Box::new(ElementVariant::Ident(Ident {
+                    span: span!(1, 1, "x.y"),
+                    data: Box::new(Element::Ident(Ident {
                         name: "y".into(),
                         parent: Some(Element {
-                            pos_raw: pos_raw!(1, 1, "x"),
+                            span: span!(1, 1, "x"),
                             data: ident!("x")
                         })
                     }))

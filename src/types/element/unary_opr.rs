@@ -1,7 +1,9 @@
+use std::borrow::Cow;
+
 use crate::{
     types::{
-        element::{call::Call, ident::Ident, Element, ElementData, ElementVariant},
-        position::PosRaw,
+        element::{call::Call, ident::Ident, Element, ElementData},
+        position::{GetSpan, Span},
         token::OprType,
     },
     Print, ZResult,
@@ -10,32 +12,37 @@ use crate::{
 #[derive(Clone, PartialEq, Debug)]
 pub struct UnaryOpr {
     pub ty: OprType,
-    pub operand: Element,
+    pub opr_span: Option<Span>,
+    pub operand: Box<Element>,
+}
+impl GetSpan for UnaryOpr {
+    fn span(&self) -> Option<Span> {
+        self.opr_span.merge_span(&self.operand)
+    }
 }
 
 impl ElementData for UnaryOpr {
-    fn as_variant(&self) -> ElementVariant {
-        ElementVariant::UnaryOpr(self.to_owned())
+    fn as_variant(&self) -> Element {
+        Element::UnaryOpr(self.to_owned())
     }
 
-    fn desugared(&self, pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
         Ok(Call {
-            called: Element {
-                pos_raw: pos_raw.to_owned(),
-                data: Box::new(
-                    Ident {
-                        name: match self.ty {
-                            OprType::Not => "_not",
-                            OprType::UnPlus => "_un_plus",
-                            OprType::UnMinus => "_un_minus",
-                            _ => panic!(),
-                        }
-                        .into(),
-                        parent: Some(self.operand.desugared(out)?),
-                    }
-                    .as_variant(),
-                ),
-            },
+            called: Ident {
+                name: match self.ty {
+                    OprType::Not => "_not",
+                    OprType::UnPlus => "_un_plus",
+                    OprType::UnMinus => "_un_minus",
+                    _ => panic!(),
+                }
+                .into(),
+                name_span: None,
+                dot_span: None,
+                parent: Some(self.operand.desugared(out)?.into()),
+            }
+            .as_variant()
+            .into(),
+            paren_spans: None,
             args: vec![],
             kwargs: Default::default(),
         }

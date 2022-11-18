@@ -1,12 +1,11 @@
-use std::{collections::VecDeque, ops::Range};
+use std::ops::Range;
 
-use itertools::{Either, Itertools};
-use smol_str::SmolStr;
-use tracing::{debug, trace};
+use itertools::Either;
+use tracing::trace;
 
 use crate::{
     types::{
-        position::GetPosRaw,
+        position::GetSpan,
         token::{Token, TokenType},
     },
     Element, ZError, ZResult,
@@ -17,7 +16,6 @@ pub struct Buffer {
     pub content: Vec<Either<Element, Token>>,
     pub cursor: usize,
     pub started: bool,
-    pub raw: Option<VecDeque<SmolStr>>,
 }
 impl Buffer {
     pub fn new(input: Vec<Token>) -> Self {
@@ -28,8 +26,10 @@ impl Buffer {
                 .collect::<Vec<Either<Element, _>>>(),
             cursor: 0,
             started: false,
-            raw: None,
         }
+    }
+    pub fn this(&self) -> Option<Either<Element, Token>> {
+        self.content.get(self.cursor).cloned()
     }
     pub fn next(&mut self) -> Option<Either<Element, Token>> {
         if self.started {
@@ -37,27 +37,18 @@ impl Buffer {
         } else {
             self.started = true;
         }
-        let next = self.content.get(self.cursor).cloned();
-        trace!(?next);
-        if let Some(raw) = &mut self.raw {
-            if let Some(next) = &next {
-                raw.push_back(match next {
-                    Either::Left(c) => c.pos_raw.raw.to_owned(),
-                    Either::Right(c) => c.get_raw().into(),
-                });
-            }
-        }
-        next
+        self.content.get(self.cursor).cloned()
     }
     pub fn next_or_err(&mut self) -> ZResult<Either<Element, Token>> {
         if let Some(c) = self.next() {
             Ok(c)
         } else {
-            let curr_pos_raw = match &self.content.last().unwrap() {
-                Either::Left(c) => c.pos_raw(),
-                Either::Right(c) => c.pos_raw(),
+            let curr_span = match &self.content.last().unwrap() {
+                Either::Left(c) => c.span(),
+                Either::Right(c) => c.span(),
             };
-            Err(ZError::error_2_1_0(&curr_pos_raw.raw).with_pos_raw(&curr_pos_raw))
+            todo!();
+            //Err(ZError::error_2_1_0(&curr_span.raw))
         }
     }
     pub fn peek_prev(&mut self) -> Option<&Either<Element, Token>> {
@@ -94,40 +85,6 @@ impl Buffer {
     }
     pub fn peek(&self) -> Option<&Either<Element, Token>> {
         self.content.get(self.next_cursor_pos())
-    }
-    pub fn start_raw_collection(&mut self) {
-        self.raw.get_or_insert_with(|| {
-            debug!("Starting raw collection");
-            if self.started {
-                vec![self
-                    .content
-                    .get(self.cursor)
-                    .map(|c| match c {
-                        Either::Left(c) => c.pos_raw.raw.to_owned(),
-                        Either::Right(c) => c.get_raw().into(),
-                    })
-                    .unwrap_or_else(|| "".into())]
-            } else {
-                vec!["".into()]
-            }
-            .into()
-        });
-    }
-    pub fn get_raw_collection(&self) -> String {
-        self.raw.clone().unwrap_or_default().iter().join("")
-    }
-    pub fn end_raw_collection(&mut self) -> String {
-        debug!("Ending raw collection");
-        self.raw.take().unwrap_or_default().iter().join("")
-    }
-    pub fn end_raw_collection_at_end(&mut self) -> String {
-        debug!("Ending raw collection at end");
-        let raw = self.raw.take().unwrap_or_default().iter().join("");
-        let rest_raw = self.content[self.cursor + 1..]
-            .iter()
-            .map(|r| r.pos_raw().raw)
-            .join("");
-        format!("{raw}{rest_raw}")
     }
     pub fn window(&self, range: Range<usize>) -> BufferWindow {
         BufferWindow {
@@ -172,7 +129,7 @@ impl Buffer {
         while let Some(ele) = self.next() {
             if let Either::Right(ele) = ele {
                 if ele.ty == Some(divider) {
-                    trace!(pos = ?ele.pos_raw().pos, "Split");
+                    trace!(pos = ?ele.span(), "Split");
                     buffer_windows.push(self.window(start..self.cursor).to_owned());
                     start = self.next_cursor_pos();
                 }
@@ -206,7 +163,7 @@ impl Buffer {
                     nest_level -= 1
                 }
                 if nest_level == 1 && ele.ty == Some(divider) {
-                    trace!(pos = ?ele.pos_raw().pos, "Split");
+                    trace!(pos = ?ele.span(), "Split");
                     buffer_windows.push(self.window(start..self.cursor).to_owned());
                     start = self.next_cursor_pos();
                 }
@@ -245,7 +202,6 @@ impl BufferWindow {
             content: self.slice.to_owned(),
             cursor: 0,
             started: false,
-            raw: None,
         }
     }
     pub fn with_as_buffer<T>(&mut self, f: &impl Fn(&mut Buffer) -> ZResult<T>) -> ZResult<T> {

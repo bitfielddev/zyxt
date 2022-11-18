@@ -1,7 +1,8 @@
-use std::{fs::File, io::Read, panic, process::exit};
+use std::{fs::File, io::Read, panic, path::PathBuf, process::exit};
 
 use clap::Parser;
 use color_eyre::config::HookBuilder;
+use itertools::Either;
 use tracing_subscriber::EnvFilter;
 use zyxt::{
     repl,
@@ -45,26 +46,26 @@ fn main() {
 
     match args.subcmd {
         Subcmd::Run(sargs) => {
-            let filename = &sargs.filename;
-            let mut content = String::new();
-            match File::open(filename) {
-                Ok(mut file) => {
-                    file.read_to_string(&mut content).unwrap_or_else(|e| {
-                        if e.to_string() == *"Is a directory (os error 21)" {
-                            ZError::error_1_2(filename.to_owned()).print_exit(&mut StdIoPrint)
-                        } else {
-                            panic!("{}", e.to_string())
-                        }
-                    });
-                }
-                Err(_) => ZError::error_1_1(filename.to_owned()).print_exit(&mut StdIoPrint),
-            };
+            let filename = PathBuf::try_from(sargs.filename).unwrap(); // TODO
+                                                                       /*let mut content = String::new();
+                                                                       match File::open(filename) {
+                                                                           Ok(mut file) => {
+                                                                               file.read_to_string(&mut content).unwrap_or_else(|e| {
+                                                                                   if e.to_string() == *"Is a directory (os error 21)" {
+                                                                                       ZError::error_1_2(filename.to_owned()).print_exit(&mut StdIoPrint)
+                                                                                   } else {
+                                                                                       panic!("{}", e.to_string())
+                                                                                   }
+                                                                               });
+                                                                           }
+                                                                           Err(_) => ZError::error_1_1(filename.to_owned()).print_exit(&mut StdIoPrint),
+                                                                       };*/
             let mut sip1 = StdIoPrint;
             let mut sip2 = StdIoPrint;
             let mut typelist = InterpreterData::<Type<Element>, _>::new(&mut sip1);
             let mut i_data = InterpreterData::<Value, _>::new(&mut sip2);
             let exit_code = zyxt::interpret(
-                &zyxt::compile(content, filename, &mut typelist)
+                &zyxt::compile(Either::Left(&filename), &mut typelist)
                     .unwrap_or_else(|e| e.print_exit(&mut StdIoPrint)),
                 &mut i_data,
             )

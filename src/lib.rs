@@ -1,5 +1,7 @@
 #![feature(box_patterns)]
+#![feature(iterator_try_reduce)]
 
+pub mod file_importer;
 pub mod instructor;
 pub mod interpreter;
 pub mod lexer;
@@ -7,8 +9,10 @@ pub mod parser;
 pub mod repl;
 pub mod types;
 
-use std::time::Instant;
+use std::{path::Path, time::Instant};
 
+use itertools::Either;
+use smol_str::SmolStr;
 use tracing::{info, trace};
 use types::{
     errors::{ZError, ZResult},
@@ -16,6 +20,7 @@ use types::{
 };
 
 use crate::{
+    file_importer::{import_file, register_input},
     instructor::gen_instructions,
     interpreter::interpret_asts,
     lexer::lex,
@@ -24,8 +29,7 @@ use crate::{
 };
 
 pub fn compile(
-    input: String,
-    filename: &str,
+    file: Either<&Path, (SmolStr, String)>,
     typelist: &mut InterpreterData<Type<Element>, impl Print>,
 ) -> ZResult<Vec<Element>> {
     /*if typelist.out.verbosity() == 0 {
@@ -33,9 +37,17 @@ pub fn compile(
     }*/
     // TODO --stats flag
 
+    let (input, filename) = match &file {
+        Either::Left(p) => (import_file(p), SmolStr::from(p.to_string_lossy())),
+        Either::Right((name, input)) => (
+            register_input(name.to_owned(), input.to_owned()),
+            name.to_owned(),
+        ),
+    };
+
     info!("Lexing");
     let lex_start = Instant::now();
-    let lexed = lex(input, filename)?;
+    let lexed = lex((*input).to_owned(), filename)?;
     let lex_time = lex_start.elapsed().as_micros();
     trace!("{lexed:#?}");
 

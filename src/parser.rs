@@ -19,26 +19,25 @@ use tracing::{debug, info};
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{block::Block, comment::Comment, Element},
+        element::{block::Block, comment::Comment, Element, ElementData},
         errors::{ZError, ZResult},
-        position::GetPosRaw,
         token::{Token, TokenType},
         value::Value,
     },
 };
 
 impl Buffer {
-    fn parse_as_block(&mut self) -> ZResult<Element<Block>> {
+    fn parse_as_block(&mut self) -> ZResult<Block> {
         let mut buffers = self.get_split_between(
             TokenType::OpenCurlyParen,
             TokenType::CloseCurlyParen,
             TokenType::StatementEnd,
         )?;
         let block = buffers.with_as_buffers(&|buffer| buffer.parse_as_expr())?;
-        let ele = Element {
-            pos_raw: self.content.get(0).map(|c| c.pos_raw()).unwrap_or_default(),
-            data: Box::new(Block { content: block }),
-        };
+        let ele = Block {
+            brace_spans: None,
+            content: block,
+        }; // TODO brace_spans
         let buffer_window = BufferWindow {
             slice: vec![Either::Left(ele.as_variant())],
             range: buffers.range,
@@ -62,7 +61,8 @@ impl Buffer {
         self.parse_un_opr()?;
         self.parse_unparen_call()?;
         if let Some(ele) = self.content.get(2) {
-            return Err(ZError::error_2_1_0(ele.pos_raw().raw).with_pos_raw(&ele.pos_raw()));
+            todo!()
+            //return Err(ZError::error_2_1_0(ele.span().raw));
         }
         match self
             .content
@@ -71,7 +71,8 @@ impl Buffer {
         {
             Either::Left(c) => Ok(c.to_owned()),
             Either::Right(c) => {
-                Err(ZError::error_2_1_0(c.pos_raw().raw).with_pos_raw(&c.pos_raw()))
+                todo!()
+                //Err(ZError::error_2_1_0(c.span().raw))
             }
         }
     }
@@ -79,17 +80,14 @@ impl Buffer {
 
 #[tracing::instrument(skip_all)]
 pub fn parse_token_list(mut input: Vec<Token>) -> ZResult<Vec<Element>> {
-    let mut comments: Vec<Element<Comment>> = vec![];
+    let mut comments: Vec<Comment> = vec![];
 
     info!("Removing comments");
     for token in input.iter() {
         if token.ty == Some(TokenType::Comment) {
-            debug!(?token.pos, "Comment detected");
-            comments.push(Element {
-                pos_raw: token.pos_raw(),
-                data: Box::new(Comment {
-                    content: token.value.to_owned(),
-                }),
+            debug!(?token.span, "Comment detected");
+            comments.push(Comment {
+                content: token.value.to_owned(),
             })
         } else if [
             Some(TokenType::CommentStart),
@@ -99,7 +97,7 @@ pub fn parse_token_list(mut input: Vec<Token>) -> ZResult<Vec<Element>> {
         ]
         .contains(&token.ty)
         {
-            return Err(ZError::error_2_1_10(token.value.to_owned()).with_token(token));
+            return Err(ZError::error_2_1_10(token.value.to_owned()).with_span(token));
         }
     }
     input.retain(|token| token.ty != Some(TokenType::Comment));

@@ -3,7 +3,10 @@ use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::Buffer,
-    types::token::{TokenCategory, TokenType},
+    types::{
+        element::ElementData,
+        token::{TokenCategory, TokenType},
+    },
     ZResult,
 };
 
@@ -26,7 +29,7 @@ impl Buffer {
                         .unwrap_or_default()
                         .contains(&TokenCategory::ValueEnd)
                     {
-                        debug!(pos = ?selected.pos, prev_ty = ?prev_ele.ty, "Found value call");
+                        debug!(pos = ?selected.span, prev_ty = ?prev_ele.ty, "Found value call");
                         continue;
                     }
                 };
@@ -35,32 +38,26 @@ impl Buffer {
                         continue;
                     }
                 }
-                debug!(pos = ?selected.pos, "Parsing parentheses");
+                debug!(pos = ?selected.span, "Parsing parentheses");
 
-                self.start_raw_collection();
                 let mut paren_window =
                     self.get_between(TokenType::OpenParen, TokenType::CloseParen)?;
-                let raw = self.end_raw_collection();
                 paren_window.with_as_buffer(&move |f| {
                     let mut ele = f.parse_as_expr()?;
-                    ele.pos_raw.raw = raw.to_owned().into();
                     trace!(?ele);
                     f.content = vec![Either::Left(ele)];
                     Ok(())
                 })?;
                 self.splice_buffer(paren_window);
             } else if selected.ty == Some(TokenType::OpenCurlyParen) {
-                debug!(pos = ?selected.pos, "Parsing curly braces");
-                self.start_raw_collection();
+                debug!(pos = ?selected.span, "Parsing curly braces");
                 let paren_window =
                     self.get_between(TokenType::OpenCurlyParen, TokenType::CloseCurlyParen)?;
                 let mut paren_window = self.window(paren_window.range); // TODO clean this up
-                let raw = self.end_raw_collection();
                 paren_window.with_as_buffer(&move |f| {
                     f.next_or_err()?;
                     let mut ele = f.parse_as_block()?;
                     trace!(?ele);
-                    ele.pos_raw.raw = raw.to_owned().into();
                     f.content = vec![Either::Left(ele.as_variant())];
                     Ok(())
                 })?;

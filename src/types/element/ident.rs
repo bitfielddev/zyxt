@@ -1,9 +1,11 @@
+use std::borrow::Cow;
+
 use smol_str::SmolStr;
 
 use crate::{
     types::{
-        element::{Element, ElementData, ElementVariant},
-        position::PosRaw,
+        element::{Element, ElementData},
+        position::{GetSpan, Span},
     },
     InterpreterData, Print, Type, Value, ZResult,
 };
@@ -11,12 +13,21 @@ use crate::{
 #[derive(Clone, PartialEq, Debug)]
 pub struct Ident {
     pub name: SmolStr,
-    pub parent: Option<Element>,
+    pub name_span: Option<Span>,
+    pub dot_span: Option<Span>,
+    pub parent: Option<Box<Element>>,
+}
+impl GetSpan for Ident {
+    fn span(&self) -> Option<Span> {
+        self.parent
+            .merge_span(&self.dot_span)
+            .merge_span(&self.name_span)
+    }
 }
 
 impl ElementData for Ident {
-    fn as_variant(&self) -> ElementVariant {
-        ElementVariant::Ident(self.to_owned())
+    fn as_variant(&self) -> Element {
+        Element::Ident(self.to_owned())
     }
 
     fn is_pattern(&self) -> bool {
@@ -24,19 +35,22 @@ impl ElementData for Ident {
     }
     fn process<O: Print>(
         &mut self,
-        pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> ZResult<Type<Element>> {
-        typelist.get_val(&self.name, pos_raw)
-    }
+        typelist.get_val(&self.name, &self.name_span)
+    } // TODO change sig of get_val
 
-    fn desugared(&self, _pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
         let mut new_self = self.to_owned();
-        new_self.parent = new_self.parent.map(|a| a.desugared(out)).transpose()?;
+        new_self.parent = new_self
+            .parent
+            .map(|a| a.desugared(out))
+            .transpose()?
+            .map(|a| a.into());
         Ok(new_self.as_variant())
     }
 
     fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
-        i_data.get_val(&self.name, &Default::default()) // TODO
+        i_data.get_val(&self.name, &self.name_span) // TODO
     }
 }

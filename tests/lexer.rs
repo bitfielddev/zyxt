@@ -8,7 +8,7 @@ use zyxt::types::token::TokenType;
 
 macro_rules! lex {
     ($str:expr) => {
-        zyxt::lexer::lex($str.to_owned(), "").unwrap()
+        zyxt::lexer::lex($str.to_owned().into(), "").unwrap()
     };
 }
 

@@ -4,9 +4,9 @@ use tracing::{debug, trace};
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{declare::Declare, Element, ElementVariant},
+        element::{declare::Declare, Element},
         errors::{ZError, ZResult},
-        position::{GetPosRaw, PosRaw},
+        position::GetSpan,
         token::{Token, TokenType},
     },
 };
@@ -26,9 +26,8 @@ impl Buffer {
                     ..
                 })
             ) {
-                debug!(pos = ?selected.pos_raw().pos, "Flag detected");
+                debug!(pos = ?selected.span(), "Flag detected");
                 flag_pos = Some(self.cursor);
-                self.start_raw_collection();
                 start = Some(self.cursor);
                 continue;
             } else if !matches!(
@@ -43,18 +42,12 @@ impl Buffer {
 
             start.get_or_insert(self.cursor - 1);
 
-            let (declared_var, prev_raw) = if let Some(Either::Left(d)) = self.peek_prev() {
-                (d.to_owned(), d.pos_raw.raw.to_owned())
+            let declared_var = if let Some(Either::Left(d)) = self.peek_prev() {
+                d.to_owned()
             } else {
-                return Err(ZError::error_2_1_5().with_pos_raw(&selected.pos_raw()));
+                return Err(ZError::error_2_1_5());
             };
-            if self.raw.is_none() {
-                self.start_raw_collection();
-                if let Some(a) = self.raw.as_mut() {
-                    a.push_front(prev_raw)
-                }
-            }
-            debug!(pos = ?declared_var.pos_raw.pos, "Parsing declaration");
+            debug!(pos = ?declared_var.span(), "Parsing declaration");
 
             let flags = if let Some(flag_pos) = flag_pos {
                 self.content[flag_pos..self.cursor - 1]
@@ -62,13 +55,15 @@ impl Buffer {
                     .map(|ele| {
                         if let Either::Right(Token {
                             ty: Some(TokenType::Flag(flag)),
+                            span,
                             ..
                         }) = ele
                         {
                             debug!(?flag, "Flag detected");
-                            Ok(flag.to_owned())
+                            Ok((flag.to_owned(), span.to_owned()))
                         } else {
-                            Err(ZError::error_2_1_6(ele.pos_raw().raw).with_pos_raw(&ele.pos_raw()))
+                            todo!()
+                            //Err(ZError::error_2_1_6(ele.span().raw))
                         }
                     })
                     .collect::<Result<_, _>>()?
@@ -79,18 +74,13 @@ impl Buffer {
             let content = self
                 .rest_incl_curr()
                 .with_as_buffer(&|buf| buf.parse_as_expr())?;
-            let ele = Element {
-                pos_raw: PosRaw {
-                    pos: self.content[start.unwrap()].pos_raw().pos,
-                    raw: self.end_raw_collection_at_end().into(),
-                },
-                data: Box::new(ElementVariant::Declare(Declare {
-                    variable: declared_var.to_owned(),
-                    content,
-                    flags,
-                    ty: None,
-                })),
-            };
+            let ele = Element::Declare(Declare {
+                variable: declared_var.to_owned().into(),
+                content: content.into(),
+                flags,
+                ty: None,
+                eq_span: None, // TODO
+            });
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],

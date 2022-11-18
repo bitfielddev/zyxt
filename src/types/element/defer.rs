@@ -1,38 +1,46 @@
+use std::borrow::Cow;
+
 use crate::{
     types::{
-        element::{Element, ElementData, ElementVariant},
-        position::PosRaw,
+        element::{Element, ElementData},
+        position::{GetSpan, Span},
     },
     InterpreterData, Print, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Defer {
-    pub content: Element,
+    pub kwd_span: Span,
+    pub content: Box<Element>,
+}
+impl GetSpan for Defer {
+    fn span(&self) -> Option<Span> {
+        self.kwd_span.merge_span(&self.content)
+    }
 }
 
 impl ElementData for Defer {
-    fn as_variant(&self) -> ElementVariant {
-        ElementVariant::Defer(self.to_owned())
+    fn as_variant(&self) -> Element {
+        Element::Defer(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> ZResult<Type<Element>> {
-        self.content.data.process(pos_raw, typelist)
+        self.content.process(typelist)
     }
 
-    fn desugared(&self, _pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
         Ok(Defer {
-            content: self.content.desugared(out)?.as_variant(),
+            kwd_span: self.kwd_span.to_owned(),
+            content: self.content.desugared(out)?.as_variant().into(),
         }
         .as_variant())
     }
 
     fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
-        i_data.add_defer(self.content.to_owned());
+        i_data.add_defer(*self.content.to_owned());
         Ok(Value::Unit)
     }
 }

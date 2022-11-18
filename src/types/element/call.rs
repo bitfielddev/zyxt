@@ -1,15 +1,12 @@
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 use smol_str::SmolStr;
 
 use crate::{
     types::{
-        element::{
-            ident::Ident, literal::Literal, procedure::Argument, Element, ElementData,
-            ElementVariant,
-        },
+        element::{ident::Ident, literal::Literal, procedure::Argument, Element, ElementData},
         interpreter_data::{FrameData, FrameType},
-        position::PosRaw,
+        position::{GetSpan, Span},
         typeobj::{unit_t::UNIT_T, TypeDefinition, TypeInstance},
         value::Proc,
     },
@@ -18,31 +15,38 @@ use crate::{
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Call {
-    pub called: Element,
+    pub called: Box<Element>,
+    pub paren_spans: Option<(Span, Span)>,
     pub args: Vec<Element>,
     pub kwargs: HashMap<SmolStr, Element>,
 }
+impl GetSpan for Call {
+    fn span(&self) -> Option<Span> {
+        let start_paren = self.paren_spans.as_ref().map(|a| &a.0);
+        let end_paren = self.paren_spans.as_ref().map(|a| &a.1);
+        self.called
+            .merge_span(start_paren)
+            .merge_span(&self.args)
+            .merge_span(end_paren)
+    }
+}
 
 impl ElementData for Call {
-    fn as_variant(&self) -> ElementVariant {
-        ElementVariant::Call(self.to_owned())
+    fn as_variant(&self) -> Element {
+        Element::Call(self.to_owned())
     }
     fn process<O: Print>(
         &mut self,
-        pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> ZResult<Type<Element>> {
-        if let ElementVariant::Ident(Ident {
+        if let Element::Ident(Ident {
             name,
             parent:
-                Some(Element {
-                    data:
-                        box ElementVariant::Ident(Ident {
-                            name: parent_name, ..
-                        }),
-                    ..
-                }),
-        }) = &*self.called.data
+                Some(box Element::Ident(Ident {
+                    name: parent_name, ..
+                })),
+            ..
+        }) = &*self.called
         {
             if &**name == "out" && &**parent_name == "ter" {
                 self.args
@@ -53,7 +57,7 @@ impl ElementData for Call {
             }
         }
         let called_type = self.called.process(typelist)?;
-        if let ElementVariant::Procedure(procedure) = self.called.data.as_mut() {
+        if let Element::Procedure(procedure) = &mut *self.called {
             for (i, arg) in self.args.iter_mut().enumerate() {
                 if arg.process(typelist)?
                     != procedure.args.get_mut(i).unwrap().ty.process(typelist)?
@@ -66,9 +70,10 @@ impl ElementData for Call {
             } else {
                 Ok(UNIT_T.as_type_element().as_type())
             }
-        } else if let ElementVariant::Literal(Literal {
+        } else if let Element::Literal(Literal {
             content: Value::Proc(proc),
-        }) = self.called.data.as_mut()
+            ..
+        }) = &mut *self.called
         {
             Ok(match proc {
                 Proc::Builtin { signature, .. } => {
@@ -120,28 +125,26 @@ impl ElementData for Call {
                 // TODO handle error
             } else {
                 unreachable!()
-            };
-            self.process(pos_raw, typelist)
+            }
+            .into();
+            self.process(typelist)
         }
     }
 
-    fn desugared(&self, _pos_raw: &PosRaw, _: &mut impl Print) -> ZResult<ElementVariant> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
         // TODO
         Ok(self.as_variant())
     }
 
     fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
-        if let ElementVariant::Ident(Ident {
+        if let Element::Ident(Ident {
             name,
             parent:
-                Some(Element {
-                    data:
-                        box ElementVariant::Ident(Ident {
-                            name: parent_name, ..
-                        }),
-                    ..
-                }),
-        }) = &*self.called.data
+                Some(box Element::Ident(Ident {
+                    name: parent_name, ..
+                })),
+            ..
+        }) = &*self.called
         {
             if *name == "out" && *parent_name == "ter" {
                 let s = self
@@ -184,7 +187,8 @@ impl ElementData for Call {
                         } else {
                             default.as_ref().unwrap()
                         };
-                        processed_args.insert(name.to_owned(), input_arg.interpret_expr(i_data)?);
+                        processed_args
+                            .insert(name.name.to_owned(), input_arg.interpret_expr(i_data)?);
                     }
                     i_data
                         .add_frame(
@@ -201,7 +205,7 @@ impl ElementData for Call {
                         )
                         .heap
                         .extend(processed_args);
-                    let res = content.data.interpret_block(i_data, true, false);
+                    let res = content.interpret_block(i_data, true, false);
                     i_data.pop_frame()?;
                     res
                 }

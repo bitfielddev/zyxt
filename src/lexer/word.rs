@@ -2,7 +2,10 @@ use tracing::trace;
 
 use crate::{
     lexer::{buffer::Buffer, ALPHANUMERIC},
-    types::token::{Flag, Keyword, Token, TokenType},
+    types::{
+        position::Span,
+        token::{Flag, Keyword, Token, TokenType},
+    },
     ZResult,
 };
 
@@ -41,8 +44,8 @@ pub fn lex_word(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
                     "prot" => TokenType::Flag(Flag::Prot),
                     _ => TokenType::Ident,
                 }),
-                value: raw.into(),
-                pos: init_pos,
+                value: (&raw).into(),
+                span: Span::new(pos, &raw),
                 ..Default::default()
             });
             return Ok(());

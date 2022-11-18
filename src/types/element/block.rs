@@ -1,8 +1,10 @@
+use std::borrow::Cow;
+
 use crate::{
     types::{
-        element::{Element, ElementData, ElementVariant},
+        element::{Element, ElementData},
         interpreter_data::FrameType,
-        position::PosRaw,
+        position::{GetSpan, Span},
         typeobj::unit_t::UNIT_T,
     },
     InterpreterData, Print, Type, Value, ZError, ZResult,
@@ -10,24 +12,32 @@ use crate::{
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Block {
+    pub brace_spans: Option<(Span, Span)>,
     pub content: Vec<Element>,
+}
+impl GetSpan for Block {
+    fn span(&self) -> Option<Span> {
+        let start_brace = self.brace_spans.as_ref().map(|a| &a.0);
+        let end_brace = self.brace_spans.as_ref().map(|a| &a.1);
+        start_brace.merge_span(&self.content).merge_span(end_brace)
+    }
 }
 
 impl ElementData for Block {
-    fn as_variant(&self) -> ElementVariant {
-        ElementVariant::Block(self.to_owned())
+    fn as_variant(&self) -> Element {
+        Element::Block(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        _pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> ZResult<Type<Element>> {
         Ok(self.block_type(typelist, true)?.0)
     }
 
-    fn desugared(&self, _pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
-        Ok(ElementVariant::Block(Self {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+        Ok(Element::Block(Self {
+            brace_spans: self.brace_spans.to_owned(),
             content: self
                 .content
                 .iter()
@@ -58,7 +68,7 @@ impl Block {
                     return_type = Some(*value);
                 } else if last != return_type.to_owned().unwrap() {
                     return Err(
-                        ZError::error_4_t(last, return_type.unwrap()).with_pos_raw(&ele.pos_raw)
+                        ZError::error_4_t(last, return_type.unwrap()), // TODO
                     );
                 }
             }
@@ -66,7 +76,7 @@ impl Block {
         if let Some(return_type) = return_type.to_owned() {
             if last != return_type {
                 let last_ele = self.content.last().unwrap();
-                return Err(ZError::error_4_t(last, return_type).with_pos_raw(&last_ele.pos_raw));
+                return Err(ZError::error_4_t(last, return_type)); // TODO
             }
         }
         if add_set {
@@ -97,7 +107,7 @@ impl Block {
             i_data.add_frame(None, FrameType::Normal);
         }
         for ele in &self.content {
-            if let ElementVariant::Return(r#return) = &*ele.data {
+            if let Element::Return(r#return) = &*ele {
                 if returnable {
                     last = r#return.value.interpret_expr(i_data)?
                 } else {

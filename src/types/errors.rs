@@ -10,9 +10,10 @@ use owo_colors::OwoColorize;
 use tracing::debug;
 
 use crate::{
+    file_importer::get_input,
     types::{
         element::{Element, ElementData},
-        position::PosRaw,
+        position::{GetSpan, Span},
         printer::Print,
         token::{Keyword, Token},
         value::Value,
@@ -24,7 +25,7 @@ pub type ZResult<T> = Result<T, ZError>;
 
 #[derive(Clone, Debug)]
 pub struct ZError {
-    pub pos: Vec<PosRaw>,
+    pub pos: Vec<Span>,
     pub code: &'static str,
     pub message: String,
 }
@@ -264,11 +265,11 @@ impl ZError {
     }
 
     /// expected pattern, got something else
-    pub fn error_2_2(ele: Element<impl ElementData>) -> Self {
+    pub fn error_2_2(ele: impl ElementData) -> Self {
         ZError {
             pos: vec![],
             code: "2.2",
-            message: format!("Expected pattern, got `{}`", ele.pos_raw.raw),
+            message: format!("Expected pattern, got `{}`", /*ele.span.raw*/ ""), // TODO
         }
     }
 
@@ -302,9 +303,7 @@ impl ZError {
             code: "3.1.0",
             message: format!(
                 "`{}` (type `{}`) has no attribute `{}`",
-                parent.pos_raw.raw.trim(),
-                parent_type,
-                attribute
+                /*parent.span.raw.trim()*/ "", parent_type, attribute
             ),
         }
     }
@@ -412,36 +411,38 @@ impl ZError {
     pub fn get_surrounding_text(&self) -> String {
         self.pos
             .iter()
-            .map(|pos_raw| {
-                let pos = format!(" {} ", pos_raw.pos).bold().on_red().to_string();
-                let mut contents =
-                    if let Ok(contents) = std::fs::read_to_string(&pos_raw.pos.filename) {
-                        contents
-                            .split('\n')
-                            .map(|a| a.to_string())
-                            .collect::<Vec<_>>()
-                    } else {
-                        todo!()
-                    };
-                let end_pos = pos_raw.pos.pos_after(&pos_raw.raw);
-                debug!(start = ?pos_raw.pos, end = ?end_pos, "Generating surrounding text");
-                let start_line = (pos_raw.pos.line - 1).saturating_sub(2);
-                let end_line = (end_pos.line - 1 + 3).min(contents.len());
+            .map(|span| {
+                let pos = format!(" {} ", span.start_pos).bold().on_red().to_string();
+                let filename = if let Some(filename) = &span.start_pos.filename {
+                    filename.as_ref()
+                } else {
+                    return pos;
+                };
+                let mut contents = if let Some(input) = get_input(filename) {
+                    input.split('\n').map(|a| a.to_string()).collect::<Vec<_>>()
+                } else {
+                    return pos;
+                };
+                debug!(start = ?span.start_pos, end = ?span.end_pos, "Generating surrounding text");
+                let start_line = (span.start_pos.line - 1).saturating_sub(2);
+                let end_line = (span.end_pos.line - 1 + 3).min(contents.len());
 
-                let start_vec = contents[pos_raw.pos.line - 1].chars().collect::<Vec<_>>();
-                contents[pos_raw.pos.line - 1] = start_vec[..pos_raw.pos.column - 1]
+                let start_vec = contents[span.start_pos.line - 1]
+                    .chars()
+                    .collect::<Vec<_>>();
+                contents[span.start_pos.line - 1] = start_vec[..span.start_pos.column - 1]
                     .iter()
                     .cloned()
                     .chain("\u{001b}[0;1;4;31m".chars())
-                    .chain(start_vec[pos_raw.pos.column - 1..].iter().cloned())
+                    .chain(start_vec[span.start_pos.column - 1..].iter().cloned())
                     .join("");
 
-                let end_vec = contents[end_pos.line - 1].chars().collect::<Vec<_>>();
-                contents[end_pos.line - 1] = end_vec[..end_pos.column - 1]
+                let end_vec = contents[span.end_pos.line - 1].chars().collect::<Vec<_>>();
+                contents[span.end_pos.line - 1] = end_vec[..span.end_pos.column - 1]
                     .iter()
                     .cloned()
                     .chain("\u{001b}[0;37;2m".chars())
-                    .chain(end_vec[end_pos.column - 1..].iter().cloned())
+                    .chain(end_vec[span.end_pos.column - 1..].iter().cloned())
                     .join("");
 
                 let surrounding = contents[start_line..=end_line].join("\n");
@@ -464,19 +465,12 @@ impl ZError {
                 + &*format!(" {}", self.message).bold().red().to_string(),
         );
     }
-    pub fn with_pos_raw(mut self, pos_raw: &PosRaw) -> Self {
-        self.pos = vec![pos_raw.to_owned()];
-        self
-    }
-    pub fn with_element(mut self, element: &Element<impl ElementData>) -> Self {
-        self.pos = vec![element.pos_raw.to_owned()];
-        self
-    }
-    pub fn with_token(mut self, token: &Token) -> Self {
-        self.pos = vec![PosRaw {
-            pos: token.pos.to_owned(),
-            raw: token.value.to_owned().trim().to_string().parse().unwrap(),
-        }];
+    pub fn with_span(mut self, span: impl GetSpan) -> Self {
+        self.pos = if let Some(span) = span.span() {
+            vec![span]
+        } else {
+            vec![]
+        };
         self
     }
 }

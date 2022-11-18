@@ -1,15 +1,14 @@
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 use smol_str::SmolStr;
 
 use crate::{
     types::{
         element::{
-            block::Block, declare::Declare, ident::Ident, procedure::Argument, Element,
-            ElementData, ElementVariant,
+            block::Block, declare::Declare, ident::Ident, procedure::Argument, Element, ElementData,
         },
         interpreter_data::FrameType,
-        position::PosRaw,
+        position::{GetSpan, Span},
         token::Flag,
         typeobj::TypeDefinition,
     },
@@ -20,47 +19,49 @@ use crate::{
 pub struct Class {
     pub is_struct: bool,
     pub implementations: HashMap<SmolStr, Element>,
-    pub inst_fields: HashMap<SmolStr, (Element<Ident>, Option<Element>)>,
-    pub content: Option<Element<Block>>,
+    pub inst_fields: HashMap<SmolStr, (Ident, Option<Element>)>,
+    pub content: Option<Block>,
     pub args: Option<Vec<Argument>>,
+}
+impl GetSpan for Class {
+    fn span(&self) -> Option<Span> {
+        todo!()
+    }
 }
 
 impl ElementData for Class {
-    fn as_variant(&self) -> ElementVariant {
-        ElementVariant::Class(self.to_owned())
+    fn as_variant(&self) -> Element {
+        Element::Class(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        _pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> ZResult<Type<Element>> {
         typelist.add_frame(None, FrameType::Normal);
-        for expr in &mut self.content.as_mut().unwrap().data.content {
+        for expr in &mut self.content.as_mut().unwrap().content {
             // TODO deal w unwrap
             expr.process(typelist)?;
-            if let ElementVariant::Declare(Declare {
+            if let Element::Declare(Declare {
                 variable,
                 content,
                 flags,
                 ty,
                 ..
-            }) = &*expr.data
+            }) = &*expr
             {
+                let flags = flags.iter().map(|a| a.0).collect::<Vec<_>>();
                 if flags.contains(&Flag::Inst) && self.args.is_some() {
                     todo!("raise error here")
                 }
-                let name = if let ElementVariant::Ident(ident) = &*variable.data {
+                let name = if let Element::Ident(ident) = &**variable {
                     &ident.name
                 } else {
                     unimplemented!() // TODO
                 };
                 let ty = if let Some(ele) = ty {
-                    if let ElementVariant::Ident(ident) = &*ele.data {
-                        Element {
-                            pos_raw: ele.pos_raw.to_owned(),
-                            data: Box::new(ident.to_owned()),
-                        }
+                    if let Element::Ident(ident) = &**ele {
+                        ident.to_owned()
                     } else {
                         unimplemented!() // TODO
                     }
@@ -69,7 +70,7 @@ impl ElementData for Class {
                 };
                 if flags.contains(&Flag::Inst) {
                     self.inst_fields
-                        .insert(name.to_owned(), (ty.to_owned(), Some(content.to_owned())));
+                        .insert(name.to_owned(), (ty.to_owned(), Some(*content.to_owned())));
                 }
             }
         }
@@ -102,13 +103,10 @@ impl ElementData for Class {
         }))
     }
 
-    fn desugared(&self, pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
         let mut new_self = self.to_owned();
         new_self.content = if let Some(content) = new_self.content {
-            Some(Element {
-                pos_raw: pos_raw.to_owned(),
-                data: Box::new(content.desugared(out)?.data.as_block().unwrap().to_owned()),
-            })
+            Some(content.desugared(out)?.as_block().unwrap().to_owned())
         } else {
             None
         };
@@ -118,7 +116,7 @@ impl ElementData for Class {
             .map(|args| {
                 args.iter_mut()
                     .map(|arg| {
-                        arg.desugar(pos_raw, out)?;
+                        arg.desugar(out)?;
                         Ok(arg)
                     })
                     .collect::<Result<Vec<_>, _>>()

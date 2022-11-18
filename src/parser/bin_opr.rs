@@ -1,12 +1,12 @@
-use itertools::{Either, Itertools};
+use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::Buffer,
     types::{
-        element::{binary_opr::BinaryOpr, Element, ElementVariant},
+        element::{binary_opr::BinaryOpr, Element},
         errors::{ZError, ZResult},
-        position::{GetPosRaw, PosRaw},
+        position::GetSpan,
         token::{Token, TokenType},
     },
 };
@@ -34,9 +34,10 @@ impl Buffer {
                 continue;
             };
             if i == 0 || i == self.content.len() - 1 {
-                return Err(
-                    ZError::error_2_1_3(selected.pos_raw().raw).with_pos_raw(&selected.pos_raw())
-                );
+                todo!();
+                // return Err(
+                //     ZError::error_2_1_3(selected.span().raw)
+                // );
             }
             if opr_type.order() >= highest_order {
                 highest_order_index = i;
@@ -49,24 +50,19 @@ impl Buffer {
         } else {
             return Ok(());
         };
-        debug!(pos = ?tok.pos, "Parsing binary operator");
+        debug!(pos = ?tok.span, "Parsing binary operator");
         let operand1 = self
             .window(0..highest_order_index)
             .with_as_buffer(&|buf| buf.parse_as_expr())?;
         let operand2 = self
             .window(highest_order_index + 1..self.content.len())
             .with_as_buffer(&|buf| buf.parse_as_expr())?;
-        let ele = Element {
-            pos_raw: PosRaw {
-                pos: operand1.pos_raw.pos.to_owned(),
-                raw: self.content.iter().map(|a| a.pos_raw().raw).join("").into(),
-            },
-            data: Box::new(ElementVariant::BinaryOpr(BinaryOpr {
-                ty: *opr_type,
-                operand1,
-                operand2,
-            })),
-        };
+        let ele = Element::BinaryOpr(BinaryOpr {
+            ty: *opr_type,
+            opr_span: Some(tok.span.to_owned()),
+            operand1: operand1.into(),
+            operand2: operand2.into(),
+        });
         trace!(?ele);
         self.content = vec![Either::Left(ele)];
         Ok(())

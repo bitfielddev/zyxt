@@ -4,7 +4,7 @@ use crate::{
         comments::{lex_block_comment, lex_line_comment},
     },
     types::{
-        position::PosRaw,
+        position::Span,
         token::{OprType, Token, TokenType},
     },
     ZError, ZResult,
@@ -63,7 +63,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
                     tokens.push(Token {
                         ty: Some(TokenType::Comment),
                         value: "/*".into(),
-                        pos,
+                        span: Span::new(pos, "/*"),
                         ..Default::default()
                     });
                     lex_block_comment(iter, tokens)?;
@@ -74,7 +74,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
                     tokens.push(Token {
                         ty: Some(TokenType::Comment),
                         value: "//".into(),
-                        pos,
+                        span: Span::new(pos, "//"),
                         ..Default::default()
                     });
                     lex_line_comment(iter, tokens)?;
@@ -171,15 +171,10 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             ')' => TokenType::CloseParen,
             ']' => TokenType::CloseSquareParen,
             '}' => TokenType::CloseCurlyParen,
-            _ => {
-                return Err(ZError::error_2_1_1(char.to_owned()).with_pos_raw(&PosRaw {
-                    pos,
-                    raw: char.into(),
-                }))
-            }
+            _ => return Err(ZError::error_2_1_1(char.to_owned())),
         }),
-        value: char.into(),
-        pos,
+        value: (&char).into(),
+        span: Span::new(pos, &char),
         ..Default::default()
     });
     Ok(())

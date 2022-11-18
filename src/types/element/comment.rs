@@ -1,14 +1,8 @@
 use smol_str::SmolStr;
 
-use crate::types::element::{ElementData, ElementVariant};
+use crate::types::element::{Element, ElementData};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Comment {
     pub content: SmolStr,
-}
-
-impl ElementData for Comment {
-    fn as_variant(&self) -> ElementVariant {
-        ElementVariant::Comment(self.to_owned())
-    }
 }

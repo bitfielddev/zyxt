@@ -7,10 +7,10 @@ use crate::{
         element::{
             block::Block,
             procedure::{Argument, Procedure},
-            Element, ElementVariant,
+            Element,
         },
         errors::ZResult,
-        position::{GetPosRaw, PosRaw},
+        position::GetSpan,
         token::{Keyword, Token, TokenType},
     },
 };
@@ -25,9 +25,9 @@ impl Buffer {
                 .get_split(TokenType::Colon)?
                 .with_as_buffers(&|buf| buf.parse_as_expr())?;
             let name = if let Some(name) = arg_sections.first() {
-                if let ElementVariant::Ident(ident) = &*name.data {
-                    debug!(pos = ?name.pos_raw.pos, "Name detected");
-                    ident.name.to_owned()
+                if let Element::Ident(ident) = &*name {
+                    debug!(pos = ?name.span(), "Name detected");
+                    ident.to_owned()
                 } else {
                     todo!()
                 }
@@ -35,13 +35,13 @@ impl Buffer {
                 todo!()
             };
             let ty = if let Some(ele) = arg_sections.get(1) {
-                debug!(pos = ?ele.pos_raw.pos, "Type detected");
-                ele.to_owned()
+                debug!(pos = ?ele.span(), "Type detected");
+                ele.to_owned().into()
             } else {
                 todo!()
             };
             let default = arg_sections.get(2).cloned();
-            debug!(pos = ?default.as_ref().map(|d| &d.pos_raw.pos), "Default may be detected");
+            debug!(pos = ?default.as_ref().map(|d| d.span()), "Default may be detected");
             Ok(Argument { name, ty, default })
         })
     }
@@ -64,10 +64,10 @@ impl Buffer {
             } else {
                 continue;
             };
-            let init_pos = tok_selected.pos_raw();
+            let kwd_span = tok_selected.span;
             let start = self.cursor;
-            debug!(pos = ?init_pos.pos, "Parsing proc / fn");
-            self.start_raw_collection();
+            debug!(pos = ?kwd_span, "Parsing proc / fn");
+
             let is_fn = if ty != TokenType::Bar {
                 ty == TokenType::Keyword(Keyword::Fn)
             } else {
@@ -79,7 +79,7 @@ impl Buffer {
             debug!(is_fn);
             let args = if let Either::Right(Token {
                 ty: Some(TokenType::Bar),
-                pos,
+                span: pos,
                 ..
             }) = &selected
             {
@@ -92,19 +92,13 @@ impl Buffer {
             selected = self.next_or_err()?;
             let return_type = if let Either::Right(Token {
                 ty: Some(TokenType::Colon),
-                pos,
+                span: pos,
                 ..
             }) = &selected
             {
                 debug!(?pos, "Return type detected");
                 let start = self.cursor + 1;
-                while !matches!(
-                    selected,
-                    Either::Left(Element {
-                        data: box ElementVariant::Block(..),
-                        ..
-                    })
-                ) {
+                while !matches!(selected, Either::Left(Element::Block(..))) {
                     selected = self.next_or_err()?;
                 }
                 let range = start..self.cursor;
@@ -121,42 +115,27 @@ impl Buffer {
             } else {
                 None
             };
-            let block: Element<Block> = if let Either::Left(
-                block @ Element {
-                    pos_raw,
-                    data: box ElementVariant::Block(_),
-                },
-            ) = &selected
-            {
-                debug!(pos = ?pos_raw.pos, "Block detected");
-                Element {
-                    pos_raw: block.pos_raw.to_owned(),
-                    data: Box::new(block.data.as_block().unwrap().to_owned()),
-                }
+            let block: Block = if let Either::Left(block @ Element::Block(_)) = &selected {
+                debug!(pos = ?block.span(), "Block detected");
+                block.as_block().unwrap().to_owned()
             } else {
-                debug!(pos = ?selected.pos_raw().pos, "Expression detected");
+                debug!(pos = ?selected.span(), "Expression detected");
                 self.window(self.cursor..self.content.len())
                     .with_as_buffer(&|buf| {
                         let ele = buf.parse_as_expr()?;
-                        Ok(Element {
-                            pos_raw: ele.pos_raw.to_owned(),
-                            data: Box::new(Block { content: vec![ele] }),
+                        Ok(Block {
+                            brace_spans: None,
+                            content: vec![ele],
                         })
                     })?
             };
-            let raw = self.end_raw_collection();
-            let ele = Element {
-                pos_raw: PosRaw {
-                    pos: init_pos.pos,
-                    raw: raw.into(),
-                },
-                data: Box::new(ElementVariant::Procedure(Procedure {
-                    is_fn,
-                    args,
-                    return_type,
-                    content: block,
-                })),
-            };
+            let ele = Element::Procedure(Procedure {
+                is_fn,
+                kwd_span: Some(kwd_span),
+                args,
+                return_type: return_type.map(|a| a.into()),
+                content: block,
+            });
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],

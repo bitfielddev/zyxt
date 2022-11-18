@@ -4,9 +4,9 @@ use tracing::{debug, trace};
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{delete::Delete, ident::Ident, unary_opr::UnaryOpr, Element, ElementVariant},
+        element::{delete::Delete, ident::Ident, unary_opr::UnaryOpr, Element},
         errors::{ZError, ZResult},
-        position::{GetPosRaw, PosRaw},
+        position::GetSpan,
         token::{Keyword, OprType, Token, TokenType},
     },
 };
@@ -25,35 +25,29 @@ impl Buffer {
             ) {
                 continue;
             }
-            let init_pos = selected.pos_raw().pos;
-            debug!(pos = ?init_pos, "Parsing delete");
+            let init_span = selected.span();
+            debug!(pos = ?init_span, "Parsing delete");
             let start = self.cursor;
-            self.start_raw_collection();
             self.next_or_err()?;
-            let vars: Vec<Element<Ident>> =
-                self.get_split(TokenType::Comma)?.with_as_buffers(&|buf| {
-                    let ele = buf.parse_as_expr()?;
-                    if let ElementVariant::Ident(data) = &*ele.data {
-                        Ok(Element {
-                            pos_raw: ele.pos_raw,
-                            data: Box::new(data.to_owned()),
-                        })
-                    } else if let ElementVariant::UnaryOpr(UnaryOpr {
-                        ty: OprType::Deref, ..
-                    }) = *ele.data
-                    {
-                        Err(ZError::error_2_1_12(&ele.pos_raw.raw).with_element(&ele))
-                    } else {
-                        Err(ZError::error_2_1_11(&ele.pos_raw.raw).with_element(&ele))
-                    }
-                })?;
-            let ele = Element {
-                pos_raw: PosRaw {
-                    pos: init_pos,
-                    raw: self.end_raw_collection().into(),
-                },
-                data: Box::new(ElementVariant::Delete(Delete { names: vars })),
-            };
+            let vars: Vec<Ident> = self.get_split(TokenType::Comma)?.with_as_buffers(&|buf| {
+                let ele = buf.parse_as_expr()?;
+                if let Element::Ident(data) = &ele {
+                    Ok(data.to_owned())
+                } else if let Element::UnaryOpr(UnaryOpr {
+                    ty: OprType::Deref, ..
+                }) = &ele
+                {
+                    todo!()
+                    //Err(ZError::error_2_1_12(&ele.raw).with_element(&ele))
+                } else {
+                    todo!()
+                    //Err(ZError::error_2_1_11(&ele.span.raw).with_element(&ele))
+                }
+            })?;
+            let ele = Element::Delete(Delete {
+                kwd_span: init_span,
+                names: vars,
+            });
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],

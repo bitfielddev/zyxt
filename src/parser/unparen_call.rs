@@ -4,9 +4,9 @@ use tracing::{debug, trace};
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{call::Call, Element, ElementVariant},
+        element::{call::Call, Element},
         errors::ZResult,
-        position::{GetPosRaw, PosRaw},
+        position::GetSpan,
         token::{Token, TokenType},
     },
 };
@@ -25,10 +25,8 @@ impl Buffer {
                 continue;
             };
 
-            let init_pos = function.pos_raw().pos;
-            debug!(pos = ?function.pos_raw.pos, "Parsing unparenthesised call");
+            debug!(pos = ?function.span(), "Parsing unparenthesised call");
             let start = self.cursor;
-            self.start_raw_collection();
             let mut args = vec![];
             let mut arg_start = self.cursor + 1;
             while let Some(selected) = self.next() {
@@ -42,7 +40,7 @@ impl Buffer {
                     if arg_start == self.cursor {
                         todo!("error")
                     }
-                    debug!(pos = ?selected.pos_raw().pos, "Comma detected");
+                    debug!(pos = ?selected.span(), "Comma detected");
                     args.push(
                         self.window(arg_start..self.cursor)
                             .with_as_buffer(&|buf| buf.parse_as_expr())?,
@@ -63,17 +61,12 @@ impl Buffer {
                 self.window(arg_start..self.cursor)
                     .with_as_buffer(&|buf| buf.parse_as_expr())?,
             );
-            let ele = Element {
-                pos_raw: PosRaw {
-                    pos: init_pos.to_owned(),
-                    raw: self.end_raw_collection().into(),
-                },
-                data: Box::new(ElementVariant::Call(Call {
-                    called: function.to_owned(),
-                    args,
-                    kwargs: Default::default(),
-                })),
-            };
+            let ele = Element::Call(Call {
+                called: function.into(),
+                paren_spans: None,
+                args,
+                kwargs: Default::default(),
+            });
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],

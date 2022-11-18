@@ -6,8 +6,11 @@ mod text_literal;
 mod whitespace;
 mod word;
 
+use std::{path::Path, sync::Arc};
+
 use once_cell::sync::Lazy;
 use regex::Regex;
+use smol_str::SmolStr;
 use tracing::{debug, trace};
 
 use crate::{
@@ -28,14 +31,14 @@ static WHITESPACE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s+$").unwrap());
 static ALPHABETIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z_]+$").unwrap());
 
 #[tracing::instrument(skip_all)]
-pub fn lex(preinput: String, filename: &str) -> ZResult<Vec<Token>> {
+pub fn lex(preinput: String, filename: SmolStr) -> ZResult<Vec<Token>> {
     if preinput.trim().is_empty() {
         return Ok(vec![]);
     };
     let input = preinput + "\n";
 
     let pos = Position {
-        filename: filename.to_string(),
+        filename: Some(Arc::new(filename)),
         ..Default::default()
     };
     let mut iter = Buffer::new(&input, pos);

@@ -1,12 +1,12 @@
-use itertools::{Either, Itertools};
+use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{unary_opr::UnaryOpr, Element, ElementVariant},
+        element::{unary_opr::UnaryOpr, Element},
         errors::ZResult,
-        position::{GetPosRaw, PosRaw},
+        position::GetSpan,
         token::{Token, TokenType},
     },
 };
@@ -25,25 +25,17 @@ impl Buffer {
             } else {
                 continue;
             };
-            let init_pos = selected.pos_raw().pos;
-            debug!(pos = ?init_pos);
+            let opr_span = selected.span();
+            debug!(pos = ?opr_span);
             let operand = self
                 .rest_incl_curr()
-                .with_as_buffer(&|buf| buf.parse_as_expr())?;
-            let ele = Element {
-                pos_raw: PosRaw {
-                    pos: init_pos,
-                    raw: self.content[self.cursor - 1..]
-                        .iter()
-                        .map(|a| a.pos_raw().raw)
-                        .join("")
-                        .into(),
-                },
-                data: Box::new(ElementVariant::UnaryOpr(UnaryOpr {
-                    ty: opr_type,
-                    operand,
-                })),
-            };
+                .with_as_buffer(&|buf| buf.parse_as_expr())?
+                .into();
+            let ele = Element::UnaryOpr(UnaryOpr {
+                ty: opr_type,
+                opr_span,
+                operand,
+            });
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],

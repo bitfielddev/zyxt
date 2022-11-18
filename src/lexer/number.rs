@@ -2,7 +2,10 @@ use tracing::trace;
 
 use crate::{
     lexer::{buffer::Buffer, NUMERIC},
-    types::token::{Token, TokenType},
+    types::{
+        position::Span,
+        token::{Token, TokenType},
+    },
     ZResult,
 };
 
@@ -23,8 +26,8 @@ pub fn lex_number(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
         } else {
             tokens.push(Token {
                 ty: Some(TokenType::LiteralNumber),
-                value: raw.into(),
-                pos: init_pos,
+                value: (&raw).into(),
+                span: Span::new(init_pos, &raw),
                 ..Default::default()
             });
             return Ok(());

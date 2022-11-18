@@ -1,12 +1,13 @@
-use std::fmt::{Display, Formatter};
-
-use smol_str::SmolStr;
+use std::{
+    borrow::Cow,
+    fmt::{Display, Formatter},
+};
 
 use crate::{
     types::{
-        element::{block::Block, Element, ElementData, ElementVariant},
+        element::{block::Block, ident::Ident, Element, ElementData},
         interpreter_data::FrameType,
-        position::PosRaw,
+        position::{GetSpan, Span},
         typeobj::{proc_t::PROC_T, unit_t::UNIT_T, TypeInstance},
         value::Proc,
     },
@@ -15,32 +16,38 @@ use crate::{
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Argument {
-    pub name: SmolStr,
-    pub ty: Element,
+    pub name: Ident,
+    pub ty: Box<Element>,
     pub default: Option<Element>,
+}
+impl GetSpan for Argument {
+    fn span(&self) -> Option<Span> {
+        self.name.merge_span(&self.ty).merge_span(&self.default)
+    }
 }
 impl Display for Argument {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
+        /*write!(
             f,
             "{}{}{}",
-            self.name,
-            if self.ty.pos_raw.raw != "_any" {
+            self.name.name,
+            if self.ty.span().raw != "_any" {
                 // TODO
-                format!(": {}", self.ty.pos_raw.raw)
+                format!(": {}", self.ty.span.raw)
             } else {
                 "".to_string()
             },
             if let Some(r) = &self.default {
-                format!(": {}", r.pos_raw.raw.trim())
+                format!(": {}", r.span.raw.trim())
             } else {
                 "".to_string()
             }
-        )
+        )*/
+        write!(f, "")
     }
 }
 impl Argument {
-    pub fn desugar(&mut self, _pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<()> {
+    pub fn desugar(&mut self, out: &mut impl Print) -> ZResult<()> {
         self.default = self
             .default
             .as_ref()
@@ -53,19 +60,27 @@ impl Argument {
 #[derive(Clone, PartialEq, Debug)]
 pub struct Procedure {
     pub is_fn: bool,
+    pub kwd_span: Option<Span>,
     pub args: Vec<Argument>,
-    pub return_type: Option<Element>,
-    pub content: Element<Block>,
+    pub return_type: Option<Box<Element>>,
+    pub content: Block,
+}
+impl GetSpan for Procedure {
+    fn span(&self) -> Option<Span> {
+        self.kwd_span
+            .merge_span(&self.args)
+            .merge_span(&self.return_type)
+            .merge_span(&self.content)
+    }
 }
 
 impl ElementData for Procedure {
-    fn as_variant(&self) -> ElementVariant {
-        ElementVariant::Procedure(self.to_owned())
+    fn as_variant(&self) -> Element {
+        Element::Procedure(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        pos_raw: &PosRaw,
         typelist: &mut InterpreterData<Type<Element>, O>,
     ) -> ZResult<Type<Element>> {
         typelist.add_frame(
@@ -83,14 +98,14 @@ impl ElementData for Procedure {
         };
         for arg in &mut self.args {
             let value = arg.ty.process(typelist)?;
-            typelist.declare_val(&arg.name, &value);
+            typelist.declare_val(&arg.name.name, &value);
         }
-        let (res, block_return_type) = self.content.data.block_type(typelist, false)?;
+        let (res, block_return_type) = self.content.block_type(typelist, false)?;
         if return_type == UNIT_T.get_instance().as_type_element() || block_return_type.is_none() {
-            self.return_type = Some(res.as_literal());
+            self.return_type = Some(res.as_literal().into());
         } else if let Some(block_return_type) = block_return_type {
             if return_type != block_return_type {
-                return Err(ZError::error_4_t(return_type, block_return_type).with_pos_raw(pos_raw));
+                return Err(ZError::error_4_t(return_type, block_return_type)); // TODO span
             }
         }
         typelist.pop_frame();
@@ -102,28 +117,18 @@ impl ElementData for Procedure {
         }))
     }
 
-    fn desugared(&self, pos_raw: &PosRaw, out: &mut impl Print) -> ZResult<ElementVariant> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
         let mut new_self = self.to_owned();
         new_self.args = self
             .args
             .iter()
             .map(|a| {
                 let mut a = a.to_owned();
-                a.desugar(pos_raw, out)?;
+                a.desugar(out)?;
                 Ok(a)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        new_self.content = Element {
-            pos_raw: self.content.pos_raw.to_owned(),
-            data: Box::new(
-                self.content
-                    .desugared(out)?
-                    .data
-                    .as_block()
-                    .unwrap()
-                    .to_owned(),
-            ),
-        };
+        new_self.content = self.content.desugared(out)?.as_block().unwrap().to_owned();
         Ok(new_self.as_variant())
     }
 

@@ -1,24 +1,30 @@
-use std::fmt::{Display, Formatter, Result};
+use std::{
+    borrow::Cow,
+    fmt::{Display, Formatter, Result},
+};
 
 use smol_str::SmolStr;
 
-use crate::types::position::Position;
+use crate::types::position::{GetSpan, Position, Span};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Token {
     pub value: SmolStr,
     pub ty: Option<TokenType>,
-    pub pos: Position,
+    pub span: Span,
     pub whitespace: SmolStr,
+}
+impl GetSpan for Token {
+    fn span(&self) -> Option<Span> {
+        Some(self.span.to_owned())
+    }
 }
 impl Default for Token {
     fn default() -> Self {
         Token {
             value: "".into(),
             ty: None,
-            pos: Position {
-                ..Default::default()
-            },
+            span: Span::default(),
             whitespace: "".into(),
         }
     }

@@ -2,17 +2,21 @@ use std::{io, io::Write, time::Instant};
 
 use backtrace::Backtrace;
 use dirs::home_dir;
+use itertools::Either;
 use owo_colors::OwoColorize;
 use rustyline::{error::ReadlineError, Editor};
+use smol_str::SmolStr;
 
 use crate::{
     compile,
-    types::{interpreter_data::InterpreterData, printer::StdIoPrint, value::Value},
+    types::{
+        element::ElementData, interpreter_data::InterpreterData, printer::StdIoPrint, value::Value,
+    },
     Element, Type, ZError,
 };
 
 pub fn repl(verbosity: u8) {
-    let filename = "[stdin]".to_string();
+    let filename = SmolStr::from("[stdin]");
     let mut sip1 = StdIoPrint;
     let mut sip2 = StdIoPrint;
     let mut typelist = InterpreterData::<Type<Element>, _>::new(&mut sip1);
@@ -58,13 +62,14 @@ pub fn repl(verbosity: u8) {
                     };
                     continue;
                 }
-                let instructions = match compile(input, &filename, &mut typelist) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        e.print(&mut StdIoPrint);
-                        continue;
-                    }
-                };
+                let instructions =
+                    match compile(Either::Right((filename.to_owned(), input)), &mut typelist) {
+                        Ok(v) => v,
+                        Err(e) => {
+                            e.print(&mut StdIoPrint);
+                            continue;
+                        }
+                    };
 
                 let instr_len = instructions.len();
                 if verbosity >= 2 {

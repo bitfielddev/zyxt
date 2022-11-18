@@ -11,7 +11,7 @@ use crate::{
     types::{
         element::ElementData,
         errors::{ZError, ZResult},
-        position::{PosRaw, Position},
+        position::{GetSpan, Position, Span},
         printer::Print,
         typeobj::{
             bool_t::BOOL_T, f16_t::F16_T, f32_t::F32_T, f64_t::F64_T, i128_t::I128_T, i16_t::I16_T,
@@ -114,7 +114,7 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
     }
     pub fn pop_frame(&mut self) -> ZResult<Option<Value>> {
         for content in self.frames.front_mut().unwrap().defer.clone() {
-            if let Value::Return(v) = content.data.interpret_expr(self)? {
+            if let Value::Return(v) = content.interpret_expr(self)? {
                 self.frames.pop_front();
                 return Ok(Some(*v));
             }
@@ -185,7 +185,7 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
         self.frames.front_mut().unwrap()
     }
 
-    pub fn set_val(&mut self, name: &SmolStr, value: &T, pos_raw: &PosRaw) -> ZResult<()> {
+    pub fn set_val(&mut self, name: &SmolStr, value: &T, span: &Span) -> ZResult<()> {
         let mut only_consts = false;
         for frame in self.frames.iter_mut() {
             if (only_consts && frame.ty == FrameType::Constants) || frame.heap.contains_key(name) {
@@ -200,9 +200,9 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
                 only_consts = true;
             }
         }
-        Err(ZError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
+        Err(ZError::error_3_0(name.to_owned()).with_span(span))
     }
-    pub fn get_val(&mut self, name: &SmolStr, pos_raw: &PosRaw) -> ZResult<T> {
+    pub fn get_val(&mut self, name: &SmolStr, span: impl GetSpan) -> ZResult<T> {
         let mut only_consts = false;
         for frame in self.frames.iter() {
             if (only_consts && frame.ty == FrameType::Constants) || frame.heap.contains_key(name) {
@@ -212,13 +212,13 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
                 only_consts = true;
             }
         }
-        Err(ZError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
+        Err(ZError::error_3_0(name.to_owned()).with_span(span))
     }
-    pub fn delete_val(&mut self, name: &SmolStr, pos_raw: &PosRaw) -> ZResult<T> {
+    pub fn delete_val(&mut self, name: &SmolStr, span: impl GetSpan) -> ZResult<T> {
         if let Some(v) = self.frames.front_mut().unwrap().heap.remove(name) {
             Ok(v)
         } else {
-            Err(ZError::error_3_0(name.to_owned()).with_pos_raw(pos_raw))
+            Err(ZError::error_3_0(name.to_owned()).with_span(span))
         }
     }
     pub fn add_defer(&mut self, content: Element) {

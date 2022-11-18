@@ -2,7 +2,10 @@ use tracing::trace;
 
 use crate::{
     lexer::buffer::Buffer,
-    types::token::{Token, TokenType},
+    types::{
+        position::Span,
+        token::{Token, TokenType},
+    },
     ZResult,
 };
 
@@ -17,8 +20,8 @@ pub fn lex_text_literal(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<(
             raw.push('"');
             tokens.push(Token {
                 ty: Some(TokenType::LiteralString),
-                value: raw.into(),
-                pos: init_pos,
+                value: (&raw).into(),
+                span: Span::new(init_pos, &raw),
                 ..Default::default()
             });
             return Ok(());

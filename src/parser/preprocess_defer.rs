@@ -1,11 +1,11 @@
-use itertools::{Either, Itertools};
+use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{defer::Defer, preprocess::Preprocess, ElementVariant},
-        position::{GetPosRaw, PosRaw},
+        element::{defer::Defer, preprocess::Preprocess},
+        position::GetSpan,
         token::{Keyword, TokenType},
     },
     Element, ZResult,
@@ -29,49 +29,41 @@ impl Buffer {
             } else {
                 continue;
             };
-            let mut raw = selected.get_raw();
             let start = self.cursor;
-            let init_pos_raw = selected.pos_raw();
-            debug!(pos = ?init_pos_raw.pos, ?kwd, "Parsing preprocess/defer");
+            let kwd_span = selected.span;
+            debug!(pos = ?kwd_span, ?kwd, "Parsing preprocess/defer");
             let selected = self.next_or_err()?;
 
-            raw += &*selected.pos_raw().raw;
             let (content, end) = if let Either::Left(selected) = selected {
-                if let ElementVariant::Block(_) = &*selected.data {
-                    debug!(pos = ?selected.pos_raw.pos, "Block detected");
+                if let Element::Block(_) = &selected {
+                    debug!(pos = ?selected.span(), "Block detected");
                     (selected.to_owned(), self.next_cursor_pos())
                 } else {
-                    debug!(pos = ?selected.pos_raw.pos, "Expression not in {{}} detected");
+                    debug!(pos = ?selected.span(), "Expression not in {{}} detected");
                     (
                         self.rest_incl_curr()
-                            .with_as_buffer(&|buffer| buffer.parse_as_expr())?
-                            .as_variant(),
+                            .with_as_buffer(&|buffer| buffer.parse_as_expr())?,
                         self.content.len(),
                     )
                 }
             } else {
-                debug!(pos = ?selected.pos_raw().pos, "Block not in {{}} detected");
+                debug!(pos = ?selected.span(), "Block not in {{}} detected");
                 (
                     self.rest_incl_curr()
-                        .with_as_buffer(&|buffer| buffer.parse_as_expr())?
-                        .as_variant(),
+                        .with_as_buffer(&|buffer| buffer.parse_as_expr())?,
                     self.content.len(),
                 )
             };
-            let ele = Element {
-                pos_raw: PosRaw {
-                    pos: init_pos_raw.pos,
-                    raw: self.content[start..end]
-                        .iter()
-                        .map(|a| a.pos_raw().raw)
-                        .join("")
-                        .into(),
-                },
-                data: Box::new(if kwd == Keyword::Pre {
-                    ElementVariant::Preprocess(Preprocess { content })
-                } else {
-                    ElementVariant::Defer(Defer { content })
-                }),
+            let ele = if kwd == Keyword::Pre {
+                Element::Preprocess(Preprocess {
+                    kwd_span,
+                    content: content.into(),
+                })
+            } else {
+                Element::Defer(Defer {
+                    kwd_span,
+                    content: content.into(),
+                })
             };
             trace!(?ele);
             let buffer_window = BufferWindow {

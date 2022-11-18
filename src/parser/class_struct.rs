@@ -4,9 +4,9 @@ use tracing::{debug, trace};
 use crate::{
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{class::Class, Element, ElementVariant},
+        element::{class::Class, Element},
         errors::{ZError, ZResult},
-        position::{GetPosRaw, PosRaw},
+        position::GetSpan,
         token::{Keyword, Token, TokenType},
     },
 };
@@ -29,19 +29,18 @@ impl Buffer {
             } else {
                 continue;
             };
-            let init_pos_raw = selected.pos_raw();
-            debug!(pos = ?init_pos_raw.pos, "Parsing");
+            let init_span = selected.span();
+            debug!(pos = ?init_span, "Parsing");
             let start = self.cursor;
-            self.start_raw_collection();
             let mut selected = self.next_or_err()?;
             let args = if let Either::Right(Token {
                 ty: Some(TokenType::Bar),
                 ..
             }) = selected
             {
-                debug!(pos = ?selected.pos_raw().pos, "Argument list detected");
+                debug!(pos = ?selected.span(), "Argument list detected");
                 if kwd == Keyword::Class {
-                    return Err(ZError::error_2_1_17().with_pos_raw(&selected.pos_raw()));
+                    return Err(ZError::error_2_1_17());
                 }
                 let args = self.parse_args()?;
                 selected = self.next_or_err()?;
@@ -49,38 +48,22 @@ impl Buffer {
             } else {
                 None
             };
-            let content_pos_raw = selected.pos_raw();
-            let content = if let Either::Left(Element {
-                data: box ElementVariant::Block(block),
-                pos_raw,
-            }) = selected
-            {
-                debug!(pos = ?pos_raw.pos, "Block detected");
-                Some(block)
+            let content = if let Either::Left(Element::Block(block)) = &selected {
+                debug!(pos = ?selected.span(), "Block detected");
+                Some(block.to_owned())
             } else if kwd == Keyword::Class {
-                return Err(ZError::error_2_1_18(&kwd).with_pos_raw(&selected.pos_raw()));
+                return Err(ZError::error_2_1_18(&kwd));
             } else {
                 self.prev();
                 None
             };
-            let ele = Element {
-                pos_raw: PosRaw {
-                    pos: init_pos_raw.pos.to_owned(),
-                    raw: self.end_raw_collection().into(),
-                },
-                data: Box::new({
-                    ElementVariant::Class(Class {
-                        is_struct: kwd == Keyword::Struct,
-                        implementations: Default::default(),
-                        inst_fields: Default::default(), // TODO
-                        content: content.map(|block| Element {
-                            pos_raw: content_pos_raw,
-                            data: Box::new(block),
-                        }),
-                        args,
-                    })
-                }),
-            };
+            let ele = Element::Class(Class {
+                is_struct: kwd == Keyword::Struct,
+                implementations: Default::default(),
+                inst_fields: Default::default(), // TODO
+                content,
+                args,
+            });
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],

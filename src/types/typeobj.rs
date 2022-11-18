@@ -32,7 +32,7 @@ use smol_str::SmolStr;
 
 use crate::{
     types::{
-        element::procedure::Argument,
+        element::{procedure::Argument, ElementData},
         typeobj::{
             type_t::{TYPE_T, TYPE_T_ELE},
             unit_t::{UNIT_T, UNIT_T_ELE},
@@ -165,12 +165,12 @@ impl TypeDefinition<Value> {
     }
 }
 
-impl<T: Clone + PartialEq + Debug> TypeDefinition<T> {
+impl<'a, T: Clone + PartialEq + Debug> TypeDefinition<T> {
     pub fn as_type(&self) -> Type<T> {
         Type::Definition(self.to_owned())
     }
 }
-impl<T: Clone + PartialEq + Debug> TypeInstance<T> {
+impl<'a, T: Clone + PartialEq + Debug> TypeInstance<T> {
     pub fn as_type(&self) -> Type<T> {
         Type::Instance(self.to_owned())
     }
