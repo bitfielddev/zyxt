@@ -11,5 +11,7 @@ Current plan is in `syntax.md`
 ```
 ter.out "Hello World";
 ```
-
-<image src=https://user-images.githubusercontent.com/61975820/196924972-051a0307-94af-4fae-84bc-910af9738da5.png width="25%"/>
+<br>
+<p align="center">
+  <image src=https://user-images.githubusercontent.com/61975820/196924972-051a0307-94af-4fae-84bc-910af9738da5.png width="25%"/>  
+</p>
