@@ -1,4 +1,8 @@
+use std::sync::Arc;
+
+use once_cell::sync::Lazy;
 use pretty_assertions::assert_eq;
+use smol_str::SmolStr;
 use zyxt::types::{
     element::{
         binary_opr::BinaryOpr,
@@ -24,16 +28,19 @@ use zyxt::types::{
     value::Value,
 };
 
+static FILENAME_ARC: Lazy<Arc<SmolStr>> = Lazy::new(|| Arc::new("".into()));
+
 macro_rules! parse {
     ($str:expr) => {
-        zyxt::parser::parse_token_list(zyxt::lexer::lex($str.to_owned(), "").unwrap()).unwrap()
+        zyxt::parser::parse_token_list(zyxt::lexer::lex($str.to_owned(), "".into()).unwrap())
+            .unwrap()
     };
 }
 macro_rules! span {
     ($line:expr, $column:expr, $raw:expr) => {
         Span::new(
             Position {
-                filename: Some("".into()),
+                filename: Some(Arc::clone(&*FILENAME_ARC)),
                 line: $line,
                 column: $column,
             },
@@ -42,17 +49,21 @@ macro_rules! span {
     };
 }
 macro_rules! ident {
-    ($name:expr) => {
+    ($line:expr, $column:expr, $name:expr) => {
         Box::new(Element::Ident(Ident {
             name: $name.into(),
             parent: None,
+            dot_span: None,
+            name_span: Some(span!($line, $column, $name)),
         }))
     };
-    (notvar $name:expr) => {
-        Box::new(Ident {
+    (notvar $line:expr, $column:expr, $name:expr) => {
+        Ident {
             name: $name.into(),
             parent: None,
-        })
+            dot_span: None,
+            name_span: Some(span!($line, $column, $name)),
+        }
     };
 }
 
@@ -61,19 +72,11 @@ fn assignment() {
     let ast = parse!("x = y");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "x = y"),
-            data: Box::new(Element::Set(Set {
-                variable: Element {
-                    span: span!(1, 1, "x"),
-                    data: ident!("x")
-                },
-                content: Element {
-                    span: span!(1, 5, " y"),
-                    data: ident!("y")
-                }
-            }))
-        }
+        Element::Set(Set {
+            variable: ident!(1, 1, "x"),
+            eq_span: Some(span!(1, 3, "=")),
+            content: ident!(1, 5, "y")
+        })
     )
 }
 
@@ -82,29 +85,17 @@ fn assignment_bin() {
     let ast = parse!("x += y");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "x += y"),
-            data: Box::new(Element::Set(Set {
-                variable: Element {
-                    span: span!(1, 1, "x"),
-                    data: ident!("x")
-                },
-                content: Element {
-                    span: span!(1, 6, " y"),
-                    data: Box::new(Element::BinaryOpr(BinaryOpr {
-                        ty: OprType::Add,
-                        operand1: Element {
-                            span: span!(1, 1, "x"),
-                            data: ident!("x")
-                        },
-                        operand2: Element {
-                            span: span!(1, 6, " y"),
-                            data: ident!("y"),
-                        }
-                    })),
-                }
-            }))
-        }
+        Element::Set(Set {
+            variable: ident!(1, 1, "x").into(),
+            eq_span: Some(span!(1, 3, "+=")),
+            content: Element::BinaryOpr(BinaryOpr {
+                ty: OprType::Add,
+                opr_span: None,
+                operand1: ident!(1, 1, "x").into(),
+                operand2: ident!(1, 6, "y").into()
+            })
+            .into(),
+        })
     )
 }
 
@@ -132,20 +123,12 @@ fn bin_opr() {
         let ast = parse!(s);
         assert_eq!(
             ast[0],
-            Element {
-                span: span!(1, 1, s),
-                data: Box::new(Element::BinaryOpr(BinaryOpr {
-                    ty,
-                    operand1: Element {
-                        span: span!(1, 1, "x"),
-                        data: ident!("x")
-                    },
-                    operand2: Element {
-                        span: span!(1, 4 + sy.len(), " y"),
-                        data: ident!("y")
-                    }
-                }))
-            }
+            Element::BinaryOpr(BinaryOpr {
+                ty,
+                opr_span: Some(span!(1, 3, sy)),
+                operand1: ident!(1, 1, "x"),
+                operand2: ident!(1, 4 + sy.len(), "y")
+            })
         )
     }
 }
@@ -155,19 +138,16 @@ fn class() {
     let ast = parse!("class { }");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "class { }"),
-            data: Box::new(Element::Class(Class {
-                is_struct: false,
-                implementations: Default::default(),
-                inst_fields: Default::default(),
-                content: Some(Element {
-                    span: span!(1, 7, " { }"),
-                    data: Box::new(Block { content: vec![] })
-                }),
-                args: None
-            }))
-        }
+        Element::Class(Class {
+            is_struct: false,
+            implementations: Default::default(),
+            inst_fields: Default::default(),
+            content: Some(Block {
+                brace_spans: None,
+                content: vec![]
+            }),
+            args: None
+        })
     )
 }
 
@@ -177,26 +157,20 @@ fn struct_params() {
     let ast = parse!("struct |x: i32| { }");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "struct |x: i32| { }"),
-            data: Box::new(Element::Class(Class {
-                is_struct: true,
-                implementations: Default::default(),
-                inst_fields: Default::default(),
-                content: Some(Element {
-                    span: span!(1, 7, " { }"),
-                    data: Box::new(Block { content: vec![] })
-                }),
-                args: Some(vec![Argument {
-                    name: "x".into(),
-                    ty: Element {
-                        span: span!(1, 11, "i32"),
-                        data: ident!("i32")
-                    },
-                    default: None
-                }])
-            }))
-        }
+        Element::Class(Class {
+            is_struct: true,
+            implementations: Default::default(),
+            inst_fields: Default::default(),
+            content: Some(Block {
+                brace_spans: None,
+                content: vec![]
+            }),
+            args: Some(vec![Argument {
+                name: ident!(notvar 1, 1, "x"),
+                ty: ident!(1, 11, "i32"),
+                default: None
+            }])
+        })
     )
 }
 
@@ -206,23 +180,17 @@ fn struct_no_content() {
     let ast = parse!("struct |x: i32|");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "struct |x: i32|"),
-            data: Box::new(Element::Class(Class {
-                is_struct: true,
-                implementations: Default::default(),
-                inst_fields: Default::default(),
-                content: None,
-                args: Some(vec![Argument {
-                    name: "x".into(),
-                    ty: Element {
-                        span: span!(1, 11, "i32"),
-                        data: ident!("i32")
-                    },
-                    default: None
-                }])
-            }))
-        }
+        Element::Class(Class {
+            is_struct: true,
+            implementations: Default::default(),
+            inst_fields: Default::default(),
+            content: None,
+            args: Some(vec![Argument {
+                name: ident!(notvar 1, 1, "x"),
+                ty: ident!(1, 11, "i32").into(),
+                default: None
+            }])
+        })
     )
 }
 
@@ -232,19 +200,16 @@ fn struct_no_params() {
     let ast = parse!("struct { }");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "struct { }"),
-            data: Box::new(Element::Class(Class {
-                is_struct: true,
-                implementations: Default::default(),
-                inst_fields: Default::default(),
-                content: Some(Element {
-                    span: span!(1, 7, " { }"),
-                    data: Box::new(Block { content: vec![] })
-                }),
-                args: None
-            }))
-        }
+        Element::Class(Class {
+            is_struct: true,
+            implementations: Default::default(),
+            inst_fields: Default::default(),
+            content: Some(Block {
+                brace_spans: None,
+                content: vec![]
+            }),
+            args: None
+        })
     )
 }
 
@@ -254,16 +219,13 @@ fn struct_no_content_no_params() {
     let ast = parse!("struct");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "struct"),
-            data: Box::new(Element::Class(Class {
-                is_struct: true,
-                implementations: Default::default(),
-                inst_fields: Default::default(),
-                content: None,
-                args: None
-            }))
-        }
+        Element::Class(Class {
+            is_struct: true,
+            implementations: Default::default(),
+            inst_fields: Default::default(),
+            content: None,
+            args: None
+        })
     )
 }
 
@@ -272,21 +234,13 @@ fn declaration() {
     let ast = parse!("x := y");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "x := y"),
-            data: Box::new(Element::Declare(Declare {
-                variable: Element {
-                    span: span!(1, 1, "x"),
-                    data: ident!("x")
-                },
-                content: Element {
-                    span: span!(1, 6, " y"),
-                    data: ident!("y")
-                },
-                flags: vec![],
-                ty: None
-            }))
-        }
+        Element::Declare(Declare {
+            variable: ident!(1, 1, "x"),
+            content: ident!(1, 6, "y"),
+            flags: vec![],
+            ty: None,
+            eq_span: None,
+        })
     )
 }
 #[test]
@@ -294,21 +248,13 @@ fn declaration_flags() {
     let ast = parse!("pub x := y");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "pub x := y"),
-            data: Box::new(Element::Declare(Declare {
-                variable: Element {
-                    span: span!(1, 5, " x"),
-                    data: ident!("x")
-                },
-                content: Element {
-                    span: span!(1, 10, " y"),
-                    data: ident!("y")
-                },
-                flags: vec![Flag::Pub],
-                ty: None
-            }))
-        }
+        Element::Declare(Declare {
+            variable: ident!(1, 5, "x"),
+            content: ident!(1, 10, "y"),
+            flags: vec![(Flag::Pub, span!(1, 1, "pub"))],
+            ty: None,
+            eq_span: None,
+        })
     )
 }
 
@@ -317,18 +263,10 @@ fn delete_single() {
     let ast = parse!("del x");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "del x"),
-            data: Box::new(Element::Delete(Delete {
-                names: vec![Element {
-                    span: span!(1, 5, " x"),
-                    data: Box::new(Ident {
-                        name: "x".into(),
-                        parent: None
-                    })
-                }]
-            }))
-        }
+        Element::Delete(Delete {
+            kwd_span: Some(span!(1, 1, "del")),
+            names: vec![ident!(notvar 1, 5, "x")]
+        })
     )
 }
 
@@ -337,25 +275,14 @@ fn delete_multiple() {
     let ast = parse!("del x, y, z");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "del x, y, z"),
-            data: Box::new(Element::Delete(Delete {
-                names: vec![
-                    Element {
-                        span: span!(1, 5, " x"),
-                        data: ident!(notvar "x")
-                    },
-                    Element {
-                        span: span!(1, 8, " y"),
-                        data: ident!(notvar "y")
-                    },
-                    Element {
-                        span: span!(1, 11, " z"),
-                        data: ident!(notvar "z")
-                    }
-                ]
-            }))
-        }
+        Element::Delete(Delete {
+            kwd_span: Some(span!(1, 1, "del")),
+            names: vec![
+                ident!(notvar 1, 5, "x"),
+                ident!(notvar 1, 8, "y"),
+                ident!(notvar 1, 11, "z")
+            ]
+        })
     )
 }
 
@@ -364,21 +291,16 @@ fn if_() {
     let ast = parse!("if x { }");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "if x { }"),
-            data: Box::new(Element::If(If {
-                conditions: vec![Condition {
-                    condition: Some(Element {
-                        span: span!(1, 4, " x"),
-                        data: ident!("x")
-                    }),
-                    if_true: Element {
-                        span: span!(1, 6, " { }"),
-                        data: Box::new(Block { content: vec![] })
-                    }
-                }]
-            }))
-        }
+        Element::If(If {
+            conditions: vec![Condition {
+                kwd_span: None,
+                condition: Some(*ident!(1, 4, "x")),
+                if_true: Block {
+                    brace_spans: None,
+                    content: vec![]
+                }
+            }]
+        })
     )
 }
 
@@ -387,30 +309,26 @@ fn if_else() {
     let ast = parse!("if x { } else { }");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "if x { } else { }"),
-            data: Box::new(Element::If(If {
-                conditions: vec![
-                    Condition {
-                        condition: Some(Element {
-                            span: span!(1, 4, " x"),
-                            data: ident!("x")
-                        }),
-                        if_true: Element {
-                            span: span!(1, 6, " { }"),
-                            data: Box::new(Block { content: vec![] })
-                        }
-                    },
-                    Condition {
-                        condition: None,
-                        if_true: Element {
-                            span: span!(1, 15, " { }"),
-                            data: Box::new(Block { content: vec![] })
-                        }
+        Element::If(If {
+            conditions: vec![
+                Condition {
+                    kwd_span: None,
+                    condition: Some(*ident!(1, 4, "x")),
+                    if_true: Block {
+                        brace_spans: None,
+                        content: vec![]
                     }
-                ]
-            }))
-        }
+                },
+                Condition {
+                    kwd_span: None,
+                    condition: None,
+                    if_true: Block {
+                        brace_spans: None,
+                        content: vec![]
+                    }
+                }
+            ]
+        })
     )
 }
 
@@ -419,33 +337,26 @@ fn if_elif() {
     let ast = parse!("if x { } elif y { }");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "if x { } elif y { }"),
-            data: Box::new(Element::If(If {
-                conditions: vec![
-                    Condition {
-                        condition: Some(Element {
-                            span: span!(1, 4, " x"),
-                            data: ident!("x")
-                        }),
-                        if_true: Element {
-                            span: span!(1, 6, " { }"),
-                            data: Box::new(Block { content: vec![] })
-                        }
-                    },
-                    Condition {
-                        condition: Some(Element {
-                            span: span!(1, 15, " y"),
-                            data: ident!("y")
-                        }),
-                        if_true: Element {
-                            span: span!(1, 17, " { }"),
-                            data: Box::new(Block { content: vec![] })
-                        }
+        Element::If(If {
+            conditions: vec![
+                Condition {
+                    kwd_span: None,
+                    condition: Some(*ident!(1, 4, "x")),
+                    if_true: Block {
+                        brace_spans: None,
+                        content: vec![]
                     }
-                ]
-            }))
-        }
+                },
+                Condition {
+                    kwd_span: None,
+                    condition: Some(*ident!(1, 15, "y")),
+                    if_true: Block {
+                        brace_spans: None,
+                        content: vec![]
+                    }
+                }
+            ]
+        })
     )
 }
 
@@ -454,56 +365,41 @@ fn if_elif_else() {
     let ast = parse!("if x { } elif y { } else { }");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "if x { } elif y { } else { }"),
-            data: Box::new(Element::If(If {
-                conditions: vec![
-                    Condition {
-                        condition: Some(Element {
-                            span: span!(1, 4, " x"),
-                            data: ident!("x")
-                        }),
-                        if_true: Element {
-                            span: span!(1, 6, " { }"),
-                            data: Box::new(Block { content: vec![] })
-                        }
-                    },
-                    Condition {
-                        condition: Some(Element {
-                            span: span!(1, 15, " y"),
-                            data: ident!("y")
-                        }),
-                        if_true: Element {
-                            span: span!(1, 17, " { }"),
-                            data: Box::new(Block { content: vec![] })
-                        }
-                    },
-                    Condition {
-                        condition: None,
-                        if_true: Element {
-                            span: span!(1, 26, " { }"),
-                            data: Box::new(Block { content: vec![] })
-                        }
+        Element::If(If {
+            conditions: vec![
+                Condition {
+                    kwd_span: None,
+                    condition: Some(*ident!(1, 4, "x")),
+                    if_true: Block {
+                        brace_spans: None,
+                        content: vec![]
                     }
-                ]
-            }))
-        }
+                },
+                Condition {
+                    kwd_span: None,
+                    condition: Some(*ident!(1, 15, "y")),
+                    if_true: Block {
+                        brace_spans: None,
+                        content: vec![]
+                    }
+                },
+                Condition {
+                    kwd_span: None,
+                    condition: None,
+                    if_true: Block {
+                        brace_spans: None,
+                        content: vec![]
+                    }
+                }
+            ]
+        })
     )
 }
 
 #[test]
 fn parentheses() {
     let ast = parse!("(x)");
-    assert_eq!(
-        ast[0],
-        Element {
-            span: span!(1, 2, "(x)"),
-            data: Box::new(Element::Ident(Ident {
-                name: "x".into(),
-                parent: None
-            }))
-        }
-    )
+    assert_eq!(ast[0], *ident!(1, 2, "x"))
 }
 
 #[test]
@@ -511,15 +407,10 @@ fn block() {
     let ast = parse!("{x}");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "{x}"),
-            data: Box::new(Element::Block(Block {
-                content: vec![Element {
-                    span: span!(1, 2, "x"),
-                    data: ident!("x")
-                }]
-            }))
-        }
+        Element::Block(Block {
+            brace_spans: None,
+            content: vec![*ident!(1, 2, "x")]
+        })
     )
 }
 
@@ -528,20 +419,14 @@ fn preprocess_block() {
     let ast = parse!("pre {x}");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "pre {x}"),
-            data: Box::new(Element::Preprocess(Preprocess {
-                content: Element {
-                    span: span!(1, 5, " {x}"),
-                    data: Box::new(Element::Block(Block {
-                        content: vec![Element {
-                            span: span!(1, 6, "x"),
-                            data: ident!("x")
-                        }]
-                    }))
-                }
-            }))
-        }
+        Element::Preprocess(Preprocess {
+            kwd_span: span!(1, 1, "pre"),
+            content: Element::Block(Block {
+                brace_spans: None,
+                content: vec![*ident!(1, 6, "x")]
+            })
+            .into()
+        })
     )
 }
 
@@ -550,15 +435,10 @@ fn preprocess_expr() {
     let ast = parse!("pre x");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "pre x"),
-            data: Box::new(Element::Preprocess(Preprocess {
-                content: Element {
-                    span: span!(1, 5, " x"),
-                    data: ident!("x")
-                }
-            }))
-        }
+        Element::Preprocess(Preprocess {
+            kwd_span: span!(1, 1, "pre"),
+            content: ident!(1, 5, "x")
+        })
     )
 }
 
@@ -567,20 +447,14 @@ fn defer_block() {
     let ast = parse!("defer {x}");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "defer {x}"),
-            data: Box::new(Element::Defer(Defer {
-                content: Element {
-                    span: span!(1, 7, " {x}"),
-                    data: Box::new(Element::Block(Block {
-                        content: vec![Element {
-                            span: span!(1, 8, "x"),
-                            data: ident!("x")
-                        }]
-                    }))
-                }
-            }))
-        }
+        Element::Defer(Defer {
+            kwd_span: span!(1, 1, "defer"),
+            content: Element::Block(Block {
+                brace_spans: None,
+                content: vec![*ident!(1, 8, "x")]
+            })
+            .into()
+        })
     )
 }
 
@@ -589,15 +463,10 @@ fn defer_expr() {
     let ast = parse!("defer x");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "defer x"),
-            data: Box::new(Element::Defer(Defer {
-                content: Element {
-                    span: span!(1, 7, " x"),
-                    data: ident!("x")
-                }
-            }))
-        }
+        Element::Defer(Defer {
+            kwd_span: span!(1, 1, "defer"),
+            content: ident!(1, 7, "x")
+        })
     )
 }
 
@@ -606,23 +475,16 @@ fn proc_kwd() {
     let ast = parse!("proc | | x");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "proc | | x"),
-            data: Box::new(Element::Procedure(Procedure {
-                is_fn: false,
-                args: vec![],
-                return_type: None,
-                content: Element {
-                    span: span!(1, 10, " x"),
-                    data: Box::new(Block {
-                        content: vec![Element {
-                            span: span!(1, 10, " x"),
-                            data: ident!("x")
-                        }]
-                    })
-                }
-            }))
-        }
+        Element::Procedure(Procedure {
+            is_fn: false,
+            kwd_span: Some(span!(1, 1, "proc")),
+            args: vec![],
+            return_type: None,
+            content: Block {
+                brace_spans: None,
+                content: vec![*ident!(1, 10, "x")]
+            }
+        })
     )
 }
 
@@ -631,23 +493,16 @@ fn proc_nokwd() {
     let ast = parse!("| | x");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "| | x"),
-            data: Box::new(Element::Procedure(Procedure {
-                is_fn: false,
-                args: vec![],
-                return_type: None,
-                content: Element {
-                    span: span!(1, 5, " x"),
-                    data: Box::new(Block {
-                        content: vec![Element {
-                            span: span!(1, 5, " x"),
-                            data: ident!("x")
-                        }]
-                    })
-                }
-            }))
-        }
+        Element::Procedure(Procedure {
+            is_fn: false,
+            kwd_span: None,
+            args: vec![],
+            return_type: None,
+            content: Block {
+                brace_spans: None,
+                content: vec![*ident!(1, 5, "x")]
+            }
+        })
     )
 }
 
@@ -656,23 +511,16 @@ fn fn_kwd() {
     let ast = parse!("fn | | x");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "fn | | x"),
-            data: Box::new(Element::Procedure(Procedure {
-                is_fn: true,
-                args: vec![],
-                return_type: None,
-                content: Element {
-                    span: span!(1, 8, " x"),
-                    data: Box::new(Block {
-                        content: vec![Element {
-                            span: span!(1, 8, " x"),
-                            data: ident!("x")
-                        }]
-                    })
-                }
-            }))
-        }
+        Element::Procedure(Procedure {
+            is_fn: true,
+            kwd_span: Some(span!(1, 1, "fn")),
+            args: vec![],
+            return_type: None,
+            content: Block {
+                brace_spans: None,
+                content: vec![*ident!(1, 8, "x")]
+            }
+        })
     )
 }
 
@@ -681,23 +529,16 @@ fn fn_arg() {
     let ast = parse!("fn | | x");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "fn | | x"),
-            data: Box::new(Element::Procedure(Procedure {
-                is_fn: true,
-                args: vec![],
-                return_type: None,
-                content: Element {
-                    span: span!(1, 8, " x"),
-                    data: Box::new(Block {
-                        content: vec![Element {
-                            span: span!(1, 8, " x"),
-                            data: ident!("x")
-                        }]
-                    })
-                }
-            }))
-        }
+        Element::Procedure(Procedure {
+            is_fn: true,
+            kwd_span: Some(span!(1, 1, "fn")),
+            args: vec![],
+            return_type: None,
+            content: Block {
+                brace_spans: None,
+                content: vec![*ident!(1, 8, "x")]
+            }
+        })
     )
 }
 
@@ -706,12 +547,10 @@ fn return_nothing() {
     let ast = parse!("ret");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "ret"),
-            data: Box::new(Element::Return(Return {
-                value: UNIT_T.as_type().as_type_element().as_literal()
-            }))
-        }
+        Element::Return(Return {
+            kwd_span: Some(span!(1, 1, "ret")),
+            value: UNIT_T.as_type().as_type_element().as_literal().into()
+        })
     )
 }
 
@@ -720,15 +559,10 @@ fn return_something() {
     let ast = parse!("ret x");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "ret x"),
-            data: Box::new(Element::Return(Return {
-                value: Element {
-                    span: span!(1, 5, " x"),
-                    data: ident!("x")
-                }
-            }))
-        }
+        Element::Return(Return {
+            kwd_span: Some(span!(1, 1, "ret")),
+            value: ident!(1, 5, "x")
+        })
     )
 }
 
@@ -746,16 +580,11 @@ fn un_opr() {
         let ast = parse!(s);
         assert_eq!(
             ast[0],
-            Element {
-                span: span!(1, 1, s),
-                data: Box::new(Element::UnaryOpr(UnaryOpr {
-                    ty,
-                    operand: Element {
-                        span: span!(1, 2, "x"),
-                        data: ident!("x")
-                    },
-                }))
-            }
+            Element::UnaryOpr(UnaryOpr {
+                ty,
+                opr_span: Some(span!(1, 1, "-")),
+                operand: ident!(1, 2, "x"),
+            })
         )
     }
 }
@@ -765,20 +594,12 @@ fn unparen_call_single() {
     let ast = parse!("x y");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "x y"),
-            data: Box::new(Element::Call(Call {
-                called: Element {
-                    span: span!(1, 1, "x"),
-                    data: ident!("x")
-                },
-                args: vec![Element {
-                    span: span!(1, 3, " y"),
-                    data: ident!("y")
-                }],
-                kwargs: Default::default()
-            }))
-        }
+        Element::Call(Call {
+            called: ident!(1, 1, "x"),
+            paren_spans: None,
+            args: vec![*ident!(1, 3, "y")],
+            kwargs: Default::default()
+        })
     )
 }
 
@@ -787,26 +608,12 @@ fn unparen_call_multiple() {
     let ast = parse!("x y, z");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "x y, z"),
-            data: Box::new(Element::Call(Call {
-                called: Element {
-                    span: span!(1, 1, "x"),
-                    data: ident!("x")
-                },
-                args: vec![
-                    Element {
-                        span: span!(1, 3, " y"),
-                        data: ident!("y")
-                    },
-                    Element {
-                        span: span!(1, 6, " z"),
-                        data: ident!("z")
-                    }
-                ],
-                kwargs: Default::default()
-            }))
-        }
+        Element::Call(Call {
+            called: ident!(1, 1, "x"),
+            paren_spans: None,
+            args: vec![*ident!(1, 3, "y"), *ident!(1, 6, "z")],
+            kwargs: Default::default()
+        })
     )
 }
 
@@ -815,30 +622,17 @@ fn unparen_call_nested() {
     let ast = parse!("x y z");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "x y z"),
-            data: Box::new(Element::Call(Call {
-                called: Element {
-                    span: span!(1, 1, "x"),
-                    data: ident!("x")
-                },
-                args: vec![Element {
-                    span: span!(1, 3, " y z"),
-                    data: Box::new(Element::Call(Call {
-                        called: Element {
-                            span: span!(1, 3, " y"),
-                            data: ident!("y")
-                        },
-                        args: vec![Element {
-                            span: span!(1, 5, " z"),
-                            data: ident!("z")
-                        }],
-                        kwargs: Default::default()
-                    }))
-                }],
+        Element::Call(Call {
+            called: ident!(1, 1, "x"),
+            paren_spans: None,
+            args: vec![Element::Call(Call {
+                called: ident!(1, 3, "y"),
+                paren_spans: None,
+                args: vec![*ident!(1, 5, "z")],
                 kwargs: Default::default()
-            }))
-        }
+            })],
+            kwargs: Default::default()
+        })
     )
 }
 
@@ -847,16 +641,12 @@ fn dot() {
     let ast = parse!("x.y");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "x.y"),
-            data: Box::new(Element::Ident(Ident {
-                name: "y".into(),
-                parent: Some(Element {
-                    span: span!(1, 1, "x"),
-                    data: ident!("x")
-                })
-            }))
-        }
+        Element::Ident(Ident {
+            name: "y".into(),
+            name_span: Some(span!(1, 3, "y")),
+            dot_span: Some(span!(1, 2, ".")),
+            parent: Some(ident!(1, 1, "x"))
+        })
     )
 }
 
@@ -865,17 +655,12 @@ fn call_no_args() {
     let ast = parse!("x()");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "x()"),
-            data: Box::new(Element::Call(Call {
-                called: Element {
-                    span: span!(1, 1, "x"),
-                    data: ident!("x")
-                },
-                args: vec![],
-                kwargs: Default::default()
-            }))
-        }
+        Element::Call(Call {
+            called: ident!(1, 1, "x"),
+            paren_spans: Some((span!(1, 2, "("), span!(1, 3, ")"))),
+            args: vec![],
+            kwargs: Default::default()
+        })
     )
 }
 
@@ -884,20 +669,12 @@ fn call_with_args() {
     let ast = parse!("x(y)");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "x(y)"),
-            data: Box::new(Element::Call(Call {
-                called: Element {
-                    span: span!(1, 1, "x"),
-                    data: ident!("x")
-                },
-                args: vec![Element {
-                    span: span!(1, 3, "y"),
-                    data: ident!("y")
-                }],
-                kwargs: Default::default()
-            }))
-        }
+        Element::Call(Call {
+            called: ident!(1, 1, "x"),
+            paren_spans: Some((span!(1, 2, "("), span!(1, 4, ")"))),
+            args: vec![*ident!(1, 3, "y")],
+            kwargs: Default::default()
+        })
     )
 }
 
@@ -906,22 +683,16 @@ fn dot_call() {
     let ast = parse!("x.y()");
     assert_eq!(
         ast[0],
-        Element {
-            span: span!(1, 1, "x.y()"),
-            data: Box::new(Element::Call(Call {
-                called: Element {
-                    span: span!(1, 1, "x.y"),
-                    data: Box::new(Element::Ident(Ident {
-                        name: "y".into(),
-                        parent: Some(Element {
-                            span: span!(1, 1, "x"),
-                            data: ident!("x")
-                        })
-                    }))
-                },
-                args: vec![],
-                kwargs: Default::default()
-            }))
-        }
+        Element::Call(Call {
+            called: Box::new(Element::Ident(Ident {
+                name: "y".into(),
+                name_span: Some(span!(1, 3, "y")),
+                dot_span: Some(span!(1, 2, ".")),
+                parent: Some(ident!(1, 1, "x")),
+            })),
+            paren_spans: Some((span!(1, 4, "("), span!(1, 5, ")"))),
+            args: vec![],
+            kwargs: Default::default()
+        })
     )
 }

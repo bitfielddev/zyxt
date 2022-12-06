@@ -59,7 +59,7 @@ impl Position {
             column: if string.contains('\n') {
                 string.split('\n').last().unwrap().chars().count()
             } else {
-                self.column + string.chars().count()
+                self.column + string.chars().count() - 1
             },
         }
     }
