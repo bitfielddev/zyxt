@@ -64,7 +64,7 @@ impl Buffer {
             } else {
                 continue;
             };
-            let kwd_span = tok_selected.span;
+            let kwd_span = (ty != TokenType::Bar).then(|| tok_selected.span);
             let start = self.cursor;
             debug!(pos = ?kwd_span, "Parsing proc / fn");
 
@@ -131,7 +131,7 @@ impl Buffer {
             };
             let ele = Element::Procedure(Procedure {
                 is_fn,
-                kwd_span: Some(kwd_span),
+                kwd_span,
                 args,
                 return_type: return_type.map(|a| a.into()),
                 content: block,
