@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{binary_opr::BinaryOpr, Ast},
+    ast::{Ast, BinaryOpr},
     parser::buffer::Buffer,
     types::{
         errors::ZResult,

@@ -1,5 +1,5 @@
 use crate::{
-    ast::{ident::Ident, Ast, AstData},
+    ast::{Ast, AstData, Ident},
     primitives::UNIT_T,
     types::position::{GetSpan, Span},
     SymTable, Type, Value, ZResult,

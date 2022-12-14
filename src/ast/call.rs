@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{ident::Ident, literal::Literal, procedure::Argument, Ast, AstData},
+    ast::{argument::Argument, Ast, AstData, Ident, Literal},
     primitives::UNIT_T,
     types::{
         interpreter_data::{FrameData, FrameType},

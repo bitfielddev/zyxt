@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{r#return::Return, Ast},
+    ast::{Ast, Return},
     parser::buffer::{Buffer, BufferWindow},
     primitives::UNIT_T,
     types::{

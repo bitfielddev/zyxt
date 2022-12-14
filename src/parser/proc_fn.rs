@@ -2,11 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{
-        block::Block,
-        procedure::{Argument, Procedure},
-        Ast,
-    },
+    ast::{Argument, Ast, Block, Procedure},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         errors::ZResult,

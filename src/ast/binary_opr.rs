@@ -1,5 +1,5 @@
 use crate::{
-    ast::{call::Call, ident::Ident, Ast, AstData},
+    ast::{Ast, AstData, Call, Ident},
     primitives::BOOL_T,
     types::{
         position::{GetSpan, Span},

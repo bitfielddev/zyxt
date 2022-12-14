@@ -7,7 +7,7 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{procedure::Argument, Ast, AstData},
+    ast::{Argument, Ast, AstData},
     primitives::{TYPE_T, TYPE_T_ELE, UNIT_T, UNIT_T_ELE},
     SymTable, Value, ZResult,
 };

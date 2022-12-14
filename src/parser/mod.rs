@@ -17,7 +17,7 @@ use itertools::Either;
 use tracing::{debug, info};
 
 use crate::{
-    ast::{block::Block, comment::Comment, Ast, AstData},
+    ast::{Ast, AstData, Block, Comment},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         errors::{ZError, ZResult},

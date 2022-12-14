@@ -4,23 +4,7 @@ use once_cell::sync::Lazy;
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 use zyxt::{
-    ast::{
-        binary_opr::BinaryOpr,
-        block::Block,
-        call::Call,
-        class::Class,
-        declare::Declare,
-        defer::Defer,
-        delete::Delete,
-        ident::Ident,
-        preprocess::Preprocess,
-        procedure::{Argument, Procedure},
-        r#if::{Condition, If},
-        r#return::Return,
-        set::Set,
-        unary_opr::UnaryOpr,
-        Ast,
-    },
+    ast::*,
     primitives::UNIT_T,
     types::{
         position::{Position, Span},

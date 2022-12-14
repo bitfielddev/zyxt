@@ -1,5 +1,5 @@
 use crate::{
-    ast::{binary_opr::BinaryOpr, Ast, AstData},
+    ast::{Ast, AstData, BinaryOpr},
     types::{
         position::{GetSpan, Span},
         token::{Flag, OprType},

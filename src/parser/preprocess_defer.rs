@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{defer::Defer, preprocess::Preprocess, Ast},
+    ast::{Ast, Defer, Preprocess},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         position::GetSpan,

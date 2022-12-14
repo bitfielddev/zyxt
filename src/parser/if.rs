@@ -2,10 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{
-        r#if::{Condition, If},
-        Ast,
-    },
+    ast::{Ast, Condition, If},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         errors::{ZError, ZResult},

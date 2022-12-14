@@ -9,7 +9,7 @@ use itertools::Itertools;
 use num::{BigInt, BigUint};
 
 use crate::{
-    ast::{block::Block, literal::Literal, procedure::Argument, Ast},
+    ast::{Argument, Ast, Block, Literal},
     primitives::*,
     types::typeobj::Type,
 };

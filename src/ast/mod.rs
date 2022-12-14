@@ -1,37 +1,50 @@
-pub mod binary_opr;
-pub mod block;
-pub mod call;
-pub mod class;
-pub mod comment;
-pub mod declare;
-pub mod defer;
-pub mod delete;
-pub mod ident;
-pub mod r#if;
-pub mod literal;
-pub mod preprocess;
-pub mod procedure;
-pub mod r#return;
-pub mod set;
-pub mod unary_opr;
+mod argument;
+mod binary_opr;
+mod block;
+mod call;
+mod class;
+mod comment;
+mod condition;
+mod declare;
+mod defer;
+mod delete;
+mod ident;
+mod r#if;
+mod literal;
+mod preprocess;
+mod procedure;
+mod r#return;
+mod set;
+mod unary_opr;
 
 use std::fmt::Debug;
 
+pub use argument::Argument;
+pub use binary_opr::BinaryOpr;
+pub use block::Block;
+pub use call::Call;
+pub use class::Class;
+pub use comment::Comment;
+pub use condition::Condition;
+pub use declare::Declare;
+pub use defer::Defer;
+pub use delete::Delete;
 use enum_as_inner::EnumAsInner;
+pub use ident::Ident;
+pub use literal::Literal;
+pub use preprocess::Preprocess;
+pub use procedure::Procedure;
+pub use r#if::If;
+pub use r#return::Return;
+pub use set::Set;
+pub use unary_opr::UnaryOpr;
 
-use crate::{
-    ast::{
-        binary_opr::BinaryOpr, block::Block, call::Call, class::Class, declare::Declare,
-        defer::Defer, delete::Delete, ident::Ident, literal::Literal, preprocess::Preprocess,
-        procedure::Procedure, r#if::If, r#return::Return, set::Set, unary_opr::UnaryOpr,
-    },
-    types::{
-        errors::ZResult,
-        interpreter_data::SymTable,
-        position::{GetSpan, Span},
-        typeobj::Type,
-        value::Value,
-    },
+use crate::types::{
+    errors::ZResult,
+    interpreter_data::SymTable,
+    position::{GetSpan, Span},
+    typeobj::Type,
+    value::Value,
 };
 
 pub trait AstData: Clone + PartialEq + Debug + GetSpan {

@@ -1,5 +1,5 @@
 use crate::{
-    ast::{block::Block, Ast},
+    ast::{Ast, Block},
     types::{interpreter_data::SymTable, position::Span, value::Value},
     ZError, ZResult,
 };
