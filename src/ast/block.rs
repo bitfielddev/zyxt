@@ -5,7 +5,7 @@ use crate::{
         interpreter_data::FrameType,
         position::{GetSpan, Span},
     },
-    InterpreterData, Type, Value, ZError, ZResult,
+    SymTable, Type, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -26,7 +26,7 @@ impl AstData for Block {
         Ast::Block(self.to_owned())
     }
 
-    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(self.block_type(typelist, true)?.0)
     }
 
@@ -41,14 +41,14 @@ impl AstData for Block {
         }))
     }
 
-    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         self.interpret_block(i_data, true, true)
     }
 }
 impl Block {
     pub fn block_type(
         &mut self,
-        typelist: &mut InterpreterData<Type<Ast>>,
+        typelist: &mut SymTable<Type<Ast>>,
         add_set: bool,
     ) -> ZResult<(Type<Ast>, Option<Type<Ast>>)> {
         let mut last = UNIT_T.as_type().as_type_element();
@@ -81,7 +81,7 @@ impl Block {
     }
     pub fn interpret_block(
         &self,
-        i_data: &mut InterpreterData<Value>,
+        i_data: &mut SymTable<Value>,
         returnable: bool,
         add_frame: bool,
     ) -> ZResult<Value> {

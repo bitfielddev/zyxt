@@ -3,7 +3,7 @@ use smol_str::SmolStr;
 use crate::{
     ast::{Ast, AstData},
     types::position::{GetSpan, Span},
-    InterpreterData, Type, Value, ZResult,
+    SymTable, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -29,7 +29,7 @@ impl AstData for Ident {
     fn is_pattern(&self) -> bool {
         true
     }
-    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         typelist.get_val(&self.name, &self.name_span)
     } // TODO change sig of get_val
 
@@ -43,7 +43,7 @@ impl AstData for Ident {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         i_data.get_val(&self.name, &self.name_span) // TODO
     }
 }

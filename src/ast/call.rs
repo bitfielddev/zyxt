@@ -11,7 +11,7 @@ use crate::{
         typeobj::{TypeDefinition, TypeInstance},
         value::Proc,
     },
-    InterpreterData, Type, Value, ZResult,
+    SymTable, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -36,7 +36,7 @@ impl AstData for Call {
     fn as_variant(&self) -> Ast {
         Ast::Call(self.to_owned())
     }
-    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         if let Ast::Ident(Ident {
             name,
             parent:
@@ -134,7 +134,7 @@ impl AstData for Call {
         Ok(self.as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         if let Ast::Ident(Ident {
             name,
             parent:

@@ -72,12 +72,12 @@ pub struct Frame<T: Clone + Display + Debug> {
     pub ty: FrameType,
 }
 #[derive(Debug)]
-pub struct InterpreterData<T: Clone + Display + Debug> {
+pub struct SymTable<T: Clone + Display + Debug> {
     pub frames: VecDeque<Frame<T>>,
 }
-impl InterpreterData<Value> {
-    pub fn new() -> InterpreterData<Value> {
-        let mut v = InterpreterData {
+impl Default for SymTable<Value> {
+    fn default() -> Self {
+        let mut v = SymTable {
             frames: VecDeque::new(),
         };
         let const_frame = v.add_frame(None, FrameType::Constants);
@@ -90,6 +90,8 @@ impl InterpreterData<Value> {
         v.add_frame(None, FrameType::Normal);
         v
     }
+}
+impl SymTable<Value> {
     pub fn heap_to_string(&self) -> String {
         self.frames
             .iter()
@@ -125,9 +127,9 @@ impl InterpreterData<Value> {
     }
 }
 
-impl InterpreterData<Type<Ast>> {
-    pub fn new() -> InterpreterData<Type<Ast>> {
-        let mut v = InterpreterData {
+impl Default for SymTable<Type<Ast>> {
+    fn default() -> Self {
+        let mut v = SymTable {
             frames: VecDeque::new(),
         };
         let const_frame = v.add_frame(None, FrameType::Constants);
@@ -148,6 +150,9 @@ impl InterpreterData<Type<Ast>> {
         v.add_frame(None, FrameType::Normal);
         v
     }
+}
+
+impl SymTable<Type<Ast>> {
     pub fn declare_val(&mut self, name: &SmolStr, value: &Type<Ast>) {
         let frame = if let Some(frame) = self.frames.front_mut() {
             frame
@@ -164,7 +169,7 @@ impl InterpreterData<Type<Ast>> {
     }
 }
 
-impl<T: Clone + Display + Debug> InterpreterData<T> {
+impl<T: Clone + Display + Debug> SymTable<T> {
     pub fn add_frame(&mut self, frame_data: Option<FrameData<T>>, ty: FrameType) -> &mut Frame<T> {
         self.frames.push_front(Frame {
             heap: HashMap::new(),

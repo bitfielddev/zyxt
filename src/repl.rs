@@ -10,14 +10,14 @@ use smol_str::SmolStr;
 use crate::{
     ast::{Ast, AstData},
     compile,
-    types::{interpreter_data::InterpreterData, value::Value},
+    types::{interpreter_data::SymTable, value::Value},
     Type, ZError,
 };
 
 pub fn repl(verbosity: u8) {
     let filename = SmolStr::from("[stdin]");
-    let mut typelist = InterpreterData::<Type<Ast>>::new();
-    let mut varlist = InterpreterData::<Value>::new();
+    let mut typelist = SymTable::<Type<Ast>>::default();
+    let mut varlist = SymTable::<Value>::default();
     let mut rl = Editor::<()>::new().unwrap();
     let mut history_path = home_dir().unwrap();
     history_path.push(".zyxt_history");

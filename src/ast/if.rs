@@ -1,7 +1,7 @@
 use crate::{
     ast::{block::Block, Ast, AstData},
     types::position::{GetSpan, Span},
-    InterpreterData, Type, Value, ZResult,
+    SymTable, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -43,7 +43,7 @@ impl AstData for If {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(self.conditions[0].if_true.block_type(typelist, true)?.0)
         // TODO consider all returns
     }
@@ -63,7 +63,7 @@ impl AstData for If {
         .as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         for cond in &self.conditions {
             if cond.condition.is_none() {
                 return cond.if_true.interpret_block(i_data, false, true);

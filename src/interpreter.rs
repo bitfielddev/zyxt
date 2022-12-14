@@ -1,10 +1,10 @@
 use crate::{
     ast::{block::Block, Ast},
-    types::{interpreter_data::InterpreterData, position::Span, value::Value},
+    types::{interpreter_data::SymTable, position::Span, value::Value},
     ZError, ZResult,
 };
 
-pub fn interpret_asts(input: &Vec<Ast>, i_data: &mut InterpreterData<Value>) -> ZResult<i32> {
+pub fn interpret_asts(input: &Vec<Ast>, i_data: &mut SymTable<Value>) -> ZResult<i32> {
     let input = Block {
         brace_spans: None,
         content: input.to_owned(),

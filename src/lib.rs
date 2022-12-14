@@ -25,12 +25,12 @@ use crate::{
     interpreter::interpret_asts,
     lexer::lex,
     parser::parse_token_list,
-    types::{interpreter_data::InterpreterData, typeobj::Type, value::Value},
+    types::{interpreter_data::SymTable, typeobj::Type, value::Value},
 };
 
 pub fn compile(
     file: Either<&Path, (SmolStr, String)>,
-    typelist: &mut InterpreterData<Type<Ast>>,
+    typelist: &mut SymTable<Type<Ast>>,
 ) -> ZResult<Vec<Ast>> {
     /*if typelist.out.verbosity() == 0 {
         return gen_instructions(parse_token_list(lex(input, filename)?)?, typelist);
@@ -72,7 +72,7 @@ pub fn compile(
     Ok(instructions)
 }
 
-pub fn interpret(input: &Vec<Ast>, i_data: &mut InterpreterData<Value>) -> ZResult<i32> {
+pub fn interpret(input: &Vec<Ast>, i_data: &mut SymTable<Value>) -> ZResult<i32> {
     /*if i_data.out.verbosity() == 0 {
         return interpret_asts(input, i_data);
     }*/

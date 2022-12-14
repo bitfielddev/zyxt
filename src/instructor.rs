@@ -1,12 +1,12 @@
 use crate::{
     ast::{Ast, AstData},
-    types::{interpreter_data::InterpreterData, typeobj::Type},
+    types::{interpreter_data::SymTable, typeobj::Type},
     ZResult,
 };
 
 pub fn gen_instructions(
     mut input: Vec<Ast>,
-    typelist: &mut InterpreterData<Type<Ast>>,
+    typelist: &mut SymTable<Type<Ast>>,
 ) -> ZResult<Vec<Ast>> {
     for ele in input.iter_mut() {
         *ele = ele.desugared()?;

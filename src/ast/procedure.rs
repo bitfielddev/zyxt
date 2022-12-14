@@ -9,7 +9,7 @@ use crate::{
         typeobj::TypeInstance,
         value::Proc,
     },
-    InterpreterData, Type, Value, ZError, ZResult,
+    SymTable, Type, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -73,7 +73,7 @@ impl AstData for Procedure {
         Ast::Procedure(self.to_owned())
     }
 
-    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         typelist.add_frame(
             None,
             if self.is_fn {
@@ -123,7 +123,7 @@ impl AstData for Procedure {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         Ok(Value::Proc(Proc::Defined {
             is_fn: self.is_fn,
             args: self.args.to_owned(),

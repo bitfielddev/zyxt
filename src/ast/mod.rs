@@ -27,7 +27,7 @@ use crate::{
     },
     types::{
         errors::ZResult,
-        interpreter_data::InterpreterData,
+        interpreter_data::SymTable,
         position::{GetSpan, Span},
         typeobj::Type,
         value::Value,
@@ -39,13 +39,13 @@ pub trait AstData: Clone + PartialEq + Debug + GetSpan {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn process(&mut self, _typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, _: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(Type::Any)
     }
     fn desugared(&self) -> ZResult<Ast> {
         Ok(self.as_variant())
     }
-    fn interpret_expr(&self, _: &mut InterpreterData<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, _: &mut SymTable<Value>) -> ZResult<Value> {
         unreachable!()
     }
 }
@@ -102,13 +102,13 @@ impl AstData for Ast {
     fn is_pattern(&self) -> bool {
         for_all_variants!(&self, is_pattern)
     }
-    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         for_all_variants!(self, process, typelist)
     }
     fn desugared(&self) -> ZResult<Ast> {
         for_all_variants!(&self, desugared)
     }
-    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         for_all_variants!(&self, interpret_expr, i_data)
     }
 }

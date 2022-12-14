@@ -10,7 +10,7 @@ use crate::{
         token::Flag,
         typeobj::TypeDefinition,
     },
-    InterpreterData, Type, Value, ZResult,
+    SymTable, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -32,7 +32,7 @@ impl AstData for Class {
         Ast::Class(self.to_owned())
     }
 
-    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         typelist.add_frame(None, FrameType::Normal);
         for expr in &mut self.content.as_mut().unwrap().content {
             // TODO deal w unwrap
@@ -120,7 +120,7 @@ impl AstData for Class {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         Ok(Value::Type(Type::Definition(TypeDefinition {
             name: Some(if self.is_struct { "struct" } else { "class" }.into()),
             inst_name: None,

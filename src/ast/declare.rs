@@ -4,7 +4,7 @@ use crate::{
         position::{GetSpan, Span},
         token::{Flag, OprType},
     },
-    InterpreterData, Type, Value, ZError, ZResult,
+    SymTable, Type, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -30,7 +30,7 @@ impl AstData for Declare {
         Ast::Declare(self.to_owned())
     }
 
-    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         if !self.variable.is_pattern() {
             return Err(ZError::error_2_2(*self.variable.to_owned()).with_span(&*self.variable));
         }
@@ -88,7 +88,7 @@ impl AstData for Declare {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {

@@ -5,7 +5,7 @@ use crate::{
         position::{GetSpan, Span},
         token::OprType,
     },
-    InterpreterData, Value, ZResult,
+    SymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -82,7 +82,7 @@ impl AstData for BinaryOpr {
         })
     }
 
-    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         match self.ty {
             OprType::And => {
                 if let Value::Bool(b) = self.operand1.interpret_expr(i_data)? {

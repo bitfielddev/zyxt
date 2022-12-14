@@ -1,7 +1,7 @@
 use crate::{
     ast::{Ast, AstData},
     types::position::{GetSpan, Span},
-    InterpreterData, Type, Value, ZResult,
+    SymTable, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -20,7 +20,7 @@ impl AstData for Defer {
         Ast::Defer(self.to_owned())
     }
 
-    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         self.content.process(typelist)
     }
 
@@ -32,7 +32,7 @@ impl AstData for Defer {
         .as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         i_data.add_defer(*self.content.to_owned());
         Ok(Value::Unit)
     }
