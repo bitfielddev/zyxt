@@ -2,7 +2,7 @@ use crate::{
     ast::{ident::Ident, Ast, AstData},
     primitives::UNIT_T,
     types::position::{GetSpan, Span},
-    InterpreterData, Print, Type, Value, ZResult,
+    InterpreterData, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -21,14 +21,11 @@ impl AstData for Delete {
         Ast::Delete(self.to_owned())
     }
 
-    fn process<O: Print>(
-        &mut self,
-        _typelist: &mut InterpreterData<Type<Ast>, O>,
-    ) -> ZResult<Type<Ast>> {
+    fn process(&mut self, _typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(UNIT_T.get_instance().as_type_element())
     }
 
-    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
         for name in &self.names {
             i_data.delete_val(&name.name, &Span::default())?; // TODO
         }

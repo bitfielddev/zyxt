@@ -5,7 +5,7 @@ use crate::{
         interpreter_data::FrameType,
         position::{GetSpan, Span},
     },
-    InterpreterData, Print, Type, Value, ZError, ZResult,
+    InterpreterData, Type, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -26,32 +26,29 @@ impl AstData for Block {
         Ast::Block(self.to_owned())
     }
 
-    fn process<O: Print>(
-        &mut self,
-        typelist: &mut InterpreterData<Type<Ast>, O>,
-    ) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(self.block_type(typelist, true)?.0)
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
+    fn desugared(&self) -> ZResult<Ast> {
         Ok(Ast::Block(Self {
             brace_spans: self.brace_spans.to_owned(),
             content: self
                 .content
                 .iter()
-                .map(|c| c.desugared(out))
+                .map(|c| c.desugared())
                 .collect::<Result<_, _>>()?,
         }))
     }
 
-    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
         self.interpret_block(i_data, true, true)
     }
 }
 impl Block {
-    pub fn block_type<O: Print>(
+    pub fn block_type(
         &mut self,
-        typelist: &mut InterpreterData<Type<Ast>, O>,
+        typelist: &mut InterpreterData<Type<Ast>>,
         add_set: bool,
     ) -> ZResult<(Type<Ast>, Option<Type<Ast>>)> {
         let mut last = UNIT_T.as_type().as_type_element();
@@ -82,9 +79,9 @@ impl Block {
         }
         Ok((last, if add_set { None } else { return_type }))
     }
-    pub fn interpret_block<O: Print>(
+    pub fn interpret_block(
         &self,
-        i_data: &mut InterpreterData<Value, O>,
+        i_data: &mut InterpreterData<Value>,
         returnable: bool,
         add_frame: bool,
     ) -> ZResult<Value> {

@@ -1,7 +1,7 @@
 use crate::{
     ast::{block::Block, Ast, AstData},
     types::position::{GetSpan, Span},
-    InterpreterData, Print, Type, Value, ZResult,
+    InterpreterData, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -18,12 +18,9 @@ impl GetSpan for Condition {
     }
 }
 impl Condition {
-    pub fn desugar(&mut self, out: &mut impl Print) -> ZResult<()> {
-        self.condition
-            .as_mut()
-            .map(|e| e.desugared(out))
-            .transpose()?;
-        self.if_true = self.if_true.desugared(out)?.as_block().unwrap().to_owned();
+    pub fn desugar(&mut self) -> ZResult<()> {
+        self.condition.as_mut().map(|e| e.desugared()).transpose()?;
+        self.if_true = self.if_true.desugared()?.as_block().unwrap().to_owned();
         Ok(())
     }
 }
@@ -46,22 +43,19 @@ impl AstData for If {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn process<O: Print>(
-        &mut self,
-        typelist: &mut InterpreterData<Type<Ast>, O>,
-    ) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(self.conditions[0].if_true.block_type(typelist, true)?.0)
         // TODO consider all returns
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
+    fn desugared(&self) -> ZResult<Ast> {
         Ok(Self {
             conditions: self
                 .conditions
                 .iter()
                 .map(|a| {
                     let mut a = a.to_owned();
-                    a.desugar(out)?;
+                    a.desugar()?;
                     Ok(a)
                 })
                 .collect::<Result<_, _>>()?,
@@ -69,7 +63,7 @@ impl AstData for If {
         .as_variant())
     }
 
-    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
         for cond in &self.conditions {
             if cond.condition.is_none() {
                 return cond.if_true.interpret_block(i_data, false, true);

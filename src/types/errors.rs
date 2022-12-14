@@ -14,7 +14,6 @@ use crate::{
     file_importer::get_input,
     types::{
         position::{GetSpan, Span},
-        printer::Print,
         token::Keyword,
         value::Value,
     },
@@ -451,17 +450,15 @@ impl ZError {
             })
             .join("\n")
     }
-    pub fn print_exit(self, out: &mut impl Print) -> ! {
-        self.print(out);
+    pub fn print_exit(self) -> ! {
+        self.print();
         exit(1)
     }
-    pub fn print(&self, out: &mut impl Print) {
-        out.println(self.get_surrounding_text());
-        out.println(
-            format!(" Error {} ", self.code)
-                .black()
-                .on_yellow()
-                .to_string()
+    pub fn print(&self) {
+        println!("{}", self.get_surrounding_text());
+        println!(
+            " Error {} ",
+            self.code.black().on_yellow().to_string()
                 + &*format!(" {}", self.message).bold().red().to_string(),
         );
     }

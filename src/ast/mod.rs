@@ -29,7 +29,6 @@ use crate::{
         errors::ZResult,
         interpreter_data::InterpreterData,
         position::{GetSpan, Span},
-        printer::Print,
         typeobj::Type,
         value::Value,
     },
@@ -40,16 +39,13 @@ pub trait AstData: Clone + PartialEq + Debug + GetSpan {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn process<O: Print>(
-        &mut self,
-        _typelist: &mut InterpreterData<Type<Ast>, O>,
-    ) -> ZResult<Type<Ast>> {
+    fn process(&mut self, _typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(Type::Any)
     }
-    fn desugared(&self, _out: &mut impl Print) -> ZResult<Ast> {
+    fn desugared(&self) -> ZResult<Ast> {
         Ok(self.as_variant())
     }
-    fn interpret_expr<O: Print>(&self, _: &mut InterpreterData<Value, O>) -> ZResult<Value> {
+    fn interpret_expr(&self, _: &mut InterpreterData<Value>) -> ZResult<Value> {
         unreachable!()
     }
 }
@@ -106,16 +102,13 @@ impl AstData for Ast {
     fn is_pattern(&self) -> bool {
         for_all_variants!(&self, is_pattern)
     }
-    fn process<O: Print>(
-        &mut self,
-        typelist: &mut InterpreterData<Type<Ast>, O>,
-    ) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
         for_all_variants!(self, process, typelist)
     }
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
-        for_all_variants!(&self, desugared, out)
+    fn desugared(&self) -> ZResult<Ast> {
+        for_all_variants!(&self, desugared)
     }
-    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
         for_all_variants!(&self, interpret_expr, i_data)
     }
 }

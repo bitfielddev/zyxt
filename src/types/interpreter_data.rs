@@ -13,7 +13,6 @@ use crate::{
     types::{
         errors::{ZError, ZResult},
         position::{GetSpan, Position, Span},
-        printer::Print,
         typeobj::Type,
         value::Value,
     },
@@ -73,15 +72,13 @@ pub struct Frame<T: Clone + Display + Debug> {
     pub ty: FrameType,
 }
 #[derive(Debug)]
-pub struct InterpreterData<'a, T: Clone + Display + Debug, O: Print> {
+pub struct InterpreterData<T: Clone + Display + Debug> {
     pub frames: VecDeque<Frame<T>>,
-    pub out: &'a mut O,
 }
-impl<'a, O: Print> InterpreterData<'a, Value, O> {
-    pub fn new(out: &'a mut O) -> InterpreterData<'a, Value, O> {
+impl InterpreterData<Value> {
+    pub fn new() -> InterpreterData<Value> {
         let mut v = InterpreterData {
             frames: VecDeque::new(),
-            out,
         };
         let const_frame = v.add_frame(None, FrameType::Constants);
         for t in PRIM_NAMES {
@@ -128,11 +125,10 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
     }
 }
 
-impl<'a, O: Print> InterpreterData<'a, Type<Ast>, O> {
-    pub fn new(out: &'a mut O) -> InterpreterData<'a, Type<Ast>, O> {
+impl InterpreterData<Type<Ast>> {
+    pub fn new() -> InterpreterData<Type<Ast>> {
         let mut v = InterpreterData {
             frames: VecDeque::new(),
-            out,
         };
         let const_frame = v.add_frame(None, FrameType::Constants);
         for t in PRIM_NAMES {
@@ -168,7 +164,7 @@ impl<'a, O: Print> InterpreterData<'a, Type<Ast>, O> {
     }
 }
 
-impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
+impl<T: Clone + Display + Debug> InterpreterData<T> {
     pub fn add_frame(&mut self, frame_data: Option<FrameData<T>>, ty: FrameType) -> &mut Frame<T> {
         self.frames.push_front(Frame {
             heap: HashMap::new(),

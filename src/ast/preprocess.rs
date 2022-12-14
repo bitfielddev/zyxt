@@ -1,7 +1,7 @@
 use crate::{
     ast::{Ast, AstData},
     types::position::{GetSpan, Span},
-    InterpreterData, Print, Type, Value, ZResult,
+    InterpreterData, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -20,11 +20,11 @@ impl AstData for Preprocess {
         Ast::Preprocess(self.to_owned())
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
-        let mut pre_instructions = self.content.desugared(out)?;
-        let mut pre_typelist = InterpreterData::<Type<Ast>, _>::new(out);
+    fn desugared(&self) -> ZResult<Ast> {
+        let mut pre_instructions = self.content.desugared()?;
+        let mut pre_typelist = InterpreterData::<Type<Ast>>::new();
         pre_instructions.process(&mut pre_typelist)?;
-        let mut i_data = InterpreterData::<Value, _>::new(out);
+        let mut i_data = InterpreterData::<Value>::new();
         let pre_value = pre_instructions.interpret_expr(&mut i_data)?;
         Ok(pre_value.as_element())
     }

@@ -4,7 +4,7 @@ use crate::{
         position::{GetSpan, Span},
         token::OprType,
     },
-    Print, ZResult,
+    ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -24,7 +24,7 @@ impl AstData for UnaryOpr {
         Ast::UnaryOpr(self.to_owned())
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
+    fn desugared(&self) -> ZResult<Ast> {
         Ok(Call {
             called: Ident {
                 name: match self.ty {
@@ -36,7 +36,7 @@ impl AstData for UnaryOpr {
                 .into(),
                 name_span: None,
                 dot_span: None,
-                parent: Some(self.operand.desugared(out)?.into()),
+                parent: Some(self.operand.desugared()?.into()),
             }
             .as_variant()
             .into(),

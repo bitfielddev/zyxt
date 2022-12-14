@@ -16,10 +16,7 @@ use std::{path::Path, time::Instant};
 use itertools::Either;
 use smol_str::SmolStr;
 use tracing::{info, trace};
-use types::{
-    errors::{ZError, ZResult},
-    printer::Print,
-};
+use types::errors::{ZError, ZResult};
 
 use crate::{
     ast::Ast,
@@ -33,7 +30,7 @@ use crate::{
 
 pub fn compile(
     file: Either<&Path, (SmolStr, String)>,
-    typelist: &mut InterpreterData<Type<Ast>, impl Print>,
+    typelist: &mut InterpreterData<Type<Ast>>,
 ) -> ZResult<Vec<Ast>> {
     /*if typelist.out.verbosity() == 0 {
         return gen_instructions(parse_token_list(lex(input, filename)?)?, typelist);
@@ -75,10 +72,7 @@ pub fn compile(
     Ok(instructions)
 }
 
-pub fn interpret(
-    input: &Vec<Ast>,
-    i_data: &mut InterpreterData<Value, impl Print>,
-) -> ZResult<i32> {
+pub fn interpret(input: &Vec<Ast>, i_data: &mut InterpreterData<Value>) -> ZResult<i32> {
     /*if i_data.out.verbosity() == 0 {
         return interpret_asts(input, i_data);
     }*/

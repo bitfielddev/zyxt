@@ -5,7 +5,7 @@ use crate::{
         position::{GetSpan, Span},
         token::OprType,
     },
-    InterpreterData, Print, Value, ZResult,
+    InterpreterData, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -28,7 +28,7 @@ impl AstData for BinaryOpr {
         Ast::BinaryOpr(self.to_owned())
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
+    fn desugared(&self) -> ZResult<Ast> {
         Ok(match self.ty {
             OprType::And | OprType::Or => {
                 let mut new_self = self.to_owned();
@@ -36,7 +36,7 @@ impl AstData for BinaryOpr {
                     *operand = BinaryOpr {
                         ty: OprType::TypeCast,
                         opr_span: self.opr_span.to_owned(),
-                        operand1: operand.desugared(out)?.into(),
+                        operand1: operand.desugared()?.into(),
                         operand2: BOOL_T
                             .as_type_element()
                             .get_instance()
@@ -44,7 +44,7 @@ impl AstData for BinaryOpr {
                             .as_variant()
                             .into(),
                     }
-                    .desugared(out)?
+                    .desugared()?
                     .into();
                 }
                 new_self.as_variant()
@@ -70,19 +70,19 @@ impl AstData for BinaryOpr {
                     .into(),
                     name_span: None,
                     dot_span: None,
-                    parent: Some(self.operand1.desugared(out)?.into()),
+                    parent: Some(self.operand1.desugared()?.into()),
                 }
                 .as_variant()
                 .into(),
                 paren_spans: None,
-                args: vec![self.operand2.desugared(out)?],
+                args: vec![self.operand2.desugared()?],
                 kwargs: Default::default(),
             }
-            .desugared(out)?,
+            .desugared()?,
         })
     }
 
-    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
         match self.ty {
             OprType::And => {
                 if let Value::Bool(b) = self.operand1.interpret_expr(i_data)? {

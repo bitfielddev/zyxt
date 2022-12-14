@@ -10,7 +10,7 @@ use crate::{
         token::Flag,
         typeobj::TypeDefinition,
     },
-    InterpreterData, Print, Type, Value, ZResult,
+    InterpreterData, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -32,10 +32,7 @@ impl AstData for Class {
         Ast::Class(self.to_owned())
     }
 
-    fn process<O: Print>(
-        &mut self,
-        typelist: &mut InterpreterData<Type<Ast>, O>,
-    ) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
         typelist.add_frame(None, FrameType::Normal);
         for expr in &mut self.content.as_mut().unwrap().content {
             // TODO deal w unwrap
@@ -101,10 +98,10 @@ impl AstData for Class {
         }))
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
+    fn desugared(&self) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
         new_self.content = if let Some(content) = new_self.content {
-            Some(content.desugared(out)?.as_block().unwrap().to_owned())
+            Some(content.desugared()?.as_block().unwrap().to_owned())
         } else {
             None
         };
@@ -114,7 +111,7 @@ impl AstData for Class {
             .map(|args| {
                 args.iter_mut()
                     .map(|arg| {
-                        arg.desugar(out)?;
+                        arg.desugar()?;
                         Ok(arg)
                     })
                     .collect::<Result<Vec<_>, _>>()
@@ -123,7 +120,7 @@ impl AstData for Class {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
         Ok(Value::Type(Type::Definition(TypeDefinition {
             name: Some(if self.is_struct { "struct" } else { "class" }.into()),
             inst_name: None,

@@ -11,7 +11,7 @@ use crate::{
         typeobj::{TypeDefinition, TypeInstance},
         value::Proc,
     },
-    InterpreterData, Print, Type, Value, ZResult,
+    InterpreterData, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -36,10 +36,7 @@ impl AstData for Call {
     fn as_variant(&self) -> Ast {
         Ast::Call(self.to_owned())
     }
-    fn process<O: Print>(
-        &mut self,
-        typelist: &mut InterpreterData<Type<Ast>, O>,
-    ) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
         if let Ast::Ident(Ident {
             name,
             parent:
@@ -132,12 +129,12 @@ impl AstData for Call {
         }
     }
 
-    fn desugared(&self, _out: &mut impl Print) -> ZResult<Ast> {
+    fn desugared(&self) -> ZResult<Ast> {
         // TODO
         Ok(self.as_variant())
     }
 
-    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
         if let Ast::Ident(Ident {
             name,
             parent:
@@ -157,7 +154,7 @@ impl AstData for Call {
                     .map(|v| v.to_string())
                     .collect::<Vec<String>>()
                     .join(" ");
-                i_data.out.println(s);
+                println!("{s}");
                 return Ok(Value::Unit);
             }
         }

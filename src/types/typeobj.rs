@@ -9,7 +9,7 @@ use smol_str::SmolStr;
 use crate::{
     ast::{procedure::Argument, Ast, AstData},
     primitives::{TYPE_T, TYPE_T_ELE, UNIT_T, UNIT_T_ELE},
-    InterpreterData, Print, Value, ZResult,
+    InterpreterData, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq)]
@@ -150,7 +150,7 @@ impl<T: Clone + PartialEq + Debug> TypeInstance<T> {
 impl TypeDefinition<Ast> {
     pub fn as_type_value(
         &self,
-        i_data: &mut InterpreterData<Value, impl Print>,
+        i_data: &mut InterpreterData<Value>,
     ) -> ZResult<TypeDefinition<Value>> {
         Ok(TypeDefinition {
             inst_name: self.inst_name.to_owned(),
@@ -182,7 +182,7 @@ impl TypeDefinition<Ast> {
 impl TypeInstance<Ast> {
     pub fn as_type_value(
         &self,
-        i_data: &mut InterpreterData<Value, impl Print>,
+        i_data: &mut InterpreterData<Value>,
     ) -> ZResult<TypeInstance<Value>> {
         Ok(TypeInstance {
             name: self.name.to_owned(),
@@ -244,10 +244,7 @@ impl Type<Ast> {
             Type::Return(ty) => ty.implementation(),
         }
     }
-    pub fn as_type_value(
-        &self,
-        i_data: &mut InterpreterData<Value, impl Print>,
-    ) -> ZResult<Type<Value>> {
+    pub fn as_type_value(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Type<Value>> {
         Ok(match &self {
             Type::Instance(inst) => Type::Instance(inst.as_type_value(i_data)?),
             Type::Definition(def) => Type::Definition(def.as_type_value(i_data)?),

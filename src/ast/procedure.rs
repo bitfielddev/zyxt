@@ -9,7 +9,7 @@ use crate::{
         typeobj::TypeInstance,
         value::Proc,
     },
-    InterpreterData, Print, Type, Value, ZError, ZResult,
+    InterpreterData, Type, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -45,12 +45,8 @@ impl Display for Argument {
     }
 }
 impl Argument {
-    pub fn desugar(&mut self, out: &mut impl Print) -> ZResult<()> {
-        self.default = self
-            .default
-            .as_ref()
-            .map(|e| e.desugared(out))
-            .transpose()?;
+    pub fn desugar(&mut self) -> ZResult<()> {
+        self.default = self.default.as_ref().map(|e| e.desugared()).transpose()?;
         Ok(())
     }
 }
@@ -77,10 +73,7 @@ impl AstData for Procedure {
         Ast::Procedure(self.to_owned())
     }
 
-    fn process<O: Print>(
-        &mut self,
-        typelist: &mut InterpreterData<Type<Ast>, O>,
-    ) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
         typelist.add_frame(
             None,
             if self.is_fn {
@@ -115,22 +108,22 @@ impl AstData for Procedure {
         }))
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
+    fn desugared(&self) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
         new_self.args = self
             .args
             .iter()
             .map(|a| {
                 let mut a = a.to_owned();
-                a.desugar(out)?;
+                a.desugar()?;
                 Ok(a)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        new_self.content = self.content.desugared(out)?.as_block().unwrap().to_owned();
+        new_self.content = self.content.desugared()?.as_block().unwrap().to_owned();
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
         Ok(Value::Proc(Proc::Defined {
             is_fn: self.is_fn,
             args: self.args.to_owned(),

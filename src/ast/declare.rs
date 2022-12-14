@@ -4,7 +4,7 @@ use crate::{
         position::{GetSpan, Span},
         token::{Flag, OprType},
     },
-    InterpreterData, Print, Type, Value, ZError, ZResult,
+    InterpreterData, Type, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -30,10 +30,7 @@ impl AstData for Declare {
         Ast::Declare(self.to_owned())
     }
 
-    fn process<O: Print>(
-        &mut self,
-        typelist: &mut InterpreterData<Type<Ast>, O>,
-    ) -> ZResult<Type<Ast>> {
+    fn process(&mut self, typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
         if !self.variable.is_pattern() {
             return Err(ZError::error_2_2(*self.variable.to_owned()).with_span(&*self.variable));
         }
@@ -79,19 +76,19 @@ impl AstData for Declare {
         Ok(content_type)
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
+    fn desugared(&self) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
-        new_self.content = self.content.desugared(out)?.into();
+        new_self.content = self.content.desugared()?.into();
         new_self.ty = self
             .ty
             .as_ref()
-            .map(|a| a.desugared(out))
+            .map(|a| a.desugared())
             .transpose()?
             .map(|a| a.into());
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {

@@ -1,7 +1,7 @@
 use crate::{
     ast::{Ast, AstData},
     types::position::{GetSpan, Span},
-    InterpreterData, Print, Type, Value, ZResult,
+    InterpreterData, Type, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -23,14 +23,11 @@ impl AstData for Literal {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn process<O: Print>(
-        &mut self,
-        _typelist: &mut InterpreterData<Type<Ast>, O>,
-    ) -> ZResult<Type<Ast>> {
+    fn process(&mut self, _typelist: &mut InterpreterData<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(self.content.get_type_obj().as_type_element())
     }
 
-    fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
+    fn interpret_expr(&self, i_data: &mut InterpreterData<Value>) -> ZResult<Value> {
         Ok(if let Value::PreType(v) = &self.content {
             Value::Type(v.as_type_value(i_data)?)
         } else {
