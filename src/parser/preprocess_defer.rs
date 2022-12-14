@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{defer::Defer, preprocess::Preprocess, Element},
+    ast::{defer::Defer, preprocess::Preprocess, Ast},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         position::GetSpan,
@@ -35,7 +35,7 @@ impl Buffer {
             let selected = self.next_or_err()?;
 
             let (content, end) = if let Either::Left(selected) = selected {
-                if let Element::Block(_) = &selected {
+                if let Ast::Block(_) = &selected {
                     debug!(pos = ?selected.span(), "Block detected");
                     (selected.to_owned(), self.next_cursor_pos())
                 } else {
@@ -55,12 +55,12 @@ impl Buffer {
                 )
             };
             let ele = if kwd == Keyword::Pre {
-                Element::Preprocess(Preprocess {
+                Ast::Preprocess(Preprocess {
                     kwd_span,
                     content: content.into(),
                 })
             } else {
-                Element::Defer(Defer {
+                Ast::Defer(Defer {
                     kwd_span,
                     content: content.into(),
                 })

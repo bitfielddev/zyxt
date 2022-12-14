@@ -3,9 +3,7 @@ use std::collections::HashMap;
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{
-        block::Block, declare::Declare, ident::Ident, procedure::Argument, Element, ElementData,
-    },
+    ast::{block::Block, declare::Declare, ident::Ident, procedure::Argument, Ast, AstData},
     types::{
         interpreter_data::FrameType,
         position::{GetSpan, Span},
@@ -18,8 +16,8 @@ use crate::{
 #[derive(Clone, PartialEq, Debug)]
 pub struct Class {
     pub is_struct: bool,
-    pub implementations: HashMap<SmolStr, Element>,
-    pub inst_fields: HashMap<SmolStr, (Ident, Option<Element>)>,
+    pub implementations: HashMap<SmolStr, Ast>,
+    pub inst_fields: HashMap<SmolStr, (Ident, Option<Ast>)>,
     pub content: Option<Block>,
     pub args: Option<Vec<Argument>>,
 }
@@ -29,20 +27,20 @@ impl GetSpan for Class {
     }
 }
 
-impl ElementData for Class {
-    fn as_variant(&self) -> Element {
-        Element::Class(self.to_owned())
+impl AstData for Class {
+    fn as_variant(&self) -> Ast {
+        Ast::Class(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         typelist.add_frame(None, FrameType::Normal);
         for expr in &mut self.content.as_mut().unwrap().content {
             // TODO deal w unwrap
             expr.process(typelist)?;
-            if let Element::Declare(Declare {
+            if let Ast::Declare(Declare {
                 variable,
                 content,
                 flags,
@@ -54,13 +52,13 @@ impl ElementData for Class {
                 if flags.contains(&Flag::Inst) && self.args.is_some() {
                     todo!("raise error here")
                 }
-                let name = if let Element::Ident(ident) = &**variable {
+                let name = if let Ast::Ident(ident) = &**variable {
                     &ident.name
                 } else {
                     unimplemented!() // TODO
                 };
                 let ty = if let Some(ele) = ty {
-                    if let Element::Ident(ident) = &**ele {
+                    if let Ast::Ident(ident) = &**ele {
                         ident.to_owned()
                     } else {
                         unimplemented!() // TODO
@@ -103,7 +101,7 @@ impl ElementData for Class {
         }))
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
         new_self.content = if let Some(content) = new_self.content {
             Some(content.desugared(out)?.as_block().unwrap().to_owned())

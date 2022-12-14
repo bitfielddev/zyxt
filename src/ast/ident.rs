@@ -1,7 +1,7 @@
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{Element, ElementData},
+    ast::{Ast, AstData},
     types::position::{GetSpan, Span},
     InterpreterData, Print, Type, Value, ZResult,
 };
@@ -11,7 +11,7 @@ pub struct Ident {
     pub name: SmolStr,
     pub name_span: Option<Span>,
     pub dot_span: Option<Span>,
-    pub parent: Option<Box<Element>>,
+    pub parent: Option<Box<Ast>>,
 }
 impl GetSpan for Ident {
     fn span(&self) -> Option<Span> {
@@ -21,9 +21,9 @@ impl GetSpan for Ident {
     }
 }
 
-impl ElementData for Ident {
-    fn as_variant(&self) -> Element {
-        Element::Ident(self.to_owned())
+impl AstData for Ident {
+    fn as_variant(&self) -> Ast {
+        Ast::Ident(self.to_owned())
     }
 
     fn is_pattern(&self) -> bool {
@@ -31,12 +31,12 @@ impl ElementData for Ident {
     }
     fn process<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         typelist.get_val(&self.name, &self.name_span)
     } // TODO change sig of get_val
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
         new_self.parent = new_self
             .parent

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{ident::Ident, literal::Literal, procedure::Argument, Element, ElementData},
+    ast::{ident::Ident, literal::Literal, procedure::Argument, Ast, AstData},
     primitives::UNIT_T,
     types::{
         interpreter_data::{FrameData, FrameType},
@@ -16,10 +16,10 @@ use crate::{
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Call {
-    pub called: Box<Element>,
+    pub called: Box<Ast>,
     pub paren_spans: Option<(Span, Span)>,
-    pub args: Vec<Element>,
-    pub kwargs: HashMap<SmolStr, Element>,
+    pub args: Vec<Ast>,
+    pub kwargs: HashMap<SmolStr, Ast>,
 }
 impl GetSpan for Call {
     fn span(&self) -> Option<Span> {
@@ -32,18 +32,18 @@ impl GetSpan for Call {
     }
 }
 
-impl ElementData for Call {
-    fn as_variant(&self) -> Element {
-        Element::Call(self.to_owned())
+impl AstData for Call {
+    fn as_variant(&self) -> Ast {
+        Ast::Call(self.to_owned())
     }
     fn process<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
-        if let Element::Ident(Ident {
+        typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
+        if let Ast::Ident(Ident {
             name,
             parent:
-                Some(box Element::Ident(Ident {
+                Some(box Ast::Ident(Ident {
                     name: parent_name, ..
                 })),
             ..
@@ -58,7 +58,7 @@ impl ElementData for Call {
             }
         }
         let called_type = self.called.process(typelist)?;
-        if let Element::Procedure(procedure) = &mut *self.called {
+        if let Ast::Procedure(procedure) = &mut *self.called {
             for (i, arg) in self.args.iter_mut().enumerate() {
                 if arg.process(typelist)?
                     != procedure.args.get_mut(i).unwrap().ty.process(typelist)?
@@ -71,7 +71,7 @@ impl ElementData for Call {
             } else {
                 Ok(UNIT_T.as_type_element().as_type())
             }
-        } else if let Element::Literal(Literal {
+        } else if let Ast::Literal(Literal {
             content: Value::Proc(proc),
             ..
         }) = &mut *self.called
@@ -132,16 +132,16 @@ impl ElementData for Call {
         }
     }
 
-    fn desugared(&self, _out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, _out: &mut impl Print) -> ZResult<Ast> {
         // TODO
         Ok(self.as_variant())
     }
 
     fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
-        if let Element::Ident(Ident {
+        if let Ast::Ident(Ident {
             name,
             parent:
-                Some(box Element::Ident(Ident {
+                Some(box Ast::Ident(Ident {
                     name: parent_name, ..
                 })),
             ..

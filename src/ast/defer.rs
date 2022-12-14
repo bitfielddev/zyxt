@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Element, ElementData},
+    ast::{Ast, AstData},
     types::position::{GetSpan, Span},
     InterpreterData, Print, Type, Value, ZResult,
 };
@@ -7,7 +7,7 @@ use crate::{
 #[derive(Clone, PartialEq, Debug)]
 pub struct Defer {
     pub kwd_span: Span,
-    pub content: Box<Element>,
+    pub content: Box<Ast>,
 }
 impl GetSpan for Defer {
     fn span(&self) -> Option<Span> {
@@ -15,19 +15,19 @@ impl GetSpan for Defer {
     }
 }
 
-impl ElementData for Defer {
-    fn as_variant(&self) -> Element {
-        Element::Defer(self.to_owned())
+impl AstData for Defer {
+    fn as_variant(&self) -> Ast {
+        Ast::Defer(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         self.content.process(typelist)
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
         Ok(Defer {
             kwd_span: self.kwd_span.to_owned(),
             content: self.content.desugared(out)?.as_variant().into(),

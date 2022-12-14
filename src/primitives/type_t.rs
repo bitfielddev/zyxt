@@ -11,7 +11,7 @@ use crate::{
         typeobj::TypeDefinition,
         value::{Proc, Value},
     },
-    Element, Type,
+    Ast, Type,
 };
 
 fn type_t() -> HashMap<SmolStr, Value> {
@@ -69,4 +69,4 @@ pub static TYPE_T: Lazy<TypeDefinition<Value>> = Lazy::new(|| TypeDefinition {
     implementations: type_t(),
     inst_fields: HashMap::new(),
 });
-pub static TYPE_T_ELE: Lazy<TypeDefinition<Element>> = Lazy::new(|| TYPE_T.as_type_element());
+pub static TYPE_T_ELE: Lazy<TypeDefinition<Ast>> = Lazy::new(|| TYPE_T.as_type_element());

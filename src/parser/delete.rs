@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{delete::Delete, ident::Ident, unary_opr::UnaryOpr, Element},
+    ast::{delete::Delete, ident::Ident, unary_opr::UnaryOpr, Ast},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         errors::ZResult,
@@ -31,9 +31,9 @@ impl Buffer {
             self.next_or_err()?;
             let vars: Vec<Ident> = self.get_split(TokenType::Comma)?.with_as_buffers(&|buf| {
                 let ele = buf.parse_as_expr()?;
-                if let Element::Ident(data) = &ele {
+                if let Ast::Ident(data) = &ele {
                     Ok(data.to_owned())
-                } else if let Element::UnaryOpr(UnaryOpr {
+                } else if let Ast::UnaryOpr(UnaryOpr {
                     ty: OprType::Deref, ..
                 }) = &ele
                 {
@@ -44,7 +44,7 @@ impl Buffer {
                     //Err(ZError::error_2_1_11(&ele.span.raw).with_element(&ele))
                 }
             })?;
-            let ele = Element::Delete(Delete {
+            let ele = Ast::Delete(Delete {
                 kwd_span: init_span,
                 names: vars,
             });

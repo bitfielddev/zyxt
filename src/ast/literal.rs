@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Element, ElementData},
+    ast::{Ast, AstData},
     types::position::{GetSpan, Span},
     InterpreterData, Print, Type, Value, ZResult,
 };
@@ -15,9 +15,9 @@ impl GetSpan for Literal {
     }
 }
 
-impl ElementData for Literal {
-    fn as_variant(&self) -> Element {
-        Element::Literal(self.to_owned())
+impl AstData for Literal {
+    fn as_variant(&self) -> Ast {
+        Ast::Literal(self.to_owned())
     }
 
     fn is_pattern(&self) -> bool {
@@ -25,8 +25,8 @@ impl ElementData for Literal {
     }
     fn process<O: Print>(
         &mut self,
-        _typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        _typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         Ok(self.content.get_type_obj().as_type_element())
     }
 

@@ -1,5 +1,5 @@
 use crate::{
-    ast::{binary_opr::BinaryOpr, Element, ElementData},
+    ast::{binary_opr::BinaryOpr, Ast, AstData},
     types::{
         position::{GetSpan, Span},
         token::{Flag, OprType},
@@ -9,10 +9,10 @@ use crate::{
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Declare {
-    pub variable: Box<Element>,
-    pub content: Box<Element>,
+    pub variable: Box<Ast>,
+    pub content: Box<Ast>,
     pub flags: Vec<(Flag, Span)>,
-    pub ty: Option<Box<Element>>,
+    pub ty: Option<Box<Ast>>,
     pub eq_span: Option<Span>,
 }
 impl GetSpan for Declare {
@@ -25,21 +25,21 @@ impl GetSpan for Declare {
     }
 }
 
-impl ElementData for Declare {
-    fn as_variant(&self) -> Element {
-        Element::Declare(self.to_owned())
+impl AstData for Declare {
+    fn as_variant(&self) -> Ast {
+        Ast::Declare(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         if !self.variable.is_pattern() {
             return Err(ZError::error_2_2(*self.variable.to_owned()).with_span(&*self.variable));
         }
         let content_type = self.content.process(typelist)?;
         let ty = self.ty.as_ref().map(|ty| {
-            if let Element::Literal(literal) = &**ty {
+            if let Ast::Literal(literal) = &**ty {
                 if let Value::Type(t) = &literal.content {
                     t.as_type_element()
                 } else {
@@ -49,7 +49,7 @@ impl ElementData for Declare {
                 todo!()
             }
         });
-        let name = if let Element::Ident(ident) = &*self.variable {
+        let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
             unimplemented!() // TODO
@@ -79,7 +79,7 @@ impl ElementData for Declare {
         Ok(content_type)
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
         new_self.content = self.content.desugared(out)?.into();
         new_self.ty = self
@@ -92,7 +92,7 @@ impl ElementData for Declare {
     }
 
     fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
-        let name = if let Element::Ident(ident) = &*self.variable {
+        let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
             unimplemented!() // TODO

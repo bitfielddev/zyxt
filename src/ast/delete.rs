@@ -1,5 +1,5 @@
 use crate::{
-    ast::{ident::Ident, Element, ElementData},
+    ast::{ident::Ident, Ast, AstData},
     primitives::UNIT_T,
     types::position::{GetSpan, Span},
     InterpreterData, Print, Type, Value, ZResult,
@@ -16,15 +16,15 @@ impl GetSpan for Delete {
     }
 }
 
-impl ElementData for Delete {
-    fn as_variant(&self) -> Element {
-        Element::Delete(self.to_owned())
+impl AstData for Delete {
+    fn as_variant(&self) -> Ast {
+        Ast::Delete(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        _typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        _typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         Ok(UNIT_T.get_instance().as_type_element())
     }
 

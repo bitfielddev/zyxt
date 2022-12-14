@@ -4,7 +4,7 @@ use tracing::{debug, trace};
 use crate::{
     ast::{
         r#if::{Condition, If},
-        Element,
+        Ast,
     },
     parser::buffer::{Buffer, BufferWindow},
     types::{
@@ -68,7 +68,7 @@ impl Buffer {
                 selected = self.next_or_err()?;
                 let condition = if kwd == Keyword::Else {
                     None
-                } else if let Either::Left(ele @ Element::Block(_)) = &selected {
+                } else if let Either::Left(ele @ Ast::Block(_)) = &selected {
                     debug!(pos = ?ele.span(), "Detected condition expr in {{}}");
                     Some(ele.to_owned())
                 } else {
@@ -76,7 +76,7 @@ impl Buffer {
                     let start = self.cursor;
                     loop {
                         let selected = self.next_or_err()?;
-                        if matches!(selected, Either::Left(Element::Block(_))) {
+                        if matches!(selected, Either::Left(Ast::Block(_))) {
                             break;
                         }
                     }
@@ -88,7 +88,7 @@ impl Buffer {
                             .with_as_buffer(&|buf| buf.parse_as_expr())?,
                     )
                 };
-                let block = if let Either::Left(Element::Block(block)) = &selected {
+                let block = if let Either::Left(Ast::Block(block)) = &selected {
                     debug!(pos = ?selected.span(), "Detected block");
                     block.to_owned()
                 } else {
@@ -102,7 +102,7 @@ impl Buffer {
                 });
             }
             self.prev();
-            let ele = Element::If(If { conditions });
+            let ele = Ast::If(If { conditions });
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],

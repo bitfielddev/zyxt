@@ -1,14 +1,14 @@
 use crate::{
-    ast::{Element, ElementData},
+    ast::{Ast, AstData},
     types::position::{GetSpan, Span},
     InterpreterData, Print, Type, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Set {
-    pub variable: Box<Element>,
+    pub variable: Box<Ast>,
     pub eq_span: Option<Span>,
-    pub content: Box<Element>,
+    pub content: Box<Ast>,
 }
 impl GetSpan for Set {
     fn span(&self) -> Option<Span> {
@@ -18,20 +18,20 @@ impl GetSpan for Set {
     }
 }
 
-impl ElementData for Set {
-    fn as_variant(&self) -> Element {
-        Element::Set(self.to_owned())
+impl AstData for Set {
+    fn as_variant(&self) -> Ast {
+        Ast::Set(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         if !self.variable.is_pattern() {
             return Err(ZError::error_2_2(*self.variable.to_owned()).with_span(&*self.variable));
         }
         let content_type = self.content.process(typelist)?;
-        let name = if let Element::Ident(ident) = &*self.variable {
+        let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
             unimplemented!() // TODO
@@ -44,7 +44,7 @@ impl ElementData for Set {
         }
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
         new_self.content = self.content.desugared(out)?.into();
         Ok(new_self.as_variant())
@@ -52,7 +52,7 @@ impl ElementData for Set {
 
     fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {
         let var = self.content.interpret_expr(i_data);
-        let name = if let Element::Ident(ident) = &*self.variable {
+        let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
             unimplemented!() // TODO

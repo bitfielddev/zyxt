@@ -17,7 +17,7 @@ use itertools::Either;
 use tracing::{debug, info};
 
 use crate::{
-    ast::{block::Block, comment::Comment, Element, ElementData},
+    ast::{block::Block, comment::Comment, Ast, AstData},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         errors::{ZError, ZResult},
@@ -45,7 +45,7 @@ impl Buffer {
         self.splice_buffer(buffer_window);
         Ok(ele)
     }
-    fn parse_as_expr(&mut self) -> ZResult<Element> {
+    fn parse_as_expr(&mut self) -> ZResult<Ast> {
         self.parse_parentheses()?;
         self.parse_if()?;
         self.parse_class_struct()?;
@@ -79,7 +79,7 @@ impl Buffer {
 }
 
 #[tracing::instrument(skip_all)]
-pub fn parse_token_list(mut input: Vec<Token>) -> ZResult<Vec<Element>> {
+pub fn parse_token_list(mut input: Vec<Token>) -> ZResult<Vec<Ast>> {
     let mut comments: Vec<Comment> = vec![];
 
     info!("Removing comments");

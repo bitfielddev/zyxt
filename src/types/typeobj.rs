@@ -7,7 +7,7 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{procedure::Argument, Element, ElementData},
+    ast::{procedure::Argument, Ast, AstData},
     primitives::{TYPE_T, TYPE_T_ELE, UNIT_T, UNIT_T_ELE},
     InterpreterData, Print, Value, ZResult,
 };
@@ -109,8 +109,8 @@ impl<T: Clone + PartialEq + Debug> Display for Type<T> {
     }
 }
 
-impl TypeDefinition<Element> {
-    pub fn get_instance(&self) -> Type<Element> {
+impl TypeDefinition<Ast> {
+    pub fn get_instance(&self) -> Type<Ast> {
         if *self == TYPE_T.as_type_element() {
             Type::Definition(TYPE_T.as_type_element())
         } else {
@@ -147,7 +147,7 @@ impl<T: Clone + PartialEq + Debug> TypeInstance<T> {
     }
 }
 
-impl TypeDefinition<Element> {
+impl TypeDefinition<Ast> {
     pub fn as_type_value(
         &self,
         i_data: &mut InterpreterData<Value, impl Print>,
@@ -179,7 +179,7 @@ impl TypeDefinition<Element> {
         })
     }
 }
-impl TypeInstance<Element> {
+impl TypeInstance<Ast> {
     pub fn as_type_value(
         &self,
         i_data: &mut InterpreterData<Value, impl Print>,
@@ -196,7 +196,7 @@ impl TypeInstance<Element> {
     }
 }
 impl TypeInstance<Value> {
-    pub fn as_type_element(&self) -> TypeInstance<Element> {
+    pub fn as_type_element(&self) -> TypeInstance<Ast> {
         TypeInstance {
             name: self.name.to_owned(),
             type_args: self.type_args.iter().map(|a| a.as_type_element()).collect(),
@@ -205,7 +205,7 @@ impl TypeInstance<Value> {
     }
 }
 impl TypeDefinition<Value> {
-    pub fn as_type_element(&self) -> TypeDefinition<Element> {
+    pub fn as_type_element(&self) -> TypeDefinition<Ast> {
         TypeDefinition {
             inst_name: self.inst_name.to_owned(),
             name: self.name.to_owned(),
@@ -232,11 +232,11 @@ impl TypeDefinition<Value> {
     }
 }
 
-impl Type<Element> {
-    pub fn as_literal(&self) -> Element {
+impl Type<Ast> {
+    pub fn as_literal(&self) -> Ast {
         Value::PreType(self.to_owned()).as_element()
     }
-    pub fn implementation(&self) -> &TypeDefinition<Element> {
+    pub fn implementation(&self) -> &TypeDefinition<Ast> {
         match &self {
             Type::Instance(TypeInstance { implementation, .. }) => implementation,
             Type::Definition { .. } => &TYPE_T_ELE,
@@ -266,7 +266,7 @@ impl Type<Value> {
             Type::Return(ty) => ty.implementation(),
         }
     }
-    pub fn as_type_element(&self) -> Type<Element> {
+    pub fn as_type_element(&self) -> Type<Ast> {
         match &self {
             Type::Instance(inst) => Type::Instance(inst.as_type_element()),
             Type::Definition(def) => Type::Definition(def.as_type_element()),

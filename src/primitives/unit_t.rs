@@ -11,7 +11,7 @@ use crate::{
         typeobj::TypeDefinition,
         value::{Proc, Value},
     },
-    Element, Type,
+    Ast, Type,
 };
 
 macro_rules! comp_opr_unit {
@@ -65,4 +65,4 @@ pub static UNIT_T: Lazy<TypeDefinition<Value>> = Lazy::new(|| TypeDefinition {
     implementations: unit_t(),
     inst_fields: HashMap::new(),
 });
-pub static UNIT_T_ELE: Lazy<TypeDefinition<Element>> = Lazy::new(|| UNIT_T.as_type_element());
+pub static UNIT_T_ELE: Lazy<TypeDefinition<Ast>> = Lazy::new(|| UNIT_T.as_type_element());

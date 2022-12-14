@@ -22,7 +22,7 @@ use types::{
 };
 
 use crate::{
-    ast::Element,
+    ast::Ast,
     file_importer::{import_file, register_input},
     instructor::gen_instructions,
     interpreter::interpret_asts,
@@ -33,8 +33,8 @@ use crate::{
 
 pub fn compile(
     file: Either<&Path, (SmolStr, String)>,
-    typelist: &mut InterpreterData<Type<Element>, impl Print>,
-) -> ZResult<Vec<Element>> {
+    typelist: &mut InterpreterData<Type<Ast>, impl Print>,
+) -> ZResult<Vec<Ast>> {
     /*if typelist.out.verbosity() == 0 {
         return gen_instructions(parse_token_list(lex(input, filename)?)?, typelist);
     }*/
@@ -76,7 +76,7 @@ pub fn compile(
 }
 
 pub fn interpret(
-    input: &Vec<Element>,
+    input: &Vec<Ast>,
     i_data: &mut InterpreterData<Value, impl Print>,
 ) -> ZResult<i32> {
     /*if i_data.out.verbosity() == 0 {

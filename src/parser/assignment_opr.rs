@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{binary_opr::BinaryOpr, set::Set, Element, ElementData},
+    ast::{binary_opr::BinaryOpr, set::Set, Ast, AstData},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         errors::ZResult,
@@ -49,7 +49,7 @@ impl Buffer {
                 }
                 .as_variant();
             }
-            let ele = Element::Set(Set {
+            let ele = Ast::Set(Set {
                 variable: var.to_owned().into(),
                 eq_span: Some(opr_span),
                 content: content.into(),

@@ -3,7 +3,7 @@ use num::BigInt;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{call::Call, ident::Ident, literal::Literal, Element, ElementData},
+    ast::{call::Call, ident::Ident, literal::Literal, Ast, AstData},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         errors::{ZError, ZResult},
@@ -28,8 +28,8 @@ impl Buffer {
     #[tracing::instrument(skip_all)]
     pub fn parse_var_literal_call(&mut self) -> ZResult<()> {
         self.reset_cursor();
-        let mut catcher: Option<(Element, usize)> = None;
-        let clear_catcher = |s: &mut Self, catcher: &mut Option<(Element, usize)>, _end: bool| {
+        let mut catcher: Option<(Ast, usize)> = None;
+        let clear_catcher = |s: &mut Self, catcher: &mut Option<(Ast, usize)>, _end: bool| {
             if let Some((catcher, start)) = catcher.take() {
                 let buffer_window = BufferWindow {
                     slice: vec![Either::Left(catcher)],
@@ -59,7 +59,7 @@ impl Buffer {
                     };
                     let selected = match self.next_or_err()? {
                         Either::Left(c) => {
-                            if let Element::Ident(ident) = c {
+                            if let Ast::Ident(ident) = c {
                                 ident.to_owned()
                             } else {
                                 todo!("get item")
@@ -75,7 +75,7 @@ impl Buffer {
                     };
                     let ident_span = selected.span();
                     debug!(pos = ?ident_span, "Parsing ident");
-                    *catcher = Element::Ident(Ident {
+                    *catcher = Ast::Ident(Ident {
                         name: selected.name,
                         name_span: ident_span,
                         dot_span: Some(dot_span),
@@ -95,7 +95,7 @@ impl Buffer {
                 | Some(TokenType::LiteralString) => {
                     clear_catcher(self, &mut catcher, false);
                     catcher = Some((
-                        Element::Literal(Literal {
+                        Ast::Literal(Literal {
                             span: Some(selected.span),
                             content: match selected.ty {
                                 Some(TokenType::LiteralMisc) => match &*selected.value {
@@ -157,7 +157,7 @@ impl Buffer {
                         Ok(ele)
                     })?;
                     let close_paren_span = self.this().and_then(|e| e.span()).unwrap();
-                    *catcher = Element::Call(Call {
+                    *catcher = Ast::Call(Call {
                         called: catcher.to_owned().into(),
                         paren_spans: Some((open_paren_span, close_paren_span)),
                         args,

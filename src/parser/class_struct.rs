@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{class::Class, Element},
+    ast::{class::Class, Ast},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         errors::{ZError, ZResult},
@@ -48,7 +48,7 @@ impl Buffer {
             } else {
                 None
             };
-            let content = if let Either::Left(Element::Block(block)) = &selected {
+            let content = if let Either::Left(Ast::Block(block)) = &selected {
                 debug!(pos = ?selected.span(), "Block detected");
                 Some(block.to_owned())
             } else if kwd == Keyword::Class {
@@ -57,7 +57,7 @@ impl Buffer {
                 self.prev();
                 None
             };
-            let ele = Element::Class(Class {
+            let ele = Ast::Class(Class {
                 is_struct: kwd == Keyword::Struct,
                 implementations: Default::default(),
                 inst_fields: Default::default(), // TODO

@@ -8,12 +8,12 @@ use crate::{
         position::GetSpan,
         token::{Token, TokenType},
     },
-    Element, ZResult,
+    Ast, ZResult,
 };
 
 #[derive(Clone, Debug)]
 pub struct Buffer {
-    pub content: Vec<Either<Element, Token>>,
+    pub content: Vec<Either<Ast, Token>>,
     pub cursor: usize,
     pub started: bool,
 }
@@ -23,15 +23,15 @@ impl Buffer {
             content: input
                 .into_iter()
                 .map(Either::Right)
-                .collect::<Vec<Either<Element, _>>>(),
+                .collect::<Vec<Either<Ast, _>>>(),
             cursor: 0,
             started: false,
         }
     }
-    pub fn this(&self) -> Option<Either<Element, Token>> {
+    pub fn this(&self) -> Option<Either<Ast, Token>> {
         self.content.get(self.cursor).cloned()
     }
-    pub fn next(&mut self) -> Option<Either<Element, Token>> {
+    pub fn next(&mut self) -> Option<Either<Ast, Token>> {
         if self.started {
             self.cursor += 1;
         } else {
@@ -39,7 +39,7 @@ impl Buffer {
         }
         self.content.get(self.cursor).cloned()
     }
-    pub fn next_or_err(&mut self) -> ZResult<Either<Element, Token>> {
+    pub fn next_or_err(&mut self) -> ZResult<Either<Ast, Token>> {
         if let Some(c) = self.next() {
             Ok(c)
         } else {
@@ -51,7 +51,7 @@ impl Buffer {
             //Err(ZError::error_2_1_0(&curr_span.raw))
         }
     }
-    pub fn peek_prev(&mut self) -> Option<&Either<Element, Token>> {
+    pub fn peek_prev(&mut self) -> Option<&Either<Ast, Token>> {
         if !self.started || self.cursor == 0 {
             None
         } else {
@@ -83,7 +83,7 @@ impl Buffer {
         self.started = false;
         self.cursor = 0;
     }
-    pub fn peek(&self) -> Option<&Either<Element, Token>> {
+    pub fn peek(&self) -> Option<&Either<Ast, Token>> {
         self.content.get(self.next_cursor_pos())
     }
     pub fn window(&self, range: Range<usize>) -> BufferWindow {
@@ -193,7 +193,7 @@ impl Buffer {
 
 #[derive(Clone)]
 pub struct BufferWindow {
-    pub slice: Vec<Either<Element, Token>>,
+    pub slice: Vec<Either<Ast, Token>>,
     pub range: Range<usize>,
 }
 impl BufferWindow {

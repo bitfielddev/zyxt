@@ -19,7 +19,7 @@ use zyxt::{
         r#return::Return,
         set::Set,
         unary_opr::UnaryOpr,
-        Element,
+        Ast,
     },
     primitives::UNIT_T,
     types::{
@@ -50,7 +50,7 @@ macro_rules! span {
 }
 macro_rules! ident {
     ($line:expr, $column:expr, $name:expr) => {
-        Box::new(Element::Ident(Ident {
+        Box::new(Ast::Ident(Ident {
             name: $name.into(),
             parent: None,
             dot_span: None,
@@ -72,7 +72,7 @@ fn assignment() {
     let ast = parse!("x = y");
     assert_eq!(
         ast[0],
-        Element::Set(Set {
+        Ast::Set(Set {
             variable: ident!(1, 1, "x"),
             eq_span: Some(span!(1, 3, "=")),
             content: ident!(1, 5, "y")
@@ -85,10 +85,10 @@ fn assignment_bin() {
     let ast = parse!("x += y");
     assert_eq!(
         ast[0],
-        Element::Set(Set {
+        Ast::Set(Set {
             variable: ident!(1, 1, "x"),
             eq_span: Some(span!(1, 3, "+=")),
-            content: Element::BinaryOpr(BinaryOpr {
+            content: Ast::BinaryOpr(BinaryOpr {
                 ty: OprType::Add,
                 opr_span: None,
                 operand1: ident!(1, 1, "x"),
@@ -123,7 +123,7 @@ fn bin_opr() {
         let ast = parse!(s);
         assert_eq!(
             ast[0],
-            Element::BinaryOpr(BinaryOpr {
+            Ast::BinaryOpr(BinaryOpr {
                 ty,
                 opr_span: Some(span!(1, 3, sy)),
                 operand1: ident!(1, 1, "x"),
@@ -138,7 +138,7 @@ fn class() {
     let ast = parse!("class { }");
     assert_eq!(
         ast[0],
-        Element::Class(Class {
+        Ast::Class(Class {
             is_struct: false,
             implementations: Default::default(),
             inst_fields: Default::default(),
@@ -157,7 +157,7 @@ fn struct_params() {
     let ast = parse!("struct |x: i32| { }");
     assert_eq!(
         ast[0],
-        Element::Class(Class {
+        Ast::Class(Class {
             is_struct: true,
             implementations: Default::default(),
             inst_fields: Default::default(),
@@ -180,7 +180,7 @@ fn struct_no_content() {
     let ast = parse!("struct |x: i32|");
     assert_eq!(
         ast[0],
-        Element::Class(Class {
+        Ast::Class(Class {
             is_struct: true,
             implementations: Default::default(),
             inst_fields: Default::default(),
@@ -200,7 +200,7 @@ fn struct_no_params() {
     let ast = parse!("struct { }");
     assert_eq!(
         ast[0],
-        Element::Class(Class {
+        Ast::Class(Class {
             is_struct: true,
             implementations: Default::default(),
             inst_fields: Default::default(),
@@ -219,7 +219,7 @@ fn struct_no_content_no_params() {
     let ast = parse!("struct");
     assert_eq!(
         ast[0],
-        Element::Class(Class {
+        Ast::Class(Class {
             is_struct: true,
             implementations: Default::default(),
             inst_fields: Default::default(),
@@ -234,7 +234,7 @@ fn declaration() {
     let ast = parse!("x := y");
     assert_eq!(
         ast[0],
-        Element::Declare(Declare {
+        Ast::Declare(Declare {
             variable: ident!(1, 1, "x"),
             content: ident!(1, 6, "y"),
             flags: vec![],
@@ -248,7 +248,7 @@ fn declaration_flags() {
     let ast = parse!("pub x := y");
     assert_eq!(
         ast[0],
-        Element::Declare(Declare {
+        Ast::Declare(Declare {
             variable: ident!(1, 5, "x"),
             content: ident!(1, 10, "y"),
             flags: vec![(Flag::Pub, span!(1, 1, "pub"))],
@@ -263,7 +263,7 @@ fn delete_single() {
     let ast = parse!("del x");
     assert_eq!(
         ast[0],
-        Element::Delete(Delete {
+        Ast::Delete(Delete {
             kwd_span: Some(span!(1, 1, "del")),
             names: vec![ident!(notvar 1, 5, "x")]
         })
@@ -275,7 +275,7 @@ fn delete_multiple() {
     let ast = parse!("del x, y, z");
     assert_eq!(
         ast[0],
-        Element::Delete(Delete {
+        Ast::Delete(Delete {
             kwd_span: Some(span!(1, 1, "del")),
             names: vec![
                 ident!(notvar 1, 5, "x"),
@@ -291,7 +291,7 @@ fn if_() {
     let ast = parse!("if x { }");
     assert_eq!(
         ast[0],
-        Element::If(If {
+        Ast::If(If {
             conditions: vec![Condition {
                 kwd_span: None,
                 condition: Some(*ident!(1, 4, "x")),
@@ -309,7 +309,7 @@ fn if_else() {
     let ast = parse!("if x { } else { }");
     assert_eq!(
         ast[0],
-        Element::If(If {
+        Ast::If(If {
             conditions: vec![
                 Condition {
                     kwd_span: None,
@@ -337,7 +337,7 @@ fn if_elif() {
     let ast = parse!("if x { } elif y { }");
     assert_eq!(
         ast[0],
-        Element::If(If {
+        Ast::If(If {
             conditions: vec![
                 Condition {
                     kwd_span: None,
@@ -365,7 +365,7 @@ fn if_elif_else() {
     let ast = parse!("if x { } elif y { } else { }");
     assert_eq!(
         ast[0],
-        Element::If(If {
+        Ast::If(If {
             conditions: vec![
                 Condition {
                     kwd_span: None,
@@ -407,7 +407,7 @@ fn block() {
     let ast = parse!("{x}");
     assert_eq!(
         ast[0],
-        Element::Block(Block {
+        Ast::Block(Block {
             brace_spans: None,
             content: vec![*ident!(1, 2, "x")]
         })
@@ -419,9 +419,9 @@ fn preprocess_block() {
     let ast = parse!("pre {x}");
     assert_eq!(
         ast[0],
-        Element::Preprocess(Preprocess {
+        Ast::Preprocess(Preprocess {
             kwd_span: span!(1, 1, "pre"),
-            content: Element::Block(Block {
+            content: Ast::Block(Block {
                 brace_spans: None,
                 content: vec![*ident!(1, 6, "x")]
             })
@@ -435,7 +435,7 @@ fn preprocess_expr() {
     let ast = parse!("pre x");
     assert_eq!(
         ast[0],
-        Element::Preprocess(Preprocess {
+        Ast::Preprocess(Preprocess {
             kwd_span: span!(1, 1, "pre"),
             content: ident!(1, 5, "x")
         })
@@ -447,9 +447,9 @@ fn defer_block() {
     let ast = parse!("defer {x}");
     assert_eq!(
         ast[0],
-        Element::Defer(Defer {
+        Ast::Defer(Defer {
             kwd_span: span!(1, 1, "defer"),
-            content: Element::Block(Block {
+            content: Ast::Block(Block {
                 brace_spans: None,
                 content: vec![*ident!(1, 8, "x")]
             })
@@ -463,7 +463,7 @@ fn defer_expr() {
     let ast = parse!("defer x");
     assert_eq!(
         ast[0],
-        Element::Defer(Defer {
+        Ast::Defer(Defer {
             kwd_span: span!(1, 1, "defer"),
             content: ident!(1, 7, "x")
         })
@@ -475,7 +475,7 @@ fn proc_kwd() {
     let ast = parse!("proc | | x");
     assert_eq!(
         ast[0],
-        Element::Procedure(Procedure {
+        Ast::Procedure(Procedure {
             is_fn: false,
             kwd_span: Some(span!(1, 1, "proc")),
             args: vec![],
@@ -493,7 +493,7 @@ fn proc_nokwd() {
     let ast = parse!("| | x");
     assert_eq!(
         ast[0],
-        Element::Procedure(Procedure {
+        Ast::Procedure(Procedure {
             is_fn: false,
             kwd_span: None,
             args: vec![],
@@ -511,7 +511,7 @@ fn fn_kwd() {
     let ast = parse!("fn | | x");
     assert_eq!(
         ast[0],
-        Element::Procedure(Procedure {
+        Ast::Procedure(Procedure {
             is_fn: true,
             kwd_span: Some(span!(1, 1, "fn")),
             args: vec![],
@@ -529,7 +529,7 @@ fn fn_arg() {
     let ast = parse!("fn | | x");
     assert_eq!(
         ast[0],
-        Element::Procedure(Procedure {
+        Ast::Procedure(Procedure {
             is_fn: true,
             kwd_span: Some(span!(1, 1, "fn")),
             args: vec![],
@@ -547,7 +547,7 @@ fn return_nothing() {
     let ast = parse!("ret");
     assert_eq!(
         ast[0],
-        Element::Return(Return {
+        Ast::Return(Return {
             kwd_span: Some(span!(1, 1, "ret")),
             value: UNIT_T.as_type().as_type_element().as_literal().into()
         })
@@ -559,7 +559,7 @@ fn return_something() {
     let ast = parse!("ret x");
     assert_eq!(
         ast[0],
-        Element::Return(Return {
+        Ast::Return(Return {
             kwd_span: Some(span!(1, 1, "ret")),
             value: ident!(1, 5, "x")
         })
@@ -580,7 +580,7 @@ fn un_opr() {
         let ast = parse!(s);
         assert_eq!(
             ast[0],
-            Element::UnaryOpr(UnaryOpr {
+            Ast::UnaryOpr(UnaryOpr {
                 ty,
                 opr_span: Some(span!(1, 1, "-")),
                 operand: ident!(1, 2, "x"),
@@ -594,7 +594,7 @@ fn unparen_call_single() {
     let ast = parse!("x y");
     assert_eq!(
         ast[0],
-        Element::Call(Call {
+        Ast::Call(Call {
             called: ident!(1, 1, "x"),
             paren_spans: None,
             args: vec![*ident!(1, 3, "y")],
@@ -608,7 +608,7 @@ fn unparen_call_multiple() {
     let ast = parse!("x y, z");
     assert_eq!(
         ast[0],
-        Element::Call(Call {
+        Ast::Call(Call {
             called: ident!(1, 1, "x"),
             paren_spans: None,
             args: vec![*ident!(1, 3, "y"), *ident!(1, 6, "z")],
@@ -622,10 +622,10 @@ fn unparen_call_nested() {
     let ast = parse!("x y z");
     assert_eq!(
         ast[0],
-        Element::Call(Call {
+        Ast::Call(Call {
             called: ident!(1, 1, "x"),
             paren_spans: None,
-            args: vec![Element::Call(Call {
+            args: vec![Ast::Call(Call {
                 called: ident!(1, 3, "y"),
                 paren_spans: None,
                 args: vec![*ident!(1, 5, "z")],
@@ -641,7 +641,7 @@ fn dot() {
     let ast = parse!("x.y");
     assert_eq!(
         ast[0],
-        Element::Ident(Ident {
+        Ast::Ident(Ident {
             name: "y".into(),
             name_span: Some(span!(1, 3, "y")),
             dot_span: Some(span!(1, 2, ".")),
@@ -655,7 +655,7 @@ fn call_no_args() {
     let ast = parse!("x()");
     assert_eq!(
         ast[0],
-        Element::Call(Call {
+        Ast::Call(Call {
             called: ident!(1, 1, "x"),
             paren_spans: Some((span!(1, 2, "("), span!(1, 3, ")"))),
             args: vec![],
@@ -669,7 +669,7 @@ fn call_with_args() {
     let ast = parse!("x(y)");
     assert_eq!(
         ast[0],
-        Element::Call(Call {
+        Ast::Call(Call {
             called: ident!(1, 1, "x"),
             paren_spans: Some((span!(1, 2, "("), span!(1, 4, ")"))),
             args: vec![*ident!(1, 3, "y")],
@@ -683,8 +683,8 @@ fn dot_call() {
     let ast = parse!("x.y()");
     assert_eq!(
         ast[0],
-        Element::Call(Call {
-            called: Box::new(Element::Ident(Ident {
+        Ast::Call(Call {
+            called: Box::new(Ast::Ident(Ident {
                 name: "y".into(),
                 name_span: Some(span!(1, 3, "y")),
                 dot_span: Some(span!(1, 2, ".")),

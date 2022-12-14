@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{binary_opr::BinaryOpr, Element},
+    ast::{binary_opr::BinaryOpr, Ast},
     parser::buffer::Buffer,
     types::{
         errors::ZResult,
@@ -56,7 +56,7 @@ impl Buffer {
         let operand2 = self
             .window(highest_order_index + 1..self.content.len())
             .with_as_buffer(&|buf| buf.parse_as_expr())?;
-        let ele = Element::BinaryOpr(BinaryOpr {
+        let ele = Ast::BinaryOpr(BinaryOpr {
             ty: *opr_type,
             opr_span: Some(tok.span.to_owned()),
             operand1: operand1.into(),

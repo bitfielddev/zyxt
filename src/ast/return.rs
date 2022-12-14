@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Element, ElementData},
+    ast::{Ast, AstData},
     primitives::UNIT_T,
     types::position::{GetSpan, Span},
     InterpreterData, Print, Type, Value, ZResult,
@@ -8,7 +8,7 @@ use crate::{
 #[derive(Clone, PartialEq, Debug)]
 pub struct Return {
     pub kwd_span: Option<Span>,
-    pub value: Box<Element>,
+    pub value: Box<Ast>,
 }
 impl GetSpan for Return {
     fn span(&self) -> Option<Span> {
@@ -16,19 +16,19 @@ impl GetSpan for Return {
     }
 }
 
-impl ElementData for Return {
-    fn as_variant(&self) -> Element {
-        Element::Return(self.to_owned())
+impl AstData for Return {
+    fn as_variant(&self) -> Ast {
+        Ast::Return(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        _typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        _typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         Ok(UNIT_T.as_type().as_type_element())
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
         Ok(Self {
             kwd_span: self.kwd_span.to_owned(),
             value: self.value.desugared(out)?.into(),

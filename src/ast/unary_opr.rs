@@ -1,5 +1,5 @@
 use crate::{
-    ast::{call::Call, ident::Ident, Element, ElementData},
+    ast::{call::Call, ident::Ident, Ast, AstData},
     types::{
         position::{GetSpan, Span},
         token::OprType,
@@ -11,7 +11,7 @@ use crate::{
 pub struct UnaryOpr {
     pub ty: OprType,
     pub opr_span: Option<Span>,
-    pub operand: Box<Element>,
+    pub operand: Box<Ast>,
 }
 impl GetSpan for UnaryOpr {
     fn span(&self) -> Option<Span> {
@@ -19,12 +19,12 @@ impl GetSpan for UnaryOpr {
     }
 }
 
-impl ElementData for UnaryOpr {
-    fn as_variant(&self) -> Element {
-        Element::UnaryOpr(self.to_owned())
+impl AstData for UnaryOpr {
+    fn as_variant(&self) -> Ast {
+        Ast::UnaryOpr(self.to_owned())
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
         Ok(Call {
             called: Ident {
                 name: match self.ty {

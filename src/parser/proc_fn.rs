@@ -5,7 +5,7 @@ use crate::{
     ast::{
         block::Block,
         procedure::{Argument, Procedure},
-        Element,
+        Ast,
     },
     parser::buffer::{Buffer, BufferWindow},
     types::{
@@ -25,7 +25,7 @@ impl Buffer {
                 .get_split(TokenType::Colon)?
                 .with_as_buffers(&|buf| buf.parse_as_expr())?;
             let name = if let Some(name) = arg_sections.first() {
-                if let Element::Ident(ident) = name {
+                if let Ast::Ident(ident) = name {
                     debug!(pos = ?name.span(), "Name detected");
                     ident.to_owned()
                 } else {
@@ -98,7 +98,7 @@ impl Buffer {
             {
                 debug!(?pos, "Return type detected");
                 let start = self.cursor + 1;
-                while !matches!(selected, Either::Left(Element::Block(..))) {
+                while !matches!(selected, Either::Left(Ast::Block(..))) {
                     selected = self.next_or_err()?;
                 }
                 let range = start..self.cursor;
@@ -115,7 +115,7 @@ impl Buffer {
             } else {
                 None
             };
-            let block: Block = if let Either::Left(block @ Element::Block(_)) = &selected {
+            let block: Block = if let Either::Left(block @ Ast::Block(_)) = &selected {
                 debug!(pos = ?block.span(), "Block detected");
                 block.as_block().unwrap().to_owned()
             } else {
@@ -129,7 +129,7 @@ impl Buffer {
                         })
                     })?
             };
-            let ele = Element::Procedure(Procedure {
+            let ele = Ast::Procedure(Procedure {
                 is_fn,
                 kwd_span,
                 args,

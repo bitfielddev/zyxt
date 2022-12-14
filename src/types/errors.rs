@@ -10,7 +10,7 @@ use owo_colors::OwoColorize;
 use tracing::debug;
 
 use crate::{
-    ast::{Element, ElementData},
+    ast::{Ast, AstData},
     file_importer::get_input,
     types::{
         position::{GetSpan, Span},
@@ -265,7 +265,7 @@ impl ZError {
     }
 
     /// expected pattern, got something else
-    pub fn error_2_2(_ele: impl ElementData) -> Self {
+    pub fn error_2_2(_ele: impl AstData) -> Self {
         ZError {
             pos: vec![],
             code: "2.2",
@@ -294,7 +294,7 @@ impl ZError {
 
     /// Type has no attribute (typechecker)
     pub fn error_3_1_0<T: Clone + PartialEq + Debug>(
-        _parent: Element,
+        _parent: Ast,
         parent_type: Type<T>,
         attribute: impl Display,
     ) -> Self {

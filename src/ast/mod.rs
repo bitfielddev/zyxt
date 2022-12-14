@@ -35,18 +35,18 @@ use crate::{
     },
 };
 
-pub trait ElementData: Clone + PartialEq + Debug + GetSpan {
-    fn as_variant(&self) -> Element;
+pub trait AstData: Clone + PartialEq + Debug + GetSpan {
+    fn as_variant(&self) -> Ast;
     fn is_pattern(&self) -> bool {
         false
     }
     fn process<O: Print>(
         &mut self,
-        _typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        _typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         Ok(Type::Any)
     }
-    fn desugared(&self, _out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, _out: &mut impl Print) -> ZResult<Ast> {
         Ok(self.as_variant())
     }
     fn interpret_expr<O: Print>(&self, _: &mut InterpreterData<Value, O>) -> ZResult<Value> {
@@ -57,27 +57,27 @@ pub trait ElementData: Clone + PartialEq + Debug + GetSpan {
 macro_rules! for_all_variants {
     ($self:expr, $f:ident $(, $args:tt)*) => {
         match $self {
-            Element::Call(v) => v.$f($($args,)*),
-            Element::UnaryOpr(v) => v.$f($($args,)*),
-            Element::BinaryOpr(v) => v.$f($($args,)*),
-            Element::Declare(v) => v.$f($($args,)*),
-            Element::Set(v) => v.$f($($args,)*),
-            Element::Literal(v) => v.$f($($args,)*),
-            Element::Ident(v) => v.$f($($args,)*),
-            Element::If(v) => v.$f($($args,)*),
-            Element::Block(v) => v.$f($($args,)*),
-            Element::Delete(v) => v.$f($($args,)*),
-            Element::Return(v) => v.$f($($args,)*),
-            Element::Procedure(v) => v.$f($($args,)*),
-            Element::Preprocess(v) => v.$f($($args,)*),
-            Element::Defer(v) => v.$f($($args,)*),
-            Element::Class(v) => v.$f($($args,)*),
+            Ast::Call(v) => v.$f($($args,)*),
+            Ast::UnaryOpr(v) => v.$f($($args,)*),
+            Ast::BinaryOpr(v) => v.$f($($args,)*),
+            Ast::Declare(v) => v.$f($($args,)*),
+            Ast::Set(v) => v.$f($($args,)*),
+            Ast::Literal(v) => v.$f($($args,)*),
+            Ast::Ident(v) => v.$f($($args,)*),
+            Ast::If(v) => v.$f($($args,)*),
+            Ast::Block(v) => v.$f($($args,)*),
+            Ast::Delete(v) => v.$f($($args,)*),
+            Ast::Return(v) => v.$f($($args,)*),
+            Ast::Procedure(v) => v.$f($($args,)*),
+            Ast::Preprocess(v) => v.$f($($args,)*),
+            Ast::Defer(v) => v.$f($($args,)*),
+            Ast::Class(v) => v.$f($($args,)*),
         }
     }
 }
 
 #[derive(Clone, PartialEq, Debug, EnumAsInner)]
-pub enum Element {
+pub enum Ast {
     Call(Call),
     UnaryOpr(UnaryOpr),
     BinaryOpr(BinaryOpr),
@@ -94,13 +94,13 @@ pub enum Element {
     Defer(Defer),
     Class(Class),
 }
-impl GetSpan for Element {
+impl GetSpan for Ast {
     fn span(&self) -> Option<Span> {
         for_all_variants!(&self, span)
     }
 }
-impl ElementData for Element {
-    fn as_variant(&self) -> Element {
+impl AstData for Ast {
+    fn as_variant(&self) -> Ast {
         self.to_owned()
     }
     fn is_pattern(&self) -> bool {
@@ -108,11 +108,11 @@ impl ElementData for Element {
     }
     fn process<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         for_all_variants!(self, process, typelist)
     }
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
         for_all_variants!(&self, desugared, out)
     }
     fn interpret_expr<O: Print>(&self, i_data: &mut InterpreterData<Value, O>) -> ZResult<Value> {

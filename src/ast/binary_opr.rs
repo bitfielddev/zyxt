@@ -1,5 +1,5 @@
 use crate::{
-    ast::{call::Call, ident::Ident, Element, ElementData},
+    ast::{call::Call, ident::Ident, Ast, AstData},
     primitives::BOOL_T,
     types::{
         position::{GetSpan, Span},
@@ -12,8 +12,8 @@ use crate::{
 pub struct BinaryOpr {
     pub ty: OprType,
     pub opr_span: Option<Span>,
-    pub operand1: Box<Element>,
-    pub operand2: Box<Element>,
+    pub operand1: Box<Ast>,
+    pub operand2: Box<Ast>,
 }
 impl GetSpan for BinaryOpr {
     fn span(&self) -> Option<Span> {
@@ -23,12 +23,12 @@ impl GetSpan for BinaryOpr {
     }
 }
 
-impl ElementData for BinaryOpr {
-    fn as_variant(&self) -> Element {
-        Element::BinaryOpr(self.to_owned())
+impl AstData for BinaryOpr {
+    fn as_variant(&self) -> Ast {
+        Ast::BinaryOpr(self.to_owned())
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
         Ok(match self.ty {
             OprType::And | OprType::Or => {
                 let mut new_self = self.to_owned();

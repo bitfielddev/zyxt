@@ -1,11 +1,11 @@
 use crate::{
-    ast::{block::Block, Element},
+    ast::{block::Block, Ast},
     types::{interpreter_data::InterpreterData, position::Span, printer::Print, value::Value},
     ZError, ZResult,
 };
 
 pub fn interpret_asts<O: Print>(
-    input: &Vec<Element>,
+    input: &Vec<Ast>,
     i_data: &mut InterpreterData<Value, O>,
 ) -> ZResult<i32> {
     let input = Block {

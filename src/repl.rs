@@ -8,7 +8,7 @@ use rustyline::{error::ReadlineError, Editor};
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{Element, ElementData},
+    ast::{Ast, AstData},
     compile,
     types::{interpreter_data::InterpreterData, printer::StdIoPrint, value::Value},
     Type, ZError,
@@ -18,7 +18,7 @@ pub fn repl(verbosity: u8) {
     let filename = SmolStr::from("[stdin]");
     let mut sip1 = StdIoPrint;
     let mut sip2 = StdIoPrint;
-    let mut typelist = InterpreterData::<Type<Element>, _>::new(&mut sip1);
+    let mut typelist = InterpreterData::<Type<Ast>, _>::new(&mut sip1);
     let mut varlist = InterpreterData::<Value, _>::new(&mut sip2);
     let mut rl = Editor::<()>::new().unwrap();
     let mut history_path = home_dir().unwrap();

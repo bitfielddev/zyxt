@@ -5,7 +5,7 @@ use color_eyre::config::HookBuilder;
 use itertools::Either;
 use tracing_subscriber::EnvFilter;
 use zyxt::{
-    ast::Element,
+    ast::Ast,
     repl,
     types::{interpreter_data::InterpreterData, printer::StdIoPrint, typeobj::Type, value::Value},
 };
@@ -60,7 +60,7 @@ fn main() {
                                                                        };*/
             let mut sip1 = StdIoPrint;
             let mut sip2 = StdIoPrint;
-            let mut typelist = InterpreterData::<Type<Element>, _>::new(&mut sip1);
+            let mut typelist = InterpreterData::<Type<Ast>, _>::new(&mut sip1);
             let mut i_data = InterpreterData::<Value, _>::new(&mut sip2);
             let exit_code = zyxt::interpret(
                 &zyxt::compile(Either::Left(&filename), &mut typelist)

@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{unary_opr::UnaryOpr, Element},
+    ast::{unary_opr::UnaryOpr, Ast},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         errors::ZResult,
@@ -31,7 +31,7 @@ impl Buffer {
                 .rest_incl_curr()
                 .with_as_buffer(&|buf| buf.parse_as_expr())?
                 .into();
-            let ele = Element::UnaryOpr(UnaryOpr {
+            let ele = Ast::UnaryOpr(UnaryOpr {
                 ty: opr_type,
                 opr_span,
                 operand,

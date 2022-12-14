@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Element, ElementData},
+    ast::{Ast, AstData},
     primitives::UNIT_T,
     types::{
         interpreter_data::FrameType,
@@ -11,7 +11,7 @@ use crate::{
 #[derive(Clone, PartialEq, Debug)]
 pub struct Block {
     pub brace_spans: Option<(Span, Span)>,
-    pub content: Vec<Element>,
+    pub content: Vec<Ast>,
 }
 impl GetSpan for Block {
     fn span(&self) -> Option<Span> {
@@ -21,20 +21,20 @@ impl GetSpan for Block {
     }
 }
 
-impl ElementData for Block {
-    fn as_variant(&self) -> Element {
-        Element::Block(self.to_owned())
+impl AstData for Block {
+    fn as_variant(&self) -> Ast {
+        Ast::Block(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         Ok(self.block_type(typelist, true)?.0)
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
-        Ok(Element::Block(Self {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
+        Ok(Ast::Block(Self {
             brace_spans: self.brace_spans.to_owned(),
             content: self
                 .content
@@ -51,9 +51,9 @@ impl ElementData for Block {
 impl Block {
     pub fn block_type<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type<Element>, O>,
+        typelist: &mut InterpreterData<Type<Ast>, O>,
         add_set: bool,
-    ) -> ZResult<(Type<Element>, Option<Type<Element>>)> {
+    ) -> ZResult<(Type<Ast>, Option<Type<Ast>>)> {
         let mut last = UNIT_T.as_type().as_type_element();
         let mut return_type = None;
         if add_set {
@@ -105,7 +105,7 @@ impl Block {
             i_data.add_frame(None, FrameType::Normal);
         }
         for ele in &self.content {
-            if let Element::Return(r#return) = ele {
+            if let Ast::Return(r#return) = ele {
                 if returnable {
                     last = r#return.value.interpret_expr(i_data)?
                 } else {

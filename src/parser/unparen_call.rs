@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{call::Call, Element},
+    ast::{call::Call, Ast},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         errors::ZResult,
@@ -61,7 +61,7 @@ impl Buffer {
                 self.window(arg_start..self.cursor)
                     .with_as_buffer(&|buf| buf.parse_as_expr())?,
             );
-            let ele = Element::Call(Call {
+            let ele = Ast::Call(Call {
                 called: function.into(),
                 paren_spans: None,
                 args,

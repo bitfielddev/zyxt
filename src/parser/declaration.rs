@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{declare::Declare, Element},
+    ast::{declare::Declare, Ast},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         errors::{ZError, ZResult},
@@ -74,7 +74,7 @@ impl Buffer {
             let content = self
                 .rest_incl_curr()
                 .with_as_buffer(&|buf| buf.parse_as_expr())?;
-            let ele = Element::Declare(Declare {
+            let ele = Ast::Declare(Declare {
                 variable: declared_var.to_owned().into(),
                 content: content.into(),
                 flags,

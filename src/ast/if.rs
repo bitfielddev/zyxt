@@ -1,5 +1,5 @@
 use crate::{
-    ast::{block::Block, Element, ElementData},
+    ast::{block::Block, Ast, AstData},
     types::position::{GetSpan, Span},
     InterpreterData, Print, Type, Value, ZResult,
 };
@@ -7,7 +7,7 @@ use crate::{
 #[derive(Clone, PartialEq, Debug)]
 pub struct Condition {
     pub kwd_span: Option<Span>,
-    pub condition: Option<Element>,
+    pub condition: Option<Ast>,
     pub if_true: Block,
 }
 impl GetSpan for Condition {
@@ -38,9 +38,9 @@ impl GetSpan for If {
     }
 }
 
-impl ElementData for If {
-    fn as_variant(&self) -> Element {
-        Element::If(self.to_owned())
+impl AstData for If {
+    fn as_variant(&self) -> Ast {
+        Ast::If(self.to_owned())
     }
 
     fn is_pattern(&self) -> bool {
@@ -48,13 +48,13 @@ impl ElementData for If {
     }
     fn process<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         Ok(self.conditions[0].if_true.block_type(typelist, true)?.0)
         // TODO consider all returns
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
         Ok(Self {
             conditions: self
                 .conditions

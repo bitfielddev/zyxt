@@ -8,7 +8,7 @@ use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{Element, ElementData},
+    ast::{Ast, AstData},
     primitives::*,
     types::{
         errors::{ZError, ZResult},
@@ -67,9 +67,9 @@ pub enum FrameType {
 #[derive(Debug)]
 pub struct Frame<T: Clone + Display + Debug> {
     pub heap: HashMap<SmolStr, T>,
-    pub defer: Vec<Element>,
+    pub defer: Vec<Ast>,
     pub frame_data: Option<FrameData<T>>,
-    pub typedefs: HashMap<SmolStr, Type<Element>>,
+    pub typedefs: HashMap<SmolStr, Type<Ast>>,
     pub ty: FrameType,
 }
 #[derive(Debug)]
@@ -128,8 +128,8 @@ impl<'a, O: Print> InterpreterData<'a, Value, O> {
     }
 }
 
-impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
-    pub fn new(out: &'a mut O) -> InterpreterData<'a, Type<Element>, O> {
+impl<'a, O: Print> InterpreterData<'a, Type<Ast>, O> {
+    pub fn new(out: &'a mut O) -> InterpreterData<'a, Type<Ast>, O> {
         let mut v = InterpreterData {
             frames: VecDeque::new(),
             out,
@@ -152,7 +152,7 @@ impl<'a, O: Print> InterpreterData<'a, Type<Element>, O> {
         v.add_frame(None, FrameType::Normal);
         v
     }
-    pub fn declare_val(&mut self, name: &SmolStr, value: &Type<Element>) {
+    pub fn declare_val(&mut self, name: &SmolStr, value: &Type<Ast>) {
         let frame = if let Some(frame) = self.frames.front_mut() {
             frame
         } else {
@@ -216,7 +216,7 @@ impl<T: Clone + Display + Debug, O: Print> InterpreterData<'_, T, O> {
             Err(ZError::error_3_0(name.to_owned()).with_span(span))
         }
     }
-    pub fn add_defer(&mut self, content: Element) {
+    pub fn add_defer(&mut self, content: Ast) {
         self.frames.front_mut().unwrap().defer.push(content);
     }
 }

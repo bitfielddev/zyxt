@@ -2,7 +2,7 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{r#return::Return, Element},
+    ast::{r#return::Return, Ast},
     parser::buffer::{Buffer, BufferWindow},
     primitives::UNIT_T,
     types::{
@@ -36,7 +36,7 @@ impl Buffer {
             }
             .into();
 
-            let ele = Element::Return(Return { kwd_span, value });
+            let ele = Ast::Return(Return { kwd_span, value });
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],

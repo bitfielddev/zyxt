@@ -9,7 +9,7 @@ use itertools::Itertools;
 use num::{BigInt, BigUint};
 
 use crate::{
-    ast::{block::Block, literal::Literal, procedure::Argument, Element},
+    ast::{block::Block, literal::Literal, procedure::Argument, Ast},
     primitives::*,
     types::typeobj::Type,
 };
@@ -86,7 +86,7 @@ pub enum Value {
     Str(String),
     Bool(bool),
     Type(Type<Value>),
-    PreType(Type<Element>),
+    PreType(Type<Ast>),
     Proc(Proc),
     ClassInstance {
         ty: Type<Value>,
@@ -261,8 +261,8 @@ impl Value {
     pub fn get_type(&self) -> Value {
         Value::Type(self.get_type_obj())
     }
-    pub fn as_element(&self) -> Element {
-        Element::Literal(Literal {
+    pub fn as_element(&self) -> Ast {
+        Ast::Literal(Literal {
             span: None,
             content: self.to_owned(),
         })

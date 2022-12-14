@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use crate::{
-    ast::{block::Block, ident::Ident, Element, ElementData},
+    ast::{block::Block, ident::Ident, Ast, AstData},
     primitives::{PROC_T, UNIT_T},
     types::{
         interpreter_data::FrameType,
@@ -15,8 +15,8 @@ use crate::{
 #[derive(Clone, PartialEq, Debug)]
 pub struct Argument {
     pub name: Ident,
-    pub ty: Box<Element>,
-    pub default: Option<Element>,
+    pub ty: Box<Ast>,
+    pub default: Option<Ast>,
 }
 impl GetSpan for Argument {
     fn span(&self) -> Option<Span> {
@@ -60,7 +60,7 @@ pub struct Procedure {
     pub is_fn: bool,
     pub kwd_span: Option<Span>,
     pub args: Vec<Argument>,
-    pub return_type: Option<Box<Element>>,
+    pub return_type: Option<Box<Ast>>,
     pub content: Block,
 }
 impl GetSpan for Procedure {
@@ -72,15 +72,15 @@ impl GetSpan for Procedure {
     }
 }
 
-impl ElementData for Procedure {
-    fn as_variant(&self) -> Element {
-        Element::Procedure(self.to_owned())
+impl AstData for Procedure {
+    fn as_variant(&self) -> Ast {
+        Ast::Procedure(self.to_owned())
     }
 
     fn process<O: Print>(
         &mut self,
-        typelist: &mut InterpreterData<Type<Element>, O>,
-    ) -> ZResult<Type<Element>> {
+        typelist: &mut InterpreterData<Type<Ast>, O>,
+    ) -> ZResult<Type<Ast>> {
         typelist.add_frame(
             None,
             if self.is_fn {
@@ -115,7 +115,7 @@ impl ElementData for Procedure {
         }))
     }
 
-    fn desugared(&self, out: &mut impl Print) -> ZResult<Element> {
+    fn desugared(&self, out: &mut impl Print) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
         new_self.args = self
             .args
