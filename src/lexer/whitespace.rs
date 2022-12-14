@@ -11,7 +11,7 @@ use crate::{
 
 #[tracing::instrument(skip_all)]
 pub fn lex_whitespace(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
-    let mut raw = "".to_string();
+    let mut raw = String::new();
     let Some((_, init_pos)) = iter.peek() else {
         return Ok(());
     };
@@ -35,14 +35,14 @@ pub fn lex_whitespace(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()>
 
 pub fn clean_whitespaces(input: Vec<Token>) -> Vec<Token> {
     let mut out: Vec<Token> = vec![];
-    let mut whitespace_stack = "".to_string();
+    let mut whitespace_stack = String::new();
 
     for mut t in input {
         if t.ty == Some(TokenType::Whitespace) {
             whitespace_stack += &*t.value;
         } else {
             t.whitespace = whitespace_stack.into();
-            whitespace_stack = "".into();
+            whitespace_stack = String::new();
             out.push(t);
         }
     }

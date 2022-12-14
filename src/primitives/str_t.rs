@@ -22,7 +22,7 @@ macro_rules! typecast_str_to_num {
 
 fn str_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
-    h.insert("_default", Value::Str("".into()));
+    h.insert("_default", Value::Str(String::new()));
     concat_vals!(h, STR_T);
 
     let typecast = |x: &Vec<Value>| {

@@ -32,7 +32,7 @@ impl ZError {
     /* 0. Internal errors, have to do with the compiler-interpreter itself */
     /// Rust error
     pub fn error_0_0(error: impl Display, backtrace: Backtrace) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "0.0",
             message: format!("Internal error: \n{error}\n{backtrace:?}\n\nThis shouldn't happen! Open an issue on our Github repo page: [TODO]")
@@ -40,8 +40,9 @@ impl ZError {
     }
 
     /// No file given
+    #[must_use]
     pub fn error_0_1() -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "0.1",
             message: "No file given".to_string(),
@@ -51,7 +52,7 @@ impl ZError {
     /* 1. File and I/O errors */
     /// File does not exist
     pub fn error_1_0(filename: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "1.0",
             message: format!("File `{filename}` does not exist"),
@@ -60,7 +61,7 @@ impl ZError {
 
     /// file cannot be opened
     pub fn error_1_1(filename: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "1.1",
             message: format!("File `{filename}` cannot be opened"),
@@ -68,7 +69,7 @@ impl ZError {
     }
 
     pub fn error_1_2(dirname: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "1.2",
             message: format!("Directory given (Got `{dirname}`)"),
@@ -78,18 +79,17 @@ impl ZError {
     /* 2. Syntax errors */
     /// parentheses not closed properly (try swapping)
     pub fn error_2_0_0(paren1: impl Display, paren2: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.0.0",
             message: format!(
-                "Parentheses `{}` and `{}` not closed properly; try swapping them",
-                paren1, paren2
+                "Parentheses `{paren1}` and `{paren2}` not closed properly; try swapping them"
             ),
         }
     }
     /// parentheses not closed properly (not closed)
     pub fn error_2_0_1(paren: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.0.1",
             message: format!("Parenthesis `{paren}` not closed"),
@@ -97,7 +97,7 @@ impl ZError {
     }
     /// parentheses not closed properly (not opened)
     pub fn error_2_0_2(paren: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.0.2",
             message: format!("Parenthesis `{paren}` not opened"),
@@ -106,7 +106,7 @@ impl ZError {
 
     /// unexpected ident (generic)
     pub fn error_2_1_0(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.0",
             message: format!("Unexpected ident `{ident}`"),
@@ -114,15 +114,16 @@ impl ZError {
     }
     /// unexpected ident (lexer didnt recognise)
     pub fn error_2_1_1(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.1",
             message: format!("Ident `{ident}` not recognised by lexer"),
         }
     }
     /// unexpected ident (dot at end of expression)
+    #[must_use]
     pub fn error_2_1_2() -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.2",
             message: "Stray `.` at end of expression".to_string(),
@@ -130,29 +131,24 @@ impl ZError {
     }
     /// unexpected ident (binary operator at start/end of expression)
     pub fn error_2_1_3(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.3",
-            message: format!(
-                "Stray `{}` binary operator at start/end of expression",
-                ident
-            ),
+            message: format!("Stray `{ident}` binary operator at start/end of expression"),
         }
     }
     /// unexpected ident (unary operator at start/end of expression)
     pub fn error_2_1_4(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.4",
-            message: format!(
-                "Stray `{}` unary operator at start/end of expression",
-                ident
-            ),
+            message: format!("Stray `{ident}` unary operator at start/end of expression"),
         }
     }
     /// unexpected ident (declaration expr at start/end of expression)
+    #[must_use]
     pub fn error_2_1_5() -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.5",
             message: "Stray `:=` at start/end of expression".to_string(),
@@ -160,7 +156,7 @@ impl ZError {
     }
     /// unexpected ident (non-flag between first flag and declared variable)
     pub fn error_2_1_6(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.6",
             message: format!("Stray `{ident}` between first flag and declared variable"),
@@ -168,7 +164,7 @@ impl ZError {
     }
     /// unexpected ident ('else/elif'  found after 'else' keyword)
     pub fn error_2_1_7(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.7",
             message: format!("`{ident}` detected after `else` keyword"),
@@ -176,7 +172,7 @@ impl ZError {
     }
     /// unexpected ident (block expected, not ident)
     pub fn error_2_1_8(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.8",
             message: format!("Block expected, not `{ident}`"),
@@ -184,7 +180,7 @@ impl ZError {
     }
     /// unexpected ident ('else/elif' found without 'if' keyword)
     pub fn error_2_1_9(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.9",
             message: format!("Stray `{ident}` without starting `if`"),
@@ -192,7 +188,7 @@ impl ZError {
     }
     /// unexpected ident (stray comment start / end)
     pub fn error_2_1_10(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.10",
             message: format!("Stray unclosed/unopened `{ident}`"),
@@ -200,7 +196,7 @@ impl ZError {
     }
     /// unexpected ident (must be variable)
     pub fn error_2_1_11(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.11",
             message: format!("Only variables can be deleted (Got `{ident}`)"),
@@ -208,15 +204,16 @@ impl ZError {
     }
     /// unexpected ident (cannot delete dereferenced variable)
     pub fn error_2_1_12(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.12",
             message: format!("Cannot delete dereferenced variable (Got `{ident}`)"),
         }
     }
     /// unexpected ident (bar not closed)
+    #[must_use]
     pub fn error_2_1_13() -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.13",
             message: "Opening bar not closed".to_string(),
@@ -224,7 +221,7 @@ impl ZError {
     }
     /// unexpected ident (Extra values past default value)
     pub fn error_2_1_14(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.14",
             message: format!("Extra values past default value (Got `{ident}`)"),
@@ -232,31 +229,34 @@ impl ZError {
     }
     /// unexpected ident (Variable name isn't variable)
     pub fn error_2_1_15(ident: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.15",
             message: format!("Variable name isn't variable (Got `{ident}`)"),
         }
     }
     /// unexpected ident (pre keyword at end of expression)
+    #[must_use]
     pub fn error_2_1_16() -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.16",
             message: "`pre` at end of line".to_string(),
         }
     }
     /// unexpected ident (parameters with class keyword)
+    #[must_use]
     pub fn error_2_1_17() -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.17",
             message: "Parameters found after `class` keyword".to_string(),
         }
     }
     /// unexpected ident (parameters with class keyword)
+    #[must_use]
     pub fn error_2_1_18(kwd: &Keyword) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.1.18",
             message: format!("Block expected after `{kwd:?}`"),
@@ -265,7 +265,7 @@ impl ZError {
 
     /// expected pattern, got something else
     pub fn error_2_2(_ele: impl AstData) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.2",
             message: format!("Expected pattern, got `{}`", /*ele.span.raw*/ ""), // TODO
@@ -274,7 +274,7 @@ impl ZError {
 
     /// unfilled argument
     pub fn error_2_3(arg: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "2.3",
             message: format!("Unfilled argument `{arg}`"),
@@ -284,7 +284,7 @@ impl ZError {
     /* 3. Variable & attribute errors */
     /// Variable not defined
     pub fn error_3_0(varname: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "3.0",
             message: format!("Undefined variable `{varname}`"),
@@ -297,7 +297,7 @@ impl ZError {
         parent_type: Type<T>,
         attribute: impl Display,
     ) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "3.1.0",
             message: format!(
@@ -308,7 +308,7 @@ impl ZError {
     }
     /// Type has no attribute (interpreter)
     pub fn error_3_1_1(parent: Value, attribute: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "3.1.1",
             message: format!(
@@ -323,18 +323,15 @@ impl ZError {
     /* 4. Type errors */
     /// Binary operator not implemented for type
     pub fn error_4_0_0(operator: impl Display, type1: impl Display, type2: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "4.0.0",
-            message: format!(
-                "Operator {} not implemented for types `{}`, `{}`",
-                operator, type1, type2
-            ),
+            message: format!("Operator {operator} not implemented for types `{type1}`, `{type2}`"),
         }
     }
     /// Unary operator not implemented for type
     pub fn error_4_0_1(operator: impl Display, ty: impl Display) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "4.0.1",
             message: format!("Operator {operator} not implemented for type `{ty}`"),
@@ -343,7 +340,7 @@ impl ZError {
 
     /// Binary operation unsuccessful
     pub fn error_4_1_0(operator: impl Display, value1: Value, value2: Value) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "4.1.0",
             message: format!(
@@ -358,7 +355,7 @@ impl ZError {
     }
     /// Unary operation unsuccessful
     pub fn error_4_1_1(operator: impl Display, value: Value) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "4.1.1",
             message: format!(
@@ -371,8 +368,9 @@ impl ZError {
     }
 
     /// Non-i32 script return value
+    #[must_use]
     pub fn error_4_2(value: Value) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "4.2",
             message: format!("Non-i32 script return value detected (Got `{value}`)"),
@@ -385,22 +383,22 @@ impl ZError {
         var_type: Type<T1>,
         value_type: Type<T2>,
     ) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "4.3",
             message: format!(
-                "Value of type `{}` assigned to variable `{}` of type `{}`",
-                value_type, variable, var_type
+                "Value of type `{value_type}` assigned to variable `{variable}` of type `{var_type}`"
             ),
         }
     }
 
     /// inconsistent block return type (temporary)
+    #[must_use]
     pub fn error_4_t<T1: Clone + PartialEq + Debug, T2: Clone + PartialEq + Debug>(
         block_type: Type<T1>,
         return_type: Type<T2>,
     ) -> Self {
-        ZError {
+        Self {
             pos: vec![],
             code: "4.4",
             message: format!("Block returns variable of type `{block_type}` earlier on, but also returns variable of type `{return_type}`")
@@ -434,9 +432,9 @@ impl ZError {
                     .collect::<Vec<_>>();
                 contents[span.start_pos.line - 1] = start_vec[..span.start_pos.column - 1]
                     .iter()
-                    .cloned()
+                    .copied()
                     .chain("\u{001b}[0;1;4;31m".chars())
-                    .chain(start_vec[span.start_pos.column - 1..].iter().cloned())
+                    .chain(start_vec[span.start_pos.column - 1..].iter().copied())
                     .join("");
 
                 let end_vec = contents[span.end_pos.line - 1].chars().collect::<Vec<_>>();
@@ -444,7 +442,7 @@ impl ZError {
                     .iter()
                     .copied()
                     .chain("\u{001b}[0;37;2m".chars())
-                    .chain(end_vec[span.end_pos.column - 1..].iter().cloned())
+                    .chain(end_vec[span.end_pos.column - 1..].iter().copied())
                     .join("");
 
                 let surrounding = contents[start_line..=end_line].join("\n");

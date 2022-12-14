@@ -36,7 +36,7 @@ impl AstData for Block {
             content: self
                 .content
                 .iter()
-                .map(|c| c.desugared())
+                .map(AstData::desugared)
                 .collect::<Result<_, _>>()?,
         }))
     }
@@ -56,7 +56,7 @@ impl Block {
         if add_set {
             typelist.add_frame(None, FrameType::Normal);
         }
-        for ele in self.content.iter_mut() {
+        for ele in &mut self.content {
             last = ele.process(typelist)?;
             if let Type::Return(value) = last.to_owned() {
                 if let Some(return_type) = &return_type {
@@ -72,7 +72,7 @@ impl Block {
         }
         if let Some(return_type) = return_type.to_owned() {
             if last != return_type {
-                let _last_ele = self.content.last().unwrap();
+                let _last_ele = self.content.last().unwrap_or_else(|| unreachable!());
                 return Err(ZError::error_4_t(last, return_type)); // TODO
             }
         }
@@ -106,7 +106,7 @@ impl Block {
         for ele in &self.content {
             if let Ast::Return(r#return) = ele {
                 if returnable {
-                    last = r#return.value.interpret_expr(i_data)?
+                    last = r#return.value.interpret_expr(i_data)?;
                 } else {
                     last = ele.interpret_expr(i_data)?;
                 }

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     ast::{Ast, AstData, Call, Ident},
     primitives::BOOL_T,
@@ -33,7 +35,7 @@ impl AstData for BinaryOpr {
             OprType::And | OprType::Or => {
                 let mut new_self = self.to_owned();
                 for operand in [&mut new_self.operand1, &mut new_self.operand2] {
-                    *operand = BinaryOpr {
+                    *operand = Self {
                         ty: OprType::TypeCast,
                         opr_span: self.opr_span.to_owned(),
                         operand1: operand.desugared()?.into(),
@@ -76,7 +78,7 @@ impl AstData for BinaryOpr {
                 .into(),
                 paren_spans: None,
                 args: vec![self.operand2.desugared()?],
-                kwargs: Default::default(),
+                kwargs: HashMap::default(),
             }
             .desugared()?,
         })
@@ -101,14 +103,12 @@ impl AstData for BinaryOpr {
             }
             OprType::Or => {
                 if let Value::Bool(b) = self.operand1.interpret_expr(i_data)? {
-                    if !b {
-                        if let Value::Bool(b) = self.operand2.interpret_expr(i_data)? {
-                            Ok(Value::Bool(b))
-                        } else {
-                            panic!()
-                        }
-                    } else {
+                    if b {
                         Ok(Value::Bool(true))
+                    } else if let Value::Bool(b) = self.operand2.interpret_expr(i_data)? {
+                        Ok(Value::Bool(b))
+                    } else {
+                        panic!()
                     }
                 } else {
                     panic!()
