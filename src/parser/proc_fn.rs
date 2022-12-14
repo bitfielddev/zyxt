@@ -19,7 +19,7 @@ impl Buffer {
         windows.with_as_buffers(&|buf| {
             let arg_sections = buf
                 .get_split(TokenType::Colon)?
-                .with_as_buffers(&|buf| buf.parse_as_expr())?;
+                .with_as_buffers(&Self::parse_as_expr)?;
             let name = if let Some(name) = arg_sections.first() {
                 if let Ast::Ident(ident) = name {
                     debug!(pos = ?name.span(), "Name detected");
@@ -37,7 +37,7 @@ impl Buffer {
                 todo!()
             };
             let default = arg_sections.get(2).cloned();
-            debug!(pos = ?default.as_ref().map(|d| d.span()), "Default may be detected");
+            debug!(pos = ?default.as_ref().map(GetSpan::span), "Default may be detected");
             Ok(Argument { name, ty, default })
         })
     }
@@ -60,14 +60,14 @@ impl Buffer {
             } else {
                 continue;
             };
-            let kwd_span = (ty != TokenType::Bar).then(|| tok_selected.span);
+            let kwd_span = (ty != TokenType::Bar).then_some(tok_selected.span);
             let start = self.cursor;
             debug!(pos = ?kwd_span, "Parsing proc / fn");
 
-            let is_fn = if ty != TokenType::Bar {
-                ty == TokenType::Keyword(Keyword::Fn)
-            } else {
+            let is_fn = if ty == TokenType::Bar {
                 false
+            } else {
+                ty == TokenType::Keyword(Keyword::Fn)
             };
             if ty != TokenType::Bar {
                 selected = self.next_or_err()?;
@@ -129,7 +129,7 @@ impl Buffer {
                 is_fn,
                 kwd_span,
                 args,
-                return_type: return_type.map(|a| a.into()),
+                return_type: return_type.map(Into::into),
                 content: block,
             });
             trace!(?ele);
@@ -137,7 +137,7 @@ impl Buffer {
                 slice: vec![Either::Left(ele)],
                 range: start..self.next_cursor_pos(),
             };
-            self.splice_buffer(buffer_window)
+            self.splice_buffer(buffer_window);
         }
         Ok(())
     }

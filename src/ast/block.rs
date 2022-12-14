@@ -59,12 +59,14 @@ impl Block {
         for ele in self.content.iter_mut() {
             last = ele.process(typelist)?;
             if let Type::Return(value) = last.to_owned() {
-                if return_type.to_owned().is_none() {
+                if let Some(return_type) = &return_type {
+                    if last != *return_type {
+                        return Err(
+                            ZError::error_4_t(last, return_type.to_owned()), // TODO
+                        );
+                    }
+                } else {
                     return_type = Some(*value);
-                } else if last != return_type.to_owned().unwrap() {
-                    return Err(
-                        ZError::error_4_t(last, return_type.unwrap()), // TODO
-                    );
                 }
             }
         }
@@ -110,16 +112,15 @@ impl Block {
                 }
                 pop!();
                 return Ok(last);
-            } else {
-                last = ele.interpret_expr(i_data)?;
-                if let Value::Return(value) = last {
-                    pop!();
-                    return if returnable {
-                        Ok(*value)
-                    } else {
-                        Ok(Value::Return(value))
-                    };
-                }
+            }
+            last = ele.interpret_expr(i_data)?;
+            if let Value::Return(value) = last {
+                pop!();
+                return if returnable {
+                    Ok(*value)
+                } else {
+                    Ok(Value::Return(value))
+                };
             }
         }
         pop!();

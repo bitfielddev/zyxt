@@ -418,7 +418,10 @@ impl ZError {
                     return pos;
                 };
                 let mut contents = if let Some(input) = get_input(filename) {
-                    input.split('\n').map(|a| a.to_string()).collect::<Vec<_>>()
+                    input
+                        .split('\n')
+                        .map(ToString::to_string)
+                        .collect::<Vec<_>>()
                 } else {
                     return pos;
                 };
@@ -439,7 +442,7 @@ impl ZError {
                 let end_vec = contents[span.end_pos.line - 1].chars().collect::<Vec<_>>();
                 contents[span.end_pos.line - 1] = end_vec[..span.end_pos.column - 1]
                     .iter()
-                    .cloned()
+                    .copied()
                     .chain("\u{001b}[0;37;2m".chars())
                     .chain(end_vec[span.end_pos.column - 1..].iter().cloned())
                     .join("");
@@ -457,11 +460,12 @@ impl ZError {
     pub fn print(&self) {
         println!("{}", self.get_surrounding_text());
         println!(
-            " Error {} ",
-            self.code.black().on_yellow().to_string()
-                + &*format!(" {}", self.message).bold().red().to_string(),
+            " Error {}{} ",
+            self.code.black().on_yellow(),
+            format!(" {}", self.message).bold().red(),
         );
     }
+    #[must_use]
     pub fn with_span(mut self, span: impl GetSpan) -> Self {
         self.pos = if let Some(span) = span.span() {
             vec![span]

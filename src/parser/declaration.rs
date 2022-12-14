@@ -71,9 +71,7 @@ impl Buffer {
                 vec![]
             };
             self.next_or_err()?;
-            let content = self
-                .rest_incl_curr()
-                .with_as_buffer(&|buf| buf.parse_as_expr())?;
+            let content = self.rest_incl_curr().with_as_buffer(&Self::parse_as_expr)?;
             let ele = Ast::Declare(Declare {
                 variable: declared_var.to_owned().into(),
                 content: content.into(),

@@ -48,7 +48,7 @@ fn main() {
             let mut typelist = SymTable::<Type<Ast>>::default();
             let mut i_data = SymTable::<Value>::default();
             let exit_code = zyxt::interpret(
-                &zyxt::compile(Either::Left(&filename), &mut typelist)
+                &zyxt::compile(&Either::Left(&filename), &mut typelist)
                     .unwrap_or_else(|e| e.print_exit()),
                 &mut i_data,
             )

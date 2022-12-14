@@ -39,7 +39,7 @@ impl AstData for Ident {
             .parent
             .map(|a| a.desugared())
             .transpose()?
-            .map(|a| a.into());
+            .map(Into::into);
         Ok(new_self.as_variant())
     }
 

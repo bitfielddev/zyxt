@@ -34,7 +34,12 @@ impl AstData for Class {
 
     fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         typelist.add_frame(None, FrameType::Normal);
-        for expr in &mut self.content.as_mut().unwrap().content {
+        for expr in &mut self
+            .content
+            .as_mut()
+            .unwrap_or_else(|| unreachable!())
+            .content
+        {
             // TODO deal w unwrap
             expr.process(typelist)?;
             if let Ast::Declare(Declare {
@@ -101,7 +106,13 @@ impl AstData for Class {
     fn desugared(&self) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
         new_self.content = if let Some(content) = new_self.content {
-            Some(content.desugared()?.as_block().unwrap().to_owned())
+            Some(
+                content
+                    .desugared()?
+                    .as_block()
+                    .unwrap_or_else(|| unreachable!())
+                    .to_owned(),
+            )
         } else {
             None
         };

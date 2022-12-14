@@ -32,7 +32,9 @@ pub enum Proc {
 impl PartialEq for Proc {
     fn eq(&self, other: &Self) -> bool {
         match &self {
-            Self::Builtin { f, .. } => {
+            Self::Builtin { f, .. } =>
+            {
+                #[allow(clippy::fn_to_numeric_cast_any)]
                 if let Self::Builtin { f: f2, .. } = other {
                     *f as usize == *f2 as usize
                 } else {
@@ -103,36 +105,36 @@ impl Debug for Proc {
 }
 impl Debug for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        if let Value::Return(v) = self {
+        if let Self::Return(v) = self {
             return Debug::fmt(&v, f);
         }
         write!(
             f,
             "{}",
             match self {
-                Value::I8(v) => format!("{v}@i8"),
-                Value::I16(v) => format!("{v}@i16"),
-                Value::I32(v) => format!("{v}@i32"),
-                Value::I64(v) => format!("{v}@i64"),
-                Value::I128(v) => format!("{v}@i128"),
-                Value::Isize(v) => format!("{v}@isize"),
-                Value::Ibig(v) => format!("{v}@ibig"),
-                Value::U8(v) => format!("{v}@u8"),
-                Value::U16(v) => format!("{v}@u16"),
-                Value::U32(v) => format!("{v}@u32"),
-                Value::U64(v) => format!("{v}@u64"),
-                Value::U128(v) => format!("{v}@u128"),
-                Value::Usize(v) => format!("{v}@usize"),
-                Value::Ubig(v) => format!("{v}@ubig"),
-                Value::F16(v) => format!("{v}@f16"),
-                Value::F32(v) => format!("{v}@f32"),
-                Value::F64(v) => format!("{v}@f64"),
-                Value::Str(v) => format!("\"{v}\""),
-                Value::Type(v) => format!("{v:?}"),
-                Value::PreType(v) => format!("{v:?}"),
-                Value::Bool(_) | Value::ClassInstance { .. } | Value::Proc { .. } | Value::Unit =>
+                Self::I8(v) => format!("{v}@i8"),
+                Self::I16(v) => format!("{v}@i16"),
+                Self::I32(v) => format!("{v}@i32"),
+                Self::I64(v) => format!("{v}@i64"),
+                Self::I128(v) => format!("{v}@i128"),
+                Self::Isize(v) => format!("{v}@isize"),
+                Self::Ibig(v) => format!("{v}@ibig"),
+                Self::U8(v) => format!("{v}@u8"),
+                Self::U16(v) => format!("{v}@u16"),
+                Self::U32(v) => format!("{v}@u32"),
+                Self::U64(v) => format!("{v}@u64"),
+                Self::U128(v) => format!("{v}@u128"),
+                Self::Usize(v) => format!("{v}@usize"),
+                Self::Ubig(v) => format!("{v}@ubig"),
+                Self::F16(v) => format!("{v}@f16"),
+                Self::F32(v) => format!("{v}@f32"),
+                Self::F64(v) => format!("{v}@f64"),
+                Self::Str(v) => format!("\"{v}\""),
+                Self::Type(v) => format!("{v:?}"),
+                Self::PreType(v) => format!("{v:?}"),
+                Self::Bool(_) | Self::ClassInstance { .. } | Self::Proc { .. } | Self::Unit =>
                     self.to_string(),
-                Value::Return(_) => unreachable!(),
+                Self::Return(_) => unreachable!(),
             }
         )
     }
@@ -143,20 +145,20 @@ impl Display for Proc {
             f,
             "{}",
             match self {
-                Proc::Builtin { signature, .. } => {
+                Self::Builtin { signature, .. } => {
                     signature
                         .iter()
                         .map(|s| {
                             let (args, ret): (Vec<Type<Value>>, Type<Value>) = s();
                             format!(
                                 "fn|{}|: {}",
-                                args.iter().map(|a| a.to_string()).join(","),
+                                args.iter().map(ToString::to_string).join(","),
                                 ret
                             )
                         })
                         .join(" / ")
                 }
-                Proc::Defined {
+                Self::Defined {
                     is_fn,
                     args,
                     return_type,
@@ -164,7 +166,7 @@ impl Display for Proc {
                 } => format!(
                     "{}|{}|: {}",
                     if *is_fn { "fn" } else { "proc" },
-                    args.iter().map(|a| a.to_string()).join(","),
+                    args.iter().map(ToString::to_string).join(","),
                     return_type
                 ),
             }
@@ -177,90 +179,93 @@ impl Display for Value {
             f,
             "{}",
             match self {
-                Value::I8(v) => v.to_string(),
-                Value::I16(v) => v.to_string(),
-                Value::I32(v) => v.to_string(),
-                Value::I64(v) => v.to_string(),
-                Value::I128(v) => v.to_string(),
-                Value::Isize(v) => v.to_string(),
-                Value::Ibig(v) => v.to_string(),
-                Value::U8(v) => v.to_string(),
-                Value::U16(v) => v.to_string(),
-                Value::U32(v) => v.to_string(),
-                Value::U64(v) => v.to_string(),
-                Value::U128(v) => v.to_string(),
-                Value::Usize(v) => v.to_string(),
-                Value::Ubig(v) => v.to_string(),
-                Value::F16(v) => v.to_string(),
-                Value::F32(v) => v.to_string(),
-                Value::F64(v) => v.to_string(),
-                Value::Str(v) => v.to_owned(),
-                Value::Bool(v) => v.to_string(),
-                Value::Type(v) | Value::ClassInstance { ty: v, .. } => format!("<{v}>"),
-                Value::PreType(v) => format!("<{v}>"),
-                Value::Unit => "()".to_string(),
-                Value::Return(v) => v.to_string(),
-                Value::Proc(v) => v.to_string(),
+                Self::I8(v) => v.to_string(),
+                Self::I16(v) => v.to_string(),
+                Self::I32(v) => v.to_string(),
+                Self::I64(v) => v.to_string(),
+                Self::I128(v) => v.to_string(),
+                Self::Isize(v) => v.to_string(),
+                Self::Ibig(v) => v.to_string(),
+                Self::U8(v) => v.to_string(),
+                Self::U16(v) => v.to_string(),
+                Self::U32(v) => v.to_string(),
+                Self::U64(v) => v.to_string(),
+                Self::U128(v) => v.to_string(),
+                Self::Usize(v) => v.to_string(),
+                Self::Ubig(v) => v.to_string(),
+                Self::F16(v) => v.to_string(),
+                Self::F32(v) => v.to_string(),
+                Self::F64(v) => v.to_string(),
+                Self::Str(v) => v.to_owned(),
+                Self::Bool(v) => v.to_string(),
+                Self::Type(v) | Self::ClassInstance { ty: v, .. } => format!("<{v}>"),
+                Self::PreType(v) => format!("<{v}>"),
+                Self::Unit => "()".to_owned(),
+                Self::Return(v) => v.to_string(),
+                Self::Proc(v) => v.to_string(),
             }
         )
     }
 }
 
 impl Value {
-    pub fn is_num(&self) -> bool {
+    #[must_use]
+    pub const fn is_num(&self) -> bool {
         matches!(
             self,
-            Value::I8(_)
-                | Value::I16(_)
-                | Value::I32(_)
-                | Value::I64(_)
-                | Value::I128(_)
-                | Value::Isize(_)
-                | Value::Ibig(_)
-                | Value::U8(_)
-                | Value::U16(_)
-                | Value::U32(_)
-                | Value::U64(_)
-                | Value::U128(_)
-                | Value::Usize(_)
-                | Value::Ubig(_)
-                | Value::F16(_)
-                | Value::F32(_)
-                | Value::F64(_)
-                | Value::Bool(_)
+            Self::I8(_)
+                | Self::I16(_)
+                | Self::I32(_)
+                | Self::I64(_)
+                | Self::I128(_)
+                | Self::Isize(_)
+                | Self::Ibig(_)
+                | Self::U8(_)
+                | Self::U16(_)
+                | Self::U32(_)
+                | Self::U64(_)
+                | Self::U128(_)
+                | Self::Usize(_)
+                | Self::Ubig(_)
+                | Self::F16(_)
+                | Self::F32(_)
+                | Self::F64(_)
+                | Self::Bool(_)
         )
     }
-    pub fn get_type_obj(&self) -> Type<Value> {
+    pub fn get_type_obj(&self) -> Type<Self> {
         match self {
-            Value::I8(..) => I8_T.get_instance(),
-            Value::I16(..) => I16_T.get_instance(),
-            Value::I32(..) => I32_T.get_instance(),
-            Value::I64(..) => I64_T.get_instance(),
-            Value::I128(..) => I128_T.get_instance(),
-            Value::Isize(..) => ISIZE_T.get_instance(),
-            Value::Ibig(..) => IBIG_T.get_instance(),
-            Value::U8(..) => U8_T.get_instance(),
-            Value::U16(..) => U16_T.get_instance(),
-            Value::U32(..) => U32_T.get_instance(),
-            Value::U64(..) => U64_T.get_instance(),
-            Value::U128(..) => U128_T.get_instance(),
-            Value::Usize(..) => USIZE_T.get_instance(),
-            Value::Ubig(..) => UBIG_T.get_instance(),
-            Value::F16(..) => F16_T.get_instance(),
-            Value::F32(..) => F32_T.get_instance(),
-            Value::F64(..) => F64_T.get_instance(),
-            Value::Str(..) => STR_T.get_instance(),
-            Value::Bool(..) => BOOL_T.get_instance(),
-            Value::Type(..) | Value::PreType(..) => TYPE_T.get_instance(),
-            Value::Proc(_) => PROC_T.get_instance(),
-            Value::ClassInstance { ty, .. } => ty.to_owned(),
-            Value::Unit => UNIT_T.get_instance(),
-            Value::Return(v) => v.get_type_obj(),
+            Self::I8(..) => I8_T.get_instance(),
+            Self::I16(..) => I16_T.get_instance(),
+            Self::I32(..) => I32_T.get_instance(),
+            Self::I64(..) => I64_T.get_instance(),
+            Self::I128(..) => I128_T.get_instance(),
+            Self::Isize(..) => ISIZE_T.get_instance(),
+            Self::Ibig(..) => IBIG_T.get_instance(),
+            Self::U8(..) => U8_T.get_instance(),
+            Self::U16(..) => U16_T.get_instance(),
+            Self::U32(..) => U32_T.get_instance(),
+            Self::U64(..) => U64_T.get_instance(),
+            Self::U128(..) => U128_T.get_instance(),
+            Self::Usize(..) => USIZE_T.get_instance(),
+            Self::Ubig(..) => UBIG_T.get_instance(),
+            Self::F16(..) => F16_T.get_instance(),
+            Self::F32(..) => F32_T.get_instance(),
+            Self::F64(..) => F64_T.get_instance(),
+            Self::Str(..) => STR_T.get_instance(),
+            Self::Bool(..) => BOOL_T.get_instance(),
+            Self::Type(..) | Self::PreType(..) => TYPE_T.get_instance(),
+            Self::Proc(_) => PROC_T.get_instance(),
+            Self::ClassInstance { ty, .. } => ty.to_owned(),
+            Self::Unit => UNIT_T.get_instance(),
+            Self::Return(v) => v.get_type_obj(),
         }
     }
-    pub fn get_type(&self) -> Value {
-        Value::Type(self.get_type_obj())
+    #[must_use]
+    pub fn get_type(&self) -> Self {
+        Self::Type(self.get_type_obj())
     }
+    #[must_use]
     pub fn as_element(&self) -> Ast {
         Ast::Literal(Literal {
             span: None,

@@ -43,9 +43,10 @@ impl Buffer {
         if let Some(c) = self.next() {
             Ok(c)
         } else {
-            let _curr_span = match &self.content.last().unwrap() {
-                Either::Left(c) => c.span(),
-                Either::Right(c) => c.span(),
+            let _curr_span = match &self.content.last() {
+                Some(Either::Left(c)) => c.span(),
+                Some(Either::Right(c)) => c.span(),
+                None => unreachable!(), // todo
             };
             todo!();
             //Err(ZError::error_2_1_0(&curr_span.raw))
@@ -61,18 +62,18 @@ impl Buffer {
     pub fn prev(&mut self) {
         if self.cursor == 0 {
             if self.started {
-                self.started = false
+                self.started = false;
             } else {
                 todo!()
             }
         } else {
-            self.cursor -= 1
+            self.cursor -= 1;
         }
     }
     pub fn rest_incl_curr(&mut self) -> BufferWindow {
         self.window(self.cursor..self.content.len())
     }
-    pub fn next_cursor_pos(&self) -> usize {
+    pub const fn next_cursor_pos(&self) -> usize {
         if self.started {
             self.cursor + 1
         } else {
@@ -105,9 +106,9 @@ impl Buffer {
                 if start_token == end_token {
                     nest_level = 0 /*usize::from(nest_level != 1)*/;
                 } else if ele.ty == Some(start_token) {
-                    nest_level += 1
+                    nest_level += 1;
                 } else if ele.ty == Some(end_token) {
-                    nest_level -= 1
+                    nest_level -= 1;
                 }
             }
             trace!(?ele, nest_level);
@@ -158,9 +159,9 @@ impl Buffer {
                 if start_token == end_token {
                     nest_level = 0 /*usize::from(nest_level != 1)*/;
                 } else if ele.ty == Some(start_token) {
-                    nest_level += 1
+                    nest_level += 1;
                 } else if ele.ty == Some(end_token) {
-                    nest_level -= 1
+                    nest_level -= 1;
                 }
                 if nest_level == 1 && ele.ty == Some(divider) {
                     trace!(pos = ?ele.span(), "Split");
@@ -207,7 +208,7 @@ impl BufferWindow {
     pub fn with_as_buffer<T>(&mut self, f: &impl Fn(&mut Buffer) -> ZResult<T>) -> ZResult<T> {
         let mut buffer = self.as_buffer();
         let res = f(&mut buffer)?;
-        let bw = BufferWindow {
+        let bw = Self {
             slice: buffer.content,
             range: self.range.to_owned(),
         };

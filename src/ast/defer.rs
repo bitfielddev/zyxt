@@ -25,7 +25,7 @@ impl AstData for Defer {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
-        Ok(Defer {
+        Ok(Self {
             kwd_span: self.kwd_span.to_owned(),
             content: self.content.desugared()?.as_variant().into(),
         }

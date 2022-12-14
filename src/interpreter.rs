@@ -11,7 +11,7 @@ pub fn interpret_asts(input: &Vec<Ast>, i_data: &mut SymTable<Value>) -> ZResult
     };
     let mut last = input.interpret_block(i_data, true, false)?;
     while let Value::Return(v) = last {
-        last = *v
+        last = *v;
     }
     if last == Value::Unit {
         last = Value::I32(0);

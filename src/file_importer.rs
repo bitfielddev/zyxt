@@ -11,18 +11,19 @@ static FILE_CACHE: Lazy<Mutex<HashMap<SmolStr, Arc<String>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
 
 pub fn import_file(file: &Path) -> Arc<String> {
-    FILE_CACHE
-        .lock()
-        .unwrap()
-        .entry(file.to_string_lossy().into())
-        .or_insert_with(|| Arc::new(std::fs::read_to_string(file).unwrap()))
-        .clone()
+    Arc::clone(
+        FILE_CACHE
+            .lock()
+            .unwrap()
+            .entry(file.to_string_lossy().into())
+            .or_insert_with(|| Arc::new(std::fs::read_to_string(file).unwrap())),
+    )
 }
 
 pub fn register_input(name: SmolStr, input: String) -> Arc<String> {
     let mut cache = FILE_CACHE.lock().unwrap();
     cache.insert(name.to_owned(), Arc::new(input));
-    cache.get(&name).unwrap().clone()
+    Arc::clone(cache.get(&name).unwrap())
 }
 
 pub fn get_input(name: &SmolStr) -> Option<Arc<String>> {

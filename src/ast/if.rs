@@ -44,13 +44,13 @@ impl AstData for If {
 
     fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         for cond in &self.conditions {
-            if cond.condition.is_none() {
-                return cond.if_true.interpret_block(i_data, false, true);
-            } else if let Some(Value::Bool(true)) = cond
-                .condition
-                .as_ref()
-                .map(|cond| cond.interpret_expr(i_data))
-                .transpose()?
+            if cond.condition.is_none()
+                || cond
+                    .condition
+                    .as_ref()
+                    .map(|cond| cond.interpret_expr(i_data))
+                    .transpose()?
+                    == Some(Value::Bool(true))
             {
                 return cond.if_true.interpret_block(i_data, false, true);
             }

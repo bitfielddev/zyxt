@@ -31,11 +31,11 @@ static WHITESPACE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s+$").unwrap());
 static ALPHABETIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z_]+$").unwrap());
 
 #[tracing::instrument(skip_all)]
-pub fn lex(preinput: String, filename: SmolStr) -> ZResult<Vec<Token>> {
-    if preinput.trim().is_empty() {
+pub fn lex(mut input: String, filename: SmolStr) -> ZResult<Vec<Token>> {
+    if input.trim().is_empty() {
         return Ok(vec![]);
     };
-    let input = preinput + "\n";
+    input.push('\n');
 
     let pos = Position {
         filename: Some(Arc::new(filename)),

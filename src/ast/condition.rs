@@ -24,7 +24,12 @@ impl GetSpan for Condition {
 impl Condition {
     pub fn desugar(&mut self) -> ZResult<()> {
         self.condition.as_mut().map(|e| e.desugared()).transpose()?;
-        self.if_true = self.if_true.desugared()?.as_block().unwrap().to_owned();
+        self.if_true = self
+            .if_true
+            .desugared()?
+            .as_block()
+            .unwrap_or_else(|| unreachable!())
+            .to_owned();
         Ok(())
     }
 }

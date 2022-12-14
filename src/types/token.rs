@@ -18,7 +18,7 @@ impl GetSpan for Token {
 }
 impl Default for Token {
     fn default() -> Self {
-        Token {
+        Self {
             value: "".into(),
             ty: None,
             span: Span::default(),
@@ -27,6 +27,7 @@ impl Default for Token {
     }
 }
 impl Token {
+    #[must_use]
     pub fn get_raw(&self) -> String {
         format!("{}{}", &self.whitespace, &self.value)
     }
@@ -70,28 +71,29 @@ impl Display for OprType {
     }
 }
 impl OprType {
-    pub fn order(&self) -> usize {
+    #[must_use]
+    pub const fn order(&self) -> usize {
         match self {
-            OprType::UnPlus | OprType::UnMinus | OprType::Not | OprType::Ref | OprType::Deref => 1,
-            OprType::TypeCast => 2,
-            OprType::Pow => 3,
-            OprType::Mul | OprType::Div | OprType::Mod => 6,
-            OprType::Add | OprType::Sub | OprType::AddSub | OprType::SubAdd => 8,
-            OprType::Gt
-            | OprType::Lt
-            | OprType::Ge
-            | OprType::Le
-            | OprType::Eq
-            | OprType::Ne
-            | OprType::Istype
-            | OprType::Isnttype
-            | OprType::Is
-            | OprType::Isnt
-            | OprType::Iseq
-            | OprType::Isnteq => 10,
-            OprType::And => 14,
-            OprType::Or => 16,
-            OprType::Concat => 18,
+            Self::UnPlus | Self::UnMinus | Self::Not | Self::Ref | Self::Deref => 1,
+            Self::TypeCast => 2,
+            Self::Pow => 3,
+            Self::Mul | Self::Div | Self::Mod => 6,
+            Self::Add | Self::Sub | Self::AddSub | Self::SubAdd => 8,
+            Self::Gt
+            | Self::Lt
+            | Self::Ge
+            | Self::Le
+            | Self::Eq
+            | Self::Ne
+            | Self::Istype
+            | Self::Isnttype
+            | Self::Is
+            | Self::Isnt
+            | Self::Iseq
+            | Self::Isnteq => 10,
+            Self::And => 14,
+            Self::Or => 16,
+            Self::Concat => 18,
         }
     }
 }
@@ -159,53 +161,52 @@ pub enum TokenType {
     Whitespace,
 }
 impl TokenType {
+    #[must_use]
     pub fn categories(&self) -> Vec<TokenCategory> {
         match self {
-            TokenType::Ident => vec![TokenCategory::ValueStart, TokenCategory::ValueEnd],
-            TokenType::LiteralNumber => vec![
+            Self::Ident => vec![TokenCategory::ValueStart, TokenCategory::ValueEnd],
+            Self::LiteralNumber => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,
                 TokenCategory::ValueEnd,
             ],
-            TokenType::OpenSquareParen
-            | TokenType::OpenCurlyParen
-            | TokenType::OpenParen
-            | TokenType::CloseSquareParen
-            | TokenType::CloseCurlyParen
-            | TokenType::CloseParen => vec![
+            Self::OpenSquareParen
+            | Self::OpenCurlyParen
+            | Self::OpenParen
+            | Self::CloseSquareParen
+            | Self::CloseCurlyParen
+            | Self::CloseParen => vec![
                 TokenCategory::Parenthesis,
                 TokenCategory::OpenParen,
                 TokenCategory::ValueStart,
             ],
-            TokenType::DotOpr => vec![TokenCategory::Operator],
-            TokenType::StatementEnd => vec![
+            Self::DotOpr => vec![TokenCategory::Operator],
+            Self::StatementEnd => vec![
                 TokenCategory::LiteralStringStart,
                 TokenCategory::LiteralStringEnd,
             ],
-            TokenType::AssignmentOpr(..) => vec![TokenCategory::Operator],
-            TokenType::UnaryOpr(OprType::Not, ..)
-            | TokenType::UnaryOpr(OprType::Ref, ..)
-            | TokenType::UnaryOpr(OprType::Deref, ..) => {
+            Self::AssignmentOpr(..) => vec![TokenCategory::Operator],
+            Self::UnaryOpr(OprType::Not | OprType::Ref | OprType::Deref, ..) => {
                 vec![TokenCategory::Operator, TokenCategory::ValueStart]
             }
-            TokenType::BinaryOpr(..) | TokenType::DeclarationOpr => vec![TokenCategory::Operator],
-            TokenType::Bar => vec![
+            Self::BinaryOpr(..) | Self::DeclarationOpr => vec![TokenCategory::Operator],
+            Self::Bar => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,
                 TokenCategory::ValueEnd,
             ],
-            TokenType::Comment => vec![
+            Self::Comment => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,
                 TokenCategory::ValueEnd,
             ],
-            TokenType::Keyword(..) | TokenType::Flag(..) => vec![TokenCategory::ValueStart],
-            TokenType::LiteralMisc => vec![
+            Self::Keyword(..) | Self::Flag(..) => vec![TokenCategory::ValueStart],
+            Self::LiteralMisc => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,
                 TokenCategory::ValueEnd,
             ],
-            TokenType::Comma => vec![],
+            Self::Comma => vec![],
             _ => todo!("{:?}", self),
         }
     }

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     ast::{Ast, AstData, Call, Ident},
     types::{
@@ -42,7 +44,7 @@ impl AstData for UnaryOpr {
             .into(),
             paren_spans: None,
             args: vec![],
-            kwargs: Default::default(),
+            kwargs: HashMap::default(),
         }
         .as_variant())
     }

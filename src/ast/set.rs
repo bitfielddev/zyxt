@@ -33,11 +33,14 @@ impl AstData for Set {
         } else {
             unimplemented!() // TODO
         };
-        let var_type = typelist.get_val(name, &self.variable.span().unwrap())?;
-        if content_type != var_type {
-            Err(ZError::error_4_3(name, var_type, content_type)) // TODO span
-        } else {
+        let var_type = typelist.get_val(
+            name,
+            &self.variable.span().unwrap_or_else(|| unreachable!()),
+        )?;
+        if content_type == var_type {
             Ok(var_type)
+        } else {
+            Err(ZError::error_4_3(name, var_type, content_type)) // TODO span
         }
     }
 

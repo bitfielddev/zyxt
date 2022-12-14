@@ -78,7 +78,12 @@ impl AstData for Procedure {
                 Ok(a)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        new_self.content = self.content.desugared()?.as_block().unwrap().to_owned();
+        new_self.content = self
+            .content
+            .desugared()?
+            .as_block()
+            .unwrap_or_else(|| unreachable!())
+            .to_owned();
         Ok(new_self.as_variant())
     }
 
@@ -86,8 +91,11 @@ impl AstData for Procedure {
         Ok(Value::Proc(Proc::Defined {
             is_fn: self.is_fn,
             args: self.args.to_owned(),
-            return_type: if let Value::Type(value) =
-                self.return_type.as_ref().unwrap().interpret_expr(i_data)?
+            return_type: if let Value::Type(value) = self
+                .return_type
+                .as_ref()
+                .unwrap_or_else(|| unreachable!())
+                .interpret_expr(i_data)?
             {
                 value
             } else {

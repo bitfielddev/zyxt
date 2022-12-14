@@ -53,14 +53,14 @@ pub fn repl(verbosity: u8) {
                             println!("{}", "All commands start wih `;`".bold().yellow());
                             println!("{}", "help\tView this help page".cyan());
                             println!("{}", "exit\tExit the repl".cyan());
-                            println!("{}", "vars\tView all variables".cyan())
+                            println!("{}", "vars\tView all variables".cyan());
                         }
                         _ => println!("{}", "Invalid command".red()),
                     };
                     continue;
                 }
                 let instructions =
-                    match compile(Either::Right((filename.to_owned(), input)), &mut typelist) {
+                    match compile(&Either::Right((filename.to_owned(), input)), &mut typelist) {
                         Ok(v) => v,
                         Err(e) => {
                             e.print();
@@ -80,13 +80,13 @@ pub fn repl(verbosity: u8) {
                             let interpret_start = Instant::now();
                             let result = instr.interpret_expr(&mut varlist);
                             let interpret_time = interpret_start.elapsed().as_micros();
-                            println!("{}", format!("{interpret_time}µs").dimmed().white());
+                            println!("{}", format!("{interpret_time}\u{b5}s").dimmed().white());
                             result
                         }
                     } {
                         Ok(result) => {
                             if result != Value::Unit && i == instr_len - 1 {
-                                println!("{out_symbol}{}", format!("{result:?}").yellow())
+                                println!("{out_symbol}{}", format!("{result:?}").yellow());
                             }
                         }
                         Err(e) => {
@@ -95,7 +95,7 @@ pub fn repl(verbosity: u8) {
                     }
                 }
             }
-            Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
+            Err(ReadlineError::Interrupted | ReadlineError::Eof) => {
                 println!("{}", "`;exit` to exit".cyan());
             }
             Err(err) => {

@@ -77,7 +77,7 @@ pub struct SymTable<T: Clone + Display + Debug> {
 }
 impl Default for SymTable<Value> {
     fn default() -> Self {
-        let mut v = SymTable {
+        let mut v = Self {
             frames: VecDeque::new(),
         };
         let const_frame = v.add_frame(None, FrameType::Constants);
@@ -92,6 +92,7 @@ impl Default for SymTable<Value> {
     }
 }
 impl SymTable<Value> {
+    #[must_use]
     pub fn heap_to_string(&self) -> String {
         self.frames
             .iter()
@@ -107,7 +108,10 @@ impl SymTable<Value> {
             .join("\n-------\n")
     }
     pub fn pop_frame(&mut self) -> ZResult<Option<Value>> {
-        for content in self.frames.front_mut().unwrap().defer.clone() {
+        let Some(first_frame) = self.frames.front_mut() else {
+            return Ok(None)
+        };
+        for content in first_frame.defer.clone() {
             if let Value::Return(v) = content.interpret_expr(self)? {
                 self.frames.pop_front();
                 return Ok(Some(*v));
@@ -129,7 +133,7 @@ impl SymTable<Value> {
 
 impl Default for SymTable<Type<Ast>> {
     fn default() -> Self {
-        let mut v = SymTable {
+        let mut v = Self {
             frames: VecDeque::new(),
         };
         let const_frame = v.add_frame(None, FrameType::Constants);
@@ -183,7 +187,7 @@ impl<T: Clone + Display + Debug> SymTable<T> {
 
     pub fn set_val(&mut self, name: &SmolStr, value: &T, span: &Span) -> ZResult<()> {
         let mut only_consts = false;
-        for frame in self.frames.iter_mut() {
+        for frame in &mut self.frames {
             if (only_consts && frame.ty == FrameType::Constants) || frame.heap.contains_key(name) {
                 if frame.ty == FrameType::Constants {
                     todo!("Err trying to change const value")
@@ -200,9 +204,13 @@ impl<T: Clone + Display + Debug> SymTable<T> {
     }
     pub fn get_val(&mut self, name: &SmolStr, span: impl GetSpan) -> ZResult<T> {
         let mut only_consts = false;
-        for frame in self.frames.iter() {
+        for frame in &self.frames {
             if (only_consts && frame.ty == FrameType::Constants) || frame.heap.contains_key(name) {
-                return Ok(frame.heap.get(name).unwrap().to_owned());
+                return Ok(frame
+                    .heap
+                    .get(name)
+                    .unwrap_or_else(|| unreachable!())
+                    .to_owned());
             }
             if frame.ty == FrameType::Function {
                 only_consts = true;
@@ -211,7 +219,10 @@ impl<T: Clone + Display + Debug> SymTable<T> {
         Err(ZError::error_3_0(name.to_owned()).with_span(span))
     }
     pub fn delete_val(&mut self, name: &SmolStr, span: impl GetSpan) -> ZResult<T> {
-        if let Some(v) = self.frames.front_mut().unwrap().heap.remove(name) {
+        let Some(first_frame) = self.frames.front_mut() else {
+            return Err(ZError::error_3_0(name.to_owned()).with_span(span))
+        };
+        if let Some(v) = first_frame.heap.remove(name) {
             Ok(v)
         } else {
             Err(ZError::error_3_0(name.to_owned()).with_span(span))

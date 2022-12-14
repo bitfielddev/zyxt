@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use itertools::Either;
 use tracing::{debug, trace};
 
@@ -59,8 +61,8 @@ impl Buffer {
             };
             let ele = Ast::Class(Class {
                 is_struct: kwd == Keyword::Struct,
-                implementations: Default::default(),
-                inst_fields: Default::default(), // TODO
+                implementations: HashMap::default(),
+                inst_fields: HashMap::default(), // TODO
                 content,
                 args,
             });
@@ -69,7 +71,7 @@ impl Buffer {
                 slice: vec![Either::Left(ele)],
                 range: start..self.next_cursor_pos(),
             };
-            self.splice_buffer(buffer_window)
+            self.splice_buffer(buffer_window);
         }
         Ok(())
     }

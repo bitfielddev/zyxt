@@ -11,7 +11,7 @@ use crate::{
 
 #[tracing::instrument(skip_all)]
 pub fn lex_number(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
-    let mut raw = "".to_string();
+    let mut raw = String::new();
     let init_pos = iter.peek().unwrap().1;
     let mut dotted = false;
     while let Some((char, pos)) = iter.peek() {

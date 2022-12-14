@@ -41,16 +41,14 @@ impl Buffer {
                 } else {
                     debug!(pos = ?selected.span(), "Expression not in {{}} detected");
                     (
-                        self.rest_incl_curr()
-                            .with_as_buffer(&|buffer| buffer.parse_as_expr())?,
+                        self.rest_incl_curr().with_as_buffer(&Self::parse_as_expr)?,
                         self.content.len(),
                     )
                 }
             } else {
                 debug!(pos = ?selected.span(), "Block not in {{}} detected");
                 (
-                    self.rest_incl_curr()
-                        .with_as_buffer(&|buffer| buffer.parse_as_expr())?,
+                    self.rest_incl_curr().with_as_buffer(&Self::parse_as_expr)?,
                     self.content.len(),
                 )
             };

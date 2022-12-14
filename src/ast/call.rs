@@ -7,7 +7,7 @@ use crate::{
     primitives::UNIT_T,
     types::{
         interpreter_data::{FrameData, FrameType},
-        position::{GetSpan, Span},
+        position::{GetSpan, Position, Span},
         typeobj::{TypeDefinition, TypeInstance},
         value::Proc,
     },
@@ -57,9 +57,7 @@ impl AstData for Call {
         let called_type = self.called.process(typelist)?;
         if let Ast::Procedure(procedure) = &mut *self.called {
             for (i, arg) in self.args.iter_mut().enumerate() {
-                if arg.process(typelist)?
-                    != procedure.args.get_mut(i).unwrap().ty.process(typelist)?
-                {
+                if arg.process(typelist)? != procedure.args[i].ty.process(typelist)? {
                     todo!("errors")
                 }
             }
@@ -75,10 +73,10 @@ impl AstData for Call {
         {
             Ok(match proc {
                 Proc::Builtin { signature, .. } => {
-                    let (mut arg_objs, ret): (Vec<Type<Value>>, Type<Value>) = signature[0]();
+                    let (arg_objs, ret): (Vec<Type<Value>>, Type<Value>) = signature[0]();
                     for (i, arg) in self.args.iter_mut().enumerate() {
                         let arg = arg.process(typelist)?;
-                        let arg_req = arg_objs.get_mut(i).unwrap().as_type_element();
+                        let arg_req = arg_objs[i].as_type_element();
                         if arg != arg_req && arg != Type::Any && arg_req != Type::Any {
                             todo!("{:#?} != {:#?}", arg, arg_req)
                         }
@@ -91,9 +89,7 @@ impl AstData for Call {
                     ..
                 } => {
                     for (i, arg) in self.args.iter_mut().enumerate() {
-                        if arg.process(typelist)?
-                            != arg_objs.get_mut(i).unwrap().ty.process(typelist)?
-                        {
+                        if arg.process(typelist)? != arg_objs[i].ty.process(typelist)? {
                             todo!("errors")
                         }
                     }
@@ -181,9 +177,9 @@ impl AstData for Call {
                     let mut processed_args = HashMap::new();
                     for (cursor, Argument { name, default, .. }) in args.iter().enumerate() {
                         let input_arg = if self.args.len() > cursor {
-                            self.args.get(cursor).unwrap()
+                            &self.args[cursor]
                         } else {
-                            default.as_ref().unwrap()
+                            default.as_ref().unwrap_or_else(|| unreachable!())
                         };
                         processed_args
                             .insert(name.name.to_owned(), input_arg.interpret_expr(i_data)?);
@@ -191,8 +187,8 @@ impl AstData for Call {
                     i_data
                         .add_frame(
                             Some(FrameData {
-                                pos: Default::default(), // TODO
-                                raw_call: Default::default(),
+                                pos: Position::default(), // TODO
+                                raw_call: String::default(),
                                 args: processed_args.to_owned(),
                             }),
                             if is_fn {

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use itertools::Either;
 use num::BigInt;
 use tracing::{debug, trace};
@@ -52,9 +54,7 @@ impl Buffer {
                 Some(TokenType::DotOpr) => {
                     let dot_span = selected.span;
                     debug!(pos = ?dot_span, "Parsing dot operator");
-                    let catcher = if let Some((catcher, _)) = &mut catcher {
-                        catcher
-                    } else {
+                    let Some((catcher, _)) = &mut catcher else {
                         return Err(ZError::error_2_1_0(String::from(".")).with_span(dot_span));
                     };
                     let selected = match self.next_or_err()? {
@@ -66,7 +66,7 @@ impl Buffer {
                             }
                         }
                         Either::Right(c) => {
-                            if let Some(ident) = Buffer::parse_ident(&c) {
+                            if let Some(ident) = Self::parse_ident(&c) {
                                 ident
                             } else {
                                 todo!("get item")
@@ -86,13 +86,13 @@ impl Buffer {
                 Some(TokenType::Ident) => {
                     debug!(pos = ?selected.span, "Parsing ident");
                     clear_catcher(self, &mut catcher, false);
-                    let ident = Buffer::parse_ident(&selected).unwrap().as_variant();
+                    let ident = Self::parse_ident(&selected).unwrap().as_variant();
                     catcher = Some((ident, self.cursor));
-                    trace!(catcher = ?catcher.as_ref().unwrap().0)
+                    trace!(catcher = ?catcher.as_ref().unwrap().0);
                 }
-                Some(TokenType::LiteralNumber)
-                | Some(TokenType::LiteralMisc)
-                | Some(TokenType::LiteralString) => {
+                Some(
+                    TokenType::LiteralNumber | TokenType::LiteralMisc | TokenType::LiteralString,
+                ) => {
                     clear_catcher(self, &mut catcher, false);
                     catcher = Some((
                         Ast::Literal(Literal {
@@ -131,7 +131,7 @@ impl Buffer {
                         }),
                         self.cursor,
                     ));
-                    trace!(catcher = ?catcher.as_ref().unwrap().0)
+                    trace!(catcher = ?catcher.as_ref().unwrap().0);
                 }
                 Some(TokenType::CloseParen) => {
                     return Err(ZError::error_2_0_2(')'.to_string()).with_span(&selected))
@@ -139,9 +139,7 @@ impl Buffer {
                 Some(TokenType::OpenParen) => {
                     let open_paren_span = selected.span;
                     debug!(pos = ?open_paren_span, "Parsing call");
-                    let catcher = if let Some((catcher, _)) = &mut catcher {
-                        catcher
-                    } else {
+                    let Some((catcher, _)) = &mut catcher else {
                         return Err(
                             ZError::error_2_1_0(String::from("(")).with_span(open_paren_span)
                         );
@@ -161,9 +159,9 @@ impl Buffer {
                         called: catcher.to_owned().into(),
                         paren_spans: Some((open_paren_span, close_paren_span)),
                         args,
-                        kwargs: Default::default(),
+                        kwargs: HashMap::default(),
                     });
-                    trace!(?catcher)
+                    trace!(?catcher);
                 }
                 _ => clear_catcher(self, &mut catcher, false),
             }

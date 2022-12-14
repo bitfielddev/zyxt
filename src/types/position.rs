@@ -22,7 +22,7 @@ pub struct Span {
 
 impl Default for Position {
     fn default() -> Self {
-        Position {
+        Self {
             filename: None,
             line: 1.try_into().unwrap(),
             column: 1.try_into().unwrap(),
@@ -35,10 +35,7 @@ impl Display for Position {
         write!(
             f,
             "{}:{}:{}",
-            self.filename
-                .as_ref()
-                .map(|a| a.to_string())
-                .unwrap_or_else(|| "[unknown]".into()),
+            self.filename.as_deref().map_or("[unknown]", |a| &**a),
             self.line,
             self.column
         )
@@ -52,8 +49,9 @@ impl Debug for Position {
 }
 
 impl Position {
-    pub fn end_pos(&self, string: &str) -> Position {
-        Position {
+    #[must_use]
+    pub fn end_pos(&self, string: &str) -> Self {
+        Self {
             filename: self.filename.to_owned(),
             line: self.line + string.chars().filter(|c| *c == '\n').count(),
             column: if string.contains('\n') {
@@ -68,7 +66,7 @@ impl Position {
             self.line += 1;
             self.column = 1;
         } else {
-            self.column += 1
+            self.column += 1;
         }
     }
 }
@@ -87,8 +85,9 @@ impl PartialOrd for Position {
 }
 
 impl Span {
+    #[must_use]
     pub fn new(pos: Position, raw: &str) -> Self {
-        Span {
+        Self {
             end_pos: pos.end_pos(raw),
             start_pos: pos,
         }
@@ -100,14 +99,10 @@ pub trait GetSpan: Clone {
     fn merge_span(&self, other: impl GetSpan) -> Option<Span> {
         let opt_span1 = self.span();
         let opt_span2 = other.span();
-        let span1 = if let Some(o) = &opt_span1 {
-            o
-        } else {
+        let Some(span1) = &opt_span1 else {
             return opt_span2;
         };
-        let span2 = if let Some(o) = &opt_span2 {
-            o
-        } else {
+        let Some(span2) = &opt_span2 else {
             return opt_span1;
         };
         if span1.start_pos.filename != span2.start_pos.filename {
@@ -130,8 +125,8 @@ pub trait GetSpan: Clone {
 impl<T: GetSpan, U: GetSpan> GetSpan for Either<T, U> {
     fn span(&self) -> Option<Span> {
         match self {
-            Either::Left(t) => t.span(),
-            Either::Right(u) => u.span(),
+            Self::Left(t) => t.span(),
+            Self::Right(u) => u.span(),
         }
     }
 }
@@ -152,7 +147,7 @@ impl<T: GetSpan> GetSpan for &T {
 }
 impl<T: GetSpan> GetSpan for Option<T> {
     fn span(&self) -> Option<Span> {
-        self.as_ref().and_then(|a| a.span())
+        self.as_ref().and_then(GetSpan::span)
     }
 }
 impl<T: GetSpan> GetSpan for &[T] {
@@ -161,10 +156,10 @@ impl<T: GetSpan> GetSpan for &[T] {
         for i in self.iter() {
             if let Some(s) = &mut s {
                 if let Some(is) = s {
-                    *s = is.merge_span(i)
+                    *s = is.merge_span(i);
                 }
             } else {
-                s = Some(i.span())
+                s = Some(i.span());
             }
         }
         s.unwrap_or(None)

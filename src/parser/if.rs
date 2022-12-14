@@ -16,18 +16,15 @@ impl Buffer {
     pub fn parse_if(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
-            let kwd = if let Either::Right(Token {
+            let Either::Right(Token {
                 ty: Some(TokenType::Keyword(kwd)),
                 ..
-            }) = selected
-            {
-                kwd
-            } else {
+            }) = selected else {
                 continue;
             };
             if [Keyword::Elif, Keyword::Else].contains(&kwd) {
                 return Err(ZError::error_2_1_9(
-                    if kwd == Keyword::Elif { "elif" } else { "else" }.to_string(),
+                    if kwd == Keyword::Elif { "elif" } else { "else" }.to_owned(),
                 ));
             } else if kwd != Keyword::If {
                 continue;
@@ -82,7 +79,7 @@ impl Buffer {
                     selected = self.next_or_err()?;
                     Some(
                         self.window(start..self.cursor)
-                            .with_as_buffer(&|buf| buf.parse_as_expr())?,
+                            .with_as_buffer(&Self::parse_as_expr)?,
                     )
                 };
                 let block = if let Either::Left(Ast::Block(block)) = &selected {
@@ -105,7 +102,7 @@ impl Buffer {
                 slice: vec![Either::Left(ele)],
                 range: start..self.next_cursor_pos(),
             };
-            self.splice_buffer(buffer_window)
+            self.splice_buffer(buffer_window);
         }
         Ok(())
     }

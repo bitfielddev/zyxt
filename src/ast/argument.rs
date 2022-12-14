@@ -45,7 +45,7 @@ impl Display for Argument {
 
 impl Argument {
     pub fn desugar(&mut self) -> ZResult<()> {
-        self.default = self.default.as_ref().map(|e| e.desugared()).transpose()?;
+        self.default = self.default.as_ref().map(AstData::desugared).transpose()?;
         Ok(())
     }
 }

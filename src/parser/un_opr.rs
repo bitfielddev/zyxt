@@ -16,20 +16,17 @@ impl Buffer {
     pub fn parse_un_opr(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
-            let opr_type = if let Either::Right(Token {
+            let Either::Right(Token {
                 ty: Some(TokenType::UnaryOpr(opr_type)),
                 ..
-            }) = selected
-            {
-                opr_type
-            } else {
+            }) = selected else {
                 continue;
             };
             let opr_span = selected.span();
             debug!(pos = ?opr_span);
             let operand = self
                 .rest_incl_curr()
-                .with_as_buffer(&|buf| buf.parse_as_expr())?
+                .with_as_buffer(&Self::parse_as_expr)?
                 .into();
             let ele = Ast::UnaryOpr(UnaryOpr {
                 ty: opr_type,

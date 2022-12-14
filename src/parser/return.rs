@@ -29,8 +29,7 @@ impl Buffer {
             let kwd_span = selected.span();
             debug!(pos = ?kwd_span, "Parsing return");
             let value = if self.next().is_some() {
-                self.rest_incl_curr()
-                    .with_as_buffer(&|buf| buf.parse_as_expr())?
+                self.rest_incl_curr().with_as_buffer(&Self::parse_as_expr)?
             } else {
                 UNIT_T.as_type().as_type_element().as_literal()
             }
@@ -42,7 +41,7 @@ impl Buffer {
                 slice: vec![Either::Left(ele)],
                 range: self.cursor - 1..self.content.len(),
             };
-            self.splice_buffer(buffer_window)
+            self.splice_buffer(buffer_window);
         }
         Ok(())
     }

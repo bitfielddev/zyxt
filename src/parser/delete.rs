@@ -53,7 +53,7 @@ impl Buffer {
                 slice: vec![Either::Left(ele)],
                 range: start..self.content.len(),
             };
-            self.splice_buffer(buffer_window)
+            self.splice_buffer(buffer_window);
         }
         Ok(())
     }

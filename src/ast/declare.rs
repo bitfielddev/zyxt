@@ -62,7 +62,7 @@ impl AstData for Declare {
                 }
                 .as_variant();
                 new_content.process(typelist)?;
-                *self = Declare {
+                *self = Self {
                     ty: self.ty.to_owned(),
                     content: new_content.into(),
                     variable: self.variable.to_owned(),
@@ -84,7 +84,7 @@ impl AstData for Declare {
             .as_ref()
             .map(|a| a.desugared())
             .transpose()?
-            .map(|a| a.into());
+            .map(Into::into);
         Ok(new_self.as_variant())
     }
 

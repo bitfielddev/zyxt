@@ -59,14 +59,14 @@ impl<T: Clone + PartialEq + Debug> Debug for TypeDefinition<T> {
 impl<T: Clone + PartialEq + Debug> Debug for Type<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Type::Instance(inst) => {
+            Self::Instance(inst) => {
                 write!(f, "{inst:?}")
             }
-            Type::Definition(def) => {
+            Self::Definition(def) => {
                 write!(f, "{def:?}")
             }
-            Type::Any => write!(f, "_any"),
-            Type::Return(t) => <Self as Debug>::fmt(t, f),
+            Self::Any => write!(f, "_any"),
+            Self::Return(t) => <Self as Debug>::fmt(t, f),
         }
     }
 }
@@ -100,10 +100,10 @@ impl<T: Clone + PartialEq + Debug> Display for Type<T> {
             f,
             "{}",
             match self {
-                Type::Instance(inst) => inst.to_string(),
-                Type::Definition(def) => def.to_string(),
-                Type::Any => "_any".into(),
-                Type::Return(ty) => ty.to_string(),
+                Self::Instance(inst) => inst.to_string(),
+                Self::Definition(def) => def.to_string(),
+                Self::Any => "_any".into(),
+                Self::Return(ty) => ty.to_string(),
             }
         )
     }
@@ -137,11 +137,13 @@ impl TypeDefinition<Value> {
 }
 
 impl<T: Clone + PartialEq + Debug> TypeDefinition<T> {
+    #[must_use]
     pub fn as_type(&self) -> Type<T> {
         Type::Definition(self.to_owned())
     }
 }
 impl<T: Clone + PartialEq + Debug> TypeInstance<T> {
+    #[must_use]
     pub fn as_type(&self) -> Type<T> {
         Type::Instance(self.to_owned())
     }
@@ -190,15 +192,17 @@ impl TypeInstance<Ast> {
     }
 }
 impl TypeInstance<Value> {
+    #[must_use]
     pub fn as_type_element(&self) -> TypeInstance<Ast> {
         TypeInstance {
             name: self.name.to_owned(),
-            type_args: self.type_args.iter().map(|a| a.as_type_element()).collect(),
+            type_args: self.type_args.iter().map(Type::as_type_element).collect(),
             implementation: self.implementation.as_type_element(),
         }
     }
 }
 impl TypeDefinition<Value> {
+    #[must_use]
     pub fn as_type_element(&self) -> TypeDefinition<Ast> {
         TypeDefinition {
             inst_name: self.inst_name.to_owned(),
@@ -227,42 +231,46 @@ impl TypeDefinition<Value> {
 }
 
 impl Type<Ast> {
+    #[must_use]
     pub fn as_literal(&self) -> Ast {
         Value::PreType(self.to_owned()).as_element()
     }
+    #[must_use]
     pub fn implementation(&self) -> &TypeDefinition<Ast> {
         match &self {
-            Type::Instance(TypeInstance { implementation, .. }) => implementation,
-            Type::Definition { .. } => &TYPE_T_ELE,
-            Type::Any => &UNIT_T_ELE,
-            Type::Return(ty) => ty.implementation(),
+            Self::Instance(TypeInstance { implementation, .. }) => implementation,
+            Self::Definition { .. } => &TYPE_T_ELE,
+            Self::Any => &UNIT_T_ELE,
+            Self::Return(ty) => ty.implementation(),
         }
     }
     pub fn as_type_value(&self, i_data: &mut SymTable<Value>) -> ZResult<Type<Value>> {
         Ok(match &self {
-            Type::Instance(inst) => Type::Instance(inst.as_type_value(i_data)?),
-            Type::Definition(def) => Type::Definition(def.as_type_value(i_data)?),
-            Type::Any => Type::Any,
-            Type::Return(t) => Type::Return(Box::new(t.as_type_value(i_data)?)),
+            Self::Instance(inst) => Type::Instance(inst.as_type_value(i_data)?),
+            Self::Definition(def) => Type::Definition(def.as_type_value(i_data)?),
+            Self::Any => Type::Any,
+            Self::Return(t) => Type::Return(Box::new(t.as_type_value(i_data)?)),
         })
     }
 }
 
 impl Type<Value> {
+    #[must_use]
     pub fn implementation(&self) -> &TypeDefinition<Value> {
         match &self {
-            Type::Instance(TypeInstance { implementation, .. }) => implementation,
-            Type::Definition { .. } => &TYPE_T,
-            Type::Any => &UNIT_T,
-            Type::Return(ty) => ty.implementation(),
+            Self::Instance(TypeInstance { implementation, .. }) => implementation,
+            Self::Definition { .. } => &TYPE_T,
+            Self::Any => &UNIT_T,
+            Self::Return(ty) => ty.implementation(),
         }
     }
+    #[must_use]
     pub fn as_type_element(&self) -> Type<Ast> {
         match &self {
-            Type::Instance(inst) => Type::Instance(inst.as_type_element()),
-            Type::Definition(def) => Type::Definition(def.as_type_element()),
-            Type::Any => Type::Any,
-            Type::Return(t) => Type::Return(Box::new(t.as_type_element())),
+            Self::Instance(inst) => Type::Instance(inst.as_type_element()),
+            Self::Definition(def) => Type::Definition(def.as_type_element()),
+            Self::Any => Type::Any,
+            Self::Return(t) => Type::Return(Box::new(t.as_type_element())),
         }
     }
 }

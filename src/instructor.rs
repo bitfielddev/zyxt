@@ -8,10 +8,10 @@ pub fn gen_instructions(
     mut input: Vec<Ast>,
     typelist: &mut SymTable<Type<Ast>>,
 ) -> ZResult<Vec<Ast>> {
-    for ele in input.iter_mut() {
+    for ele in &mut input {
         *ele = ele.desugared()?;
     }
-    for ele in input.iter_mut() {
+    for ele in &mut input {
         ele.process(typelist)?;
     }
     Ok(input)

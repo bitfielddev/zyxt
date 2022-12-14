@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use itertools::Either;
 use tracing::{debug, trace};
 
@@ -43,9 +45,9 @@ impl Buffer {
                     debug!(pos = ?selected.span(), "Comma detected");
                     args.push(
                         self.window(arg_start..self.cursor)
-                            .with_as_buffer(&|buf| buf.parse_as_expr())?,
+                            .with_as_buffer(&Self::parse_as_expr)?,
                     );
-                    arg_start = self.cursor + 1
+                    arg_start = self.cursor + 1;
                 }
             }
             if matches!(
@@ -59,20 +61,20 @@ impl Buffer {
             }
             args.push(
                 self.window(arg_start..self.cursor)
-                    .with_as_buffer(&|buf| buf.parse_as_expr())?,
+                    .with_as_buffer(&Self::parse_as_expr)?,
             );
             let ele = Ast::Call(Call {
                 called: function.into(),
                 paren_spans: None,
                 args,
-                kwargs: Default::default(),
+                kwargs: HashMap::default(),
             });
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
                 range: start..self.content.len(),
             };
-            self.splice_buffer(buffer_window)
+            self.splice_buffer(buffer_window);
         }
         Ok(())
     }
