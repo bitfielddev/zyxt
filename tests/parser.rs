@@ -3,8 +3,8 @@ use std::sync::Arc;
 use once_cell::sync::Lazy;
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
-use zyxt::types::{
-    element::{
+use zyxt::{
+    ast::{
         binary_opr::BinaryOpr,
         block::Block,
         call::Call,
@@ -13,7 +13,6 @@ use zyxt::types::{
         defer::Defer,
         delete::Delete,
         ident::Ident,
-        literal::Literal,
         preprocess::Preprocess,
         procedure::{Argument, Procedure},
         r#if::{Condition, If},
@@ -22,10 +21,11 @@ use zyxt::types::{
         unary_opr::UnaryOpr,
         Element,
     },
-    position::{Position, Span},
-    token::{Flag, OprType},
-    typeobj::unit_t::UNIT_T,
-    value::Value,
+    primitives::UNIT_T,
+    types::{
+        position::{Position, Span},
+        token::{Flag, OprType},
+    },
 };
 
 static FILENAME_ARC: Lazy<Arc<SmolStr>> = Lazy::new(|| Arc::new("".into()));
@@ -86,13 +86,13 @@ fn assignment_bin() {
     assert_eq!(
         ast[0],
         Element::Set(Set {
-            variable: ident!(1, 1, "x").into(),
+            variable: ident!(1, 1, "x"),
             eq_span: Some(span!(1, 3, "+=")),
             content: Element::BinaryOpr(BinaryOpr {
                 ty: OprType::Add,
                 opr_span: None,
-                operand1: ident!(1, 1, "x").into(),
-                operand2: ident!(1, 6, "y").into()
+                operand1: ident!(1, 1, "x"),
+                operand2: ident!(1, 6, "y")
             })
             .into(),
         })
@@ -187,7 +187,7 @@ fn struct_no_content() {
             content: None,
             args: Some(vec![Argument {
                 name: ident!(notvar 1, 1, "x"),
-                ty: ident!(1, 11, "i32").into(),
+                ty: ident!(1, 11, "i32"),
                 default: None
             }])
         })

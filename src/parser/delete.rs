@@ -2,9 +2,9 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
+    ast::{delete::Delete, ident::Ident, unary_opr::UnaryOpr, Element},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{delete::Delete, ident::Ident, unary_opr::UnaryOpr, Element},
         errors::ZResult,
         position::GetSpan,
         token::{Keyword, OprType, Token, TokenType},

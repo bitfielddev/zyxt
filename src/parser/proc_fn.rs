@@ -2,13 +2,13 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
+    ast::{
+        block::Block,
+        procedure::{Argument, Procedure},
+        Element,
+    },
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{
-            block::Block,
-            procedure::{Argument, Procedure},
-            Element,
-        },
         errors::ZResult,
         position::GetSpan,
         token::{Keyword, Token, TokenType},

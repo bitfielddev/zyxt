@@ -8,11 +8,10 @@ use rustyline::{error::ReadlineError, Editor};
 use smol_str::SmolStr;
 
 use crate::{
+    ast::{Element, ElementData},
     compile,
-    types::{
-        element::ElementData, interpreter_data::InterpreterData, printer::StdIoPrint, value::Value,
-    },
-    Element, Type, ZError,
+    types::{interpreter_data::InterpreterData, printer::StdIoPrint, value::Value},
+    Type, ZError,
 };
 
 pub fn repl(verbosity: u8) {

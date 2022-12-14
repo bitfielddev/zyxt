@@ -1,10 +1,6 @@
 use crate::{
-    types::{
-        element::{Element, ElementData},
-        interpreter_data::InterpreterData,
-        printer::Print,
-        typeobj::Type,
-    },
+    ast::{Element, ElementData},
+    types::{interpreter_data::InterpreterData, printer::Print, typeobj::Type},
     ZResult,
 };
 

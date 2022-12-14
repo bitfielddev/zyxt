@@ -5,11 +5,9 @@ use color_eyre::config::HookBuilder;
 use itertools::Either;
 use tracing_subscriber::EnvFilter;
 use zyxt::{
+    ast::Element,
     repl,
-    types::{
-        element::Element, interpreter_data::InterpreterData, printer::StdIoPrint, typeobj::Type,
-        value::Value,
-    },
+    types::{interpreter_data::InterpreterData, printer::StdIoPrint, typeobj::Type, value::Value},
 };
 
 #[derive(Parser)]

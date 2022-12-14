@@ -2,9 +2,9 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
+    ast::{declare::Declare, Element},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{declare::Declare, Element},
         errors::{ZError, ZResult},
         position::GetSpan,
         token::{Token, TokenType},

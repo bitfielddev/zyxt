@@ -3,9 +3,9 @@ use num::BigInt;
 use tracing::{debug, trace};
 
 use crate::{
+    ast::{call::Call, ident::Ident, literal::Literal, Element, ElementData},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{call::Call, ident::Ident, literal::Literal, Element, ElementData},
         errors::{ZError, ZResult},
         position::GetSpan,
         token::{Token, TokenType},

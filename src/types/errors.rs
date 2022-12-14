@@ -10,9 +10,9 @@ use owo_colors::OwoColorize;
 use tracing::debug;
 
 use crate::{
+    ast::{Element, ElementData},
     file_importer::get_input,
     types::{
-        element::{Element, ElementData},
         position::{GetSpan, Span},
         printer::Print,
         token::Keyword,

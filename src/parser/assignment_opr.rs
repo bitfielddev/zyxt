@@ -2,9 +2,9 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
+    ast::{binary_opr::BinaryOpr, set::Set, Element, ElementData},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{binary_opr::BinaryOpr, set::Set, Element, ElementData},
         errors::ZResult,
         position::GetSpan,
         token::{Token, TokenType},

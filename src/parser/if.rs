@@ -2,12 +2,12 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
+    ast::{
+        r#if::{Condition, If},
+        Element,
+    },
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        element::{
-            r#if::{Condition, If},
-            Element,
-        },
         errors::{ZError, ZResult},
         position::GetSpan,
         token::{Keyword, Token, TokenType},

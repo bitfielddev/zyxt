@@ -1,27 +1,3 @@
-pub mod bool_t;
-pub mod f16_t;
-pub mod f32_t;
-pub mod f64_t;
-pub mod i128_t;
-pub mod i16_t;
-pub mod i32_t;
-pub mod i64_t;
-pub mod i8_t;
-pub mod ibig_t;
-pub mod isize_t;
-pub mod macros;
-pub mod proc_t;
-pub mod str_t;
-pub mod type_t;
-pub mod u128_t;
-pub mod u16_t;
-pub mod u32_t;
-pub mod u64_t;
-pub mod u8_t;
-pub mod ubig_t;
-pub mod unit_t;
-pub mod usize_t;
-
 use std::{
     collections::HashMap,
     fmt::{Debug, Display, Formatter},
@@ -31,14 +7,9 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::{
-    types::{
-        element::{procedure::Argument, ElementData},
-        typeobj::{
-            type_t::{TYPE_T, TYPE_T_ELE},
-            unit_t::{UNIT_T, UNIT_T_ELE},
-        },
-    },
-    Element, InterpreterData, Print, Value, ZResult,
+    ast::{procedure::Argument, Element, ElementData},
+    primitives::{TYPE_T, TYPE_T_ELE, UNIT_T, UNIT_T_ELE},
+    InterpreterData, Print, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq)]

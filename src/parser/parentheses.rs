@@ -2,11 +2,9 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
+    ast::ElementData,
     parser::buffer::Buffer,
-    types::{
-        element::ElementData,
-        token::{TokenCategory, TokenType},
-    },
+    types::token::{TokenCategory, TokenType},
     ZResult,
 };
 

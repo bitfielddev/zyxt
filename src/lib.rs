@@ -1,11 +1,13 @@
 #![feature(box_patterns)]
 #![feature(iterator_try_reduce)]
 
+pub mod ast;
 pub mod file_importer;
 pub mod instructor;
 pub mod interpreter;
 pub mod lexer;
 pub mod parser;
+pub mod primitives;
 pub mod repl;
 pub mod types;
 
@@ -20,12 +22,13 @@ use types::{
 };
 
 use crate::{
+    ast::Element,
     file_importer::{import_file, register_input},
     instructor::gen_instructions,
     interpreter::interpret_asts,
     lexer::lex,
     parser::parse_token_list,
-    types::{element::Element, interpreter_data::InterpreterData, typeobj::Type, value::Value},
+    types::{interpreter_data::InterpreterData, typeobj::Type, value::Value},
 };
 
 pub fn compile(

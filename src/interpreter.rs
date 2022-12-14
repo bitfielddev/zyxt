@@ -1,11 +1,6 @@
 use crate::{
-    types::{
-        element::{block::Block, Element},
-        interpreter_data::InterpreterData,
-        position::Span,
-        printer::Print,
-        value::Value,
-    },
+    ast::{block::Block, Element},
+    types::{interpreter_data::InterpreterData, position::Span, printer::Print, value::Value},
     ZError, ZResult,
 };
 
