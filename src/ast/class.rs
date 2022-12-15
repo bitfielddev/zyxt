@@ -5,8 +5,8 @@ use smol_str::SmolStr;
 use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Declare, Ident},
     types::{
-        interpreter_data::FrameType,
         position::{GetSpan, Span},
+        sym_table::FrameType,
         token::Flag,
         typeobj::TypeDefinition,
     },
@@ -32,8 +32,8 @@ impl AstData for Class {
         Ast::Class(self.to_owned())
     }
 
-    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        typelist.add_frame(None, FrameType::Normal);
+    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+        ty_symt.add_frame(None, FrameType::Normal);
         for expr in &mut self
             .content
             .as_mut()
@@ -41,7 +41,7 @@ impl AstData for Class {
             .content
         {
             // TODO deal w unwrap
-            expr.process(typelist)?;
+            expr.process(ty_symt)?;
             if let Ast::Declare(Declare {
                 variable,
                 content,
@@ -78,22 +78,22 @@ impl AstData for Class {
             todo!("raise error here")
         }
         for item in self.implementations.values_mut() {
-            item.process(typelist)?;
+            item.process(ty_symt)?;
         }
         let new_inst_fields = self
             .inst_fields
             .iter_mut()
             .map(|(ident, (ty, default))| {
-                let ty = ty.process(typelist)?;
+                let ty = ty.process(ty_symt)?;
                 if let Some(default) = default {
-                    if ty != default.process(typelist)? {
+                    if ty != default.process(ty_symt)? {
                         todo!("raise error")
                     }
                 }
                 Ok((ident.to_owned(), (Box::new(ty), default.to_owned())))
             })
             .collect::<Result<HashMap<_, _>, _>>()?;
-        typelist.pop_frame();
+        ty_symt.pop_frame();
         Ok(Type::Definition(TypeDefinition {
             inst_name: None,
             name: Some(if self.is_struct { "struct" } else { "class" }.into()),
@@ -131,7 +131,7 @@ impl AstData for Class {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         Ok(Value::Type(Type::Definition(TypeDefinition {
             name: Some(if self.is_struct { "struct" } else { "class" }.into()),
             inst_name: None,
@@ -139,7 +139,7 @@ impl AstData for Class {
             implementations: self
                 .implementations
                 .iter()
-                .map(|(k, v)| Ok((k.to_owned(), v.interpret_expr(i_data)?)))
+                .map(|(k, v)| Ok((k.to_owned(), v.interpret_expr(val_symt)?)))
                 .collect::<Result<HashMap<_, _>, _>>()?,
             inst_fields: self
                 .inst_fields
@@ -148,13 +148,13 @@ impl AstData for Class {
                     Ok((
                         k.to_owned(),
                         (
-                            Box::new(if let Value::Type(value) = v1.interpret_expr(i_data)? {
+                            Box::new(if let Value::Type(value) = v1.interpret_expr(val_symt)? {
                                 value
                             } else {
                                 panic!()
                             }),
                             v2.to_owned()
-                                .map(|v2| v2.interpret_expr(i_data))
+                                .map(|v2| v2.interpret_expr(val_symt))
                                 .transpose()?,
                         ),
                     ))

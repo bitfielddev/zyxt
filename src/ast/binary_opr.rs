@@ -84,12 +84,12 @@ impl AstData for BinaryOpr {
         })
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         match self.ty {
             OprType::And => {
-                if let Value::Bool(b) = self.operand1.interpret_expr(i_data)? {
+                if let Value::Bool(b) = self.operand1.interpret_expr(val_symt)? {
                     if b {
-                        if let Value::Bool(b) = self.operand2.interpret_expr(i_data)? {
+                        if let Value::Bool(b) = self.operand2.interpret_expr(val_symt)? {
                             Ok(Value::Bool(b))
                         } else {
                             panic!()
@@ -102,10 +102,10 @@ impl AstData for BinaryOpr {
                 }
             }
             OprType::Or => {
-                if let Value::Bool(b) = self.operand1.interpret_expr(i_data)? {
+                if let Value::Bool(b) = self.operand1.interpret_expr(val_symt)? {
                     if b {
                         Ok(Value::Bool(true))
-                    } else if let Value::Bool(b) = self.operand2.interpret_expr(i_data)? {
+                    } else if let Value::Bool(b) = self.operand2.interpret_expr(val_symt)? {
                         Ok(Value::Bool(b))
                     } else {
                         panic!()

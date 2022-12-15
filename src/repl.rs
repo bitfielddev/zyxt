@@ -10,14 +10,14 @@ use smol_str::SmolStr;
 use crate::{
     ast::{Ast, AstData},
     compile,
-    types::{interpreter_data::SymTable, value::Value},
+    types::{sym_table::SymTable, value::Value},
     Type,
 };
 
 pub fn repl(verbosity: u8) -> Result<()> {
     let filename = SmolStr::from("[stdin]");
-    let mut typelist = SymTable::<Type<Ast>>::default();
-    let mut varlist = SymTable::<Value>::default();
+    let mut ty_symt = SymTable::<Type<Ast>>::default();
+    let mut val_symt = SymTable::<Value>::default();
     let mut rl = Editor::<()>::new()?;
     let mut history_path = home_dir().ok_or_else(|| eyre!("No home dir"))?;
     history_path.push(".zyxt_history");
@@ -46,7 +46,7 @@ pub fn repl(verbosity: u8) -> Result<()> {
                 rl.save_history(&*history_path.to_string_lossy())?;
                 if input.starts_with(';') {
                     match &*input {
-                        ";vars" => println!("{}", varlist.heap_to_string()),
+                        ";vars" => println!("{}", val_symt.heap_to_string()),
                         ";exit" => unreachable!(),
                         ";help" => {
                             println!("{}", "All commands start wih `;`".bold().yellow());
@@ -59,7 +59,7 @@ pub fn repl(verbosity: u8) -> Result<()> {
                     continue;
                 }
                 let instructions =
-                    match compile(&Either::Right((filename.to_owned(), input)), &mut typelist) {
+                    match compile(&Either::Right((filename.to_owned(), input)), &mut ty_symt) {
                         Ok(v) => v,
                         Err(e) => {
                             e.print();
@@ -74,10 +74,10 @@ pub fn repl(verbosity: u8) -> Result<()> {
                 for (i, instr) in instructions.into_iter().enumerate() {
                     match {
                         if verbosity == 0 {
-                            instr.interpret_expr(&mut varlist)
+                            instr.interpret_expr(&mut val_symt)
                         } else {
                             let interpret_start = Instant::now();
-                            let result = instr.interpret_expr(&mut varlist);
+                            let result = instr.interpret_expr(&mut val_symt);
                             let interpret_time = interpret_start.elapsed().as_micros();
                             println!("{}", format!("{interpret_time}\u{b5}s").dimmed().white());
                             result

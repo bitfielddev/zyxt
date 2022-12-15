@@ -30,11 +30,11 @@ impl AstData for Declare {
         Ast::Declare(self.to_owned())
     }
 
-    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         if !self.variable.is_pattern() {
             return Err(ZError::t006().with_span(&self.variable));
         }
-        let content_type = self.content.process(typelist)?;
+        let content_type = self.content.process(ty_symt)?;
         let ty = self
             .ty
             .as_ref()
@@ -56,7 +56,7 @@ impl AstData for Declare {
             return Err(ZError::t008().with_span(&self.variable));
         };
         if let Some(ty) = ty {
-            typelist.declare_val(name, &ty);
+            ty_symt.declare_val(name, &ty);
             if content_type != ty {
                 let mut new_content = BinaryOpr {
                     ty: OprType::TypeCast,
@@ -65,7 +65,7 @@ impl AstData for Declare {
                     operand2: ty.as_literal().into(),
                 }
                 .as_variant();
-                new_content.process(typelist)?;
+                new_content.process(ty_symt)?;
                 *self = Self {
                     ty: self.ty.to_owned(),
                     content: new_content.into(),
@@ -75,7 +75,7 @@ impl AstData for Declare {
                 };
             }
         } else {
-            typelist.declare_val(name, &content_type);
+            ty_symt.declare_val(name, &content_type);
         }
         Ok(content_type)
     }
@@ -92,14 +92,14 @@ impl AstData for Declare {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
             unreachable!()
         };
-        let var = self.content.interpret_expr(i_data);
-        i_data.declare_val(name, &var.to_owned()?);
+        let var = self.content.interpret_expr(val_symt);
+        val_symt.declare_val(name, &var.to_owned()?);
         var
     }
 }

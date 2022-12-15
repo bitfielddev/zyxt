@@ -21,7 +21,7 @@ impl AstData for Return {
         Ast::Return(self.to_owned())
     }
 
-    fn process(&mut self, _typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(UNIT_T.as_type().as_type_element())
     }
 
@@ -33,7 +33,9 @@ impl AstData for Return {
         .as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
-        Ok(Value::Return(Box::new(self.value.interpret_expr(i_data)?)))
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+        Ok(Value::Return(Box::new(
+            self.value.interpret_expr(val_symt)?,
+        )))
     }
 }

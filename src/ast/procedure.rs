@@ -2,8 +2,8 @@ use crate::{
     ast::{argument::Argument, Ast, AstData, Block},
     primitives::{PROC_T, UNIT_T},
     types::{
-        interpreter_data::FrameType,
         position::{GetSpan, Span},
+        sym_table::FrameType,
         typeobj::TypeInstance,
         value::Proc,
     },
@@ -32,8 +32,8 @@ impl AstData for Procedure {
         Ast::Procedure(self.to_owned())
     }
 
-    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        typelist.add_frame(
+    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+        ty_symt.add_frame(
             None,
             if self.is_fn {
                 FrameType::Function
@@ -42,15 +42,15 @@ impl AstData for Procedure {
             },
         );
         let return_type = if let Some(ty) = &mut self.return_type {
-            ty.process(typelist)?
+            ty.process(ty_symt)?
         } else {
             UNIT_T.as_type().as_type_element()
         };
         for arg in &mut self.args {
-            let value = arg.ty.process(typelist)?;
-            typelist.declare_val(&arg.name.name, &value);
+            let value = arg.ty.process(ty_symt)?;
+            ty_symt.declare_val(&arg.name.name, &value);
         }
-        let (res, block_return_type) = self.content.block_type(typelist, false)?;
+        let (res, block_return_type) = self.content.block_type(ty_symt, false)?;
         if return_type == UNIT_T.get_instance().as_type_element() || block_return_type.is_none() {
             self.return_type = Some(res.as_literal().into());
         } else if let Some(block_return_type) = block_return_type {
@@ -59,7 +59,7 @@ impl AstData for Procedure {
                 // TODO span
             }
         }
-        typelist.pop_frame();
+        ty_symt.pop_frame();
         Ok(Type::Instance(TypeInstance {
             name: Some("proc".into()),
             //name: Some(if *is_fn { "fn" } else { "proc" }.into()),
@@ -88,7 +88,7 @@ impl AstData for Procedure {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         Ok(Value::Proc(Proc::Defined {
             is_fn: self.is_fn,
             args: self.args.to_owned(),
@@ -96,7 +96,7 @@ impl AstData for Procedure {
                 .return_type
                 .as_ref()
                 .unwrap_or_else(|| unreachable!())
-                .interpret_expr(i_data)?
+                .interpret_expr(val_symt)?
             {
                 value
             } else {

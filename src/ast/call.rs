@@ -7,8 +7,8 @@ use crate::{
     errors::ZError,
     primitives::UNIT_T,
     types::{
-        interpreter_data::{FrameData, FrameType},
         position::{GetSpan, Position, Span},
+        sym_table::{FrameData, FrameType},
         typeobj::{TypeDefinition, TypeInstance},
         value::Proc,
     },
@@ -37,7 +37,7 @@ impl AstData for Call {
     fn as_variant(&self) -> Ast {
         Ast::Call(self.to_owned())
     }
-    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         if let Ast::Ident(Ident {
             name,
             parent:
@@ -50,22 +50,22 @@ impl AstData for Call {
             if &**name == "out" && &**parent_name == "ter" {
                 self.args
                     .iter_mut()
-                    .map(|a| a.process(typelist))
+                    .map(|a| a.process(ty_symt))
                     .collect::<ZResult<Vec<_>>>()?;
                 return Ok(UNIT_T.get_instance().as_type_element());
             }
         }
-        let called_type = self.called.process(typelist)?;
+        let called_type = self.called.process(ty_symt)?;
         if let Ast::Procedure(procedure) = &mut *self.called {
             for (i, arg) in self.args.iter_mut().enumerate() {
-                let expected = procedure.args[i].ty.process(typelist)?;
-                let actual = arg.process(typelist)?;
+                let expected = procedure.args[i].ty.process(ty_symt)?;
+                let actual = arg.process(ty_symt)?;
                 if expected != actual {
                     return Err(ZError::t004(&expected, &actual).with_span(&*self));
                 }
             }
             if let Some(ty) = &mut procedure.return_type {
-                ty.process(typelist)
+                ty.process(ty_symt)
             } else {
                 Ok(UNIT_T.as_type_element().as_type())
             }
@@ -78,7 +78,7 @@ impl AstData for Call {
                 Proc::Builtin { signature, .. } => {
                     let (arg_objs, ret): (Vec<Type<Value>>, Type<Value>) = signature[0]();
                     for (i, arg) in self.args.iter_mut().enumerate() {
-                        let actual = arg.process(typelist)?;
+                        let actual = arg.process(ty_symt)?;
                         let expected = arg_objs[i].as_type_element();
                         if actual != expected && actual != Type::Any && expected != Type::Any {
                             return Err(ZError::t004(&expected, &actual).with_span(&*self));
@@ -92,8 +92,8 @@ impl AstData for Call {
                     ..
                 } => {
                     for (i, arg) in self.args.iter_mut().enumerate() {
-                        let expected = arg_objs[i].ty.process(typelist)?;
-                        let actual = arg.process(typelist)?;
+                        let expected = arg_objs[i].ty.process(ty_symt)?;
+                        let actual = arg.process(ty_symt)?;
                         if expected != actual {
                             return Err(ZError::t004(&expected, &actual).with_span(&*self));
                         }
@@ -125,7 +125,7 @@ impl AstData for Call {
                 unreachable!()
             }
             .into();
-            self.process(typelist)
+            self.process(ty_symt)
         }
     }
 
@@ -134,7 +134,7 @@ impl AstData for Call {
         Ok(self.as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         if let Ast::Ident(Ident {
             name,
             parent:
@@ -148,7 +148,7 @@ impl AstData for Call {
                 let s = self
                     .args
                     .iter()
-                    .map(|arg| arg.interpret_expr(i_data))
+                    .map(|arg| arg.interpret_expr(val_symt))
                     .collect::<Result<Vec<_>, _>>()?
                     .into_iter()
                     .map(|v| v.to_string())
@@ -158,13 +158,13 @@ impl AstData for Call {
                 return Ok(Value::Unit);
             }
         }
-        if let Value::Proc(proc) = self.called.interpret_expr(i_data)? {
+        if let Value::Proc(proc) = self.called.interpret_expr(val_symt)? {
             match proc {
                 Proc::Builtin { f, .. } => {
                     let processed_args = self
                         .args
                         .iter()
-                        .map(|a| a.interpret_expr(i_data))
+                        .map(|a| a.interpret_expr(val_symt))
                         .collect::<Result<Vec<_>, _>>()?;
                     if let Some(v) = f(&processed_args) {
                         Ok(v)
@@ -186,9 +186,9 @@ impl AstData for Call {
                             default.as_ref().unwrap_or_else(|| unreachable!())
                         };
                         processed_args
-                            .insert(name.name.to_owned(), input_arg.interpret_expr(i_data)?);
+                            .insert(name.name.to_owned(), input_arg.interpret_expr(val_symt)?);
                     }
-                    i_data
+                    val_symt
                         .add_frame(
                             Some(FrameData {
                                 pos: Position::default(), // TODO
@@ -203,8 +203,8 @@ impl AstData for Call {
                         )
                         .heap
                         .extend(processed_args);
-                    let res = content.interpret_block(i_data, true, false);
-                    i_data.pop_frame()?;
+                    let res = content.interpret_block(val_symt, true, false);
+                    val_symt.pop_frame()?;
                     res
                 }
             }

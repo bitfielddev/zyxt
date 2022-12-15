@@ -23,13 +23,13 @@ impl AstData for Literal {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn process(&mut self, _typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(self.content.get_type_obj().as_type_element())
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         Ok(if let Value::PreType(v) = &self.content {
-            Value::Type(v.as_type_value(i_data)?)
+            Value::Type(v.as_type_value(val_symt)?)
         } else {
             self.content.to_owned()
         })

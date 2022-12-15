@@ -150,7 +150,7 @@ impl<T: Clone + PartialEq + Debug> TypeInstance<T> {
 }
 
 impl TypeDefinition<Ast> {
-    pub fn as_type_value(&self, i_data: &mut SymTable<Value>) -> ZResult<TypeDefinition<Value>> {
+    pub fn as_type_value(&self, val_symt: &mut SymTable<Value>) -> ZResult<TypeDefinition<Value>> {
         Ok(TypeDefinition {
             inst_name: self.inst_name.to_owned(),
             name: self.name.to_owned(),
@@ -158,7 +158,7 @@ impl TypeDefinition<Ast> {
             implementations: self
                 .implementations
                 .iter()
-                .map(|(k, v)| Ok((k.to_owned(), v.interpret_expr(i_data)?)))
+                .map(|(k, v)| Ok((k.to_owned(), v.interpret_expr(val_symt)?)))
                 .collect::<Result<HashMap<_, _>, _>>()?,
             inst_fields: self
                 .inst_fields
@@ -167,9 +167,9 @@ impl TypeDefinition<Ast> {
                     Ok((
                         k.to_owned(),
                         (
-                            Box::new(v1.as_type_value(i_data)?),
+                            Box::new(v1.as_type_value(val_symt)?),
                             v2.to_owned()
-                                .map(|v2| v2.interpret_expr(i_data))
+                                .map(|v2| v2.interpret_expr(val_symt))
                                 .transpose()?,
                         ),
                     ))
@@ -179,15 +179,15 @@ impl TypeDefinition<Ast> {
     }
 }
 impl TypeInstance<Ast> {
-    pub fn as_type_value(&self, i_data: &mut SymTable<Value>) -> ZResult<TypeInstance<Value>> {
+    pub fn as_type_value(&self, val_symt: &mut SymTable<Value>) -> ZResult<TypeInstance<Value>> {
         Ok(TypeInstance {
             name: self.name.to_owned(),
             type_args: self
                 .type_args
                 .iter()
-                .map(|a| a.as_type_value(i_data))
+                .map(|a| a.as_type_value(val_symt))
                 .collect::<Result<Vec<_>, _>>()?,
-            implementation: self.implementation.as_type_value(i_data)?,
+            implementation: self.implementation.as_type_value(val_symt)?,
         })
     }
 }
@@ -244,12 +244,12 @@ impl Type<Ast> {
             Self::Return(ty) => ty.implementation(),
         }
     }
-    pub fn as_type_value(&self, i_data: &mut SymTable<Value>) -> ZResult<Type<Value>> {
+    pub fn as_type_value(&self, val_symt: &mut SymTable<Value>) -> ZResult<Type<Value>> {
         Ok(match &self {
-            Self::Instance(inst) => Type::Instance(inst.as_type_value(i_data)?),
-            Self::Definition(def) => Type::Definition(def.as_type_value(i_data)?),
+            Self::Instance(inst) => Type::Instance(inst.as_type_value(val_symt)?),
+            Self::Definition(def) => Type::Definition(def.as_type_value(val_symt)?),
             Self::Any => Type::Any,
-            Self::Return(t) => Type::Return(Box::new(t.as_type_value(i_data)?)),
+            Self::Return(t) => Type::Return(Box::new(t.as_type_value(val_symt)?)),
         })
     }
 }

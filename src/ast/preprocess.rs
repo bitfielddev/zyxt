@@ -22,10 +22,10 @@ impl AstData for Preprocess {
 
     fn desugared(&self) -> ZResult<Ast> {
         let mut pre_instructions = self.content.desugared()?;
-        let mut pre_typelist = SymTable::<Type<Ast>>::default();
-        pre_instructions.process(&mut pre_typelist)?;
-        let mut i_data = SymTable::<Value>::default();
-        let pre_value = pre_instructions.interpret_expr(&mut i_data)?;
+        let mut pre_ty_symt = SymTable::<Type<Ast>>::default();
+        pre_instructions.process(&mut pre_ty_symt)?;
+        let mut val_symt = SymTable::<Value>::default();
+        let pre_value = pre_instructions.interpret_expr(&mut val_symt)?;
         Ok(pre_value.as_element())
     }
 }

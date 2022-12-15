@@ -7,7 +7,7 @@ use tracing_subscriber::EnvFilter;
 use zyxt::{
     ast::Ast,
     repl,
-    types::{interpreter_data::SymTable, typeobj::Type, value::Value},
+    types::{sym_table::SymTable, typeobj::Type, value::Value},
 };
 
 #[derive(Parser)]
@@ -44,12 +44,12 @@ fn main() -> Result<()> {
 
     match args.subcmd {
         Subcmd::Run(sargs) => {
-            let mut typelist = SymTable::<Type<Ast>>::default();
-            let mut i_data = SymTable::<Value>::default();
+            let mut ty_symt = SymTable::<Type<Ast>>::default();
+            let mut val_symt = SymTable::<Value>::default();
             let exit_code = zyxt::interpret(
-                &zyxt::compile(&Either::Left(&sargs.filename), &mut typelist)
+                &zyxt::compile(&Either::Left(&sargs.filename), &mut ty_symt)
                     .unwrap_or_else(|e| e.print_exit()),
-                &mut i_data,
+                &mut val_symt,
             )
             .unwrap_or_else(|e| e.print_exit());
             exit(exit_code);

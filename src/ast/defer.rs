@@ -20,8 +20,8 @@ impl AstData for Defer {
         Ast::Defer(self.to_owned())
     }
 
-    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        self.content.process(typelist)
+    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+        self.content.process(ty_symt)
     }
 
     fn desugared(&self) -> ZResult<Ast> {
@@ -32,8 +32,8 @@ impl AstData for Defer {
         .as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
-        i_data.add_defer(*self.content.to_owned());
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+        val_symt.add_defer(*self.content.to_owned());
         Ok(Value::Unit)
     }
 }

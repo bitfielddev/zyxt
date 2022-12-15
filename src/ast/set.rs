@@ -23,17 +23,17 @@ impl AstData for Set {
         Ast::Set(self.to_owned())
     }
 
-    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         if !self.variable.is_pattern() {
             return Err(ZError::t006().with_span(&*self.variable));
         }
-        let content_type = self.content.process(typelist)?;
+        let content_type = self.content.process(ty_symt)?;
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
             unimplemented!() // TODO
         };
-        let var_type = typelist.get_val(
+        let var_type = ty_symt.get_val(
             name,
             &self.variable.span().unwrap_or_else(|| unreachable!()),
         )?;
@@ -50,14 +50,14 @@ impl AstData for Set {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
-        let var = self.content.interpret_expr(i_data);
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+        let var = self.content.interpret_expr(val_symt);
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
             unimplemented!() // TODO
         };
-        i_data.set_val(name, &var.to_owned()?, self)?;
+        val_symt.set_val(name, &var.to_owned()?, self)?;
         var
     }
 }

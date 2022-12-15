@@ -29,8 +29,8 @@ impl AstData for Ident {
     fn is_pattern(&self) -> bool {
         true
     }
-    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        typelist.get_val(&self.name, &self.name_span)
+    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+        ty_symt.get_val(&self.name, &self.name_span)
     }
 
     fn desugared(&self) -> ZResult<Ast> {
@@ -43,7 +43,7 @@ impl AstData for Ident {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
-        i_data.get_val(&self.name, &self.name_span)
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+        val_symt.get_val(&self.name, &self.name_span)
     }
 }

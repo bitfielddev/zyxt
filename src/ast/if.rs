@@ -22,8 +22,8 @@ impl AstData for If {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        Ok(self.conditions[0].if_true.block_type(typelist, true)?.0)
+    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+        Ok(self.conditions[0].if_true.block_type(ty_symt, true)?.0)
         // TODO consider all returns
     }
 
@@ -42,17 +42,17 @@ impl AstData for If {
         .as_variant())
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         for cond in &self.conditions {
             if cond.condition.is_none()
                 || cond
                     .condition
                     .as_ref()
-                    .map(|cond| cond.interpret_expr(i_data))
+                    .map(|cond| cond.interpret_expr(val_symt))
                     .transpose()?
                     == Some(Value::Bool(true))
             {
-                return cond.if_true.interpret_block(i_data, false, true);
+                return cond.if_true.interpret_block(val_symt, false, true);
             }
         }
         Ok(Value::Unit)

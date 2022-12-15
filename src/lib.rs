@@ -168,15 +168,15 @@ use crate::{
     interpreter::interpret_asts,
     lexer::lex,
     parser::parse_token_list,
-    types::{interpreter_data::SymTable, typeobj::Type, value::Value},
+    types::{sym_table::SymTable, typeobj::Type, value::Value},
 };
 
 pub fn compile(
     file: &Either<&Path, (SmolStr, String)>,
-    typelist: &mut SymTable<Type<Ast>>,
+    ty_symt: &mut SymTable<Type<Ast>>,
 ) -> ZResult<Vec<Ast>> {
-    /*if typelist.out.verbosity() == 0 {
-        return gen_instructions(parse_token_list(lex(input, filename)?)?, typelist);
+    /*if ty_symt.out.verbosity() == 0 {
+        return gen_instructions(parse_token_list(lex(input, filename)?)?, ty_symt);
     }*/
     // TODO --stats flag
 
@@ -202,7 +202,7 @@ pub fn compile(
 
     info!("Generating instructions");
     let check_start = Instant::now();
-    let instructions = gen_instructions(parsed, typelist)?;
+    let instructions = gen_instructions(parsed, ty_symt)?;
     let check_time = check_start.elapsed().as_micros();
     trace!("{instructions:#?}");
 
@@ -218,14 +218,14 @@ pub fn compile(
     Ok(instructions)
 }
 
-pub fn interpret(input: &Vec<Ast>, i_data: &mut SymTable<Value>) -> ZResult<i32> {
-    /*if i_data.out.verbosity() == 0 {
-        return interpret_asts(input, i_data);
+pub fn interpret(input: &Vec<Ast>, val_symt: &mut SymTable<Value>) -> ZResult<i32> {
+    /*if val_symt.out.verbosity() == 0 {
+        return interpret_asts(input, val_symt);
     }*/
     // TODO --stats flag
     info!("Interpreting");
     let interpret_start = Instant::now();
-    let exit_code = interpret_asts(input, i_data)?;
+    let exit_code = interpret_asts(input, val_symt)?;
     let interpret_time = interpret_start.elapsed().as_micros();
     info!("Exited with code {exit_code}");
     info!("Stats");

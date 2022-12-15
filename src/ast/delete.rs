@@ -21,13 +21,13 @@ impl AstData for Delete {
         Ast::Delete(self.to_owned())
     }
 
-    fn process(&mut self, _typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn process(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(UNIT_T.get_instance().as_type_element())
     }
 
-    fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         for name in &self.names {
-            i_data.delete_val(&name.name, self)?;
+            val_symt.delete_val(&name.name, self)?;
         }
         Ok(Value::Unit)
     }
