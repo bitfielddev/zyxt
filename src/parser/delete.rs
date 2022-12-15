@@ -3,9 +3,9 @@ use tracing::{debug, trace};
 
 use crate::{
     ast::{Ast, Delete, Ident, UnaryOpr},
+    errors::{ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        errors::ZResult,
         position::GetSpan,
         token::{Keyword, OprType, Token, TokenType},
     },
@@ -37,11 +37,9 @@ impl Buffer {
                     ty: OprType::Deref, ..
                 }) = &ele
                 {
-                    todo!()
-                    //Err(ZError::error_2_1_12(&ele.raw).with_element(&ele))
+                    Err(ZError::p013().with_span(ele))
                 } else {
-                    todo!()
-                    //Err(ZError::error_2_1_11(&ele.span.raw).with_element(&ele))
+                    Err(ZError::p014().with_span(ele))
                 }
             })?;
             let ele = Ast::Delete(Delete {

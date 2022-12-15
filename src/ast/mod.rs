@@ -39,12 +39,14 @@ pub use r#return::Return;
 pub use set::Set;
 pub use unary_opr::UnaryOpr;
 
-use crate::types::{
+use crate::{
     errors::ZResult,
-    interpreter_data::SymTable,
-    position::{GetSpan, Span},
-    typeobj::Type,
-    value::Value,
+    types::{
+        interpreter_data::SymTable,
+        position::{GetSpan, Span},
+        typeobj::Type,
+        value::Value,
+    },
 };
 
 pub trait AstData: Clone + PartialEq + Debug + GetSpan {

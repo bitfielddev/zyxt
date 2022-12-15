@@ -31,7 +31,7 @@ impl AstData for Ident {
     }
     fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         typelist.get_val(&self.name, &self.name_span)
-    } // TODO change sig of get_val
+    }
 
     fn desugared(&self) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
@@ -44,6 +44,6 @@ impl AstData for Ident {
     }
 
     fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
-        i_data.get_val(&self.name, &self.name_span) // TODO
+        i_data.get_val(&self.name, &self.name_span)
     }
 }

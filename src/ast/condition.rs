@@ -1,9 +1,7 @@
 use crate::{
     ast::{Ast, AstData, Block},
-    types::{
-        errors::ZResult,
-        position::{GetSpan, Span},
-    },
+    errors::ZResult,
+    types::position::{GetSpan, Span},
 };
 
 #[derive(Clone, PartialEq, Debug)]

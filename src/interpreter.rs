@@ -1,5 +1,6 @@
 use crate::{
     ast::{Ast, Block},
+    primitives::I32_T,
     types::{interpreter_data::SymTable, position::Span, value::Value},
     ZError, ZResult,
 };
@@ -19,6 +20,7 @@ pub fn interpret_asts(input: &Vec<Ast>, i_data: &mut SymTable<Value>) -> ZResult
     if let Value::I32(v) = last {
         Ok(v)
     } else {
-        Err(ZError::error_4_2(last).with_span(&Span::default())) // TODO
+        Err(ZError::t009(&I32_T.as_type(), &last.get_type_obj()).with_span(&Span::default()))
+        // TODO
     }
 }

@@ -55,7 +55,8 @@ impl AstData for Procedure {
             self.return_type = Some(res.as_literal().into());
         } else if let Some(block_return_type) = block_return_type {
             if return_type != block_return_type {
-                return Err(ZError::error_4_t(return_type, block_return_type)); // TODO span
+                return Err(ZError::t009(&return_type, &block_return_type).with_span(&*self));
+                // TODO span
             }
         }
         typelist.pop_frame();

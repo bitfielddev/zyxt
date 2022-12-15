@@ -9,10 +9,10 @@ use smol_str::SmolStr;
 
 use crate::{
     ast::{Ast, AstData},
+    errors::{ZError, ZResult},
     primitives::*,
     types::{
-        errors::{ZError, ZResult},
-        position::{GetSpan, Position, Span},
+        position::{GetSpan, Position},
         typeobj::Type,
         value::Value,
     },
@@ -185,12 +185,12 @@ impl<T: Clone + Display + Debug> SymTable<T> {
         self.frames.front_mut().unwrap()
     }
 
-    pub fn set_val(&mut self, name: &SmolStr, value: &T, span: &Span) -> ZResult<()> {
+    pub fn set_val(&mut self, name: &SmolStr, value: &T, span: impl GetSpan) -> ZResult<()> {
         let mut only_consts = false;
         for frame in &mut self.frames {
             if (only_consts && frame.ty == FrameType::Constants) || frame.heap.contains_key(name) {
                 if frame.ty == FrameType::Constants {
-                    todo!("Err trying to change const value")
+                    return Err(ZError::t001().with_span(span));
                 }
                 // TODO sth abt all type definitions being constant
                 frame.heap.insert(name.to_owned(), value.to_owned());
@@ -200,7 +200,7 @@ impl<T: Clone + Display + Debug> SymTable<T> {
                 only_consts = true;
             }
         }
-        Err(ZError::error_3_0(name.to_owned()).with_span(span))
+        Err(ZError::t002().with_span(span))
     }
     pub fn get_val(&mut self, name: &SmolStr, span: impl GetSpan) -> ZResult<T> {
         let mut only_consts = false;
@@ -216,16 +216,16 @@ impl<T: Clone + Display + Debug> SymTable<T> {
                 only_consts = true;
             }
         }
-        Err(ZError::error_3_0(name.to_owned()).with_span(span))
+        Err(ZError::t002().with_span(span))
     }
     pub fn delete_val(&mut self, name: &SmolStr, span: impl GetSpan) -> ZResult<T> {
         let Some(first_frame) = self.frames.front_mut() else {
-            return Err(ZError::error_3_0(name.to_owned()).with_span(span))
+            return Err(ZError::t002().with_span(span))
         };
         if let Some(v) = first_frame.heap.remove(name) {
             Ok(v)
         } else {
-            Err(ZError::error_3_0(name.to_owned()).with_span(span))
+            Err(ZError::t002().with_span(span))
         }
     }
     pub fn add_defer(&mut self, content: Ast) {

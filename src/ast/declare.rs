@@ -32,24 +32,28 @@ impl AstData for Declare {
 
     fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         if !self.variable.is_pattern() {
-            return Err(ZError::error_2_2(*self.variable.to_owned()).with_span(&*self.variable));
+            return Err(ZError::t006().with_span(&self.variable));
         }
         let content_type = self.content.process(typelist)?;
-        let ty = self.ty.as_ref().map(|ty| {
-            if let Ast::Literal(literal) = &**ty {
-                if let Value::Type(t) = &literal.content {
-                    t.as_type_element()
+        let ty = self
+            .ty
+            .as_ref()
+            .map(|ty| {
+                if let Ast::Literal(literal) = &**ty {
+                    if let Value::Type(t) = &literal.content {
+                        Ok(t.as_type_element())
+                    } else {
+                        Err(ZError::t007().with_span(ty))
+                    }
                 } else {
-                    todo!()
+                    Err(ZError::t007().with_span(ty))
                 }
-            } else {
-                todo!()
-            }
-        });
+            })
+            .transpose()?;
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
-            unimplemented!() // TODO
+            return Err(ZError::t008().with_span(&self.variable));
         };
         if let Some(ty) = ty {
             typelist.declare_val(name, &ty);
@@ -92,7 +96,7 @@ impl AstData for Declare {
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
-            unimplemented!() // TODO
+            unreachable!()
         };
         let var = self.content.interpret_expr(i_data);
         i_data.declare_val(name, &var.to_owned()?);

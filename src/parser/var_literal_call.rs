@@ -6,9 +6,9 @@ use tracing::{debug, trace};
 
 use crate::{
     ast::{Ast, AstData, Call, Ident, Literal},
+    errors::{ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        errors::{ZError, ZResult},
         position::GetSpan,
         token::{Token, TokenType},
         value::Value,
@@ -55,7 +55,7 @@ impl Buffer {
                     let dot_span = selected.span;
                     debug!(pos = ?dot_span, "Parsing dot operator");
                     let Some((catcher, _)) = &mut catcher else {
-                        return Err(ZError::error_2_1_0(String::from(".")).with_span(dot_span));
+                        return Err(ZError::p022().with_span(dot_span));
                     };
                     let selected = match self.next_or_err()? {
                         Either::Left(c) => {
@@ -133,15 +133,13 @@ impl Buffer {
                     ));
                     trace!(catcher = ?catcher.as_ref().unwrap().0);
                 }
-                Some(TokenType::CloseParen) => {
-                    return Err(ZError::error_2_0_2(')'.to_string()).with_span(&selected))
-                }
+                Some(TokenType::CloseParen) => return Err(ZError::p023().with_span(&selected)),
                 Some(TokenType::OpenParen) => {
                     let open_paren_span = selected.span;
                     debug!(pos = ?open_paren_span, "Parsing call");
                     let Some((catcher, _)) = &mut catcher else {
                         return Err(
-                            ZError::error_2_1_0(String::from("(")).with_span(open_paren_span)
+                            ZError::p024().with_span(open_paren_span)
                         );
                         // parens should have been settled in the first part
                     };

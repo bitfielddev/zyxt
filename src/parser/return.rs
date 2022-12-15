@@ -3,10 +3,10 @@ use tracing::{debug, trace};
 
 use crate::{
     ast::{Ast, Return},
+    errors::ZResult,
     parser::buffer::{Buffer, BufferWindow},
     primitives::UNIT_T,
     types::{
-        errors::ZResult,
         position::GetSpan,
         token::{Keyword, Token, TokenType},
     },

@@ -3,9 +3,9 @@ use tracing::{debug, trace};
 
 use crate::{
     ast::{Ast, UnaryOpr},
+    errors::ZResult,
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        errors::ZResult,
         position::GetSpan,
         token::{Token, TokenType},
     },

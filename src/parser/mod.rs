@@ -18,9 +18,9 @@ use tracing::{debug, info};
 
 use crate::{
     ast::{Ast, AstData, Block, Comment},
+    errors::{ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        errors::{ZError, ZResult},
         token::{Token, TokenType},
         value::Value,
     },
@@ -60,9 +60,8 @@ impl Buffer {
         self.parse_bin_opr()?;
         self.parse_un_opr()?;
         self.parse_unparen_call()?;
-        if let Some(_ele) = self.content.get(2) {
-            todo!()
-            //return Err(ZError::error_2_1_0(ele.span().raw));
+        if let Some(ele) = self.content.get(1) {
+            return Err(ZError::p002().with_span(ele));
         }
         match self
             .content
@@ -70,10 +69,7 @@ impl Buffer {
             .unwrap_or(&Either::Left(Value::Unit.as_element()))
         {
             Either::Left(c) => Ok(c.to_owned()),
-            Either::Right(_c) => {
-                todo!()
-                //Err(ZError::error_2_1_0(c.span().raw))
-            }
+            Either::Right(c) => return Err(ZError::p003().with_span(c)),
         }
     }
 }
@@ -97,7 +93,7 @@ pub fn parse_token_list(mut input: Vec<Token>) -> ZResult<Vec<Ast>> {
         ]
         .contains(&token.ty)
         {
-            return Err(ZError::error_2_1_10(token.value.to_owned()).with_span(token));
+            return Err(ZError::p001().with_span(token));
         }
     }
     input.retain(|token| token.ty != Some(TokenType::Comment));

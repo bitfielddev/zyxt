@@ -1,7 +1,7 @@
 use std::{path::PathBuf, process::exit};
 
 use clap::Parser;
-use color_eyre::config::HookBuilder;
+use color_eyre::{config::HookBuilder, eyre::Result};
 use itertools::Either;
 use tracing_subscriber::EnvFilter;
 use zyxt::{
@@ -28,13 +28,13 @@ enum Subcmd {
 }
 #[derive(Parser)]
 struct Run {
-    filename: String,
+    filename: PathBuf,
 }
 
-fn main() {
+fn main() -> Result<()> {
     HookBuilder::new()
         .panic_section("This shouldn't happen!\nOpen an issue on our GitHub: https://github.com/Segmential/zyxt/issues/new")
-        .install().unwrap();
+        .install()?;
     tracing_subscriber::fmt()
         .event_format(tracing_subscriber::fmt::format().compact())
         .with_env_filter(EnvFilter::from_env("RUST_LOG"))
@@ -44,11 +44,10 @@ fn main() {
 
     match args.subcmd {
         Subcmd::Run(sargs) => {
-            let filename = PathBuf::try_from(sargs.filename).unwrap(); // TODO
             let mut typelist = SymTable::<Type<Ast>>::default();
             let mut i_data = SymTable::<Value>::default();
             let exit_code = zyxt::interpret(
-                &zyxt::compile(&Either::Left(&filename), &mut typelist)
+                &zyxt::compile(&Either::Left(&sargs.filename), &mut typelist)
                     .unwrap_or_else(|e| e.print_exit()),
                 &mut i_data,
             )
@@ -56,6 +55,7 @@ fn main() {
             exit(exit_code);
         }
         // TODO Compile, Interpret
-        Subcmd::Repl => repl::repl(verbose),
+        Subcmd::Repl => repl::repl(verbose)?,
     }
+    Ok(())
 }

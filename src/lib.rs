@@ -144,6 +144,7 @@
 )]
 
 pub mod ast;
+pub mod errors;
 pub mod file_importer;
 pub mod instructor;
 pub mod interpreter;
@@ -155,10 +156,10 @@ pub mod types;
 
 use std::{path::Path, time::Instant};
 
+use errors::{ZError, ZResult};
 use itertools::Either;
 use smol_str::SmolStr;
 use tracing::{info, trace};
-use types::errors::{ZError, ZResult};
 
 use crate::{
     ast::Ast,

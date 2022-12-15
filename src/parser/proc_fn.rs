@@ -3,9 +3,9 @@ use tracing::{debug, trace};
 
 use crate::{
     ast::{Argument, Ast, Block, Procedure},
+    errors::{ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        errors::ZResult,
         position::GetSpan,
         token::{Keyword, Token, TokenType},
     },
@@ -14,6 +14,7 @@ use crate::{
 impl Buffer {
     #[tracing::instrument(skip_all)]
     pub fn parse_args(&mut self) -> ZResult<Vec<Argument>> {
+        let init_span = self.content[self.cursor].span();
         let mut windows =
             self.get_split_between(TokenType::Bar, TokenType::Bar, TokenType::Comma)?;
         windows.with_as_buffers(&|buf| {
@@ -25,16 +26,16 @@ impl Buffer {
                     debug!(pos = ?name.span(), "Name detected");
                     ident.to_owned()
                 } else {
-                    todo!()
+                    return Err(ZError::p019().with_span(name));
                 }
             } else {
-                todo!()
+                return Err(ZError::p019().with_span(&init_span));
             };
             let ty = if let Some(ele) = arg_sections.get(1) {
                 debug!(pos = ?ele.span(), "Type detected");
                 ele.to_owned().into()
             } else {
-                todo!()
+                return Err(ZError::p020().with_span(&init_span));
             };
             let default = arg_sections.get(2).cloned();
             debug!(pos = ?default.as_ref().map(GetSpan::span), "Default may be detected");

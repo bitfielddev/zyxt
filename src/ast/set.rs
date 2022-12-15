@@ -25,7 +25,7 @@ impl AstData for Set {
 
     fn process(&mut self, typelist: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         if !self.variable.is_pattern() {
-            return Err(ZError::error_2_2(*self.variable.to_owned()).with_span(&*self.variable));
+            return Err(ZError::t006().with_span(&*self.variable));
         }
         let content_type = self.content.process(typelist)?;
         let name = if let Ast::Ident(ident) = &*self.variable {
@@ -40,7 +40,7 @@ impl AstData for Set {
         if content_type == var_type {
             Ok(var_type)
         } else {
-            Err(ZError::error_4_3(name, var_type, content_type)) // TODO span
+            Err(ZError::t010(&var_type, &content_type).with_span(&*self)) // TODO span
         }
     }
 
@@ -57,7 +57,7 @@ impl AstData for Set {
         } else {
             unimplemented!() // TODO
         };
-        i_data.set_val(name, &var.to_owned()?, &Default::default())?; // TODO
+        i_data.set_val(name, &var.to_owned()?, self)?;
         var
     }
 }

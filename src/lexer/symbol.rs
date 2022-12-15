@@ -171,7 +171,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             ')' => TokenType::CloseParen,
             ']' => TokenType::CloseSquareParen,
             '}' => TokenType::CloseCurlyParen,
-            _ => return Err(ZError::error_2_1_1(char.to_owned())),
+            _ => return Err(ZError::l001().with_span(Span::new(pos, &char))),
         }),
         value: (&char).into(),
         span: Span::new(pos, &char),

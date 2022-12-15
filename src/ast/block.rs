@@ -61,9 +61,7 @@ impl Block {
             if let Type::Return(value) = last.to_owned() {
                 if let Some(return_type) = &return_type {
                     if last != *return_type {
-                        return Err(
-                            ZError::error_4_t(last, return_type.to_owned()), // TODO
-                        );
+                        return Err(ZError::t003(&last, return_type).with_span(&*ele));
                     }
                 } else {
                     return_type = Some(*value);
@@ -72,8 +70,8 @@ impl Block {
         }
         if let Some(return_type) = return_type.to_owned() {
             if last != return_type {
-                let _last_ele = self.content.last().unwrap_or_else(|| unreachable!());
-                return Err(ZError::error_4_t(last, return_type)); // TODO
+                let last_ele = self.content.last().unwrap_or_else(|| unreachable!());
+                return Err(ZError::t003(&last, &return_type).with_span(last_ele));
             }
         }
         if add_set {

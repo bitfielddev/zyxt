@@ -4,6 +4,7 @@ use smol_str::SmolStr;
 
 use crate::{
     ast::{argument::Argument, Ast, AstData, Ident, Literal},
+    errors::ZError,
     primitives::UNIT_T,
     types::{
         interpreter_data::{FrameData, FrameType},
@@ -57,8 +58,10 @@ impl AstData for Call {
         let called_type = self.called.process(typelist)?;
         if let Ast::Procedure(procedure) = &mut *self.called {
             for (i, arg) in self.args.iter_mut().enumerate() {
-                if arg.process(typelist)? != procedure.args[i].ty.process(typelist)? {
-                    todo!("errors")
+                let expected = procedure.args[i].ty.process(typelist)?;
+                let actual = arg.process(typelist)?;
+                if expected != actual {
+                    return Err(ZError::t004(&expected, &actual).with_span(&*self));
                 }
             }
             if let Some(ty) = &mut procedure.return_type {
@@ -75,10 +78,10 @@ impl AstData for Call {
                 Proc::Builtin { signature, .. } => {
                     let (arg_objs, ret): (Vec<Type<Value>>, Type<Value>) = signature[0]();
                     for (i, arg) in self.args.iter_mut().enumerate() {
-                        let arg = arg.process(typelist)?;
-                        let arg_req = arg_objs[i].as_type_element();
-                        if arg != arg_req && arg != Type::Any && arg_req != Type::Any {
-                            todo!("{:#?} != {:#?}", arg, arg_req)
+                        let actual = arg.process(typelist)?;
+                        let expected = arg_objs[i].as_type_element();
+                        if actual != expected && actual != Type::Any && expected != Type::Any {
+                            return Err(ZError::t004(&expected, &actual).with_span(&*self));
                         }
                     }
                     ret.as_type_element()
@@ -89,8 +92,10 @@ impl AstData for Call {
                     ..
                 } => {
                     for (i, arg) in self.args.iter_mut().enumerate() {
-                        if arg.process(typelist)? != arg_objs[i].ty.process(typelist)? {
-                            todo!("errors")
+                        let expected = arg_objs[i].ty.process(typelist)?;
+                        let actual = arg.process(typelist)?;
+                        if expected != actual {
+                            return Err(ZError::t004(&expected, &actual).with_span(&*self));
                         }
                     }
                     return_type.as_type_element()
@@ -109,14 +114,13 @@ impl AstData for Call {
             }
             self.called = if let Type::Definition(TypeDefinition {
                 implementations, ..
-            }) = called_type
+            }) = &called_type
             {
                 if let Some(call) = implementations.get("_call") {
                     call.to_owned()
                 } else {
-                    todo!();
+                    return Err(ZError::t005(&called_type, "_call").with_span(&self.called));
                 }
-                // TODO handle error
             } else {
                 unreachable!()
             }
@@ -165,7 +169,7 @@ impl AstData for Call {
                     if let Some(v) = f(&processed_args) {
                         Ok(v)
                     } else {
-                        todo!()
+                        return Err(ZError::i001(&processed_args).with_span(&*self));
                     }
                 }
                 Proc::Defined {

@@ -27,7 +27,7 @@ impl AstData for Delete {
 
     fn interpret_expr(&self, i_data: &mut SymTable<Value>) -> ZResult<Value> {
         for name in &self.names {
-            i_data.delete_val(&name.name, &Span::default())?; // TODO
+            i_data.delete_val(&name.name, self)?;
         }
         Ok(Value::Unit)
     }

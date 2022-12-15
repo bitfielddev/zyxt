@@ -3,11 +3,9 @@ use tracing::{debug, trace};
 
 use crate::{
     ast::{Ast, BinaryOpr},
+    errors::{ZError, ZResult},
     parser::buffer::Buffer,
-    types::{
-        errors::ZResult,
-        token::{Token, TokenType},
-    },
+    types::token::{Token, TokenType},
 };
 
 impl Buffer {
@@ -30,10 +28,7 @@ impl Buffer {
                 continue;
             };
             if i == 0 || i == self.content.len() - 1 {
-                todo!();
-                // return Err(
-                //     ZError::error_2_1_3(selected.span().raw)
-                // );
+                return Err(ZError::p006().with_span(selected));
             }
             if opr_type.order() >= highest_order {
                 highest_order_index = i;

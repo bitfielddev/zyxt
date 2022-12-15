@@ -5,9 +5,9 @@ use tracing::{debug, trace};
 
 use crate::{
     ast::{Ast, Call},
+    errors::{ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        errors::ZResult,
         position::GetSpan,
         token::{Token, TokenType},
     },
@@ -40,7 +40,7 @@ impl Buffer {
                     })
                 ) {
                     if arg_start == self.cursor {
-                        todo!("error")
+                        return Err(ZError::p021().with_span(selected));
                     }
                     debug!(pos = ?selected.span(), "Comma detected");
                     args.push(
@@ -57,7 +57,7 @@ impl Buffer {
                     ..
                 }))
             ) {
-                todo!("error")
+                return Err(ZError::p007().with_span(self.content.last()));
             }
             args.push(
                 self.window(arg_start..self.cursor)

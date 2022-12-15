@@ -14,6 +14,7 @@ use smol_str::SmolStr;
 use tracing::{debug, trace};
 
 use crate::{
+    errors::ZResult,
     lexer::{
         buffer::Buffer,
         number::lex_number,
@@ -22,7 +23,7 @@ use crate::{
         whitespace::{clean_whitespaces, lex_whitespace},
         word::lex_word,
     },
-    types::{errors::ZResult, position::Position, token::Token},
+    types::{position::Position, token::Token},
 };
 
 static ALPHANUMERIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z0-9_]+$").unwrap());

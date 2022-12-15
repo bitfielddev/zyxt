@@ -3,9 +3,9 @@ use tracing::{debug, trace};
 
 use crate::{
     ast::{Ast, Declare},
+    errors::{ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        errors::{ZError, ZResult},
         position::GetSpan,
         token::{Token, TokenType},
     },
@@ -44,8 +44,10 @@ impl Buffer {
 
             let declared_var = if let Some(Either::Left(d)) = self.peek_prev() {
                 d.to_owned()
+            } else if let Some(d) = self.peek_prev() {
+                return Err(ZError::p012().with_span(d));
             } else {
-                return Err(ZError::error_2_1_5());
+                return Err(ZError::p008().with_span(selected));
             };
             debug!(pos = ?declared_var.span(), "Parsing declaration");
 
@@ -62,8 +64,7 @@ impl Buffer {
                             debug!(?flag, "Flag detected");
                             Ok((flag.to_owned(), span.to_owned()))
                         } else {
-                            todo!()
-                            //Err(ZError::error_2_1_6(ele.span().raw))
+                            Err(ZError::p013().with_span(ele))
                         }
                     })
                     .collect::<Result<_, _>>()?

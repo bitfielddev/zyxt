@@ -1,6 +1,6 @@
 use std::{io, io::Write, time::Instant};
 
-use backtrace::Backtrace;
+use color_eyre::eyre::{eyre, Result};
 use dirs::home_dir;
 use itertools::Either;
 use owo_colors::OwoColorize;
@@ -11,18 +11,17 @@ use crate::{
     ast::{Ast, AstData},
     compile,
     types::{interpreter_data::SymTable, value::Value},
-    Type, ZError,
+    Type,
 };
 
-pub fn repl(verbosity: u8) {
+pub fn repl(verbosity: u8) -> Result<()> {
     let filename = SmolStr::from("[stdin]");
     let mut typelist = SymTable::<Type<Ast>>::default();
     let mut varlist = SymTable::<Value>::default();
-    let mut rl = Editor::<()>::new().unwrap();
-    let mut history_path = home_dir().unwrap();
+    let mut rl = Editor::<()>::new()?;
+    let mut history_path = home_dir().ok_or_else(|| eyre!("No home dir"))?;
     history_path.push(".zyxt_history");
-    rl.load_history(history_path.to_str().unwrap())
-        .unwrap_or(());
+    let _ = rl.load_history(&*history_path.to_string_lossy());
 
     let in_symbol = ">>] ".bold().cyan().to_string();
     let out_symbol = "[>> ".bold().green().to_string();
@@ -36,7 +35,7 @@ pub fn repl(verbosity: u8) {
     println!("{}", "`;help` for more commands".cyan());
     loop {
         print!("{in_symbol} ");
-        io::stdout().flush().unwrap();
+        io::stdout().flush()?;
         let input = rl.readline(&in_symbol);
         match input {
             Ok(input) => {
@@ -44,7 +43,7 @@ pub fn repl(verbosity: u8) {
                     break;
                 }
                 rl.add_history_entry(&input);
-                rl.save_history(history_path.to_str().unwrap()).unwrap();
+                rl.save_history(&*history_path.to_string_lossy())?;
                 if input.starts_with(';') {
                     match &*input {
                         ";vars" => println!("{}", varlist.heap_to_string()),
@@ -98,10 +97,9 @@ pub fn repl(verbosity: u8) {
             Err(ReadlineError::Interrupted | ReadlineError::Eof) => {
                 println!("{}", "`;exit` to exit".cyan());
             }
-            Err(err) => {
-                ZError::error_0_0(err.to_string(), Backtrace::new());
-            }
+            Err(err) => return Err(err.into()),
         }
     }
-    rl.save_history(history_path.to_str().unwrap()).unwrap();
+    rl.save_history(&*history_path.to_string_lossy())?;
+    Ok(())
 }

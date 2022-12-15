@@ -4,6 +4,7 @@ use itertools::Either;
 use tracing::trace;
 
 use crate::{
+    errors::ZError,
     types::{
         position::GetSpan,
         token::{Token, TokenType},
@@ -43,13 +44,12 @@ impl Buffer {
         if let Some(c) = self.next() {
             Ok(c)
         } else {
-            let _curr_span = match &self.content.last() {
+            let curr_span = match &self.content.last() {
                 Some(Either::Left(c)) => c.span(),
                 Some(Either::Right(c)) => c.span(),
-                None => unreachable!(), // todo
+                None => return Err(ZError::p007()),
             };
-            todo!();
-            //Err(ZError::error_2_1_0(&curr_span.raw))
+            Err(ZError::p007().with_span(curr_span))
         }
     }
     pub fn peek_prev(&mut self) -> Option<&Either<Ast, Token>> {
@@ -59,16 +59,21 @@ impl Buffer {
             self.content.get(self.cursor - 1)
         }
     }
-    pub fn prev(&mut self) {
+    pub fn prev(&mut self) -> ZResult<()> {
         if self.cursor == 0 {
             if self.started {
                 self.started = false;
             } else {
-                todo!()
+                return Err(if let Some(first) = self.content.first() {
+                    ZError::p008().with_span(first)
+                } else {
+                    ZError::p008()
+                });
             }
         } else {
             self.cursor -= 1;
         }
+        Ok(())
     }
     pub fn rest_incl_curr(&mut self) -> BufferWindow {
         self.window(self.cursor..self.content.len())
@@ -117,7 +122,7 @@ impl Buffer {
             }
         }
         if nest_level != 0 {
-            todo!("err")
+            return Err(ZError::p009(end_token).with_span(&self.content[self.cursor]));
         }
         Ok(BufferWindow {
             slice: self.content[start + 1..self.cursor].to_owned(),
@@ -175,7 +180,7 @@ impl Buffer {
             }
         }
         if nest_level != 0 {
-            todo!("err")
+            return Err(ZError::p009(end_token).with_span(&self.content[self.cursor]));
         }
         if start != self.cursor {
             buffer_windows.push(self.window(start..self.cursor));

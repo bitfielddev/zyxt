@@ -2,10 +2,8 @@ use std::fmt::{Display, Formatter};
 
 use crate::{
     ast::{Ast, AstData, Ident},
-    types::{
-        errors::ZResult,
-        position::{GetSpan, Span},
-    },
+    errors::ZResult,
+    types::position::{GetSpan, Span},
 };
 
 #[derive(Clone, PartialEq, Debug)]

@@ -3,9 +3,9 @@ use tracing::{debug, trace};
 
 use crate::{
     ast::{Ast, AstData, BinaryOpr, Set},
+    errors::{ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        errors::ZResult,
         position::GetSpan,
         token::{Token, TokenType},
     },
@@ -30,12 +30,12 @@ impl Buffer {
             let var = if let Some(Either::Left(var)) = self.peek_prev() {
                 var.to_owned()
             } else {
-                todo!("error")
+                return Err(ZError::p004().with_span(opr_span));
             };
             self.next_or_err()?;
             let mut content = self.rest_incl_curr().with_as_buffer(&|buf| {
                 if buf.content.is_empty() {
-                    todo!("error")
+                    return Err(ZError::p005().with_span(&opr_span));
                 }
                 buf.parse_as_expr()
             })?;

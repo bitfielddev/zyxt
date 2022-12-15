@@ -5,9 +5,9 @@ use tracing::{debug, trace};
 
 use crate::{
     ast::{Ast, Class},
+    errors::{ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        errors::{ZError, ZResult},
         position::GetSpan,
         token::{Keyword, Token, TokenType},
     },
@@ -42,7 +42,7 @@ impl Buffer {
             {
                 debug!(pos = ?selected.span(), "Argument list detected");
                 if kwd == Keyword::Class {
-                    return Err(ZError::error_2_1_17());
+                    return Err(ZError::p010().with_span(selected));
                 }
                 let args = self.parse_args()?;
                 selected = self.next_or_err()?;
@@ -54,9 +54,9 @@ impl Buffer {
                 debug!(pos = ?selected.span(), "Block detected");
                 Some(block.to_owned())
             } else if kwd == Keyword::Class {
-                return Err(ZError::error_2_1_18(&kwd));
+                return Err(ZError::p011().with_span(selected));
             } else {
-                self.prev();
+                self.prev()?;
                 None
             };
             let ele = Ast::Class(Class {
