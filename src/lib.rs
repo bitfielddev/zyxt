@@ -159,7 +159,7 @@ use std::{path::Path, time::Instant};
 use errors::{ZError, ZResult};
 use itertools::Either;
 use smol_str::SmolStr;
-use tracing::{info, trace};
+use tracing::{debug, info, trace};
 
 use crate::{
     ast::Ast,

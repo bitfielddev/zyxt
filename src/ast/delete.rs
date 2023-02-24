@@ -1,5 +1,7 @@
+use itertools::Itertools;
+
 use crate::{
-    ast::{Ast, AstData, Ident},
+    ast::{Ast, AstData, Ident, Reconstruct},
     primitives::UNIT_T,
     types::position::{GetSpan, Span},
     SymTable, Type, Value, ZResult,
@@ -30,5 +32,14 @@ impl AstData for Delete {
             val_symt.delete_val(&name.name, self)?;
         }
         Ok(Value::Unit)
+    }
+}
+
+impl Reconstruct for Delete {
+    fn reconstruct(&self) -> String {
+        format!(
+            "del {}",
+            self.names.iter().map(|a| a.reconstruct()).join(" , ")
+        )
     }
 }

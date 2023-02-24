@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Ast, AstData},
+    ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
     SymTable, Type, Value, ZResult,
 };
@@ -35,5 +35,10 @@ impl AstData for Defer {
     fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         val_symt.add_defer(*self.content.to_owned());
         Ok(Value::Unit)
+    }
+}
+impl Reconstruct for Defer {
+    fn reconstruct(&self) -> String {
+        format!("defer {}", self.content.reconstruct())
     }
 }

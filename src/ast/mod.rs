@@ -17,7 +17,7 @@ mod r#return;
 mod set;
 mod unary_opr;
 
-use std::fmt::Debug;
+use std::fmt::{Debug, Display, Formatter};
 
 pub use argument::Argument;
 pub use binary_opr::BinaryOpr;
@@ -31,6 +31,7 @@ pub use defer::Defer;
 pub use delete::Delete;
 use enum_as_inner::EnumAsInner;
 pub use ident::Ident;
+use itertools::Itertools;
 pub use literal::Literal;
 pub use preprocess::Preprocess;
 pub use procedure::Procedure;
@@ -125,5 +126,21 @@ impl AstData for Ast {
     }
     fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         for_all_variants!(&self, interpret_expr, val_symt)
+    }
+}
+
+pub trait Reconstruct {
+    fn reconstruct(&self) -> String;
+}
+
+impl Reconstruct for Ast {
+    fn reconstruct(&self) -> String {
+        for_all_variants!(&self, reconstruct)
+    }
+}
+
+impl Reconstruct for Vec<Ast> {
+    fn reconstruct(&self) -> String {
+        self.iter().map(|a| a.reconstruct()).join(" ; ")
     }
 }

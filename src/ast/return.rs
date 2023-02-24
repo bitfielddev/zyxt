@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Ast, AstData},
+    ast::{Ast, AstData, Reconstruct},
     primitives::UNIT_T,
     types::position::{GetSpan, Span},
     SymTable, Type, Value, ZResult,
@@ -37,5 +37,11 @@ impl AstData for Return {
         Ok(Value::Return(Box::new(
             self.value.interpret_expr(val_symt)?,
         )))
+    }
+}
+
+impl Reconstruct for Return {
+    fn reconstruct(&self) -> String {
+        format!("ret {}", self.value.reconstruct())
     }
 }

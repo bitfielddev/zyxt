@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{argument::Argument, Ast, AstData, Ident, Literal},
+    ast::{argument::Argument, Ast, AstData, Ident, Literal, Reconstruct},
     errors::ZError,
     primitives::UNIT_T,
     types::{
@@ -211,5 +212,15 @@ impl AstData for Call {
         } else {
             panic!()
         }
+    }
+}
+
+impl Reconstruct for Call {
+    fn reconstruct(&self) -> String {
+        format!(
+            "{} ( {} )",
+            self.called.reconstruct(),
+            self.args.iter().map(|a| a.reconstruct()).join(" , ")
+        )
     }
 }

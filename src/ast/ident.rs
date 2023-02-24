@@ -1,7 +1,7 @@
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{Ast, AstData},
+    ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
     SymTable, Type, Value, ZResult,
 };
@@ -45,5 +45,15 @@ impl AstData for Ident {
 
     fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         val_symt.get_val(&self.name, &self.name_span)
+    }
+}
+
+impl Reconstruct for Ident {
+    fn reconstruct(&self) -> String {
+        if let Some(parent) = &self.parent {
+            format!("{} . {}", parent.reconstruct(), self.name)
+        } else {
+            self.name.to_owned().into()
+        }
     }
 }

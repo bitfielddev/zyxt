@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Ast, AstData},
+    ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
     SymTable, Type, Value, ZError, ZResult,
 };
@@ -59,5 +59,15 @@ impl AstData for Set {
         };
         val_symt.set_val(name, &var.to_owned()?, self)?;
         var
+    }
+}
+
+impl Reconstruct for Set {
+    fn reconstruct(&self) -> String {
+        format!(
+            "{} = {}",
+            self.variable.reconstruct(),
+            self.content.reconstruct()
+        )
     }
 }

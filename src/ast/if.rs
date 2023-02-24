@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Ast, AstData, Condition},
+    ast::{Ast, AstData, Condition, Reconstruct},
     types::position::{GetSpan, Span},
     SymTable, Type, Value, ZResult,
 };
@@ -56,5 +56,11 @@ impl AstData for If {
             }
         }
         Ok(Value::Unit)
+    }
+}
+
+impl Reconstruct for If {
+    fn reconstruct(&self) -> String {
+        format!("todo")
     }
 }

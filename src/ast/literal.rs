@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Ast, AstData},
+    ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
     SymTable, Type, Value, ZResult,
 };
@@ -33,5 +33,10 @@ impl AstData for Literal {
         } else {
             self.content.to_owned()
         })
+    }
+}
+impl Reconstruct for Literal {
+    fn reconstruct(&self) -> String {
+        format!("{:?}", self.content)
     }
 }

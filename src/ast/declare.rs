@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Ast, AstData, BinaryOpr},
+    ast::{Ast, AstData, BinaryOpr, Reconstruct},
     types::{
         position::{GetSpan, Span},
         token::{Flag, OprType},
@@ -37,16 +37,17 @@ impl AstData for Declare {
         let content_type = self.content.process(ty_symt)?;
         let ty = self
             .ty
-            .as_ref()
+            .as_mut()
             .map(|ty| {
+                ty.process(ty_symt)?;
                 if let Ast::Literal(literal) = &**ty {
                     if let Value::Type(t) = &literal.content {
                         Ok(t.as_type_element())
                     } else {
-                        Err(ZError::t007().with_span(ty))
+                        Err(ZError::t007().with_span(ty.to_owned()))
                     }
                 } else {
-                    Err(ZError::t007().with_span(ty))
+                    Err(ZError::t007().with_span(ty.to_owned()))
                 }
             })
             .transpose()?;
@@ -101,5 +102,23 @@ impl AstData for Declare {
         let var = self.content.interpret_expr(val_symt);
         val_symt.declare_val(name, &var.to_owned()?);
         var
+    }
+}
+impl Reconstruct for Declare {
+    fn reconstruct(&self) -> String {
+        if let Some(ty) = &self.ty {
+            format!(
+                "{}: {} := {}",
+                self.variable.reconstruct(),
+                ty.reconstruct(),
+                self.content.reconstruct()
+            )
+        } else {
+            format!(
+                "{} := {}",
+                self.variable.reconstruct(),
+                self.content.reconstruct()
+            )
+        }
     }
 }

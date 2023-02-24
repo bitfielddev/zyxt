@@ -3,8 +3,8 @@ a := 3;
 b := 4.0;
 
 // get type of var
-ter.out a, "is type", a@type;
-ter.out b, "is type", b@type;
+ter.out a, "is type", (a@type);
+ter.out b, "is type", (b@type);
 
 b := 4;
 

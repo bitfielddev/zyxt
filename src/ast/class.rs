@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{argument::Argument, Ast, AstData, Block, Declare, Ident},
+    ast::{argument::Argument, Ast, AstData, Block, Declare, Ident, Reconstruct},
     types::{
         position::{GetSpan, Span},
         sym_table::FrameType,
@@ -161,5 +161,11 @@ impl AstData for Class {
                 })
                 .collect::<Result<HashMap<_, _>, _>>()?,
         })))
+    }
+}
+
+impl Reconstruct for Class {
+    fn reconstruct(&self) -> String {
+        format!("todo")
     }
 }

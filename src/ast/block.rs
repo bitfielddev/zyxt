@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Ast, AstData},
+    ast::{Ast, AstData, Reconstruct},
     primitives::UNIT_T,
     types::{
         position::{GetSpan, Span},
@@ -123,5 +123,11 @@ impl Block {
         }
         pop!();
         Ok(last)
+    }
+}
+
+impl Reconstruct for Block {
+    fn reconstruct(&self) -> String {
+        format!("{{ {} }}", self.content.reconstruct())
     }
 }

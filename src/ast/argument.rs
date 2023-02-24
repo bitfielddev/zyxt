@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use crate::{
-    ast::{Ast, AstData, Ident},
+    ast::{Ast, AstData, Ident, Reconstruct},
     errors::ZResult,
     types::position::{GetSpan, Span},
 };
@@ -45,5 +45,18 @@ impl Argument {
     pub fn desugar(&mut self) -> ZResult<()> {
         self.default = self.default.as_ref().map(AstData::desugared).transpose()?;
         Ok(())
+    }
+}
+
+impl Reconstruct for Argument {
+    fn reconstruct(&self) -> String {
+        format!(
+            "{}: {}: {}",
+            self.name.reconstruct(),
+            self.ty.reconstruct(),
+            self.default
+                .as_ref()
+                .map_or(String::new(), |a| a.reconstruct())
+        )
     }
 }

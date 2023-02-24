@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Ast, AstData},
+    ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
     SymTable, Type, Value, ZResult,
 };
@@ -27,5 +27,11 @@ impl AstData for Preprocess {
         let mut val_symt = SymTable::<Value>::default();
         let pre_value = pre_instructions.interpret_expr(&mut val_symt)?;
         Ok(pre_value.as_element())
+    }
+}
+
+impl Reconstruct for Preprocess {
+    fn reconstruct(&self) -> String {
+        format!("pre {}", self.content.reconstruct())
     }
 }

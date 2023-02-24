@@ -1,7 +1,10 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    fmt::{Display, Formatter},
+};
 
 use crate::{
-    ast::{Ast, AstData, Call, Ident},
+    ast::{Ast, AstData, Call, Ident, Reconstruct},
     primitives::BOOL_T,
     types::{
         position::{GetSpan, Span},
@@ -116,5 +119,16 @@ impl AstData for BinaryOpr {
             }
             _opr => panic!("{_opr:?}"),
         }
+    }
+}
+
+impl Reconstruct for BinaryOpr {
+    fn reconstruct(&self) -> String {
+        format!(
+            "{} <{}> {}",
+            self.operand1.reconstruct(),
+            self.ty,
+            self.operand2.reconstruct()
+        )
     }
 }

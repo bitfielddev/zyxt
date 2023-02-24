@@ -1,5 +1,7 @@
+use tracing::debug;
+
 use crate::{
-    ast::{Ast, AstData},
+    ast::{Ast, AstData, Reconstruct},
     types::{sym_table::SymTable, typeobj::Type},
     ZResult,
 };
@@ -11,6 +13,7 @@ pub fn gen_instructions(
     for ele in &mut input {
         *ele = ele.desugared()?;
     }
+    debug!("{}", input.reconstruct());
     for ele in &mut input {
         ele.process(ty_symt)?;
     }

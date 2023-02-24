@@ -1,5 +1,5 @@
 use crate::{
-    ast::{argument::Argument, Ast, AstData, Block},
+    ast::{argument::Argument, Ast, AstData, Block, Reconstruct},
     primitives::{PROC_T, UNIT_T},
     types::{
         position::{GetSpan, Span},
@@ -104,5 +104,10 @@ impl AstData for Procedure {
             },
             content: self.content.to_owned(),
         }))
+    }
+}
+impl Reconstruct for Procedure {
+    fn reconstruct(&self) -> String {
+        format!("todo")
     }
 }

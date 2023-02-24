@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    ast::{Ast, AstData, Call, Ident},
+    ast::{Ast, AstData, Call, Ident, Reconstruct},
     types::{
         position::{GetSpan, Span},
         token::OprType,
@@ -47,5 +47,11 @@ impl AstData for UnaryOpr {
             kwargs: HashMap::default(),
         }
         .as_variant())
+    }
+}
+
+impl Reconstruct for UnaryOpr {
+    fn reconstruct(&self) -> String {
+        format!("({}) {}", self.ty, self.operand.reconstruct())
     }
 }
