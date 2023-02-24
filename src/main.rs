@@ -3,7 +3,8 @@ use std::{path::PathBuf, process::exit};
 use clap::Parser;
 use color_eyre::{config::HookBuilder, eyre::Result};
 use itertools::Either;
-use tracing_subscriber::EnvFilter;
+use tracing_error::ErrorLayer;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 use zyxt::{
     ast::Ast,
     repl,
@@ -35,9 +36,10 @@ fn main() -> Result<()> {
     HookBuilder::new()
         .panic_section("This shouldn't happen!\nOpen an issue on our GitHub: https://github.com/Segmential/zyxt/issues/new")
         .install()?;
-    tracing_subscriber::fmt()
-        .event_format(tracing_subscriber::fmt::format().compact())
-        .with_env_filter(EnvFilter::from_env("RUST_LOG"))
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer().compact())
+        .with(EnvFilter::from_env("RUST_LOG"))
+        .with(ErrorLayer::default())
         .init();
     let args = Args::parse();
     let verbose = args.verbose;

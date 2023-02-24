@@ -94,7 +94,7 @@ impl Span {
     }
 }
 
-pub trait GetSpan: Clone {
+pub trait GetSpan: Clone + Debug {
     fn span(&self) -> Option<Span>;
     fn merge_span(&self, other: impl GetSpan) -> Option<Span> {
         let opt_span1 = self.span();

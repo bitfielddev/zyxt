@@ -5,9 +5,11 @@ mod typecheck;
 
 use std::{fmt::Debug, process::exit};
 
+use backtrace::Backtrace;
 use itertools::Itertools;
 use owo_colors::OwoColorize;
 use tracing::{debug, warn};
+use tracing_error::SpanTrace;
 
 use crate::{
     file_importer::get_input,
@@ -21,15 +23,20 @@ pub struct ZError {
     pub pos: Vec<Span>,
     pub code: &'static str,
     pub message: String,
+    pub span_trace: SpanTrace,
+    pub back_trace: Backtrace,
 }
 
 impl ZError {
     #[must_use]
-    pub const fn new(code: &'static str, message: String) -> Self {
+    #[tracing::instrument(skip_all)]
+    pub fn new(code: &'static str, message: String) -> Self {
         Self {
             code,
             message,
             pos: Vec::new(),
+            span_trace: SpanTrace::capture(),
+            back_trace: Backtrace::new(),
         }
     }
     #[tracing::instrument(skip_all)]
@@ -87,6 +94,9 @@ impl ZError {
     }
     pub fn print(&self) {
         println!("{}", self.get_surrounding_text());
+        // TODO flag for showing span_trace
+        println!("Span trace:\n{}", self.span_trace);
+        println!("Back trace:\n{:#?}", self.back_trace);
         println!(
             " Error {}{} ",
             self.code.black().on_yellow(),

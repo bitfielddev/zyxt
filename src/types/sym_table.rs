@@ -157,6 +157,7 @@ impl Default for SymTable<Type<Ast>> {
 }
 
 impl SymTable<Type<Ast>> {
+    #[tracing::instrument(skip(self))]
     pub fn declare_val(&mut self, name: &SmolStr, value: &Type<Ast>) {
         let frame = if let Some(frame) = self.frames.front_mut() {
             frame
@@ -174,6 +175,7 @@ impl SymTable<Type<Ast>> {
 }
 
 impl<T: Clone + Display + Debug> SymTable<T> {
+    #[tracing::instrument(skip(self))]
     pub fn add_frame(&mut self, frame_data: Option<FrameData<T>>, ty: FrameType) -> &mut Frame<T> {
         self.frames.push_front(Frame {
             heap: HashMap::new(),
@@ -185,6 +187,7 @@ impl<T: Clone + Display + Debug> SymTable<T> {
         self.frames.front_mut().unwrap()
     }
 
+    #[tracing::instrument(skip(self))]
     pub fn set_val(&mut self, name: &SmolStr, value: &T, span: impl GetSpan) -> ZResult<()> {
         let mut only_consts = false;
         for frame in &mut self.frames {
@@ -202,6 +205,7 @@ impl<T: Clone + Display + Debug> SymTable<T> {
         }
         Err(ZError::t002().with_span(span))
     }
+    #[tracing::instrument(skip(self))]
     pub fn get_val(&mut self, name: &SmolStr, span: impl GetSpan) -> ZResult<T> {
         let mut only_consts = false;
         for frame in &self.frames {
@@ -218,6 +222,7 @@ impl<T: Clone + Display + Debug> SymTable<T> {
         }
         Err(ZError::t002().with_span(span))
     }
+    #[tracing::instrument(skip(self))]
     pub fn delete_val(&mut self, name: &SmolStr, span: impl GetSpan) -> ZResult<T> {
         let Some(first_frame) = self.frames.front_mut() else {
             return Err(ZError::t002().with_span(span))
@@ -228,6 +233,7 @@ impl<T: Clone + Display + Debug> SymTable<T> {
             Err(ZError::t002().with_span(span))
         }
     }
+    #[tracing::instrument(skip(self))]
     pub fn add_defer(&mut self, content: Ast) {
         self.frames.front_mut().unwrap().defer.push(content);
     }

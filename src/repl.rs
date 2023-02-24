@@ -4,7 +4,7 @@ use color_eyre::eyre::{eyre, Result};
 use dirs::home_dir;
 use itertools::Either;
 use owo_colors::OwoColorize;
-use rustyline::{error::ReadlineError, Editor};
+use rustyline::{error::ReadlineError, history::FileHistory, Editor};
 use smol_str::SmolStr;
 
 use crate::{
@@ -18,7 +18,7 @@ pub fn repl(verbosity: u8) -> Result<()> {
     let filename = SmolStr::from("[stdin]");
     let mut ty_symt = SymTable::<Type<Ast>>::default();
     let mut val_symt = SymTable::<Value>::default();
-    let mut rl = Editor::<()>::new()?;
+    let mut rl = Editor::<(), FileHistory>::new()?; // TODO history
     let mut history_path = home_dir().ok_or_else(|| eyre!("No home dir"))?;
     history_path.push(".zyxt_history");
     let _ = rl.load_history(&*history_path.to_string_lossy());
