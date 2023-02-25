@@ -27,6 +27,7 @@ macro_rules! comp_opr_unit {
     };
 }
 
+#[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 #[allow(unused_variables)]
 fn unit_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();

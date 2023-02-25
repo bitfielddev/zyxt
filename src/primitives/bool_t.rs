@@ -23,6 +23,7 @@ macro_rules! typecast_bool_to_num {
     };
 }
 
+#[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn bool_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
     h.insert("_default", Value::Bool(false));

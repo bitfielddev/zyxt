@@ -23,8 +23,8 @@ pub struct ZError {
     pub pos: Vec<Span>,
     pub code: &'static str,
     pub message: String,
-    pub span_trace: SpanTrace,
-    pub back_trace: Backtrace,
+    pub span_trace: Box<SpanTrace>,
+    pub back_trace: Box<Backtrace>,
 }
 
 impl ZError {
@@ -35,8 +35,8 @@ impl ZError {
             code,
             message,
             pos: Vec::new(),
-            span_trace: SpanTrace::capture(),
-            back_trace: Backtrace::new(),
+            span_trace: Box::new(SpanTrace::capture()),
+            back_trace: Box::new(Backtrace::new()),
         }
     }
     #[tracing::instrument(skip_all)]

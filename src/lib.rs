@@ -159,7 +159,7 @@ use std::{path::Path, time::Instant};
 use errors::{ZError, ZResult};
 use itertools::Either;
 use smol_str::SmolStr;
-use tracing::{debug, info, trace};
+use tracing::{info, trace};
 
 use crate::{
     ast::Ast,
@@ -182,10 +182,7 @@ pub fn compile(
 
     let (input, filename) = match &file {
         Either::Left(p) => (import_file(p), SmolStr::from(p.to_string_lossy())),
-        Either::Right((name, input)) => (
-            register_input(name.to_owned(), input.to_owned()),
-            name.to_owned(),
-        ),
+        Either::Right((name, input)) => (register_input(name, input), name.to_owned()),
     };
 
     info!("Lexing");

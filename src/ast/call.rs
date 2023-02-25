@@ -170,7 +170,7 @@ impl AstData for Call {
                     if let Some(v) = f(&processed_args) {
                         Ok(v)
                     } else {
-                        return Err(ZError::i001(&processed_args).with_span(&*self));
+                        Err(ZError::i001(&processed_args).with_span(self))
                     }
                 }
                 Proc::Defined {
@@ -220,7 +220,7 @@ impl Reconstruct for Call {
         format!(
             "{} ( {} )",
             self.called.reconstruct(),
-            self.args.iter().map(|a| a.reconstruct()).join(" , ")
+            self.args.iter().map(Reconstruct::reconstruct).join(" , ")
         )
     }
 }

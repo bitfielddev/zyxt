@@ -16,6 +16,7 @@ use crate::{
     unary, Type,
 };
 
+#[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn ubig_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
     h.insert("_default", Value::Ubig(0u8.into()));

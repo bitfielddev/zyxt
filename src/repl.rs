@@ -42,7 +42,7 @@ pub fn repl(verbosity: u8) -> Result<()> {
                 if input == *";exit" {
                     break;
                 }
-                rl.add_history_entry(&input);
+                rl.add_history_entry(&input)?;
                 rl.save_history(&*history_path.to_string_lossy())?;
                 if input.starts_with(';') {
                     match &*input {

@@ -56,7 +56,7 @@ impl Reconstruct for Argument {
             self.ty.reconstruct(),
             self.default
                 .as_ref()
-                .map_or(String::new(), |a| a.reconstruct())
+                .map_or(String::new(), Reconstruct::reconstruct)
         )
     }
 }

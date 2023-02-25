@@ -17,7 +17,7 @@ mod r#return;
 mod set;
 mod unary_opr;
 
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::Debug;
 
 pub use argument::Argument;
 pub use binary_opr::BinaryOpr;
@@ -141,6 +141,6 @@ impl Reconstruct for Ast {
 
 impl Reconstruct for Vec<Ast> {
     fn reconstruct(&self) -> String {
-        self.iter().map(|a| a.reconstruct()).join(" ; ")
+        self.iter().map(Reconstruct::reconstruct).join(" ; ")
     }
 }

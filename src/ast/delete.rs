@@ -39,7 +39,7 @@ impl Reconstruct for Delete {
     fn reconstruct(&self) -> String {
         format!(
             "del {}",
-            self.names.iter().map(|a| a.reconstruct()).join(" , ")
+            self.names.iter().map(Reconstruct::reconstruct).join(" , ")
         )
     }
 }

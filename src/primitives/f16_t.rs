@@ -28,6 +28,7 @@ macro_rules! typecast_f16_to_int {
     };
 }
 
+#[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn f16_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
     h.insert("_default", Value::F16(f16::from_f64_const(0.0)));

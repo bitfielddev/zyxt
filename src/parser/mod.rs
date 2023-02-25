@@ -69,7 +69,7 @@ impl Buffer {
             .unwrap_or(&Either::Left(Value::Unit.as_element()))
         {
             Either::Left(c) => Ok(c.to_owned()),
-            Either::Right(c) => return Err(ZError::p003().with_span(c)),
+            Either::Right(c) => Err(ZError::p003().with_span(c)),
         }
     }
 }

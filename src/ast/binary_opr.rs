@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    fmt::{Display, Formatter},
-};
+use std::collections::HashMap;
 
 use crate::{
     ast::{Ast, AstData, Call, Ident, Reconstruct},

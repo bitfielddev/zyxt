@@ -47,14 +47,17 @@ impl Buffer {
         self.reset_cursor();
         while let Some(mut selected) = self.next() {
             let (tok_selected, ty) = if let Either::Right(selected) = &selected {
+                let Some(sel_ty) = &selected.ty else {
+                    continue
+                };
                 if [
-                    Some(TokenType::Keyword(Keyword::Proc)),
-                    Some(TokenType::Keyword(Keyword::Fn)),
-                    Some(TokenType::Bar),
+                    TokenType::Keyword(Keyword::Proc),
+                    TokenType::Keyword(Keyword::Fn),
+                    TokenType::Bar,
                 ]
-                .contains(&selected.ty)
+                .contains(sel_ty)
                 {
-                    (selected.to_owned(), selected.ty.unwrap())
+                    (selected.to_owned(), *sel_ty)
                 } else {
                     continue;
                 }
@@ -112,9 +115,9 @@ impl Buffer {
             } else {
                 None
             };
-            let block: Block = if let Either::Left(block @ Ast::Block(_)) = &selected {
+            let block: Block = if let Either::Left(Ast::Block(block)) = &selected {
                 debug!(pos = ?block.span(), "Block detected");
-                block.as_block().unwrap().to_owned()
+                block.to_owned()
             } else {
                 debug!(pos = ?selected.span(), "Expression detected");
                 self.window(self.cursor..self.content.len())

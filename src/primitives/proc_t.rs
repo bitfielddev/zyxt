@@ -15,6 +15,7 @@ use crate::{
     Type,
 };
 
+#[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn proc_t() -> HashMap<SmolStr, Value> {
     let mut h = HashMap::new();
     concat_vals!(h, PROC_T);
