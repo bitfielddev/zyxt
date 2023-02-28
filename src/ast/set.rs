@@ -46,7 +46,8 @@ impl AstData for Set {
 
     fn desugared(&self) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
-        new_self.content = self.content.desugared()?.into();
+        new_self.content.desugar()?;
+        new_self.variable.desugar()?;
         Ok(new_self.as_variant())
     }
 

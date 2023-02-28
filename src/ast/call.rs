@@ -41,19 +41,21 @@ impl AstData for Call {
     fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         if let Ast::Ident(Ident {
             name,
-            parent:
-                Some(box Ast::Ident(Ident {
-                    name: parent_name, ..
-                })),
+            parent: Some(parent),
             ..
         }) = &*self.called
         {
-            if &**name == "out" && &**parent_name == "ter" {
-                self.args
-                    .iter_mut()
-                    .map(|a| a.typecheck(ty_symt))
-                    .collect::<ZResult<Vec<_>>>()?;
-                return Ok(UNIT_T.get_instance().as_type_element());
+            if let Ast::Ident(Ident {
+                name: parent_name, ..
+            }) = &**parent
+            {
+                if &**name == "out" && &**parent_name == "ter" {
+                    self.args
+                        .iter_mut()
+                        .map(|a| a.typecheck(ty_symt))
+                        .collect::<ZResult<Vec<_>>>()?;
+                    return Ok(UNIT_T.get_instance().as_type_element());
+                }
             }
         }
         let called_type = self.called.typecheck(ty_symt)?;
@@ -131,32 +133,46 @@ impl AstData for Call {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
-        // TODO
-        Ok(self.as_variant())
+        Ok(Ast::Call(Self {
+            called: Box::new(self.called.desugared()?),
+            paren_spans: self.paren_spans.to_owned(),
+            args: self
+                .args
+                .iter()
+                .map(AstData::desugared)
+                .collect::<ZResult<_>>()?,
+            kwargs: self
+                .kwargs
+                .iter()
+                .map(|(k, v)| Ok((k.to_owned(), v.desugared()?)))
+                .collect::<ZResult<_>>()?,
+        }))
     }
 
     fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         if let Ast::Ident(Ident {
             name,
-            parent:
-                Some(box Ast::Ident(Ident {
-                    name: parent_name, ..
-                })),
+            parent: Some(parent),
             ..
         }) = &*self.called
         {
-            if *name == "out" && *parent_name == "ter" {
-                let s = self
-                    .args
-                    .iter()
-                    .map(|arg| arg.interpret_expr(val_symt))
-                    .collect::<Result<Vec<_>, _>>()?
-                    .into_iter()
-                    .map(|v| v.to_string())
-                    .collect::<Vec<String>>()
-                    .join(" ");
-                println!("{s}");
-                return Ok(Value::Unit);
+            if let Ast::Ident(Ident {
+                name: parent_name, ..
+            }) = &**parent
+            {
+                if &**name == "out" && &**parent_name == "ter" {
+                    let s = self
+                        .args
+                        .iter()
+                        .map(|arg| arg.interpret_expr(val_symt))
+                        .collect::<Result<Vec<_>, _>>()?
+                        .into_iter()
+                        .map(|v| v.to_string())
+                        .collect::<Vec<String>>()
+                        .join(" ");
+                    println!("{s}");
+                    return Ok(Value::Unit);
+                }
             }
         }
         if let Value::Proc(proc) = self.called.interpret_expr(val_symt)? {

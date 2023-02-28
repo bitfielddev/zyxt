@@ -84,6 +84,7 @@ impl AstData for Declare {
     fn desugared(&self) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
         new_self.content.desugar()?;
+        new_self.variable.desugar()?;
         new_self.ty = self
             .ty
             .as_ref()
