@@ -21,7 +21,7 @@ impl AstData for Return {
         Ast::Return(self.to_owned())
     }
 
-    fn process(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(UNIT_T.as_type().as_type_element())
     }
 

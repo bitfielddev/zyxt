@@ -32,7 +32,7 @@ impl AstData for Procedure {
         Ast::Procedure(self.to_owned())
     }
 
-    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         ty_symt.add_frame(
             None,
             if self.is_fn {
@@ -42,12 +42,12 @@ impl AstData for Procedure {
             },
         );
         let return_type = if let Some(ty) = &mut self.return_type {
-            ty.process(ty_symt)?
+            ty.typecheck(ty_symt)?
         } else {
             UNIT_T.as_type().as_type_element()
         };
         for arg in &mut self.args {
-            let value = arg.ty.process(ty_symt)?;
+            let value = arg.ty.typecheck(ty_symt)?;
             ty_symt.declare_val(&arg.name.name, &value);
         }
         let (res, block_return_type) = self.content.block_type(ty_symt, false)?;

@@ -23,7 +23,7 @@ impl AstData for Literal {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn process(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(self.content.get_type_obj().as_type_element())
     }
 

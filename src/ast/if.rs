@@ -22,7 +22,7 @@ impl AstData for If {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(self.conditions[0].if_true.block_type(ty_symt, true)?.0)
         // TODO consider all returns
     }

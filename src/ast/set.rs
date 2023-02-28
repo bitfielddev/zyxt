@@ -23,11 +23,11 @@ impl AstData for Set {
         Ast::Set(self.to_owned())
     }
 
-    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         if !self.variable.is_pattern() {
             return Err(ZError::t006().with_span(&*self.variable));
         }
-        let content_type = self.content.process(ty_symt)?;
+        let content_type = self.content.typecheck(ty_symt)?;
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {

@@ -23,7 +23,7 @@ impl AstData for Delete {
         Ast::Delete(self.to_owned())
     }
 
-    fn process(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(UNIT_T.get_instance().as_type_element())
     }
 

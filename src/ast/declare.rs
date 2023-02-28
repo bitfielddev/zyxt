@@ -30,16 +30,16 @@ impl AstData for Declare {
         Ast::Declare(self.to_owned())
     }
 
-    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         if !self.variable.is_pattern() {
             return Err(ZError::t006().with_span(&self.variable));
         }
-        let content_type = self.content.process(ty_symt)?;
+        let content_type = self.content.typecheck(ty_symt)?;
         let ty = self
             .ty
             .as_mut()
             .map(|ty| {
-                ty.process(ty_symt)?;
+                ty.typecheck(ty_symt)?;
                 if let Ast::Literal(literal) = &**ty {
                     if let Value::Type(t) = &literal.content {
                         Ok(t.as_type_element())
@@ -66,7 +66,7 @@ impl AstData for Declare {
                     operand2: ty.as_literal().into(),
                 }
                 .as_variant();
-                new_content.process(ty_symt)?;
+                new_content.typecheck(ty_symt)?;
                 *self = Self {
                     ty: self.ty.to_owned(),
                     content: new_content.into(),
@@ -83,7 +83,7 @@ impl AstData for Declare {
 
     fn desugared(&self) -> ZResult<Ast> {
         let mut new_self = self.to_owned();
-        new_self.content = self.content.desugared()?.into();
+        new_self.content.desugar()?;
         new_self.ty = self
             .ty
             .as_ref()

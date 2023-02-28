@@ -55,7 +55,7 @@ pub trait AstData: Clone + PartialEq + Debug + GetSpan {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn process(&mut self, _: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, _: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(Type::Any)
     }
     fn desugared(&self) -> ZResult<Ast> {
@@ -118,14 +118,20 @@ impl AstData for Ast {
     fn is_pattern(&self) -> bool {
         for_all_variants!(&self, is_pattern)
     }
-    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        for_all_variants!(self, process, ty_symt)
+    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+        for_all_variants!(self, typecheck, ty_symt)
     }
     fn desugared(&self) -> ZResult<Ast> {
         for_all_variants!(&self, desugared)
     }
     fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         for_all_variants!(&self, interpret_expr, val_symt)
+    }
+}
+impl Ast {
+    pub fn desugar(&mut self) -> ZResult<()> {
+        *self = self.desugared()?;
+        Ok(())
     }
 }
 

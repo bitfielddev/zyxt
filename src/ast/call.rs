@@ -38,7 +38,7 @@ impl AstData for Call {
     fn as_variant(&self) -> Ast {
         Ast::Call(self.to_owned())
     }
-    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         if let Ast::Ident(Ident {
             name,
             parent:
@@ -51,22 +51,22 @@ impl AstData for Call {
             if &**name == "out" && &**parent_name == "ter" {
                 self.args
                     .iter_mut()
-                    .map(|a| a.process(ty_symt))
+                    .map(|a| a.typecheck(ty_symt))
                     .collect::<ZResult<Vec<_>>>()?;
                 return Ok(UNIT_T.get_instance().as_type_element());
             }
         }
-        let called_type = self.called.process(ty_symt)?;
+        let called_type = self.called.typecheck(ty_symt)?;
         if let Ast::Procedure(procedure) = &mut *self.called {
             for (i, arg) in self.args.iter_mut().enumerate() {
-                let expected = procedure.args[i].ty.process(ty_symt)?;
-                let actual = arg.process(ty_symt)?;
+                let expected = procedure.args[i].ty.typecheck(ty_symt)?;
+                let actual = arg.typecheck(ty_symt)?;
                 if expected != actual {
                     return Err(ZError::t004(&expected, &actual).with_span(&*self));
                 }
             }
             if let Some(ty) = &mut procedure.return_type {
-                ty.process(ty_symt)
+                ty.typecheck(ty_symt)
             } else {
                 Ok(UNIT_T.as_type_element().as_type())
             }
@@ -79,7 +79,7 @@ impl AstData for Call {
                 Proc::Builtin { signature, .. } => {
                     let (arg_objs, ret): (Vec<Type<Value>>, Type<Value>) = signature[0]();
                     for (i, arg) in self.args.iter_mut().enumerate() {
-                        let actual = arg.process(ty_symt)?;
+                        let actual = arg.typecheck(ty_symt)?;
                         let expected = arg_objs[i].as_type_element();
                         if actual != expected && actual != Type::Any && expected != Type::Any {
                             return Err(ZError::t004(&expected, &actual).with_span(&*self));
@@ -93,8 +93,8 @@ impl AstData for Call {
                     ..
                 } => {
                     for (i, arg) in self.args.iter_mut().enumerate() {
-                        let expected = arg_objs[i].ty.process(ty_symt)?;
-                        let actual = arg.process(ty_symt)?;
+                        let expected = arg_objs[i].ty.typecheck(ty_symt)?;
+                        let actual = arg.typecheck(ty_symt)?;
                         if expected != actual {
                             return Err(ZError::t004(&expected, &actual).with_span(&*self));
                         }
@@ -126,7 +126,7 @@ impl AstData for Call {
                 unreachable!()
             }
             .into();
-            self.process(ty_symt)
+            self.typecheck(ty_symt)
         }
     }
 

@@ -29,7 +29,7 @@ impl AstData for Ident {
     fn is_pattern(&self) -> bool {
         true
     }
-    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         ty_symt.get_val(&self.name, &self.name_span)
     }
 

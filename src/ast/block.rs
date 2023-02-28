@@ -26,7 +26,7 @@ impl AstData for Block {
         Ast::Block(self.to_owned())
     }
 
-    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
         Ok(self.block_type(ty_symt, true)?.0)
     }
 
@@ -57,7 +57,7 @@ impl Block {
             ty_symt.add_frame(None, FrameType::Normal);
         }
         for ele in &mut self.content {
-            last = ele.process(ty_symt)?;
+            last = ele.typecheck(ty_symt)?;
             if let Type::Return(value) = last.to_owned() {
                 if let Some(return_type) = &return_type {
                     if last != *return_type {

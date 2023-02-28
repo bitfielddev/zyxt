@@ -146,7 +146,6 @@
 pub mod ast;
 pub mod errors;
 pub mod file_importer;
-pub mod instructor;
 pub mod interpreter;
 pub mod lexer;
 pub mod parser;
@@ -159,12 +158,11 @@ use std::{path::Path, time::Instant};
 use errors::{ZError, ZResult};
 use itertools::Either;
 use smol_str::SmolStr;
-use tracing::{info, trace};
+use tracing::{debug, info, trace};
 
 use crate::{
-    ast::Ast,
+    ast::{Ast, AstData, Reconstruct},
     file_importer::{import_file, register_input},
-    instructor::gen_instructions,
     interpreter::interpret_asts,
     lexer::lex,
     parser::parse_token_list,
@@ -193,26 +191,39 @@ pub fn compile(
 
     info!("Parsing");
     let parse_start = Instant::now();
-    let parsed = parse_token_list(lexed)?;
+    let mut parsed = parse_token_list(lexed)?;
     let parse_time = parse_start.elapsed().as_micros();
     trace!("{parsed:#?}");
+    debug!("{}", parsed.reconstruct());
 
-    info!("Generating instructions");
-    let check_start = Instant::now();
-    let instructions = gen_instructions(parsed, ty_symt)?;
-    let check_time = check_start.elapsed().as_micros();
-    trace!("{instructions:#?}");
+    info!("Desugaring");
+    let desugar_start = Instant::now();
+    for ele in &mut parsed {
+        ele.desugar()?;
+    }
+    let desugar_time = desugar_start.elapsed().as_micros();
+    trace!("{parsed:#?}");
+    debug!("{}", parsed.reconstruct());
+
+    info!("Typechecking");
+    let typecheck_start = Instant::now();
+    for ele in &mut parsed {
+        ele.typecheck(ty_symt)?;
+    }
+    let typecheck_time = typecheck_start.elapsed().as_micros();
+    trace!("{parsed:#?}");
 
     info!("Stats:");
     info!("Lexing time: {lex_time}\u{b5}s");
     info!("Parsing time: {parse_time}\u{b5}s");
-    info!("Instruction generation time: {check_time}\u{b5}s");
+    info!("Desugar time: {desugar_time}\u{b5}s");
+    info!("Typecheck time: {typecheck_time}\u{b5}s");
     info!(
         "Total time: {}\u{b5}s\n",
-        lex_time + parse_time + check_time
+        lex_time + parse_time + desugar_time + typecheck_time
     );
 
-    Ok(instructions)
+    Ok(parsed)
 }
 
 pub fn interpret(input: &Vec<Ast>, val_symt: &mut SymTable<Value>) -> ZResult<i32> {

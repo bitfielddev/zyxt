@@ -20,8 +20,8 @@ impl AstData for Defer {
         Ast::Defer(self.to_owned())
     }
 
-    fn process(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        self.content.process(ty_symt)
+    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+        self.content.typecheck(ty_symt)
     }
 
     fn desugared(&self) -> ZResult<Ast> {
