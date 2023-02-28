@@ -8,8 +8,8 @@ impl ZError {
         Self::new("T001", "Constants are not mutable".to_owned())
     }
     #[must_use]
-    pub fn t002() -> Self {
-        Self::new("T002", "Symbol is not defined".to_owned())
+    pub fn t002(sym: &str) -> Self {
+        Self::new("T002", format!("Symbol `{sym}` is not defined"))
     }
     #[must_use]
     pub fn t003<T: Clone + PartialEq + Debug>(block_type: &Type<T>, return_type: &Type<T>) -> Self {

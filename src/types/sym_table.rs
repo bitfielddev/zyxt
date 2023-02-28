@@ -203,7 +203,7 @@ impl<T: Clone + Display + Debug> SymTable<T> {
                 only_consts = true;
             }
         }
-        Err(ZError::t002().with_span(span))
+        Err(ZError::t002(name).with_span(span))
     }
     #[tracing::instrument(skip(self))]
     pub fn get_val(&mut self, name: &SmolStr, span: impl GetSpan) -> ZResult<T> {
@@ -220,17 +220,17 @@ impl<T: Clone + Display + Debug> SymTable<T> {
                 only_consts = true;
             }
         }
-        Err(ZError::t002().with_span(span))
+        Err(ZError::t002(name).with_span(span))
     }
     #[tracing::instrument(skip(self))]
     pub fn delete_val(&mut self, name: &SmolStr, span: impl GetSpan) -> ZResult<T> {
         let Some(first_frame) = self.frames.front_mut() else {
-            return Err(ZError::t002().with_span(span))
+            return Err(ZError::t002(name).with_span(span))
         };
         if let Some(v) = first_frame.heap.remove(name) {
             Ok(v)
         } else {
-            Err(ZError::t002().with_span(span))
+            Err(ZError::t002(name).with_span(span))
         }
     }
     #[tracing::instrument(skip(self))]
