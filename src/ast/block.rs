@@ -1,3 +1,5 @@
+use tracing::debug;
+
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     primitives::UNIT_T,
@@ -31,6 +33,7 @@ impl AstData for Block {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring block");
         Ok(Ast::Block(Self {
             brace_spans: self.brace_spans.to_owned(),
             content: self

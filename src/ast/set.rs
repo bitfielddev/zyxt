@@ -1,3 +1,5 @@
+use tracing::debug;
+
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
@@ -45,6 +47,7 @@ impl AstData for Set {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring set statement");
         let mut new_self = self.to_owned();
         new_self.content.desugar()?;
         new_self.variable.desugar()?;

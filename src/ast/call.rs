@@ -2,14 +2,16 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 use smol_str::SmolStr;
+use tracing::debug;
 
 use crate::{
-    ast::{argument::Argument, Ast, AstData, Ident, Literal, Reconstruct},
+    ast::{argument::Argument, Ast, AstData, BinaryOpr, Ident, Literal, Member, Reconstruct},
     errors::ZError,
     primitives::UNIT_T,
     types::{
         position::{GetSpan, Position, Span},
         sym_table::{FrameData, FrameType},
+        token::{AccessType, OprType},
         typeobj::{TypeDefinition, TypeInstance},
         value::Proc,
     },
@@ -39,12 +41,7 @@ impl AstData for Call {
         Ast::Call(self.to_owned())
     }
     fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        if let Ast::Ident(Ident {
-            name,
-            parent: Some(parent),
-            ..
-        }) = &*self.called
-        {
+        if let Ast::Member(Member { name, parent, .. }) = &*self.called {
             if let Ast::Ident(Ident {
                 name: parent_name, ..
             }) = &**parent
@@ -133,14 +130,46 @@ impl AstData for Call {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring function call");
+        let mut called = self.called.desugared()?;
+        let mut args = self
+            .args
+            .iter()
+            .map(AstData::desugared)
+            .collect::<ZResult<Vec<_>>>()?;
+        if let Ast::Member(Member {
+            ty: AccessType::Method,
+            name,
+            parent,
+            ..
+        }) = called
+        {
+            called = Ast::Member(Member {
+                ty: AccessType::Namespace,
+                name,
+                parent: Box::new(
+                    Ast::BinaryOpr(BinaryOpr {
+                        ty: OprType::TypeCast,
+                        opr_span: None,
+                        operand1: parent.to_owned(),
+                        operand2: Box::from(Ast::Ident(Ident {
+                            name: "type".into(),
+                            name_span: None,
+                        })),
+                    })
+                    .desugared()?,
+                ),
+                name_span: None,
+                dot_span: None,
+            });
+            args.reverse();
+            args.push(*parent);
+            args.reverse();
+        }
         Ok(Ast::Call(Self {
-            called: Box::new(self.called.desugared()?),
+            called: Box::new(called),
             paren_spans: self.paren_spans.to_owned(),
-            args: self
-                .args
-                .iter()
-                .map(AstData::desugared)
-                .collect::<ZResult<_>>()?,
+            args,
             kwargs: self
                 .kwargs
                 .iter()
@@ -150,12 +179,7 @@ impl AstData for Call {
     }
 
     fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
-        if let Ast::Ident(Ident {
-            name,
-            parent: Some(parent),
-            ..
-        }) = &*self.called
-        {
+        if let Ast::Member(Member { name, parent, .. }) = &*self.called {
             if let Ast::Ident(Ident {
                 name: parent_name, ..
             }) = &**parent

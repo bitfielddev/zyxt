@@ -1,3 +1,5 @@
+use tracing::debug;
+
 use crate::{
     ast::{Ast, AstData, Block},
     errors::ZResult,
@@ -21,6 +23,7 @@ impl GetSpan for Condition {
 
 impl Condition {
     pub fn desugar(&mut self) -> ZResult<()> {
+        debug!(span = ?self.span(), "Desugaring condition");
         self.condition.as_mut().map(|e| e.desugared()).transpose()?;
         self.if_true = self
             .if_true

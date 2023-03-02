@@ -5,7 +5,7 @@ use crate::{
     },
     types::{
         position::Span,
-        token::{OprType, Token, TokenType},
+        token::{AccessType, OprType, Token, TokenType},
     },
     ZError, ZResult,
 };
@@ -154,12 +154,22 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
                 } // TODO |>
                 _ => TokenType::Bar,
             },
-            '.' => TokenType::DotOpr,
+            '.' => TokenType::DotOpr(AccessType::Field),
             ':' => match iter.peek() {
                 Some(('=', _)) => {
                     iter.next().unwrap();
                     char.push('=');
                     TokenType::DeclarationOpr
+                }
+                Some(('.', _)) => {
+                    iter.next().unwrap();
+                    char.push('.');
+                    TokenType::DotOpr(AccessType::Method)
+                }
+                Some((':', _)) => {
+                    iter.next().unwrap();
+                    char.push(':');
+                    TokenType::DotOpr(AccessType::Namespace)
                 }
                 _ => TokenType::Colon,
             },

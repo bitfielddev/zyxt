@@ -1,3 +1,5 @@
+use tracing::debug;
+
 use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Reconstruct},
     primitives::{PROC_T, UNIT_T},
@@ -69,6 +71,7 @@ impl AstData for Procedure {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring procedure statement");
         let mut new_self = self.to_owned();
         new_self.args = self
             .args

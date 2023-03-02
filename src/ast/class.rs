@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use smol_str::SmolStr;
+use tracing::debug;
 
 use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Declare, Ident, Reconstruct},
@@ -104,6 +105,7 @@ impl AstData for Class {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring class");
         let mut new_self = self.to_owned();
         new_self.content = if let Some(content) = new_self.content {
             Some(

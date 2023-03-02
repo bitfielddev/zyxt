@@ -10,14 +10,10 @@ use crate::{
 pub struct Ident {
     pub name: SmolStr,
     pub name_span: Option<Span>,
-    pub dot_span: Option<Span>,
-    pub parent: Option<Box<Ast>>,
 }
 impl GetSpan for Ident {
     fn span(&self) -> Option<Span> {
-        self.parent
-            .merge_span(&self.dot_span)
-            .merge_span(&self.name_span)
+        self.name_span.to_owned()
     }
 }
 
@@ -33,16 +29,6 @@ impl AstData for Ident {
         ty_symt.get_val(&self.name, &self.name_span)
     }
 
-    fn desugared(&self) -> ZResult<Ast> {
-        let mut new_self = self.to_owned();
-        new_self.parent = new_self
-            .parent
-            .map(|a| a.desugared())
-            .transpose()?
-            .map(Into::into);
-        Ok(new_self.as_variant())
-    }
-
     fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
         val_symt.get_val(&self.name, &self.name_span)
     }
@@ -50,10 +36,6 @@ impl AstData for Ident {
 
 impl Reconstruct for Ident {
     fn reconstruct(&self) -> String {
-        if let Some(parent) = &self.parent {
-            format!("{} . {}", parent.reconstruct(), self.name)
-        } else {
-            self.name.to_owned().into()
-        }
+        self.name.to_owned().into()
     }
 }

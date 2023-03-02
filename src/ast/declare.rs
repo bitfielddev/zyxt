@@ -1,3 +1,5 @@
+use tracing::debug;
+
 use crate::{
     ast::{Ast, AstData, BinaryOpr, Reconstruct},
     types::{
@@ -82,6 +84,7 @@ impl AstData for Declare {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring declaration");
         let mut new_self = self.to_owned();
         new_self.content.desugar()?;
         new_self.variable.desugar()?;

@@ -1,3 +1,5 @@
+use tracing::debug;
+
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     primitives::UNIT_T,
@@ -26,6 +28,7 @@ impl AstData for Return {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring return statement");
         Ok(Self {
             kwd_span: self.kwd_span.to_owned(),
             value: self.value.desugared()?.into(),

@@ -5,7 +5,7 @@ use num::BigInt;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::{Ast, AstData, Call, Ident, Literal},
+    ast::{Ast, AstData, Call, Ident, Literal, Member},
     errors::{ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
@@ -23,8 +23,6 @@ impl Buffer {
         Some(Ident {
             name: token.value.to_owned(),
             name_span: Some(token.span.to_owned()),
-            dot_span: None,
-            parent: None,
         })
     }
     #[tracing::instrument(skip_all)]
@@ -51,7 +49,7 @@ impl Buffer {
                 Either::Right(s) => s,
             };
             match selected.ty {
-                Some(TokenType::DotOpr) => {
+                Some(TokenType::DotOpr(access_ty)) => {
                     let dot_span = selected.span;
                     debug!(pos = ?dot_span, "Parsing dot operator");
                     let Some((catcher, _)) = &mut catcher else {
@@ -73,13 +71,13 @@ impl Buffer {
                             }
                         }
                     };
-                    let ident_span = selected.span();
-                    debug!(pos = ?ident_span, "Parsing ident");
-                    *catcher = Ast::Ident(Ident {
-                        name: selected.name,
-                        name_span: ident_span,
+                    debug!(pos = ?selected.span(), "Parsing ident");
+                    *catcher = Ast::Member(Member {
+                        ty: access_ty,
+                        name: selected.name.to_owned(),
+                        parent: Box::new(catcher.to_owned()),
+                        name_span: selected.span(),
                         dot_span: Some(dot_span),
-                        parent: Some(catcher.to_owned().into()),
                     });
                     trace!(?catcher);
                 }

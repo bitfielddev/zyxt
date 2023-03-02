@@ -11,6 +11,7 @@ mod delete;
 mod ident;
 mod r#if;
 mod literal;
+mod member;
 mod preprocess;
 mod procedure;
 mod r#return;
@@ -40,6 +41,7 @@ pub use r#return::Return;
 pub use set::Set;
 pub use unary_opr::UnaryOpr;
 
+pub use crate::ast::member::Member;
 use crate::{
     errors::ZResult,
     types::{
@@ -84,6 +86,7 @@ macro_rules! for_all_variants {
             Ast::Preprocess(v) => v.$f($($args,)*),
             Ast::Defer(v) => v.$f($($args,)*),
             Ast::Class(v) => v.$f($($args,)*),
+            Ast::Member(v) => v.$f($($args,)*),
         }
     }
 }
@@ -105,6 +108,7 @@ pub enum Ast {
     Preprocess(Preprocess),
     Defer(Defer),
     Class(Class),
+    Member(Member),
 }
 impl GetSpan for Ast {
     fn span(&self) -> Option<Span> {

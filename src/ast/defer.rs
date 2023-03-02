@@ -1,3 +1,5 @@
+use tracing::debug;
+
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
@@ -25,6 +27,7 @@ impl AstData for Defer {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring defer statement");
         Ok(Self {
             kwd_span: self.kwd_span.to_owned(),
             content: self.content.desugared()?.as_variant().into(),

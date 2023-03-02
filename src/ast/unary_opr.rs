@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
+use tracing::debug;
+
 use crate::{
-    ast::{Ast, AstData, Call, Ident, Reconstruct},
+    ast::{Ast, AstData, Call, Member, Reconstruct},
     types::{
         position::{GetSpan, Span},
-        token::OprType,
+        token::{AccessType, OprType},
     },
     ZResult,
 };
@@ -27,8 +29,10 @@ impl AstData for UnaryOpr {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring unary operator");
         Ok(Call {
-            called: Ident {
+            called: Member {
+                ty: AccessType::Method,
                 name: match self.ty {
                     OprType::Not => "_not",
                     OprType::UnPlus => "_un_plus",
@@ -38,9 +42,9 @@ impl AstData for UnaryOpr {
                 .into(),
                 name_span: None,
                 dot_span: None,
-                parent: Some(self.operand.desugared()?.into()),
+                parent: self.operand.desugared()?.into(),
             }
-            .as_variant()
+            .desugared()?
             .into(),
             paren_spans: None,
             args: vec![],

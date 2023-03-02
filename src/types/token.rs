@@ -126,6 +126,12 @@ pub enum Keyword {
     Struct,
 }
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum AccessType {
+    Field,
+    Method,
+    Namespace,
+}
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(dead_code)]
 pub enum TokenType {
     CommentStart,                   // //
@@ -136,7 +142,7 @@ pub enum TokenType {
     UnaryOpr(OprType),              // \~, ++, ! etc
     AssignmentOpr(Option<OprType>), // =, += etc
     BinaryOpr(OprType), // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
-    DotOpr,             // .
+    DotOpr(AccessType), // .
     DeclarationOpr,     // :=
     LiteralMisc,        // true, null, etc
     LiteralNumber,      // 3, 24, -34.5 etc
@@ -180,7 +186,7 @@ impl TokenType {
                 TokenCategory::OpenParen,
                 TokenCategory::ValueStart,
             ],
-            Self::DotOpr => vec![TokenCategory::Operator],
+            Self::DotOpr(..) => vec![TokenCategory::Operator],
             Self::StatementEnd => vec![
                 TokenCategory::LiteralStringStart,
                 TokenCategory::LiteralStringEnd,

@@ -1,3 +1,5 @@
+use tracing::debug;
+
 use crate::{
     ast::{Ast, AstData, Condition, Reconstruct},
     types::position::{GetSpan, Span},
@@ -28,6 +30,7 @@ impl AstData for If {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring if statement");
         Ok(Self {
             conditions: self
                 .conditions

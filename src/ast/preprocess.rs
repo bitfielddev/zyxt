@@ -1,3 +1,5 @@
+use tracing::debug;
+
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
@@ -21,6 +23,7 @@ impl AstData for Preprocess {
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring preprocess statement");
         let mut pre_instructions = self.content.desugared()?;
         let mut pre_ty_symt = SymTable::<Type<Ast>>::default();
         pre_instructions.typecheck(&mut pre_ty_symt)?;

@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 
+use tracing::debug;
+
 use crate::{
-    ast::{Ast, AstData, Call, Ident, Reconstruct},
+    ast::{Ast, AstData, Call, Member, Reconstruct},
     primitives::BOOL_T,
     types::{
         position::{GetSpan, Span},
-        token::OprType,
+        token::{AccessType, OprType},
     },
     SymTable, Value, ZResult,
 };
@@ -33,6 +35,7 @@ impl AstData for BinaryOpr {
     fn desugared(&self) -> ZResult<Ast> {
         Ok(match self.ty {
             OprType::And | OprType::Or => {
+                debug!(span = ?self.span(), "Desugaring && / || operator");
                 let mut new_self = self.to_owned();
                 for operand in [&mut new_self.operand1, &mut new_self.operand2] {
                     *operand = Self {
@@ -51,36 +54,46 @@ impl AstData for BinaryOpr {
                 }
                 new_self.as_variant()
             }
-            _ => Call {
-                called: Ident {
-                    name: match self.ty {
-                        OprType::Add => "_add",
-                        OprType::Sub => "_sub",
-                        OprType::Mul => "_mul",
-                        OprType::Div => "_div",
-                        OprType::Mod => "_rem",
-                        OprType::Eq => "_eq",
-                        OprType::Ne => "_ne",
-                        OprType::Lt => "_lt",
-                        OprType::Le => "_le",
-                        OprType::Gt => "_gt",
-                        OprType::Ge => "_ge",
-                        OprType::Concat => "_concat",
-                        OprType::TypeCast => "_typecast",
-                        _ => unimplemented!("{:#?}", self.ty),
-                    }
-                    .into(),
-                    name_span: None,
-                    dot_span: None,
-                    parent: Some(self.operand1.desugared()?.into()),
-                }
-                .as_variant()
-                .into(),
-                paren_spans: None,
-                args: vec![self.operand2.desugared()?],
-                kwargs: HashMap::default(),
+            OprType::TypeCast => {
+                debug!(span = ?self.span(), "Desugaring @ operator");
+                let mut new_self = self.to_owned();
+                new_self.operand1.desugar()?;
+                new_self.operand2.desugar()?;
+                new_self.as_variant()
             }
-            .desugared()?,
+            _ => {
+                debug!(span = ?self.span(), "Desugaring miscellaneous binary operator");
+                Call {
+                    called: Member {
+                        ty: AccessType::Method,
+                        name: match self.ty {
+                            OprType::Add => "_add",
+                            OprType::Sub => "_sub",
+                            OprType::Mul => "_mul",
+                            OprType::Div => "_div",
+                            OprType::Mod => "_rem",
+                            OprType::Eq => "_eq",
+                            OprType::Ne => "_ne",
+                            OprType::Lt => "_lt",
+                            OprType::Le => "_le",
+                            OprType::Gt => "_gt",
+                            OprType::Ge => "_ge",
+                            OprType::Concat => "_concat",
+                            _ => unimplemented!("{:#?}", self.ty),
+                        }
+                        .into(),
+                        name_span: None,
+                        dot_span: None,
+                        parent: self.operand1.desugared()?.into(),
+                    }
+                    .desugared()?
+                    .into(),
+                    paren_spans: None,
+                    args: vec![self.operand2.desugared()?],
+                    kwargs: HashMap::default(),
+                }
+                .desugared()?
+            }
         })
     }
 
