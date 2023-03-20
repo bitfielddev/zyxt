@@ -8,7 +8,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilte
 use zyxt::{
     ast::Ast,
     repl,
-    types::{sym_table::SymTable, typeobj::Type, value::Value},
+    types::{r#type::Type, sym_table::SymTable, value::Value},
 };
 
 #[derive(Parser)]

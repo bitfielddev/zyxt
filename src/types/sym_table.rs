@@ -13,7 +13,7 @@ use crate::{
     primitives::*,
     types::{
         position::{GetSpan, Position},
-        typeobj::Type,
+        r#type::Type,
         value::Value,
     },
 };

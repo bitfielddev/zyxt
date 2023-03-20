@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display};
 
-use crate::{errors::ZError, types::typeobj::Type};
+use crate::{errors::ZError, types::r#type::Type};
 
 impl ZError {
     #[must_use]

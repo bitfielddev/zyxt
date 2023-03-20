@@ -166,7 +166,7 @@ use crate::{
     interpreter::interpret_asts,
     lexer::lex,
     parser::parse_token_list,
-    types::{sym_table::SymTable, typeobj::Type, value::Value},
+    types::{r#type::Type, sym_table::SymTable, value::Value},
 };
 
 pub fn compile(

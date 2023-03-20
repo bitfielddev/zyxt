@@ -5,8 +5,8 @@ use crate::{
     primitives::{PROC_T, UNIT_T},
     types::{
         position::{GetSpan, Span},
+        r#type::TypeInstance,
         sym_table::FrameType,
-        typeobj::TypeInstance,
         value::Proc,
     },
     SymTable, Type, Value, ZError, ZResult,

@@ -11,7 +11,7 @@ use num::{BigInt, BigUint};
 use crate::{
     ast::{Argument, Ast, Block, Literal},
     primitives::*,
-    types::typeobj::Type,
+    types::r#type::Type,
 };
 
 type BuiltinFunction = Vec<&'static (dyn Fn() -> (Vec<Type<Value>>, Type<Value>) + Sync)>;

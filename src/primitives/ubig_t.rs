@@ -10,7 +10,7 @@ use crate::{
     primitives::*,
     typecast_int, typecast_to_type,
     types::{
-        typeobj::TypeDefinition,
+        r#type::TypeDefinition,
         value::{Proc, Value},
     },
     unary, Type,

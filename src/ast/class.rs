@@ -7,9 +7,9 @@ use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Declare, Ident, Reconstruct},
     types::{
         position::{GetSpan, Span},
+        r#type::TypeDefinition,
         sym_table::FrameType,
         token::Flag,
-        typeobj::TypeDefinition,
     },
     SymTable, Type, Value, ZResult,
 };

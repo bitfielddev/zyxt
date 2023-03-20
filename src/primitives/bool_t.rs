@@ -8,7 +8,7 @@ use crate::{
     primitives::*,
     typecast_to_type,
     types::{
-        typeobj::TypeDefinition,
+        r#type::TypeDefinition,
         value::{Proc, Value},
     },
     Type,

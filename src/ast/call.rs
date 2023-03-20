@@ -10,9 +10,9 @@ use crate::{
     primitives::UNIT_T,
     types::{
         position::{GetSpan, Position, Span},
+        r#type::{TypeDefinition, TypeInstance},
         sym_table::{FrameData, FrameType},
         token::{AccessType, OprType},
-        typeobj::{TypeDefinition, TypeInstance},
         value::Proc,
     },
     SymTable, Type, Value, ZResult,

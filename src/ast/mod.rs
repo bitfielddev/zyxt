@@ -46,8 +46,8 @@ use crate::{
     errors::ZResult,
     types::{
         position::{GetSpan, Span},
+        r#type::Type,
         sym_table::SymTable,
-        typeobj::Type,
         value::Value,
     },
 };
