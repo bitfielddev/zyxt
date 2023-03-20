@@ -152,10 +152,7 @@ impl AstData for Call {
                         ty: OprType::TypeCast,
                         opr_span: None,
                         operand1: parent.to_owned(),
-                        operand2: Box::from(Ast::Ident(Ident {
-                            name: "type".into(),
-                            name_span: None,
-                        })),
+                        operand2: Box::from(Ast::Ident(Ident::new("type"))),
                     })
                     .desugared()?,
                 ),

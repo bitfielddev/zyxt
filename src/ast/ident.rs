@@ -6,7 +6,7 @@ use crate::{
     SymTable, Type, Value, ZResult,
 };
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Ident {
     pub name: SmolStr,
     pub name_span: Option<Span>,
@@ -37,5 +37,15 @@ impl AstData for Ident {
 impl Reconstruct for Ident {
     fn reconstruct(&self) -> String {
         self.name.to_owned().into()
+    }
+}
+
+impl Ident {
+    #[must_use]
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.into(),
+            name_span: None,
+        }
     }
 }
