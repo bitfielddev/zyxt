@@ -266,7 +266,7 @@ impl Value {
         Self::Type(self.get_type_obj())
     }
     #[must_use]
-    pub fn as_element(&self) -> Ast {
+    pub fn as_ast(&self) -> Ast {
         Ast::Literal(Literal {
             span: None,
             content: self.to_owned(),

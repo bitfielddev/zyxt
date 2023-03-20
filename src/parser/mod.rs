@@ -66,7 +66,7 @@ impl Buffer {
         match self
             .content
             .first()
-            .unwrap_or(&Either::Left(Value::Unit.as_element()))
+            .unwrap_or(&Either::Left(Value::Unit.as_ast()))
         {
             Either::Left(c) => Ok(c.to_owned()),
             Either::Right(c) => Err(ZError::p003().with_span(c)),

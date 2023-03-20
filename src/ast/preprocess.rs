@@ -29,7 +29,7 @@ impl AstData for Preprocess {
         pre_instructions.typecheck(&mut pre_ty_symt)?;
         let mut val_symt = SymTable::<Value>::default();
         let pre_value = pre_instructions.interpret_expr(&mut val_symt)?;
-        Ok(pre_value.as_element())
+        Ok(pre_value.as_ast())
     }
 }
 

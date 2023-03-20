@@ -211,7 +211,7 @@ impl TypeDefinition<Value> {
             implementations: self
                 .implementations
                 .iter()
-                .map(|(k, v)| (k.to_owned(), v.as_element()))
+                .map(|(k, v)| (k.to_owned(), v.as_ast()))
                 .collect(),
             inst_fields: self
                 .inst_fields
@@ -221,7 +221,7 @@ impl TypeDefinition<Value> {
                         k.to_owned(),
                         (
                             Box::new(v1.as_type_element()),
-                            v2.to_owned().map(|v2| v2.as_element()),
+                            v2.to_owned().map(|v2| v2.as_ast()),
                         ),
                     )
                 })
@@ -233,7 +233,7 @@ impl TypeDefinition<Value> {
 impl Type<Ast> {
     #[must_use]
     pub fn as_literal(&self) -> Ast {
-        Value::PreType(self.to_owned()).as_element()
+        Value::PreType(self.to_owned()).as_ast()
     }
     #[must_use]
     pub fn implementation(&self) -> &TypeDefinition<Ast> {
