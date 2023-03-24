@@ -1,8 +1,4 @@
-use std::{
-    collections::HashMap,
-    ops::{Add, Div, Mul, Neg, Rem, Sub},
-    sync::Arc,
-};
+use std::{collections::HashMap, sync::Arc};
 
 use half::f16;
 use num::{
@@ -10,7 +6,6 @@ use num::{
     ToPrimitive,
 };
 use once_cell::sync::Lazy;
-use smol_str::SmolStr;
 use tracing::trace;
 
 use crate::{
@@ -25,7 +20,7 @@ use crate::{
     typecast_float,
     types::{
         r#type::{BuiltinType, ValueType},
-        value::{Proc, Value},
+        value::Value,
     },
     Type,
 };

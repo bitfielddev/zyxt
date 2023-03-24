@@ -55,10 +55,7 @@ use std::sync::Arc;
 use maplit::hashmap;
 use once_cell::sync::Lazy;
 
-use crate::{
-    ast::Ident,
-    types::r#type::{BuiltinType, Type, ValueType},
-};
+use crate::types::r#type::{Type, ValueType};
 
 pub static PRIMS: Lazy<HashMap<&'static str, Arc<Type>>> = Lazy::new(|| {
     hashmap! {

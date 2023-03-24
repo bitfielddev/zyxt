@@ -66,6 +66,6 @@ impl AstData for If {
 
 impl Reconstruct for If {
     fn reconstruct(&self) -> String {
-        format!("todo")
+        "todo".to_owned()
     }
 }

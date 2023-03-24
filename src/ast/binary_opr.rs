@@ -4,12 +4,12 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Call, Member, Reconstruct},
-    primitives::{BOOL_T, BOOL_T_VAL},
+    primitives::BOOL_T_VAL,
     types::{
         position::{GetSpan, Span},
         token::{AccessType, OprType},
     },
-    InterpretSymTable, TypecheckSymTable, Value, ZResult,
+    InterpretSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]

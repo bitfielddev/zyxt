@@ -1,17 +1,11 @@
-use std::{collections::HashMap, ops::Rem};
+use std::collections::HashMap;
 
 use half::f16;
-use num_traits::{CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, ToPrimitive};
+use num_traits::ToPrimitive;
 use once_cell::sync::Lazy;
-use smol_str::SmolStr;
 use tracing::trace;
 
-use crate::{
-    primitives::*,
-    typecast_int,
-    types::value::{Proc, Value},
-    Type,
-};
+use crate::{primitives::*, typecast_int, types::value::Value, Type};
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn ubig_t() -> BuiltinType {
     let mut h = HashMap::new();
@@ -19,7 +13,7 @@ fn ubig_t() -> BuiltinType {
     h.insert("_default", Value::Ubig(0u8.into()));
     concat(&mut h, &UBIG_T);
     unary_unsigned_default::<BigUint>(&mut h, &UBIG_T);
-    arith_opr::<BigUint>(&mut h, "_rem", &|a, b| a.rem(b), &IBIG_T);
+    arith_opr::<BigUint>(&mut h, "_rem", &std::ops::Rem::rem, &IBIG_T);
     arith_opr_big_default::<BigUint>(&mut h, &UBIG_T);
     comp_opr_default::<BigUint>(&mut h, &UBIG_T);
 
@@ -68,8 +62,8 @@ use num::BigUint;
 use crate::{
     ast::Ident,
     primitives::utils::{
-        arith_opr, arith_opr_big_default, arith_opr_default, comp_opr_default, concat, get_param,
-        type_cast, unary_signed_default, unary_unsigned_default,
+        arith_opr, arith_opr_big_default, comp_opr_default, concat, get_param, type_cast,
+        unary_unsigned_default,
     },
     types::r#type::{BuiltinType, ValueType},
 };

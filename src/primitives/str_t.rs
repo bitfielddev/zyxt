@@ -1,13 +1,8 @@
 use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
-use smol_str::SmolStr;
 
-use crate::{
-    primitives::*,
-    types::value::{Proc, Value},
-    Type,
-};
+use crate::{primitives::*, types::value::Value, Type};
 
 macro_rules! typecast_str_to_num {
     ($v:ident, $x:ident) => {

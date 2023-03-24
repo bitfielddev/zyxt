@@ -1,19 +1,17 @@
 use std::{
-    cmp::{Eq, PartialOrd},
+    cmp::PartialOrd,
     collections::HashMap,
-    fmt::Display,
     ops::{Add, Div, Mul, Rem, Sub},
     sync::Arc,
 };
 
 use num_traits::{
-    CheckedAdd, CheckedDiv, CheckedMul, CheckedNeg, CheckedRem, CheckedSub, Float, Signed,
-    Unsigned, Zero,
+    CheckedAdd, CheckedDiv, CheckedMul, CheckedNeg, CheckedRem, CheckedSub, Float, Signed, Unsigned,
 };
 use once_cell::sync::Lazy;
 
 use crate::{
-    primitives::{proc_t::generic_proc, LazyGenericProc, ANY_T, BOOL_T, STR_T, TYPE_T},
+    primitives::{LazyGenericProc, ANY_T, BOOL_T, STR_T, TYPE_T},
     types::{
         r#type::Type,
         value::{BuiltinFunction, Proc, Value, ValueInner},
@@ -34,6 +32,7 @@ pub fn unary<'a>(
     h.insert(
         n,
         Value::Proc(Proc::Builtin {
+            id: Arc::as_ptr(&f) as *const () as usize,
             f,
             ty: LazyGenericProc::new(vec![arg_ty], ret_ty),
         }),
@@ -54,14 +53,14 @@ pub fn unary_signed_default<T: Signed + CheckedNeg + ValueInner>(
     unary(
         h,
         "_un_sub",
-        Arc::new(|x: &Vec<Value>| Some({ get_param::<T>(&x, 0)?.checked_neg()?.into() })),
+        Arc::new(|x: &Vec<Value>| Some(get_param::<T>(x, 0)?.checked_neg()?.into())),
         this_ty,
         this_ty,
     );
     unary(
         h,
         "_not",
-        Arc::new(|x: &Vec<Value>| Some(get_param::<T>(&x, 0)?.is_zero().into())),
+        Arc::new(|x: &Vec<Value>| Some(get_param::<T>(x, 0)?.is_zero().into())),
         this_ty,
         &BOOL_T,
     );
@@ -81,7 +80,7 @@ pub fn unary_unsigned_default<T: Unsigned + ValueInner>(
     unary(
         h,
         "_not",
-        Arc::new(|x: &Vec<Value>| Some(get_param::<T>(&x, 0)?.is_zero().into())),
+        Arc::new(|x: &Vec<Value>| Some(get_param::<T>(x, 0)?.is_zero().into())),
         this_ty,
         &BOOL_T,
     );
@@ -101,7 +100,7 @@ pub fn unary_float_default<T: Float + ValueInner>(
     unary(
         h,
         "_un_sub",
-        Arc::new(|x: &Vec<Value>| Some({ get_param::<T>(&x, 0)?.neg().into() })),
+        Arc::new(|x: &Vec<Value>| Some(get_param::<T>(x, 0)?.neg().into())),
         this_ty,
         this_ty,
     );
@@ -110,7 +109,7 @@ pub fn unary_float_default<T: Float + ValueInner>(
         "_not",
         Arc::new(|x: &Vec<Value>| {
             Some(
-                (get_param::<T>(&x, 0)?.is_zero() || get_param::<T>(&x, 0)?.eq(&T::neg_zero()))
+                (get_param::<T>(x, 0)?.is_zero() || get_param::<T>(x, 0)?.eq(&T::neg_zero()))
                     .into(),
             )
         }),
@@ -130,6 +129,7 @@ pub fn binary<'a>(
     h.insert(
         n,
         Value::Proc(Proc::Builtin {
+            id: Arc::as_ptr(&f) as *const () as usize,
             f,
             ty: LazyGenericProc::new(vec![arg1_ty, arg2_ty], ret_ty),
         }),
@@ -195,11 +195,11 @@ pub fn arith_opr<'a, T: ValueInner>(
     binary(
         h,
         n,
-        Arc::new(|x: &Vec<Value>| Some(f(get_param::<T>(&x, 0)?, get_param::<T>(x, 1)?).into())),
+        Arc::new(|x: &Vec<Value>| Some(f(get_param::<T>(x, 0)?, get_param::<T>(x, 1)?).into())),
         this_ty,
         this_ty,
         this_ty,
-    )
+    );
 }
 
 pub fn arith_opr_op<'a, T: ValueInner>(
@@ -211,11 +211,11 @@ pub fn arith_opr_op<'a, T: ValueInner>(
     binary(
         h,
         n,
-        Arc::new(|x: &Vec<Value>| Some(f(&get_param::<T>(&x, 0)?, &get_param::<T>(x, 1)?)?.into())),
+        Arc::new(|x: &Vec<Value>| Some(f(&get_param::<T>(x, 0)?, &get_param::<T>(x, 1)?)?.into())),
         this_ty,
         this_ty,
         this_ty,
-    )
+    );
 }
 
 pub fn arith_opr_default<
@@ -263,11 +263,11 @@ pub fn comp_opr<'a, T: ValueInner>(
     binary(
         h,
         n,
-        Arc::new(|x: &Vec<Value>| Some(f(&get_param::<T>(&x, 0)?, &get_param::<T>(x, 1)?).into())),
+        Arc::new(|x: &Vec<Value>| Some(f(&get_param::<T>(x, 0)?, &get_param::<T>(x, 1)?).into())),
         this_ty,
         this_ty,
         &BOOL_T,
-    )
+    );
 }
 
 pub fn comp_opr_default<T: PartialOrd<T> + ValueInner>(

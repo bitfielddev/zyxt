@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use itertools::Either;
 use tracing::{debug, trace};
 
@@ -7,7 +5,6 @@ use crate::{
     ast::{Ast, Return},
     errors::ZResult,
     parser::buffer::{Buffer, BufferWindow},
-    primitives::UNIT_T,
     types::{
         position::GetSpan,
         token::{Keyword, Token, TokenType},
@@ -34,7 +31,7 @@ impl Buffer {
             let value = if self.next().is_some() {
                 self.rest_incl_curr().with_as_buffer(&Self::parse_as_expr)?
             } else {
-                Value::Unit.as_ast().into()
+                Value::Unit.as_ast()
             }
             .into();
 

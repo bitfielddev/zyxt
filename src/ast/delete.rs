@@ -9,7 +9,7 @@ use crate::{
     InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Delete {
     pub kwd_span: Option<Span>,
     pub names: Vec<Ident>,
@@ -25,7 +25,7 @@ impl AstData for Delete {
         Ast::Delete(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn typecheck(&mut self, _ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         Ok(Arc::clone(&UNIT_T))
     }
 

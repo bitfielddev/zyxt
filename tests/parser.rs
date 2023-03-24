@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use once_cell::sync::Lazy;
 use pretty_assertions::assert_eq;

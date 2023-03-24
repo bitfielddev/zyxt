@@ -1,14 +1,9 @@
 use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
-use smol_str::SmolStr;
 use tracing::trace;
 
-use crate::{
-    primitives::*,
-    types::value::{Proc, Value},
-    Ast, Type,
-};
+use crate::{primitives::*, types::value::Value, Type};
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn type_t() -> BuiltinType {
     let mut h = HashMap::new();

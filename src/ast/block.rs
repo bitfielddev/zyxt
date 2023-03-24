@@ -9,7 +9,7 @@ use crate::{
         position::{GetSpan, Span},
         sym_table::{InterpretFrameType, TypecheckFrameType},
     },
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZError, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -65,7 +65,7 @@ impl Block {
         }
         ty_symt.set_block_return(
             Arc::clone(&last),
-            self.content.last().and_then(|a| a.span()),
+            self.content.last().and_then(GetSpan::span),
         )?;
         if add_set {
             ty_symt.pop_frame();
@@ -83,7 +83,7 @@ impl Block {
         macro_rules! pop {
             () => {
                 if add_frame {
-                    let res = val_symt.pop_frame();
+                    let _res = val_symt.pop_frame();
                 }
             };
         }

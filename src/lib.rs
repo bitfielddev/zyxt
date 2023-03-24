@@ -153,7 +153,7 @@ pub mod primitives;
 pub mod repl;
 pub mod types;
 
-use std::{path::Path, sync::Arc, time::Instant};
+use std::{path::Path, time::Instant};
 
 use errors::{ZError, ZResult};
 use itertools::Either;

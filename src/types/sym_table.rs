@@ -86,7 +86,7 @@ impl TypecheckSymTable {
                         return Err(ZError::t003(ret_ty, &ty).with_span(span));
                     }
                 } else {
-                    *ret_ty = Some(ty)
+                    *ret_ty = Some(ty);
                 }
                 return Ok(());
             }
@@ -101,7 +101,7 @@ impl TypecheckSymTable {
                 &frame.ty
             {
                 if let Some(ret_ty) = ret_ty {
-                    return Arc::clone(&ret_ty);
+                    return Arc::clone(ret_ty);
                 }
             }
         }
@@ -224,7 +224,7 @@ impl Default for InterpretSymTable {
         let mut table = Self(VecDeque::new());
         table.add_frame(InterpretFrameType::Constants);
         for (k, v) in &*PRIMS_VAL {
-            table.declare_val(k, Value::Type(Arc::clone(v)))
+            table.declare_val(k, Value::Type(Arc::clone(v)));
         }
         table.add_frame(InterpretFrameType::Normal);
         table

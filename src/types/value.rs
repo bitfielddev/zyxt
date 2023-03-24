@@ -6,12 +6,10 @@ use std::{
 
 use enum_as_inner::EnumAsInner;
 use half::f16;
-use itertools::Itertools;
 use num::{BigInt, BigUint};
-use once_cell::sync::Lazy;
 
 use crate::{
-    ast::{Argument, Ast, Block, Literal},
+    ast::{Ast, Block, Literal},
     primitives::*,
     types::r#type::{Type, ValueType},
 };
@@ -22,6 +20,7 @@ pub type BuiltinFunction = dyn Fn(&Vec<Value>) -> Option<Value> + Send + Sync;
 pub enum Proc {
     Builtin {
         f: Arc<BuiltinFunction>,
+        id: usize,
         ty: LazyGenericProc,
     },
     Defined {
@@ -32,7 +31,7 @@ pub enum Proc {
 impl PartialEq for Proc {
     fn eq(&self, other: &Self) -> bool {
         match (&self, other) {
-            (Self::Builtin { f: f1, .. }, Self::Builtin { f: f2, .. }) => Arc::ptr_eq(f1, f2),
+            (Self::Builtin { id: id1, .. }, Self::Builtin { id: id2, .. }) => id1 == id2,
             (
                 Self::Defined {
                     is_fn: is_fn1,
@@ -127,7 +126,7 @@ from_to!(Proc, Proc);
 
 impl From<()> for Value {
     fn from(_: ()) -> Self {
-        Value::Unit
+        Self::Unit
     }
 }
 impl TryFrom<Value> for () {
@@ -269,7 +268,7 @@ impl Value {
             Self::Bool(..) => Arc::clone(&BOOL_T),
             Self::Type(..) => Arc::clone(&TYPE_T),
             Self::Proc(_) => Arc::clone(&PROC_T),
-            Self::ClassInstance { ty, .. } => todo!(),
+            Self::ClassInstance { .. } => todo!(),
             Self::Unit => Arc::clone(&UNIT_T),
             Self::Return(v) => v.ty(),
         }
@@ -297,7 +296,7 @@ impl Value {
             Self::Bool(..) => Arc::clone(&BOOL_T_VAL),
             Self::Type(..) => Arc::clone(&TYPE_T_VAL),
             Self::Proc(_) => Arc::clone(&PROC_T_VAL),
-            Self::ClassInstance { ty, .. } => Arc::clone(&ty),
+            Self::ClassInstance { ty, .. } => Arc::clone(ty),
             Self::Unit => Arc::clone(&UNIT_T_VAL),
             Self::Return(v) => v.value_ty(),
         }

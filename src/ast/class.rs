@@ -80,7 +80,7 @@ impl AstData for Class {
         for item in self.implementations.values_mut() {
             item.typecheck(ty_symt)?;
         }
-        let new_inst_fields = self
+        let _new_inst_fields = self
             .inst_fields
             .iter_mut()
             .map(|(ident, (ty, default))| {
@@ -131,13 +131,13 @@ impl AstData for Class {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+    fn interpret_expr(&self, _val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         todo!()
     }
 }
 
 impl Reconstruct for Class {
     fn reconstruct(&self) -> String {
-        format!("todo")
+        "todo".to_owned()
     }
 }

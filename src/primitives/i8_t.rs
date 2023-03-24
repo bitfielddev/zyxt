@@ -2,7 +2,6 @@ use std::{collections::HashMap, sync::Arc};
 
 use half::f16;
 use once_cell::sync::Lazy;
-use smol_str::SmolStr;
 use tracing::trace;
 
 use crate::{
@@ -16,7 +15,7 @@ use crate::{
     typecast_int,
     types::{
         r#type::{BuiltinType, ValueType},
-        value::{Proc, Value},
+        value::Value,
     },
     Type,
 };

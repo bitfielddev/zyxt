@@ -8,13 +8,12 @@ use rustyline::{error::ReadlineError, history::FileHistory, Editor};
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{Ast, AstData},
+    ast::AstData,
     compile,
     types::{
         sym_table::{InterpretSymTable, TypecheckSymTable},
         value::Value,
     },
-    Type,
 };
 
 pub fn repl(verbosity: u8) -> Result<()> {

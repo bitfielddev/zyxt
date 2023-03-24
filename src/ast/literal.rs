@@ -25,11 +25,11 @@ impl AstData for Literal {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn typecheck(&mut self, _ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         Ok(self.content.ty())
     }
 
-    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+    fn interpret_expr(&self, _val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         Ok(self.content.to_owned())
     }
 }

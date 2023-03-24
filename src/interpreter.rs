@@ -3,11 +3,7 @@ use std::sync::Arc;
 use crate::{
     ast::{Ast, Block},
     primitives::I32_T,
-    types::{
-        position::Span,
-        sym_table::{InterpretSymTable, TypecheckSymTable},
-        value::Value,
-    },
+    types::{position::Span, sym_table::InterpretSymTable, value::Value},
     ZError, ZResult,
 };
 

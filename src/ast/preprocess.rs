@@ -3,7 +3,7 @@ use tracing::debug;
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
+    InterpretSymTable, TypecheckSymTable, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]

@@ -5,15 +5,11 @@ use smol_str::SmolStr;
 use tracing::debug;
 
 use crate::{
-    ast::{argument::Argument, Ast, AstData, BinaryOpr, Ident, Literal, Member, Reconstruct},
-    errors::ZError,
+    ast::{Ast, AstData, BinaryOpr, Ident, Member, Reconstruct},
     primitives::UNIT_T,
     types::{
-        position::{GetSpan, Position, Span},
-        r#type::ValueType,
-        sym_table::TypecheckFrameType,
+        position::{GetSpan, Span},
         token::{AccessType, OprType},
-        value::Proc,
     },
     InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
@@ -175,7 +171,7 @@ impl AstData for Call {
         }))
     }
 
-    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+    fn interpret_expr(&self, _val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         todo!()
         /*if let Ast::Member(Member { name, parent, .. }) = &*self.called {
             if let Ast::Ident(Ident {

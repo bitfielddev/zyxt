@@ -1,14 +1,9 @@
 use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
-use smol_str::SmolStr;
 use tracing::trace;
 
-use crate::{
-    primitives::*,
-    types::value::{Proc, Value},
-    Ast, Type,
-};
+use crate::{primitives::*, types::value::Value, Type};
 fn comp_opr_unit<'a>(h: &mut HashMap<&'a str, Value>, n: &'a str, res: bool) {
     binary(
         h,

@@ -6,14 +6,10 @@ use std::{
 };
 
 use itertools::Either;
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::OnceCell;
 use smol_str::SmolStr;
 
-use crate::{
-    ast::Ident,
-    primitives::{ANY_T, ANY_T_VAL},
-    types::value::Value,
-};
+use crate::{ast::Ident, primitives::ANY_T_VAL, types::value::Value};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Type {
@@ -84,19 +80,19 @@ pub enum ValueType {
 }
 
 impl From<ValueType> for Type {
-    fn from(value: ValueType) -> Self {
+    fn from(_value: ValueType) -> Self {
         todo!()
     }
 }
 
 impl Display for Type {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!()
     }
 }
 
 impl Display for ValueType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!()
     }
 }

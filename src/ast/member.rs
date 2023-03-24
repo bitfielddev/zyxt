@@ -37,7 +37,7 @@ impl AstData for Member {
     }
 
     fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
-        let parent_type = self.parent.typecheck(ty_symt)?;
+        let _parent_type = self.parent.typecheck(ty_symt)?;
         todo!()
     }
 

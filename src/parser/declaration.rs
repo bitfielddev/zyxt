@@ -83,7 +83,7 @@ impl Buffer {
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
-                range: start.take().unwrap()..self.content.len(),
+                range: start.take().unwrap_or_else(|| unreachable!())..self.content.len(),
             };
             self.splice_buffer(buffer_window);
         }

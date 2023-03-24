@@ -60,7 +60,7 @@ impl AstData for Declare {
                     ty: OprType::TypeCast,
                     opr_span: None,
                     operand1: self.content.to_owned(),
-                    operand2: self.ty.to_owned().unwrap(),
+                    operand2: self.ty.to_owned().unwrap_or_else(|| unreachable!()),
                 }
                 .as_variant();
                 new_content.typecheck(ty_symt)?;

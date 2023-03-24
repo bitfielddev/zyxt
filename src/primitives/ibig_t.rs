@@ -1,20 +1,11 @@
-use std::{
-    collections::HashMap,
-    ops::{Neg, Rem},
-};
+use std::{collections::HashMap, ops::Neg};
 
 use half::f16;
 use num_traits::{ToPrimitive, Zero};
 use once_cell::sync::Lazy;
-use smol_str::SmolStr;
 use tracing::trace;
 
-use crate::{
-    primitives::*,
-    typecast_int,
-    types::value::{Proc, Value},
-    Type,
-};
+use crate::{primitives::*, typecast_int, types::value::Value, Type};
 
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn ibig_t() -> BuiltinType {
@@ -32,19 +23,19 @@ fn ibig_t() -> BuiltinType {
     unary(
         &mut h,
         "_un_sub",
-        Arc::new(|x: &Vec<Value>| Some({ get_param::<BigInt>(&x, 0)?.neg().into() })),
+        Arc::new(|x: &Vec<Value>| Some(get_param::<BigInt>(x, 0)?.neg().into())),
         &IBIG_T,
         &IBIG_T,
     );
     unary(
         &mut h,
         "_not",
-        Arc::new(|x: &Vec<Value>| Some(get_param::<BigInt>(&x, 0)?.is_zero().into())),
+        Arc::new(|x: &Vec<Value>| Some(get_param::<BigInt>(x, 0)?.is_zero().into())),
         &IBIG_T,
         &BOOL_T,
     );
     arith_opr_big_default::<BigInt>(&mut h, &IBIG_T);
-    arith_opr::<BigInt>(&mut h, "_rem", &|a, b| a.rem(b), &IBIG_T);
+    arith_opr::<BigInt>(&mut h, "_rem", &std::ops::Rem::rem, &IBIG_T);
     comp_opr_default::<BigInt>(&mut h, &IBIG_T);
 
     let typecast = Arc::new(|x: &Vec<Value>| {
@@ -92,8 +83,7 @@ use num::BigInt;
 use crate::{
     ast::Ident,
     primitives::utils::{
-        arith_opr, arith_opr_big_default, arith_opr_default, comp_opr_default, concat, get_param,
-        type_cast, unary, unary_signed_default, unary_unsigned_default,
+        arith_opr, arith_opr_big_default, comp_opr_default, concat, get_param, type_cast, unary,
     },
     types::r#type::{BuiltinType, ValueType},
 };

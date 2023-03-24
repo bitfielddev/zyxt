@@ -84,9 +84,11 @@ impl Buffer {
                 Some(TokenType::Ident) => {
                     debug!(pos = ?selected.span, "Parsing ident");
                     clear_catcher(self, &mut catcher, false);
-                    let ident = Self::parse_ident(&selected).unwrap().as_variant();
+                    let ident = Self::parse_ident(&selected)
+                        .unwrap_or_else(|| unreachable!())
+                        .as_variant();
                     catcher = Some((ident, self.cursor));
-                    trace!(catcher = ?catcher.as_ref().unwrap().0);
+                    trace!(catcher = ?catcher.as_ref().unwrap_or_else(|| unreachable!()).0);
                 }
                 Some(
                     TokenType::LiteralNumber | TokenType::LiteralMisc | TokenType::LiteralString,
@@ -105,7 +107,12 @@ impl Buffer {
                                 },
                                 Some(TokenType::LiteralNumber) => {
                                     if selected.value.contains('.') {
-                                        Value::F64(selected.value.parse().unwrap())
+                                        Value::F64(
+                                            selected
+                                                .value
+                                                .parse()
+                                                .unwrap_or_else(|_| unreachable!()),
+                                        )
                                         // TODO Decimal
                                     } else if let Ok(val) = selected.value.parse::<i32>() {
                                         Value::I32(val)
@@ -129,7 +136,7 @@ impl Buffer {
                         }),
                         self.cursor,
                     ));
-                    trace!(catcher = ?catcher.as_ref().unwrap().0);
+                    trace!(catcher = ?catcher.as_ref().unwrap_or_else(|| unreachable!()).0);
                 }
                 Some(TokenType::CloseParen) => return Err(ZError::p023().with_span(&selected)),
                 Some(TokenType::OpenParen) => {
@@ -150,7 +157,10 @@ impl Buffer {
                         let ele = f.parse_as_expr()?;
                         Ok(ele)
                     })?;
-                    let close_paren_span = self.this().and_then(|e| e.span()).unwrap();
+                    let close_paren_span = self
+                        .this()
+                        .and_then(|e| e.span())
+                        .unwrap_or_else(|| unreachable!());
                     *catcher = Ast::Call(Call {
                         called: catcher.to_owned().into(),
                         paren_spans: Some((open_paren_span, close_paren_span)),

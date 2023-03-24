@@ -2,15 +2,9 @@ use std::collections::HashMap;
 
 use half::f16;
 use once_cell::sync::Lazy;
-use smol_str::SmolStr;
 use tracing::trace;
 
-use crate::{
-    primitives::*,
-    typecast_int,
-    types::value::{Proc, Value},
-    Type,
-};
+use crate::{primitives::*, typecast_int, types::value::Value, Type};
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn i32_t() -> BuiltinType {
     let mut h = HashMap::new();
@@ -64,8 +58,7 @@ use std::sync::Arc;
 use crate::{
     ast::Ident,
     primitives::utils::{
-        arith_opr_default, binary, comp_opr_default, concat, get_param, type_cast,
-        unary_signed_default,
+        arith_opr_default, comp_opr_default, concat, get_param, type_cast, unary_signed_default,
     },
     types::r#type::{BuiltinType, ValueType},
 };

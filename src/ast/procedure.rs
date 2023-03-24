@@ -1,17 +1,16 @@
 use std::sync::Arc;
 
-use itertools::Either;
 use tracing::debug;
 
 use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Reconstruct},
-    primitives::{generic_proc, PROC_T, UNIT_T},
+    primitives::generic_proc,
     types::{
         position::{GetSpan, Span},
         sym_table::TypecheckFrameType,
         value::Proc,
     },
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZError, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -55,7 +54,7 @@ impl AstData for Procedure {
             ty_symt.declare_val(&arg.name.name, ty);
         }
         let res = self.content.block_type(ty_symt, false)?;
-        let (TypecheckFrameType::Function(ret_ty) | TypecheckFrameType::Normal(ret_ty)) = &ty_symt.0.front().unwrap().ty else {
+        let (TypecheckFrameType::Function(ret_ty) | TypecheckFrameType::Normal(ret_ty)) = &ty_symt.0.front().unwrap_or_else(|| unreachable!()).ty else {
             unreachable!()
         };
         let ret_ty = Arc::clone(if let Some(ret_ty) = ret_ty {
@@ -67,7 +66,7 @@ impl AstData for Procedure {
             &res
         });
         ty_symt.pop_frame();
-        Ok(generic_proc(&vec![], ret_ty))
+        Ok(generic_proc(&[], ret_ty))
     }
 
     fn desugared(&self) -> ZResult<Ast> {
@@ -91,7 +90,7 @@ impl AstData for Procedure {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+    fn interpret_expr(&self, _val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         Ok(Value::Proc(Proc::Defined {
             is_fn: self.is_fn,
             content: self.content.to_owned(),
@@ -100,6 +99,6 @@ impl AstData for Procedure {
 }
 impl Reconstruct for Procedure {
     fn reconstruct(&self) -> String {
-        format!("todo")
+        "todo".to_owned()
     }
 }

@@ -1,7 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
 use once_cell::sync::Lazy;
-use smol_str::SmolStr;
 
 use crate::{
     ast::Ident,
@@ -11,7 +10,7 @@ use crate::{
     },
     types::{
         r#type::{BuiltinType, ValueType},
-        value::{Proc, Value},
+        value::Value,
     },
     Type,
 };
