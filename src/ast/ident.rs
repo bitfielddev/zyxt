@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use smol_str::SmolStr;
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
-    SymTable, Type, Value, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -25,11 +27,11 @@ impl AstData for Ident {
     fn is_pattern(&self) -> bool {
         true
     }
-    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         ty_symt.get_val(&self.name, &self.name_span)
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         val_symt.get_val(&self.name, &self.name_span)
     }
 }

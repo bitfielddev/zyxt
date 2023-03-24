@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use tracing::debug;
 
 use crate::{
@@ -5,9 +7,9 @@ use crate::{
     primitives::UNIT_T,
     types::{
         position::{GetSpan, Span},
-        sym_table::FrameType,
+        sym_table::{InterpretFrameType, TypecheckFrameType},
     },
-    SymTable, Type, Value, ZError, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -28,8 +30,8 @@ impl AstData for Block {
         Ast::Block(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        Ok(self.block_type(ty_symt, true)?.0)
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        self.block_type(ty_symt, true)
     }
 
     fn desugared(&self) -> ZResult<Ast> {
@@ -44,47 +46,35 @@ impl AstData for Block {
         }))
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         self.interpret_block(val_symt, true, true)
     }
 }
 impl Block {
     pub fn block_type(
         &mut self,
-        ty_symt: &mut SymTable<Type<Ast>>,
+        ty_symt: &mut TypecheckSymTable,
         add_set: bool,
-    ) -> ZResult<(Type<Ast>, Option<Type<Ast>>)> {
-        let mut last = UNIT_T.as_type().as_type_element();
-        let mut return_type = None;
+    ) -> ZResult<Arc<Type>> {
+        let mut last = Arc::clone(&UNIT_T);
         if add_set {
-            ty_symt.add_frame(None, FrameType::Normal);
+            ty_symt.add_frame(TypecheckFrameType::Normal(None));
         }
         for ele in &mut self.content {
             last = ele.typecheck(ty_symt)?;
-            if let Type::Return(value) = last.to_owned() {
-                if let Some(return_type) = &return_type {
-                    if last != *return_type {
-                        return Err(ZError::t003(&last, return_type).with_span(&*ele));
-                    }
-                } else {
-                    return_type = Some(*value);
-                }
-            }
         }
-        if let Some(return_type) = return_type.to_owned() {
-            if last != return_type {
-                let last_ele = self.content.last().unwrap_or_else(|| unreachable!());
-                return Err(ZError::t003(&last, &return_type).with_span(last_ele));
-            }
-        }
+        ty_symt.set_block_return(
+            Arc::clone(&last),
+            self.content.last().and_then(|a| a.span()),
+        )?;
         if add_set {
             ty_symt.pop_frame();
         }
-        Ok((last, if add_set { None } else { return_type }))
+        Ok(last)
     }
     pub fn interpret_block(
         &self,
-        val_symt: &mut SymTable<Value>,
+        val_symt: &mut InterpretSymTable,
         returnable: bool,
         add_frame: bool,
     ) -> ZResult<Value> {
@@ -93,16 +83,13 @@ impl Block {
         macro_rules! pop {
             () => {
                 if add_frame {
-                    let res = val_symt.pop_frame()?;
-                    if let Some(res) = res {
-                        return Ok(res);
-                    }
+                    let res = val_symt.pop_frame();
                 }
             };
         }
 
         if add_frame {
-            val_symt.add_frame(None, FrameType::Normal);
+            val_symt.add_frame(InterpretFrameType::Normal);
         }
         for ele in &self.content {
             if let Ast::Return(r#return) = ele {

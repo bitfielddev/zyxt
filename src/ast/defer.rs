@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
-    SymTable, Type, Value, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -22,7 +24,7 @@ impl AstData for Defer {
         Ast::Defer(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         self.content.typecheck(ty_symt)
     }
 
@@ -35,7 +37,7 @@ impl AstData for Defer {
         .as_variant())
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         val_symt.add_defer(*self.content.to_owned());
         Ok(Value::Unit)
     }

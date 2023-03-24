@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 use itertools::Itertools;
 
 use crate::{
     ast::{Ast, AstData, Ident, Reconstruct},
     primitives::UNIT_T,
     types::position::{GetSpan, Span},
-    SymTable, Type, Value, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -23,11 +25,11 @@ impl AstData for Delete {
         Ast::Delete(self.to_owned())
     }
 
-    fn typecheck(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        Ok(UNIT_T.get_instance().as_type_element())
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        Ok(Arc::clone(&UNIT_T))
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         for name in &self.names {
             val_symt.delete_val(&name.name, self)?;
         }

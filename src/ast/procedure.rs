@@ -1,15 +1,17 @@
+use std::sync::Arc;
+
+use itertools::Either;
 use tracing::debug;
 
 use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Reconstruct},
-    primitives::{PROC_T, UNIT_T},
+    primitives::{generic_proc, PROC_T, UNIT_T},
     types::{
         position::{GetSpan, Span},
-        r#type::TypeInstance,
-        sym_table::FrameType,
+        sym_table::TypecheckFrameType,
         value::Proc,
     },
-    SymTable, Type, Value, ZError, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -34,40 +36,38 @@ impl AstData for Procedure {
         Ast::Procedure(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        ty_symt.add_frame(
-            None,
-            if self.is_fn {
-                FrameType::Function
-            } else {
-                FrameType::Normal
-            },
-        );
-        let return_type = if let Some(ty) = &mut self.return_type {
-            ty.typecheck(ty_symt)?
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        let sig_ret_ty = if let Some(ty) = &mut self.return_type {
+            let Ast::Ident(i) = &**ty else {
+                todo!()
+            };
+            Some(ty_symt.get_type(&i.name, ty.span())?)
         } else {
-            UNIT_T.as_type().as_type_element()
+            None
         };
+        ty_symt.add_frame(if self.is_fn {
+            TypecheckFrameType::Function
+        } else {
+            TypecheckFrameType::Normal
+        }(sig_ret_ty.map(|a| Arc::clone(&a))));
         for arg in &mut self.args {
-            let value = arg.ty.typecheck(ty_symt)?;
-            ty_symt.declare_val(&arg.name.name, &value);
+            let ty = ty_symt.get_type_from_ident(&arg.ty, arg.ty.span())?;
+            ty_symt.declare_val(&arg.name.name, ty);
         }
-        let (res, block_return_type) = self.content.block_type(ty_symt, false)?;
-        if return_type == UNIT_T.get_instance().as_type_element() || block_return_type.is_none() {
-            self.return_type = Some(res.as_literal().into());
-        } else if let Some(block_return_type) = block_return_type {
-            if return_type != block_return_type {
-                return Err(ZError::t009(&return_type, &block_return_type).with_span(&*self));
-                // TODO span
+        let res = self.content.block_type(ty_symt, false)?;
+        let (TypecheckFrameType::Function(ret_ty) | TypecheckFrameType::Normal(ret_ty)) = &ty_symt.0.front().unwrap().ty else {
+            unreachable!()
+        };
+        let ret_ty = Arc::clone(if let Some(ret_ty) = ret_ty {
+            if *ret_ty != res {
+                todo!("error")
             }
-        }
+            ret_ty
+        } else {
+            &res
+        });
         ty_symt.pop_frame();
-        Ok(Type::Instance(TypeInstance {
-            name: Some("proc".into()),
-            //name: Some(if *is_fn { "fn" } else { "proc" }.into()),
-            type_args: vec![UNIT_T.as_type().as_type_element(), return_type],
-            implementation: PROC_T.as_type_element(),
-        }))
+        Ok(generic_proc(vec![], ret_ty))
     }
 
     fn desugared(&self) -> ZResult<Ast> {
@@ -91,20 +91,9 @@ impl AstData for Procedure {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         Ok(Value::Proc(Proc::Defined {
             is_fn: self.is_fn,
-            args: self.args.to_owned(),
-            return_type: if let Value::Type(value) = self
-                .return_type
-                .as_ref()
-                .unwrap_or_else(|| unreachable!())
-                .interpret_expr(val_symt)?
-            {
-                value
-            } else {
-                panic!("{self:#?}")
-            },
             content: self.content.to_owned(),
         }))
     }

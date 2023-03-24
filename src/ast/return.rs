@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     primitives::UNIT_T,
     types::position::{GetSpan, Span},
-    SymTable, Type, Value, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -23,8 +25,8 @@ impl AstData for Return {
         Ast::Return(self.to_owned())
     }
 
-    fn typecheck(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        Ok(UNIT_T.as_type().as_type_element())
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        Ok(Arc::clone(&UNIT_T))
     }
 
     fn desugared(&self) -> ZResult<Ast> {
@@ -36,7 +38,7 @@ impl AstData for Return {
         .as_variant())
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         Ok(Value::Return(Box::new(
             self.value.interpret_expr(val_symt)?,
         )))

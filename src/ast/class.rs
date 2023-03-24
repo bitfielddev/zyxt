@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use smol_str::SmolStr;
 use tracing::debug;
@@ -7,11 +7,10 @@ use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Declare, Ident, Reconstruct},
     types::{
         position::{GetSpan, Span},
-        r#type::TypeDefinition,
-        sym_table::FrameType,
+        sym_table::TypecheckFrameType,
         token::Flag,
     },
-    SymTable, Type, Value, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -33,8 +32,8 @@ impl AstData for Class {
         Ast::Class(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        ty_symt.add_frame(None, FrameType::Normal);
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        ty_symt.add_frame(TypecheckFrameType::Normal(None));
         for expr in &mut self
             .content
             .as_mut()
@@ -95,12 +94,11 @@ impl AstData for Class {
             })
             .collect::<Result<HashMap<_, _>, _>>()?;
         ty_symt.pop_frame();
-        Ok(Type::Definition(TypeDefinition {
-            inst_name: None,
-            name: Some(if self.is_struct { "struct" } else { "class" }.into()),
-            generics: vec![],
-            implementations: self.implementations.to_owned(),
-            inst_fields: new_inst_fields,
+        Ok(Arc::new(Type::Type {
+            name: None,
+            namespace: todo!(),
+            fields: todo!(),
+            type_args: vec![],
         }))
     }
 
@@ -133,36 +131,8 @@ impl AstData for Class {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
-        Ok(Value::Type(Type::Definition(TypeDefinition {
-            name: Some(if self.is_struct { "struct" } else { "class" }.into()),
-            inst_name: None,
-            generics: vec![],
-            implementations: self
-                .implementations
-                .iter()
-                .map(|(k, v)| Ok((k.to_owned(), v.interpret_expr(val_symt)?)))
-                .collect::<Result<HashMap<_, _>, _>>()?,
-            inst_fields: self
-                .inst_fields
-                .iter()
-                .map(|(k, (v1, v2))| {
-                    Ok((
-                        k.to_owned(),
-                        (
-                            Box::new(if let Value::Type(value) = v1.interpret_expr(val_symt)? {
-                                value
-                            } else {
-                                panic!()
-                            }),
-                            v2.to_owned()
-                                .map(|v2| v2.interpret_expr(val_symt))
-                                .transpose()?,
-                        ),
-                    ))
-                })
-                .collect::<Result<HashMap<_, _>, _>>()?,
-        })))
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+        todo!()
     }
 }
 

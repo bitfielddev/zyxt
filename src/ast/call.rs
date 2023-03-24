@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -10,12 +10,12 @@ use crate::{
     primitives::UNIT_T,
     types::{
         position::{GetSpan, Position, Span},
-        r#type::{TypeDefinition, TypeInstance},
-        sym_table::{FrameData, FrameType},
+        r#type::ValueType,
+        sym_table::TypecheckFrameType,
         token::{AccessType, OprType},
         value::Proc,
     },
-    SymTable, Type, Value, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -40,7 +40,7 @@ impl AstData for Call {
     fn as_variant(&self) -> Ast {
         Ast::Call(self.to_owned())
     }
-    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         if let Ast::Member(Member { name, parent, .. }) = &*self.called {
             if let Ast::Ident(Ident {
                 name: parent_name, ..
@@ -51,11 +51,11 @@ impl AstData for Call {
                         .iter_mut()
                         .map(|a| a.typecheck(ty_symt))
                         .collect::<ZResult<Vec<_>>>()?;
-                    return Ok(UNIT_T.get_instance().as_type_element());
+                    return Ok(Arc::clone(&UNIT_T));
                 }
             }
         }
-        let called_type = self.called.typecheck(ty_symt)?;
+        /*let called_type = self.called.typecheck(ty_symt)?;
         if let Ast::Procedure(procedure) = &mut *self.called {
             for (i, arg) in self.args.iter_mut().enumerate() {
                 let expected = procedure.args[i].ty.typecheck(ty_symt)?;
@@ -67,7 +67,7 @@ impl AstData for Call {
             if let Some(ty) = &mut procedure.return_type {
                 ty.typecheck(ty_symt)
             } else {
-                Ok(UNIT_T.as_type_element().as_type())
+                Ok(UNIT_TArc::clone(&))
             }
         } else if let Ast::Literal(Literal {
             content: Value::Proc(proc),
@@ -76,15 +76,15 @@ impl AstData for Call {
         {
             Ok(match proc {
                 Proc::Builtin { signature, .. } => {
-                    let (arg_objs, ret): (Vec<Type<Value>>, Type<Value>) = signature[0]();
+                    let (arg_objs, ret): (Vec<ValueType>, ValueType) = signature[0]();
                     for (i, arg) in self.args.iter_mut().enumerate() {
                         let actual = arg.typecheck(ty_symt)?;
-                        let expected = arg_objs[i].as_type_element();
+                        let expected = arg_objs[i];
                         if actual != expected && actual != Type::Any && expected != Type::Any {
                             return Err(ZError::t004(&expected, &actual).with_span(&*self));
                         }
                     }
-                    ret.as_type_element()
+                    ret
                 }
                 Proc::Defined {
                     args: arg_objs,
@@ -98,7 +98,7 @@ impl AstData for Call {
                             return Err(ZError::t004(&expected, &actual).with_span(&*self));
                         }
                     }
-                    return_type.as_type_element()
+                    return_type
                 }
             })
         } else {
@@ -125,8 +125,8 @@ impl AstData for Call {
                 unreachable!()
             }
             .into();
-            self.typecheck(ty_symt)
-        }
+            self.typecheck(ty_symt)*/
+        todo!()
     }
 
     fn desugared(&self) -> ZResult<Ast> {
@@ -175,11 +175,12 @@ impl AstData for Call {
         }))
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
-        if let Ast::Member(Member { name, parent, .. }) = &*self.called {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+        todo!()
+        /*if let Ast::Member(Member { name, parent, .. }) = &*self.called {
             if let Ast::Ident(Ident {
-                name: parent_name, ..
-            }) = &**parent
+                                  name: parent_name, ..
+                              }) = &**parent
             {
                 if &**name == "out" && &**parent_name == "ter" {
                     let s = self
@@ -234,9 +235,9 @@ impl AstData for Call {
                                 args: processed_args.to_owned(),
                             }),
                             if is_fn {
-                                FrameType::Function
+                                TypecheckFrameType::Function
                             } else {
-                                FrameType::Normal
+                                TypecheckFrameType::Normal
                             },
                         )
                         .heap
@@ -248,7 +249,7 @@ impl AstData for Call {
             }
         } else {
             panic!()
-        }
+        }*/
     }
 }
 

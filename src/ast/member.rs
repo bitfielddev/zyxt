@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use smol_str::SmolStr;
 
 use crate::{
@@ -6,7 +8,7 @@ use crate::{
         position::{GetSpan, Span},
         token::AccessType,
     },
-    SymTable, Type, Value, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -34,7 +36,7 @@ impl AstData for Member {
         true
     }
 
-    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         let parent_type = self.parent.typecheck(ty_symt)?;
         todo!()
     }
@@ -45,7 +47,7 @@ impl AstData for Member {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         val_symt.get_val(&self.name, &self.name_span)
     }
 }

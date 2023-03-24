@@ -533,7 +533,7 @@ fn return_nothing() {
         ast[0],
         Ast::Return(Return {
             kwd_span: Some(span!(1, 1, "ret")),
-            value: UNIT_T.as_type().as_type_element().as_literal().into()
+            value: Arc::clone(&UNIT_T).as_literal().into()
         })
     )
 }

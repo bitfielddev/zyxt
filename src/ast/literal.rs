@@ -1,7 +1,9 @@
+use std::sync::Arc;
+
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
-    SymTable, Type, Value, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -23,16 +25,12 @@ impl AstData for Literal {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn typecheck(&mut self, _ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        Ok(self.content.get_type_obj().as_type_element())
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        Ok(self.content.ty())
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
-        Ok(if let Value::PreType(v) = &self.content {
-            Value::Type(v.as_type_value(val_symt)?)
-        } else {
-            self.content.to_owned()
-        })
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+        Ok(self.content.to_owned())
     }
 }
 impl Reconstruct for Literal {

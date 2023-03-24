@@ -18,7 +18,7 @@ mod r#return;
 mod set;
 mod unary_opr;
 
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::Arc};
 
 pub use argument::Argument;
 pub use binary_opr::BinaryOpr;
@@ -44,10 +44,11 @@ pub use unary_opr::UnaryOpr;
 pub use crate::ast::member::Member;
 use crate::{
     errors::ZResult,
+    primitives::ANY_T,
     types::{
         position::{GetSpan, Span},
         r#type::Type,
-        sym_table::SymTable,
+        sym_table::{InterpretSymTable, TypecheckSymTable},
         value::Value,
     },
 };
@@ -57,13 +58,13 @@ pub trait AstData: Clone + PartialEq + Debug + GetSpan {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn typecheck(&mut self, _: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        Ok(Type::Any)
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        Ok(Arc::clone(&ANY_T))
     }
     fn desugared(&self) -> ZResult<Ast> {
         Ok(self.as_variant())
     }
-    fn interpret_expr(&self, _: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, _: &mut InterpretSymTable) -> ZResult<Value> {
         unreachable!()
     }
 }
@@ -122,13 +123,13 @@ impl AstData for Ast {
     fn is_pattern(&self) -> bool {
         for_all_variants!(&self, is_pattern)
     }
-    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         for_all_variants!(self, typecheck, ty_symt)
     }
     fn desugared(&self) -> ZResult<Ast> {
         for_all_variants!(&self, desugared)
     }
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         for_all_variants!(&self, interpret_expr, val_symt)
     }
 }

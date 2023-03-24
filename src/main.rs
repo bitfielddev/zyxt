@@ -6,9 +6,12 @@ use itertools::Either;
 use tracing_error::ErrorLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 use zyxt::{
-    ast::Ast,
     repl,
-    types::{r#type::Type, sym_table::SymTable, value::Value},
+    types::{
+        r#type::Type,
+        sym_table::{InterpretSymTable, TypecheckSymTable},
+        value::Value,
+    },
 };
 
 #[derive(Parser)]
@@ -46,8 +49,8 @@ fn main() -> Result<()> {
 
     match args.subcmd {
         Subcmd::Run(sargs) => {
-            let mut ty_symt = SymTable::<Type<Ast>>::default();
-            let mut val_symt = SymTable::<Value>::default();
+            let mut ty_symt = TypecheckSymTable::default();
+            let mut val_symt = InterpretSymTable::default();
             let exit_code = zyxt::interpret(
                 &zyxt::compile(&Either::Left(&sargs.filename), &mut ty_symt)
                     .unwrap_or_else(|e| e.print_exit()),

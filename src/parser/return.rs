@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use itertools::Either;
 use tracing::{debug, trace};
 
@@ -9,6 +11,7 @@ use crate::{
     types::{
         position::GetSpan,
         token::{Keyword, Token, TokenType},
+        value::Value,
     },
 };
 
@@ -31,7 +34,7 @@ impl Buffer {
             let value = if self.next().is_some() {
                 self.rest_incl_curr().with_as_buffer(&Self::parse_as_expr)?
             } else {
-                UNIT_T.as_type().as_type_element().as_literal()
+                Value::Unit.as_ast().into()
             }
             .into();
 

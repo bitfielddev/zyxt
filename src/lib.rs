@@ -153,7 +153,7 @@ pub mod primitives;
 pub mod repl;
 pub mod types;
 
-use std::{path::Path, time::Instant};
+use std::{path::Path, sync::Arc, time::Instant};
 
 use errors::{ZError, ZResult};
 use itertools::Either;
@@ -166,12 +166,16 @@ use crate::{
     interpreter::interpret_asts,
     lexer::lex,
     parser::parse_token_list,
-    types::{r#type::Type, sym_table::SymTable, value::Value},
+    types::{
+        r#type::Type,
+        sym_table::{InterpretSymTable, TypecheckSymTable},
+        value::Value,
+    },
 };
 
 pub fn compile(
     file: &Either<&Path, (SmolStr, String)>,
-    ty_symt: &mut SymTable<Type<Ast>>,
+    ty_symt: &mut TypecheckSymTable,
 ) -> ZResult<Vec<Ast>> {
     /*if ty_symt.out.verbosity() == 0 {
         return gen_instructions(parse_token_list(lex(input, filename)?)?, ty_symt);
@@ -226,7 +230,7 @@ pub fn compile(
     Ok(parsed)
 }
 
-pub fn interpret(input: &Vec<Ast>, val_symt: &mut SymTable<Value>) -> ZResult<i32> {
+pub fn interpret(input: &Vec<Ast>, val_symt: &mut InterpretSymTable) -> ZResult<i32> {
     /*if val_symt.out.verbosity() == 0 {
         return interpret_asts(input, val_symt);
     }*/

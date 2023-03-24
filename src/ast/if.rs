@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Condition, Reconstruct},
     types::position::{GetSpan, Span},
-    SymTable, Type, Value, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -24,8 +26,8 @@ impl AstData for If {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
-        Ok(self.conditions[0].if_true.block_type(ty_symt, true)?.0)
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        self.conditions[0].if_true.block_type(ty_symt, true)
         // TODO consider all returns
     }
 
@@ -45,7 +47,7 @@ impl AstData for If {
         .as_variant())
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         for cond in &self.conditions {
             if cond.condition.is_none()
                 || cond

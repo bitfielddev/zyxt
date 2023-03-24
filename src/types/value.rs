@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     fmt::{Debug, Display, Formatter},
+    sync::Arc,
 };
 
 use enum_as_inner::EnumAsInner;
@@ -11,57 +12,37 @@ use num::{BigInt, BigUint};
 use crate::{
     ast::{Argument, Ast, Block, Literal},
     primitives::*,
-    types::r#type::Type,
+    types::r#type::{Type, ValueType},
 };
 
-type BuiltinFunction = Vec<&'static (dyn Fn() -> (Vec<Type<Value>>, Type<Value>) + Sync)>;
+pub type BuiltinFunction = dyn Fn(&Vec<Value>) -> Option<Value> + Send + Sync;
 
 #[derive(Clone)]
 pub enum Proc {
     Builtin {
-        f: fn(&Vec<Value>) -> Option<Value>,
-        signature: BuiltinFunction,
+        f: Arc<BuiltinFunction>,
+        ty: Arc<Type>,
     },
     Defined {
         is_fn: bool,
-        args: Vec<Argument>,
-        return_type: Type<Value>,
         content: Block,
     },
 }
 impl PartialEq for Proc {
     fn eq(&self, other: &Self) -> bool {
-        match &self {
-            Self::Builtin { f, .. } =>
-            {
-                #[allow(clippy::fn_to_numeric_cast_any)]
-                if let Self::Builtin { f: f2, .. } = other {
-                    *f as usize == *f2 as usize
-                } else {
-                    false
-                }
-            }
-            Self::Defined {
-                is_fn,
-                args,
-                return_type,
-                content,
-            } => {
-                if let Self::Defined {
+        match (&self, other) {
+            (Self::Builtin { f: f1, .. }, Self::Builtin { f: f2, .. }) => std::ptr::eq(f1, f2),
+            (
+                Self::Defined {
+                    is_fn: is_fn1,
+                    content: content1,
+                },
+                Self::Defined {
                     is_fn: is_fn2,
-                    args: args2,
-                    return_type: return_type2,
                     content: content2,
-                } = other
-                {
-                    is_fn == is_fn2
-                        && args == args2
-                        && return_type == return_type2
-                        && content == content2
-                } else {
-                    false
-                }
-            }
+                },
+            ) => is_fn1 == is_fn2 && content1 == content2,
+            _ => false,
         }
     }
 }
@@ -87,15 +68,77 @@ pub enum Value {
     F64(f64),
     Str(String),
     Bool(bool),
-    Type(Type<Value>),
-    PreType(Type<Ast>),
+    Type(Arc<ValueType>),
     Proc(Proc),
     ClassInstance {
-        ty: Type<Value>,
+        ty: Arc<ValueType>,
         attrs: HashMap<String, Value>,
     },
     Unit,
     Return(Box<Value>),
+}
+
+pub trait ValueInner: TryFrom<Value> + Into<Value> + 'static {}
+
+macro_rules! from_to {
+    ($variant:ident, $ty:ty) => {
+        impl From<$ty> for Value {
+            fn from(value: $ty) -> Self {
+                Value::$variant(value)
+            }
+        }
+        impl TryFrom<Value> for $ty {
+            type Error = ();
+
+            fn try_from(value: Value) -> Result<Self, Self::Error> {
+                if let Value::$variant(v) = value {
+                    Ok(v)
+                } else {
+                    Err(()) // TODO
+                }
+            }
+        }
+        impl ValueInner for $ty {}
+    };
+}
+
+from_to!(I8, i8);
+from_to!(I16, i16);
+from_to!(I32, i32);
+from_to!(I64, i64);
+from_to!(I128, i128);
+from_to!(Isize, isize);
+from_to!(Ibig, BigInt);
+from_to!(U8, u8);
+from_to!(U16, u16);
+from_to!(U32, u32);
+from_to!(U64, u64);
+from_to!(U128, u128);
+from_to!(Usize, usize);
+from_to!(Ubig, BigUint);
+from_to!(F16, f16);
+from_to!(F32, f32);
+from_to!(F64, f64);
+from_to!(Str, String);
+from_to!(Bool, bool);
+from_to!(Type, Arc<ValueType>);
+from_to!(Proc, Proc);
+
+impl From<()> for Value {
+    fn from(_: ()) -> Self {
+        Value::Unit
+    }
+}
+impl TryFrom<Value> for () {
+    type Error = ();
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        if value == Value::Unit {
+            Ok(())
+        } else {
+            Err(()) // TODO
+        }
+    }
 }
 
 impl Debug for Proc {
@@ -131,7 +174,6 @@ impl Debug for Value {
                 Self::F64(v) => format!("{v}@f64"),
                 Self::Str(v) => format!("\"{v}\""),
                 Self::Type(v) => format!("{v:?}"),
-                Self::PreType(v) => format!("{v:?}"),
                 Self::Bool(_) | Self::ClassInstance { .. } | Self::Proc { .. } | Self::Unit =>
                     self.to_string(),
                 Self::Return(_) => unreachable!(),
@@ -141,36 +183,7 @@ impl Debug for Value {
 }
 impl Display for Proc {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Builtin { signature, .. } => {
-                    signature
-                        .iter()
-                        .map(|s| {
-                            let (args, ret): (Vec<Type<Value>>, Type<Value>) = s();
-                            format!(
-                                "fn|{}|: {}",
-                                args.iter().map(ToString::to_string).join(","),
-                                ret
-                            )
-                        })
-                        .join(" / ")
-                }
-                Self::Defined {
-                    is_fn,
-                    args,
-                    return_type,
-                    ..
-                } => format!(
-                    "{}|{}|: {}",
-                    if *is_fn { "fn" } else { "proc" },
-                    args.iter().map(ToString::to_string).join(","),
-                    return_type
-                ),
-            }
-        )
+        write!(f, "{}", todo!())
     }
 }
 impl Display for Value {
@@ -199,7 +212,6 @@ impl Display for Value {
                 Self::Str(v) => v.to_owned(),
                 Self::Bool(v) => v.to_string(),
                 Self::Type(v) | Self::ClassInstance { ty: v, .. } => format!("<{v}>"),
-                Self::PreType(v) => format!("<{v}>"),
                 Self::Unit => "()".to_owned(),
                 Self::Return(v) => v.to_string(),
                 Self::Proc(v) => v.to_string(),
@@ -233,37 +245,61 @@ impl Value {
                 | Self::Bool(_)
         )
     }
-    pub fn get_type_obj(&self) -> Type<Self> {
+    pub fn ty(&self) -> Arc<Type> {
         match self {
-            Self::I8(..) => I8_T.get_instance(),
-            Self::I16(..) => I16_T.get_instance(),
-            Self::I32(..) => I32_T.get_instance(),
-            Self::I64(..) => I64_T.get_instance(),
-            Self::I128(..) => I128_T.get_instance(),
-            Self::Isize(..) => ISIZE_T.get_instance(),
-            Self::Ibig(..) => IBIG_T.get_instance(),
-            Self::U8(..) => U8_T.get_instance(),
-            Self::U16(..) => U16_T.get_instance(),
-            Self::U32(..) => U32_T.get_instance(),
-            Self::U64(..) => U64_T.get_instance(),
-            Self::U128(..) => U128_T.get_instance(),
-            Self::Usize(..) => USIZE_T.get_instance(),
-            Self::Ubig(..) => UBIG_T.get_instance(),
-            Self::F16(..) => F16_T.get_instance(),
-            Self::F32(..) => F32_T.get_instance(),
-            Self::F64(..) => F64_T.get_instance(),
-            Self::Str(..) => STR_T.get_instance(),
-            Self::Bool(..) => BOOL_T.get_instance(),
-            Self::Type(..) | Self::PreType(..) => TYPE_T.get_instance(),
-            Self::Proc(_) => PROC_T.get_instance(),
-            Self::ClassInstance { ty, .. } => ty.to_owned(),
-            Self::Unit => UNIT_T.get_instance(),
-            Self::Return(v) => v.get_type_obj(),
+            Self::I8(..) => Arc::clone(&I8_T),
+            Self::I16(..) => Arc::clone(&I16_T),
+            Self::I32(..) => Arc::clone(&I32_T),
+            Self::I64(..) => Arc::clone(&I64_T),
+            Self::I128(..) => Arc::clone(&I128_T),
+            Self::Isize(..) => Arc::clone(&ISIZE_T),
+            Self::Ibig(..) => Arc::clone(&IBIG_T),
+            Self::U8(..) => Arc::clone(&U8_T),
+            Self::U16(..) => Arc::clone(&U16_T),
+            Self::U32(..) => Arc::clone(&U32_T),
+            Self::U64(..) => Arc::clone(&U64_T),
+            Self::U128(..) => Arc::clone(&U128_T),
+            Self::Usize(..) => Arc::clone(&USIZE_T),
+            Self::Ubig(..) => Arc::clone(&UBIG_T),
+            Self::F16(..) => Arc::clone(&F16_T),
+            Self::F32(..) => Arc::clone(&F32_T),
+            Self::F64(..) => Arc::clone(&F64_T),
+            Self::Str(..) => Arc::clone(&STR_T),
+            Self::Bool(..) => Arc::clone(&BOOL_T),
+            Self::Type(..) => Arc::clone(&TYPE_T),
+            Self::Proc(_) => Arc::clone(&PROC_T),
+            Self::ClassInstance { ty, .. } => todo!(),
+            Self::Unit => Arc::clone(&UNIT_T),
+            Self::Return(v) => v.ty(),
         }
     }
-    #[must_use]
-    pub fn get_type(&self) -> Self {
-        Self::Type(self.get_type_obj())
+    pub fn value_ty(&self) -> Arc<ValueType> {
+        match self {
+            Self::I8(..) => Arc::clone(&I8_T_VAL),
+            Self::I16(..) => Arc::clone(&I16_T_VAL),
+            Self::I32(..) => Arc::clone(&I32_T_VAL),
+            Self::I64(..) => Arc::clone(&I64_T_VAL),
+            Self::I128(..) => Arc::clone(&I128_T_VAL),
+            Self::Isize(..) => Arc::clone(&ISIZE_T_VAL),
+            Self::Ibig(..) => Arc::clone(&IBIG_T_VAL),
+            Self::U8(..) => Arc::clone(&U8_T_VAL),
+            Self::U16(..) => Arc::clone(&U16_T_VAL),
+            Self::U32(..) => Arc::clone(&U32_T_VAL),
+            Self::U64(..) => Arc::clone(&U64_T_VAL),
+            Self::U128(..) => Arc::clone(&U128_T_VAL),
+            Self::Usize(..) => Arc::clone(&USIZE_T_VAL),
+            Self::Ubig(..) => Arc::clone(&UBIG_T_VAL),
+            Self::F16(..) => Arc::clone(&F16_T_VAL),
+            Self::F32(..) => Arc::clone(&F32_T_VAL),
+            Self::F64(..) => Arc::clone(&F64_T_VAL),
+            Self::Str(..) => Arc::clone(&STR_T_VAL),
+            Self::Bool(..) => Arc::clone(&BOOL_T_VAL),
+            Self::Type(..) => Arc::clone(&TYPE_T_VAL),
+            Self::Proc(_) => Arc::clone(&PROC_T_VAL),
+            Self::ClassInstance { ty, .. } => Arc::clone(&ty),
+            Self::Unit => Arc::clone(&UNIT_T_VAL),
+            Self::Return(v) => v.value_ty(),
+        }
     }
     #[must_use]
     pub fn as_ast(&self) -> Ast {

@@ -4,81 +4,94 @@ use std::{
 };
 
 use half::f16;
-use num_traits::ToPrimitive;
+use num_traits::{ToPrimitive, Zero};
 use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 
 use crate::{
-    arith_opr_num, binary, comp_opr_num, concat_vals, get_param,
     primitives::*,
-    typecast_int, typecast_to_type,
-    types::{
-        r#type::TypeDefinition,
-        value::{Proc, Value},
-    },
-    unary, Type,
+    typecast_int,
+    types::value::{Proc, Value},
+    Type,
 };
 
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
-fn ibig_t() -> HashMap<SmolStr, Value> {
+fn ibig_t() -> BuiltinType {
     let mut h = HashMap::new();
     h.insert("_default", Value::Ibig(0.into()));
-    concat_vals!(h, IBIG_T);
+    concat(&mut h, Arc::clone(&IBIG_T));
+    unary(
+        &mut h,
+        "_un_add",
+        Arc::new(|x: &Vec<Value>| Some(x[0].to_owned())),
+        Arc::clone(&IBIG_T),
+        Arc::clone(&IBIG_T),
+    );
+    unary(
+        &mut h,
+        "_un_sub",
+        Arc::new(|x: &Vec<Value>| Some({ get_param::<BigInt>(&x, 0)?.neg().into() })),
+        Arc::clone(&IBIG_T),
+        Arc::clone(&IBIG_T),
+    );
+    unary(
+        &mut h,
+        "_not",
+        Arc::new(|x: &Vec<Value>| Some(get_param::<BigInt>(&x, 0)?.is_zero().into())),
+        Arc::clone(&IBIG_T),
+        Arc::clone(&BOOL_T),
+    );
+    arith_opr_big_default::<BigInt>(&mut h, Arc::clone(&IBIG_T));
+    arith_opr::<BigInt>(&mut h, "_rem", &|a, b| a.rem(b), Arc::clone(&IBIG_T));
+    comp_opr_default::<BigInt>(&mut h, Arc::clone(&IBIG_T));
 
-    unary!(h, IBIG_T.as_type(), "_un_add", |x: &Vec<Value>| Some(
-        x[0].to_owned()
-    ));
-    unary!(h, IBIG_T.as_type(), "_un_sub", |x: &Vec<Value>| Some(
-        Value::Ibig(get_param!(x, 0, Ibig).neg())
-    ));
-    unary!(h, IBIG_T.as_type(), "_not", |x: &Vec<Value>| Some(
-        Value::Bool(get_param!(x, 0, Ibig) == 0.into())
-    ));
-
-    arith_opr_num!(h, big default IBIG_T Ibig);
-    comp_opr_num!(h, default IBIG_T Ibig);
-
-    let typecast = |x: &Vec<Value>| {
-        Some(match get_param!(x, 1, Type) {
-            p if p == TYPE_T.as_type() => typecast_to_type!(IBIG_T),
-            p if p == STR_T.as_type() => typecast_int!(Ibig => str, x),
-            p if p == BOOL_T.as_type() => Value::Bool(get_param!(x, 0, Ibig) == 0.into()),
-            p if p == I8_T.as_type() => typecast_int!(Ibig => I8, x),
-            p if p == I16_T.as_type() => typecast_int!(Ibig => I16, x),
-            p if p == I32_T.as_type() => typecast_int!(Ibig => I32, x),
-            p if p == I64_T.as_type() => typecast_int!(Ibig => I64, x),
-            p if p == I128_T.as_type() => typecast_int!(Ibig => I128, x),
-            p if p == ISIZE_T.as_type() => typecast_int!(Ibig => Ibig, x),
-            p if p == IBIG_T.as_type() => x[0].to_owned(),
-            p if p == U8_T.as_type() => typecast_int!(Ibig => U8, x),
-            p if p == U16_T.as_type() => typecast_int!(Ibig => U16, x),
-            p if p == U32_T.as_type() => typecast_int!(Ibig => U32, x),
-            p if p == U64_T.as_type() => typecast_int!(Ibig => U64, x),
-            p if p == U128_T.as_type() => typecast_int!(Ibig => U128, x),
-            p if p == USIZE_T.as_type() => typecast_int!(Ibig => Usize, x),
-            p if p == UBIG_T.as_type() => typecast_int!(Ibig => Ubig, x),
-            p if p == F16_T.as_type() => typecast_int!(big Ibig => f16, x),
-            p if p == F32_T.as_type() => typecast_int!(big Ibig => f32, x),
-            p if p == F64_T.as_type() => typecast_int!(big Ibig => f64, x),
+    let typecast = Arc::new(|x: &Vec<Value>| {
+        Some(match get_param::<Arc<ValueType>>(x, 1)? {
+            p if p == *TYPE_T_VAL => Value::Type(Arc::clone(&IBIG_T_VAL)),
+            p if p == *STR_T_VAL => typecast_int!(BigInt => str, x),
+            p if p == *BOOL_T_VAL => Value::Bool(get_param::<BigInt>(x, 0)? == 0.into()),
+            p if p == *I8_T_VAL => typecast_int!(BigInt => I8, x),
+            p if p == *I16_T_VAL => typecast_int!(BigInt => I16, x),
+            p if p == *I32_T_VAL => typecast_int!(BigInt => I32, x),
+            p if p == *I64_T_VAL => typecast_int!(BigInt => I64, x),
+            p if p == *I128_T_VAL => typecast_int!(BigInt => I128, x),
+            p if p == *ISIZE_T_VAL => typecast_int!(BigInt => Ibig, x),
+            p if p == *IBIG_T_VAL => x[0].to_owned(),
+            p if p == *U8_T_VAL => typecast_int!(BigInt => U8, x),
+            p if p == *U16_T_VAL => typecast_int!(BigInt => U16, x),
+            p if p == *U32_T_VAL => typecast_int!(BigInt => U32, x),
+            p if p == *U64_T_VAL => typecast_int!(BigInt => U64, x),
+            p if p == *U128_T_VAL => typecast_int!(BigInt => U128, x),
+            p if p == *USIZE_T_VAL => typecast_int!(BigInt => Usize, x),
+            p if p == *UBIG_T_VAL => typecast_int!(BigInt => Ubig, x),
+            p if p == *F16_T_VAL => typecast_int!(big BigInt => f16, x),
+            p if p == *F32_T_VAL => typecast_int!(big BigInt => f32, x),
+            p if p == *F64_T_VAL => typecast_int!(big BigInt => f64, x),
             _ => return None,
         })
-    };
-    binary!(
-        h,
-        IBIG_T.as_type(),
-        "_typecast",
-        [TYPE_T.as_type()],
-        Type::Any,
-        typecast
-    );
+    });
+    type_cast(&mut h, typecast, Arc::clone(&IBIG_T));
 
-    h.drain().map(|(k, v)| (k.into(), v)).collect()
+    BuiltinType {
+        name: Some(Ident::new("ibig")),
+        namespace: h.drain().map(|(k, v)| (k.into(), v)).collect(),
+        fields: Default::default(),
+        type_args: vec![],
+    }
 }
 
-pub static IBIG_T: Lazy<TypeDefinition<Value>> = Lazy::new(|| TypeDefinition {
-    name: Some("{builtin ibig}".into()),
-    inst_name: Some("ibig".into()),
-    generics: vec![],
-    implementations: ibig_t(),
-    inst_fields: HashMap::new(),
-});
+pub static IBIG_T: Lazy<Arc<Type>> = Lazy::new(|| Arc::new(ibig_t().into()));
+pub static IBIG_T_VAL: Lazy<Arc<ValueType>> = Lazy::new(|| Arc::new(ibig_t().into()));
+
+use std::sync::Arc;
+
+use num::BigInt;
+
+use crate::{
+    ast::Ident,
+    primitives::utils::{
+        arith_opr, arith_opr_big_default, arith_opr_default, comp_opr_default, concat, get_param,
+        type_cast, unary, unary_signed_default, unary_unsigned_default,
+    },
+    types::r#type::{BuiltinType, ValueType},
+};

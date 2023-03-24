@@ -1,11 +1,17 @@
+use std::sync::Arc;
+
 use crate::{
     ast::{Ast, Block},
     primitives::I32_T,
-    types::{position::Span, sym_table::SymTable, value::Value},
+    types::{
+        position::Span,
+        sym_table::{InterpretSymTable, TypecheckSymTable},
+        value::Value,
+    },
     ZError, ZResult,
 };
 
-pub fn interpret_asts(input: &Vec<Ast>, val_symt: &mut SymTable<Value>) -> ZResult<i32> {
+pub fn interpret_asts(input: &Vec<Ast>, val_symt: &mut InterpretSymTable) -> ZResult<i32> {
     let input = Block {
         brace_spans: None,
         content: input.to_owned(),
@@ -20,7 +26,7 @@ pub fn interpret_asts(input: &Vec<Ast>, val_symt: &mut SymTable<Value>) -> ZResu
     if let Value::I32(v) = last {
         Ok(v)
     } else {
-        Err(ZError::t009(&I32_T.as_type(), &last.get_type_obj()).with_span(&Span::default()))
+        Err(ZError::t009(&Arc::clone(&I32_T), &last.ty()).with_span(&Span::default()))
         // TODO
     }
 }

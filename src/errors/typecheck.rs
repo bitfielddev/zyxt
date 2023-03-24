@@ -12,18 +12,18 @@ impl ZError {
         Self::new("T002", format!("Symbol `{sym}` is not defined"))
     }
     #[must_use]
-    pub fn t003<T: Clone + PartialEq + Debug>(block_type: &Type<T>, return_type: &Type<T>) -> Self {
+    pub fn t003(block_type: &Type, return_type: &Type) -> Self {
         Self::new("T003", format!("Block returns variable of type `{block_type}` earlier on, but also returns variable of type `{return_type}`"))
     }
     #[must_use]
-    pub fn t004<T: Clone + PartialEq + Debug>(expected: &Type<T>, actual: &Type<T>) -> Self {
+    pub fn t004(expected: &Type, actual: &Type) -> Self {
         Self::new(
             "T004",
             format!("Procedure/function expected argument of type `{expected}`, got `{actual}`"),
         )
     }
     #[must_use]
-    pub fn t005(ty: &Type<impl Clone + PartialEq + Debug>, attr: impl Display) -> Self {
+    pub fn t005(ty: &Type, attr: impl Display) -> Self {
         Self::new(
             "T005",
             format!("Symbol of type `{ty}` has no attribute `{attr}`"),
@@ -42,7 +42,7 @@ impl ZError {
         Self::new("T008", "Expected an ident".to_owned())
     }
     #[must_use]
-    pub fn t009<T: Clone + PartialEq + Debug>(expected: &Type<T>, actual: &Type<T>) -> Self {
+    pub fn t009(expected: &Type, actual: &Type) -> Self {
         Self::new(
             "T009",
             format!(
@@ -51,7 +51,7 @@ impl ZError {
         )
     }
     #[must_use]
-    pub fn t010<T: Clone + PartialEq + Debug>(expected: &Type<T>, actual: &Type<T>) -> Self {
+    pub fn t010(expected: &Type, actual: &Type) -> Self {
         Self::new(
             "T010",
             format!("Attempt to assign value of type `{actual}` to symbol of type `{expected}`"),

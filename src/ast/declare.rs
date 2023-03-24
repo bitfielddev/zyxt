@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use tracing::debug;
 
 use crate::{
@@ -6,7 +8,7 @@ use crate::{
         position::{GetSpan, Span},
         token::{Flag, OprType},
     },
-    SymTable, Type, Value, ZError, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -32,40 +34,33 @@ impl AstData for Declare {
         Ast::Declare(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         if !self.variable.is_pattern() {
             return Err(ZError::t006().with_span(&self.variable));
         }
         let content_type = self.content.typecheck(ty_symt)?;
         let ty = self
             .ty
-            .as_mut()
+            .as_ref()
             .map(|ty| {
-                ty.typecheck(ty_symt)?;
-                if let Ast::Literal(literal) = &**ty {
-                    if let Value::Type(t) = &literal.content {
-                        Ok(t.as_type_element())
-                    } else {
-                        Err(ZError::t007().with_span(ty.to_owned()))
-                    }
-                } else {
-                    Err(ZError::t007().with_span(ty.to_owned()))
-                }
+                let Ast::Ident(i) = &**ty else {
+                todo!()
+            };
+                ty_symt.get_type(&i.name, ty.span())
             })
             .transpose()?;
         let name = if let Ast::Ident(ident) = &*self.variable {
-            &ident.name
+            ident.name.to_owned()
         } else {
             return Err(ZError::t008().with_span(&self.variable));
         };
         if let Some(ty) = ty {
-            ty_symt.declare_val(name, &ty);
             if content_type != ty {
                 let mut new_content = BinaryOpr {
                     ty: OprType::TypeCast,
                     opr_span: None,
                     operand1: self.content.to_owned(),
-                    operand2: ty.as_literal().into(),
+                    operand2: self.ty.to_owned().unwrap(),
                 }
                 .as_variant();
                 new_content.typecheck(ty_symt)?;
@@ -77,9 +72,8 @@ impl AstData for Declare {
                     eq_span: self.eq_span.to_owned(),
                 };
             }
-        } else {
-            ty_symt.declare_val(name, &content_type);
         }
+        ty_symt.declare_val(&name, Arc::clone(&content_type));
         Ok(content_type)
     }
 
@@ -97,15 +91,15 @@ impl AstData for Declare {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
             unreachable!()
         };
-        let var = self.content.interpret_expr(val_symt);
-        val_symt.declare_val(name, &var.to_owned()?);
-        var
+        let var = self.content.interpret_expr(val_symt)?;
+        val_symt.declare_val(name, var.to_owned());
+        Ok(var)
     }
 }
 impl Reconstruct for Declare {

@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     types::position::{GetSpan, Span},
-    SymTable, Type, Value, ZError, ZResult,
+    InterpretSymTable, Type, TypecheckSymTable, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -25,7 +27,7 @@ impl AstData for Set {
         Ast::Set(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut SymTable<Type<Ast>>) -> ZResult<Type<Ast>> {
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         if !self.variable.is_pattern() {
             return Err(ZError::t006().with_span(&*self.variable));
         }
@@ -54,15 +56,15 @@ impl AstData for Set {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
-        let var = self.content.interpret_expr(val_symt);
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+        let var = self.content.interpret_expr(val_symt)?;
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
             unimplemented!() // TODO
         };
-        val_symt.set_val(name, &var.to_owned()?, self)?;
-        var
+        val_symt.set_val(name, var.to_owned(), self)?;
+        Ok(var)
     }
 }
 

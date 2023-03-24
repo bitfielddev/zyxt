@@ -1,15 +1,15 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Call, Member, Reconstruct},
-    primitives::BOOL_T,
+    primitives::{BOOL_T, BOOL_T_VAL},
     types::{
         position::{GetSpan, Span},
         token::{AccessType, OprType},
     },
-    SymTable, Value, ZResult,
+    InterpretSymTable, TypecheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -42,12 +42,7 @@ impl AstData for BinaryOpr {
                         ty: OprType::TypeCast,
                         opr_span: self.opr_span.to_owned(),
                         operand1: operand.desugared()?.into(),
-                        operand2: BOOL_T
-                            .as_type_element()
-                            .get_instance()
-                            .as_literal()
-                            .as_variant()
-                            .into(),
+                        operand2: Box::new(Value::Type(Arc::clone(&BOOL_T_VAL)).as_ast()),
                     }
                     .desugared()?
                     .into();
@@ -97,7 +92,7 @@ impl AstData for BinaryOpr {
         })
     }
 
-    fn interpret_expr(&self, val_symt: &mut SymTable<Value>) -> ZResult<Value> {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
         match self.ty {
             OprType::And => {
                 if let Value::Bool(b) = self.operand1.interpret_expr(val_symt)? {
