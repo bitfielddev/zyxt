@@ -67,7 +67,7 @@ impl AstData for Procedure {
             &res
         });
         ty_symt.pop_frame();
-        Ok(generic_proc(vec![], ret_ty))
+        Ok(generic_proc(&vec![], ret_ty))
     }
 
     fn desugared(&self) -> ZResult<Ast> {

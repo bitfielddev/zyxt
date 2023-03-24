@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use half::f16;
 use once_cell::sync::Lazy;
 use smol_str::SmolStr;
+use tracing::trace;
 
 use crate::{
     primitives::*,
@@ -10,15 +11,15 @@ use crate::{
     types::value::{Proc, Value},
     Type,
 };
-
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn usize_t() -> BuiltinType {
     let mut h = HashMap::new();
+    trace!("Initialising usize");
     h.insert("_default", Value::Usize(0));
-    concat(&mut h, Arc::clone(&USIZE_T));
-    unary_unsigned_default::<usize>(&mut h, Arc::clone(&USIZE_T));
-    arith_opr_default::<usize>(&mut h, Arc::clone(&USIZE_T));
-    comp_opr_default::<usize>(&mut h, Arc::clone(&USIZE_T));
+    concat(&mut h, &USIZE_T);
+    unary_unsigned_default::<usize>(&mut h, &USIZE_T);
+    arith_opr_default::<usize>(&mut h, &USIZE_T);
+    comp_opr_default::<usize>(&mut h, &USIZE_T);
 
     let typecast = Arc::new(|x: &Vec<Value>| {
         Some(match get_param::<Arc<ValueType>>(x, 1)? {
@@ -45,12 +46,12 @@ fn usize_t() -> BuiltinType {
             _ => return None,
         })
     });
-    type_cast(&mut h, typecast, Arc::clone(&USIZE_T));
+    type_cast(&mut h, typecast, &USIZE_T);
 
     BuiltinType {
         name: Some(Ident::new("usize")),
         namespace: h.drain().map(|(k, v)| (k.into(), v)).collect(),
-        fields: Default::default(),
+        fields: HashMap::default(),
         type_args: vec![],
     }
 }

@@ -11,6 +11,7 @@ use num::{
 };
 use once_cell::sync::Lazy;
 use smol_str::SmolStr;
+use tracing::trace;
 
 use crate::{
     ast::Ident,
@@ -25,7 +26,6 @@ use crate::{
     },
     Type,
 };
-
 macro_rules! typecast_f16_to_int {
     ($vo:ident $f:ident, $x:ident) => {
         Value::$vo(get_param::<f16>($x, 0)?.to_f64().$f()?)
@@ -35,21 +35,22 @@ macro_rules! typecast_f16_to_int {
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn f16_t() -> BuiltinType {
     let mut h = HashMap::new();
+    trace!("Initialising f16");
     h.insert("_default", Value::F16(f16::ZERO));
-    concat(&mut h, Arc::clone(&F16_T));
+    concat(&mut h, &F16_T);
     unary(
         &mut h,
         "_un_add",
         Arc::new(|x: &Vec<Value>| Some(x[0].to_owned())),
-        Arc::clone(&F16_T),
-        Arc::clone(&F16_T),
+        &F16_T,
+        &F16_T,
     );
     unary(
         &mut h,
         "_un_sub",
         Arc::new(|x: &Vec<Value>| Some(get_param::<f16>(x, 0)?.neg().into())),
-        Arc::clone(&F16_T),
-        Arc::clone(&F16_T),
+        &F16_T,
+        &F16_T,
     );
     unary(
         &mut h,
@@ -61,11 +62,11 @@ fn f16_t() -> BuiltinType {
                 .into(),
             )
         }),
-        Arc::clone(&F16_T),
-        Arc::clone(&BOOL_T),
+        &F16_T,
+        &BOOL_T,
     );
-    arith_opr_float_default::<f16>(&mut h, Arc::clone(&F16_T));
-    comp_opr_default::<f16>(&mut h, Arc::clone(&F16_T));
+    arith_opr_float_default::<f16>(&mut h, &F16_T);
+    comp_opr_default::<f16>(&mut h, &F16_T);
 
     let typecast = Arc::new(|x: &Vec<Value>| {
         Some(match get_param::<Arc<ValueType>>(x, 1)? {
@@ -94,12 +95,12 @@ fn f16_t() -> BuiltinType {
             _ => return None,
         })
     });
-    type_cast(&mut h, typecast, Arc::clone(&F16_T));
+    type_cast(&mut h, typecast, &F16_T);
 
     BuiltinType {
         name: Some(Ident::new("f16")),
         namespace: h.drain().map(|(k, v)| (k.into(), v)).collect(),
-        fields: Default::default(),
+        fields: HashMap::default(),
         type_args: vec![],
     }
 }

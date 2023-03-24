@@ -3,6 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use half::f16;
 use once_cell::sync::Lazy;
 use smol_str::SmolStr;
+use tracing::trace;
 
 use crate::{
     ast::Ident,
@@ -23,11 +24,12 @@ use crate::{
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn i8_t() -> BuiltinType {
     let mut h = HashMap::new();
+    trace!("Initialising i8");
     h.insert("_default", Value::I8(0));
-    concat(&mut h, Arc::clone(&I8_T));
-    unary_signed_default::<i8>(&mut h, Arc::clone(&I8_T));
-    arith_opr_default::<i8>(&mut h, Arc::clone(&I8_T));
-    comp_opr_default::<i8>(&mut h, Arc::clone(&I8_T));
+    concat(&mut h, &I8_T);
+    unary_signed_default::<i8>(&mut h, &I8_T);
+    arith_opr_default::<i8>(&mut h, &I8_T);
+    comp_opr_default::<i8>(&mut h, &I8_T);
 
     let typecast = Arc::new(|x: &Vec<Value>| {
         Some(match get_param::<Arc<ValueType>>(x, 1)? {
@@ -54,12 +56,12 @@ fn i8_t() -> BuiltinType {
             _ => return None,
         })
     });
-    type_cast(&mut h, typecast, Arc::clone(&I8_T));
+    type_cast(&mut h, typecast, &I8_T);
 
     BuiltinType {
         name: Some(Ident::new("i8")),
         namespace: h.drain().map(|(k, v)| (k.into(), v)).collect(),
-        fields: Default::default(),
+        fields: HashMap::default(),
         type_args: vec![],
     }
 }

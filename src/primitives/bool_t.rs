@@ -24,13 +24,15 @@ macro_rules! typecast_bool_to_num {
         Value::$v(if get_param::<bool>($x, 0)? { 1u8 } else { 0u8 }.into())
     };
 }
+use tracing::trace;
 
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn bool_t() -> BuiltinType {
     let mut h = HashMap::new();
+    trace!("Initialising bool");
     h.insert("_default", Value::Bool(false));
-    concat(&mut h, Arc::clone(&BOOL_T));
-    comp_opr_default::<bool>(&mut h, Arc::clone(&BOOL_T));
+    concat(&mut h, &BOOL_T);
+    comp_opr_default::<bool>(&mut h, &BOOL_T);
 
     let typecast = Arc::new(|x: &Vec<Value>| {
         Some(match get_param::<Arc<ValueType>>(x, 1)? {
@@ -57,12 +59,12 @@ fn bool_t() -> BuiltinType {
             _ => return None,
         })
     });
-    type_cast(&mut h, typecast, Arc::clone(&BOOL_T));
+    type_cast(&mut h, typecast, &BOOL_T);
 
     BuiltinType {
         name: Some(Ident::new("bool")),
         namespace: h.drain().map(|(k, v)| (k.into(), v)).collect(),
-        fields: Default::default(),
+        fields: HashMap::default(),
         type_args: vec![],
     }
 }

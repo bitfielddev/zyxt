@@ -1,11 +1,12 @@
 use std::{
     collections::HashMap,
-    fmt::{Display, Formatter},
+    fmt::{Debug, Display, Formatter},
+    ops::Deref,
     sync::Arc,
 };
 
 use itertools::Either;
-use once_cell::sync::Lazy;
+use once_cell::sync::{Lazy, OnceCell};
 use smol_str::SmolStr;
 
 use crate::{
@@ -19,7 +20,7 @@ pub enum Type {
     Any,
     Type {
         name: Option<Ident>,
-        namespace: HashMap<SmolStr, Arc<Type>>,
+        namespace: HashMap<SmolStr, LazyType<Value>>,
         fields: HashMap<SmolStr, Arc<Type>>,
         type_args: Vec<(SmolStr, Arc<Type>)>,
     },
@@ -27,6 +28,48 @@ pub enum Type {
         type_args: Vec<(SmolStr, Either<Value, Arc<Type>>)>,
         base: Arc<Type>,
     },
+}
+
+#[derive(Clone)]
+pub struct LazyType<T: Clone + Debug> {
+    pub data: Option<T>,
+    ty: OnceCell<Arc<Type>>,
+    f: Arc<dyn Fn(&Option<T>) -> Arc<Type> + Send + Sync>,
+}
+impl<T: Clone + Debug> PartialEq for LazyType<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.ty == other.ty
+    }
+}
+impl<T: Clone + Debug> Debug for LazyType<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&**self, f)
+    }
+}
+impl<T: Clone + Debug> Deref for LazyType<T> {
+    type Target = Arc<Type>;
+    fn deref(&self) -> &Self::Target {
+        self.ty.get_or_init(|| (self.f)(&self.data))
+    }
+}
+impl<T: Clone + Debug + 'static> LazyType<T> {
+    pub fn new_lazy(data: T, f: fn(&T) -> Arc<Type>) -> Self {
+        Self {
+            data: Some(data),
+            f: Arc::new(move |v| f(v.as_ref().unwrap())),
+            ty: OnceCell::new(),
+        }
+    }
+}
+
+impl<T: Clone + Debug> From<Arc<Type>> for LazyType<T> {
+    fn from(ty: Arc<Type>) -> Self {
+        Self {
+            data: None,
+            f: Arc::new(move |_| Arc::clone(&ty)),
+            ty: OnceCell::new(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -72,10 +115,10 @@ impl From<BuiltinType> for Type {
             namespace: value
                 .namespace
                 .into_iter()
-                .map(|(k, v)| (k, v.ty()))
+                .map(|(k, v)| (k, LazyType::new_lazy(v, Value::ty)))
                 .collect(),
             fields: value.fields,
-            type_args: vec![],
+            type_args: value.type_args,
         }
     }
 }

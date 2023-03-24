@@ -8,6 +8,7 @@ use enum_as_inner::EnumAsInner;
 use half::f16;
 use itertools::Itertools;
 use num::{BigInt, BigUint};
+use once_cell::sync::Lazy;
 
 use crate::{
     ast::{Argument, Ast, Block, Literal},
@@ -21,7 +22,7 @@ pub type BuiltinFunction = dyn Fn(&Vec<Value>) -> Option<Value> + Send + Sync;
 pub enum Proc {
     Builtin {
         f: Arc<BuiltinFunction>,
-        ty: Arc<Type>,
+        ty: LazyGenericProc,
     },
     Defined {
         is_fn: bool,
@@ -31,7 +32,7 @@ pub enum Proc {
 impl PartialEq for Proc {
     fn eq(&self, other: &Self) -> bool {
         match (&self, other) {
-            (Self::Builtin { f: f1, .. }, Self::Builtin { f: f2, .. }) => std::ptr::eq(f1, f2),
+            (Self::Builtin { f: f1, .. }, Self::Builtin { f: f2, .. }) => Arc::ptr_eq(f1, f2),
             (
                 Self::Defined {
                     is_fn: is_fn1,

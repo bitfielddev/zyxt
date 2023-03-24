@@ -14,12 +14,13 @@ macro_rules! typecast_str_to_num {
         Value::$v(get_param::<String>($x, 0)?.parse().ok()?)
     };
 }
-
+use tracing::trace;
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn str_t() -> BuiltinType {
     let mut h = HashMap::new();
+    trace!("Initialising str");
     h.insert("_default", Value::Str(String::new()));
-    concat(&mut h, Arc::clone(&STR_T));
+    concat(&mut h, &STR_T);
 
     let typecast = Arc::new(|x: &Vec<Value>| {
         Some(match get_param::<Arc<ValueType>>(x, 1)? {
@@ -46,7 +47,7 @@ fn str_t() -> BuiltinType {
             _ => return None,
         })
     });
-    type_cast(&mut h, typecast, Arc::clone(&STR_T));
+    type_cast(&mut h, typecast, &STR_T);
     binary(
         &mut h,
         "_mul",
@@ -57,15 +58,15 @@ fn str_t() -> BuiltinType {
                 x, 1
             )?)))
         }),
-        Arc::clone(&STR_T),
-        Arc::clone(&USIZE_T),
-        Arc::clone(&STR_T),
+        &STR_T,
+        &USIZE_T,
+        &STR_T,
     );
 
     BuiltinType {
         name: Some(Ident::new("str")),
         namespace: h.drain().map(|(k, v)| (k.into(), v)).collect(),
-        fields: Default::default(),
+        fields: HashMap::default(),
         type_args: vec![],
     }
 }

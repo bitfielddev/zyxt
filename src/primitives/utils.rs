@@ -10,9 +10,10 @@ use num_traits::{
     CheckedAdd, CheckedDiv, CheckedMul, CheckedNeg, CheckedRem, CheckedSub, Float, Signed,
     Unsigned, Zero,
 };
+use once_cell::sync::Lazy;
 
 use crate::{
-    primitives::{proc_t::generic_proc, ANY_T, BOOL_T, STR_T, TYPE_T},
+    primitives::{proc_t::generic_proc, LazyGenericProc, ANY_T, BOOL_T, STR_T, TYPE_T},
     types::{
         r#type::Type,
         value::{BuiltinFunction, Proc, Value, ValueInner},
@@ -27,82 +28,82 @@ pub fn unary<'a>(
     h: &mut HashMap<&'a str, Value>,
     n: &'a str,
     f: Arc<BuiltinFunction>,
-    arg_ty: Arc<Type>,
-    ret_ty: Arc<Type>,
+    arg_ty: &'static Lazy<Arc<Type>>,
+    ret_ty: &'static Lazy<Arc<Type>>,
 ) {
     h.insert(
         n,
         Value::Proc(Proc::Builtin {
             f,
-            ty: generic_proc(vec![arg_ty], ret_ty),
+            ty: LazyGenericProc::new(vec![arg_ty], ret_ty),
         }),
     );
 }
 
-pub fn unary_signed_default<T: Signed + CheckedNeg + Into<Value> + TryFrom<Value>>(
+pub fn unary_signed_default<T: Signed + CheckedNeg + ValueInner>(
     h: &mut HashMap<&str, Value>,
-    this_ty: Arc<Type>,
+    this_ty: &'static Lazy<Arc<Type>>,
 ) {
     unary(
         h,
         "_un_add",
         Arc::new(|x: &Vec<Value>| Some(x[0].to_owned())),
-        Arc::clone(&this_ty),
-        Arc::clone(&this_ty),
+        this_ty,
+        this_ty,
     );
     unary(
         h,
         "_un_sub",
         Arc::new(|x: &Vec<Value>| Some({ get_param::<T>(&x, 0)?.checked_neg()?.into() })),
-        Arc::clone(&this_ty),
-        Arc::clone(&this_ty),
+        this_ty,
+        this_ty,
     );
     unary(
         h,
         "_not",
         Arc::new(|x: &Vec<Value>| Some(get_param::<T>(&x, 0)?.is_zero().into())),
-        Arc::clone(&this_ty),
-        Arc::clone(&BOOL_T),
+        this_ty,
+        &BOOL_T,
     );
 }
 
-pub fn unary_unsigned_default<T: Unsigned + Into<Value> + TryFrom<Value>>(
+pub fn unary_unsigned_default<T: Unsigned + ValueInner>(
     h: &mut HashMap<&str, Value>,
-    this_ty: Arc<Type>,
+    this_ty: &'static Lazy<Arc<Type>>,
 ) {
     unary(
         h,
         "_un_add",
         Arc::new(|x: &Vec<Value>| Some(x[0].to_owned())),
-        Arc::clone(&this_ty),
-        Arc::clone(&this_ty),
+        this_ty,
+        this_ty,
     );
     unary(
         h,
         "_not",
         Arc::new(|x: &Vec<Value>| Some(get_param::<T>(&x, 0)?.is_zero().into())),
-        Arc::clone(&this_ty),
-        Arc::clone(&BOOL_T),
+        this_ty,
+        &BOOL_T,
     );
 }
 
-pub fn unary_float_default<T: Float + Into<Value> + TryFrom<Value>>(
+pub fn unary_float_default<T: Float + ValueInner>(
     h: &mut HashMap<&str, Value>,
-    this_ty: Arc<Type>,
+    this_ty: &'static Lazy<Arc<Type>>,
 ) {
     unary(
         h,
         "_un_add",
         Arc::new(|x: &Vec<Value>| Some(x[0].to_owned())),
-        Arc::clone(&this_ty),
-        Arc::clone(&this_ty),
+        this_ty,
+        this_ty,
     );
     unary(
         h,
         "_un_sub",
         Arc::new(|x: &Vec<Value>| Some({ get_param::<T>(&x, 0)?.neg().into() })),
-        Arc::clone(&this_ty),
-        Arc::clone(&this_ty),
+        this_ty,
+        this_ty,
     );
     unary(
         h,
@@ -113,8 +114,8 @@ pub fn unary_float_default<T: Float + Into<Value> + TryFrom<Value>>(
                     .into(),
             )
         }),
-        Arc::clone(&this_ty),
-        Arc::clone(&BOOL_T),
+        this_ty,
+        &BOOL_T,
     );
 }
 
@@ -122,15 +123,15 @@ pub fn binary<'a>(
     h: &mut HashMap<&'a str, Value>,
     n: &'a str,
     f: Arc<BuiltinFunction>,
-    arg1_ty: Arc<Type>,
-    arg2_ty: Arc<Type>,
-    ret_ty: Arc<Type>,
+    arg1_ty: &'static Lazy<Arc<Type>>,
+    arg2_ty: &'static Lazy<Arc<Type>>,
+    ret_ty: &'static Lazy<Arc<Type>>,
 ) {
     h.insert(
         n,
         Value::Proc(Proc::Builtin {
             f,
-            ty: generic_proc(vec![arg1_ty, arg2_ty], ret_ty),
+            ty: LazyGenericProc::new(vec![arg1_ty, arg2_ty], ret_ty),
         }),
     );
 }
@@ -189,15 +190,15 @@ pub fn arith_opr<'a, T: ValueInner>(
     h: &mut HashMap<&'a str, Value>,
     n: &'a str,
     f: &'static (dyn Fn(T, T) -> T + Send + Sync),
-    this_ty: Arc<Type>,
+    this_ty: &'static Lazy<Arc<Type>>,
 ) {
     binary(
         h,
         n,
         Arc::new(|x: &Vec<Value>| Some(f(get_param::<T>(&x, 0)?, get_param::<T>(x, 1)?).into())),
-        Arc::clone(&this_ty),
-        Arc::clone(&this_ty),
-        Arc::clone(&this_ty),
+        this_ty,
+        this_ty,
+        this_ty,
     )
 }
 
@@ -205,15 +206,15 @@ pub fn arith_opr_op<'a, T: ValueInner>(
     h: &mut HashMap<&'a str, Value>,
     n: &'a str,
     f: &'static (dyn Fn(&T, &T) -> Option<T> + Send + Sync),
-    this_ty: Arc<Type>,
+    this_ty: &'static Lazy<Arc<Type>>,
 ) {
     binary(
         h,
         n,
         Arc::new(|x: &Vec<Value>| Some(f(&get_param::<T>(&x, 0)?, &get_param::<T>(x, 1)?)?.into())),
-        Arc::clone(&this_ty),
-        Arc::clone(&this_ty),
-        Arc::clone(&this_ty),
+        this_ty,
+        this_ty,
+        this_ty,
     )
 }
 
@@ -221,84 +222,81 @@ pub fn arith_opr_default<
     T: CheckedAdd + CheckedSub + CheckedMul + CheckedDiv + CheckedRem + ValueInner,
 >(
     h: &mut HashMap<&str, Value>,
-    this_ty: Arc<Type>,
+    this_ty: &'static Lazy<Arc<Type>>,
 ) {
-    arith_opr_op(h, "_add", &T::checked_add, Arc::clone(&this_ty));
-    arith_opr_op(h, "_sub", &T::checked_sub, Arc::clone(&this_ty));
-    arith_opr_op(h, "_mul", &T::checked_mul, Arc::clone(&this_ty));
-    arith_opr_op(h, "_div", &T::checked_div, Arc::clone(&this_ty));
-    arith_opr_op(h, "_rem", &T::checked_rem, Arc::clone(&this_ty));
+    arith_opr_op(h, "_add", &T::checked_add, this_ty);
+    arith_opr_op(h, "_sub", &T::checked_sub, this_ty);
+    arith_opr_op(h, "_mul", &T::checked_mul, this_ty);
+    arith_opr_op(h, "_div", &T::checked_div, this_ty);
+    arith_opr_op(h, "_rem", &T::checked_rem, this_ty);
 }
 
 pub fn arith_opr_big_default<
     T: CheckedAdd + CheckedSub + CheckedMul + CheckedDiv + Rem<T> + ValueInner,
 >(
     h: &mut HashMap<&str, Value>,
-    this_ty: Arc<Type>,
+    this_ty: &'static Lazy<Arc<Type>>,
 ) {
-    arith_opr_op(h, "_add", &T::checked_add, Arc::clone(&this_ty));
-    arith_opr_op(h, "_sub", &T::checked_sub, Arc::clone(&this_ty));
-    arith_opr_op(h, "_mul", &T::checked_mul, Arc::clone(&this_ty));
-    arith_opr_op(h, "_div", &T::checked_div, Arc::clone(&this_ty));
+    arith_opr_op(h, "_add", &T::checked_add, this_ty);
+    arith_opr_op(h, "_sub", &T::checked_sub, this_ty);
+    arith_opr_op(h, "_mul", &T::checked_mul, this_ty);
+    arith_opr_op(h, "_div", &T::checked_div, this_ty);
 }
 
 pub fn arith_opr_float_default<T: Float + ValueInner>(
     h: &mut HashMap<&str, Value>,
-    this_ty: Arc<Type>,
+    this_ty: &'static Lazy<Arc<Type>>,
 ) {
-    arith_opr(h, "_add", &Add::<T>::add, Arc::clone(&this_ty));
-    arith_opr(h, "_sub", &Sub::<T>::sub, Arc::clone(&this_ty));
-    arith_opr(h, "_mul", &Mul::<T>::mul, Arc::clone(&this_ty));
-    arith_opr(h, "_div", &Div::<T>::div, Arc::clone(&this_ty));
-    arith_opr(h, "_rem", &Rem::<T>::rem, Arc::clone(&this_ty));
+    arith_opr(h, "_add", &Add::<T>::add, this_ty);
+    arith_opr(h, "_sub", &Sub::<T>::sub, this_ty);
+    arith_opr(h, "_mul", &Mul::<T>::mul, this_ty);
+    arith_opr(h, "_div", &Div::<T>::div, this_ty);
+    arith_opr(h, "_rem", &Rem::<T>::rem, this_ty);
 }
 
 pub fn comp_opr<'a, T: ValueInner>(
     h: &mut HashMap<&'a str, Value>,
     n: &'a str,
     f: &'static (dyn Fn(&T, &T) -> bool + Send + Sync),
-    this_ty: Arc<Type>,
+    this_ty: &'static Lazy<Arc<Type>>,
 ) {
     binary(
         h,
         n,
         Arc::new(|x: &Vec<Value>| Some(f(&get_param::<T>(&x, 0)?, &get_param::<T>(x, 1)?).into())),
-        Arc::clone(&this_ty),
-        Arc::clone(&this_ty),
-        Arc::clone(&BOOL_T),
+        this_ty,
+        this_ty,
+        &BOOL_T,
     )
 }
 
 pub fn comp_opr_default<T: PartialOrd<T> + ValueInner>(
     h: &mut HashMap<&str, Value>,
-    this_ty: Arc<Type>,
+    this_ty: &'static Lazy<Arc<Type>>,
 ) {
-    comp_opr(h, "_eq", &T::eq, Arc::clone(&this_ty));
-    comp_opr(h, "_ne", &T::ne, Arc::clone(&this_ty));
-    comp_opr(h, "_gt", &T::gt, Arc::clone(&this_ty));
-    comp_opr(h, "_ge", &T::ge, Arc::clone(&this_ty));
-    comp_opr(h, "_lt", &T::lt, Arc::clone(&this_ty));
-    comp_opr(h, "_le", &T::le, Arc::clone(&this_ty));
+    comp_opr(h, "_eq", &T::eq, this_ty);
+    comp_opr(h, "_ne", &T::ne, this_ty);
+    comp_opr(h, "_gt", &T::gt, this_ty);
+    comp_opr(h, "_ge", &T::ge, this_ty);
+    comp_opr(h, "_lt", &T::lt, this_ty);
+    comp_opr(h, "_le", &T::le, this_ty);
 }
 
-pub fn concat(h: &mut HashMap<&str, Value>, this_ty: Arc<Type>) {
+pub fn concat(h: &mut HashMap<&str, Value>, this_ty: &'static Lazy<Arc<Type>>) {
     binary(
         h,
         "_concat",
         Arc::new(|x: &Vec<Value>| Some(Value::Str(format!("{}{}", x[0], x[1])))),
-        Arc::clone(&this_ty),
-        Arc::clone(&ANY_T),
-        Arc::clone(&STR_T),
-    )
+        this_ty,
+        &ANY_T,
+        &STR_T,
+    );
 }
 
-pub fn type_cast(h: &mut HashMap<&str, Value>, f: Arc<BuiltinFunction>, this_ty: Arc<Type>) {
-    binary(
-        h,
-        "_typecast",
-        f,
-        Arc::clone(&this_ty),
-        Arc::clone(&TYPE_T),
-        Arc::clone(&ANY_T),
-    )
+pub fn type_cast(
+    h: &mut HashMap<&str, Value>,
+    f: Arc<BuiltinFunction>,
+    this_ty: &'static Lazy<Arc<Type>>,
+) {
+    binary(h, "_typecast", f, this_ty, &TYPE_T, &ANY_T);
 }

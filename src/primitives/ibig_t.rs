@@ -7,6 +7,7 @@ use half::f16;
 use num_traits::{ToPrimitive, Zero};
 use once_cell::sync::Lazy;
 use smol_str::SmolStr;
+use tracing::trace;
 
 use crate::{
     primitives::*,
@@ -18,32 +19,33 @@ use crate::{
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn ibig_t() -> BuiltinType {
     let mut h = HashMap::new();
+    trace!("Initialising ibig");
     h.insert("_default", Value::Ibig(0.into()));
-    concat(&mut h, Arc::clone(&IBIG_T));
+    concat(&mut h, &IBIG_T);
     unary(
         &mut h,
         "_un_add",
         Arc::new(|x: &Vec<Value>| Some(x[0].to_owned())),
-        Arc::clone(&IBIG_T),
-        Arc::clone(&IBIG_T),
+        &IBIG_T,
+        &IBIG_T,
     );
     unary(
         &mut h,
         "_un_sub",
         Arc::new(|x: &Vec<Value>| Some({ get_param::<BigInt>(&x, 0)?.neg().into() })),
-        Arc::clone(&IBIG_T),
-        Arc::clone(&IBIG_T),
+        &IBIG_T,
+        &IBIG_T,
     );
     unary(
         &mut h,
         "_not",
         Arc::new(|x: &Vec<Value>| Some(get_param::<BigInt>(&x, 0)?.is_zero().into())),
-        Arc::clone(&IBIG_T),
-        Arc::clone(&BOOL_T),
+        &IBIG_T,
+        &BOOL_T,
     );
-    arith_opr_big_default::<BigInt>(&mut h, Arc::clone(&IBIG_T));
-    arith_opr::<BigInt>(&mut h, "_rem", &|a, b| a.rem(b), Arc::clone(&IBIG_T));
-    comp_opr_default::<BigInt>(&mut h, Arc::clone(&IBIG_T));
+    arith_opr_big_default::<BigInt>(&mut h, &IBIG_T);
+    arith_opr::<BigInt>(&mut h, "_rem", &|a, b| a.rem(b), &IBIG_T);
+    comp_opr_default::<BigInt>(&mut h, &IBIG_T);
 
     let typecast = Arc::new(|x: &Vec<Value>| {
         Some(match get_param::<Arc<ValueType>>(x, 1)? {
@@ -70,12 +72,12 @@ fn ibig_t() -> BuiltinType {
             _ => return None,
         })
     });
-    type_cast(&mut h, typecast, Arc::clone(&IBIG_T));
+    type_cast(&mut h, typecast, &IBIG_T);
 
     BuiltinType {
         name: Some(Ident::new("ibig")),
         namespace: h.drain().map(|(k, v)| (k.into(), v)).collect(),
-        fields: Default::default(),
+        fields: HashMap::default(),
         type_args: vec![],
     }
 }

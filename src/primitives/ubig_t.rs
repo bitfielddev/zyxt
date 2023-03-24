@@ -4,6 +4,7 @@ use half::f16;
 use num_traits::{CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, ToPrimitive};
 use once_cell::sync::Lazy;
 use smol_str::SmolStr;
+use tracing::trace;
 
 use crate::{
     primitives::*,
@@ -11,16 +12,16 @@ use crate::{
     types::value::{Proc, Value},
     Type,
 };
-
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn ubig_t() -> BuiltinType {
     let mut h = HashMap::new();
+    trace!("Initialising ubig");
     h.insert("_default", Value::Ubig(0u8.into()));
-    concat(&mut h, Arc::clone(&UBIG_T));
-    unary_unsigned_default::<BigUint>(&mut h, Arc::clone(&UBIG_T));
-    arith_opr::<BigUint>(&mut h, "_rem", &|a, b| a.rem(b), Arc::clone(&IBIG_T));
-    arith_opr_big_default::<BigUint>(&mut h, Arc::clone(&UBIG_T));
-    comp_opr_default::<BigUint>(&mut h, Arc::clone(&UBIG_T));
+    concat(&mut h, &UBIG_T);
+    unary_unsigned_default::<BigUint>(&mut h, &UBIG_T);
+    arith_opr::<BigUint>(&mut h, "_rem", &|a, b| a.rem(b), &IBIG_T);
+    arith_opr_big_default::<BigUint>(&mut h, &UBIG_T);
+    comp_opr_default::<BigUint>(&mut h, &UBIG_T);
 
     let typecast = Arc::new(|x: &Vec<Value>| {
         Some(match get_param::<Arc<ValueType>>(x, 1)? {
@@ -47,12 +48,12 @@ fn ubig_t() -> BuiltinType {
             _ => return None,
         })
     });
-    type_cast(&mut h, typecast, Arc::clone(&UBIG_T));
+    type_cast(&mut h, typecast, &UBIG_T);
 
     BuiltinType {
         name: Some(Ident::new("ubig")),
         namespace: h.drain().map(|(k, v)| (k.into(), v)).collect(),
-        fields: Default::default(),
+        fields: HashMap::default(),
         type_args: vec![],
     }
 }

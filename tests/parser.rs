@@ -5,10 +5,10 @@ use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 use zyxt::{
     ast::*,
-    primitives::UNIT_T,
     types::{
         position::{Position, Span},
         token::{Flag, OprType},
+        value::Value,
     },
 };
 
@@ -36,16 +36,16 @@ macro_rules! ident {
     ($line:expr, $column:expr, $name:expr) => {
         Box::new(Ast::Ident(Ident {
             name: $name.into(),
-            parent: None,
-            dot_span: None,
+            //parent: None,
+            //dot_span: None,
             name_span: Some(span!($line, $column, $name)),
         }))
     };
     (notvar $line:expr, $column:expr, $name:expr) => {
         Ident {
             name: $name.into(),
-            parent: None,
-            dot_span: None,
+            //parent: None,
+            //dot_span: None,
             name_span: Some(span!($line, $column, $name)),
         }
     };
@@ -125,7 +125,7 @@ fn class() {
         Ast::Class(Class {
             is_struct: false,
             implementations: Default::default(),
-            inst_fields: Default::default(),
+            inst_fields: HashMap::default(),
             content: Some(Block {
                 brace_spans: None,
                 content: vec![]
@@ -144,7 +144,7 @@ fn struct_params() {
         Ast::Class(Class {
             is_struct: true,
             implementations: Default::default(),
-            inst_fields: Default::default(),
+            inst_fields: HashMap::default(),
             content: Some(Block {
                 brace_spans: None,
                 content: vec![]
@@ -167,7 +167,7 @@ fn struct_no_content() {
         Ast::Class(Class {
             is_struct: true,
             implementations: Default::default(),
-            inst_fields: Default::default(),
+            inst_fields: HashMap::default(),
             content: None,
             args: Some(vec![Argument {
                 name: ident!(notvar 1, 1, "x"),
@@ -187,7 +187,7 @@ fn struct_no_params() {
         Ast::Class(Class {
             is_struct: true,
             implementations: Default::default(),
-            inst_fields: Default::default(),
+            inst_fields: HashMap::default(),
             content: Some(Block {
                 brace_spans: None,
                 content: vec![]
@@ -206,7 +206,7 @@ fn struct_no_content_no_params() {
         Ast::Class(Class {
             is_struct: true,
             implementations: Default::default(),
-            inst_fields: Default::default(),
+            inst_fields: HashMap::default(),
             content: None,
             args: None
         })
@@ -533,7 +533,7 @@ fn return_nothing() {
         ast[0],
         Ast::Return(Return {
             kwd_span: Some(span!(1, 1, "ret")),
-            value: Arc::clone(&UNIT_T).as_literal().into()
+            value: Value::Unit.as_ast().into()
         })
     )
 }
@@ -628,8 +628,8 @@ fn dot() {
         Ast::Ident(Ident {
             name: "y".into(),
             name_span: Some(span!(1, 3, "y")),
-            dot_span: Some(span!(1, 2, ".")),
-            parent: Some(ident!(1, 1, "x"))
+            //dot_span: Some(span!(1, 2, ".")),
+            //parent: Some(ident!(1, 1, "x")) todo
         })
     )
 }
@@ -671,8 +671,8 @@ fn dot_call() {
             called: Box::new(Ast::Ident(Ident {
                 name: "y".into(),
                 name_span: Some(span!(1, 3, "y")),
-                dot_span: Some(span!(1, 2, ".")),
-                parent: Some(ident!(1, 1, "x")),
+                //dot_span: Some(span!(1, 2, ".")),
+                //parent: Some(ident!(1, 1, "x")), todo
             })),
             paren_spans: Some((span!(1, 4, "("), span!(1, 5, ")"))),
             args: vec![],

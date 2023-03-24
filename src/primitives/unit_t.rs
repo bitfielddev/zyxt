@@ -2,21 +2,21 @@ use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
 use smol_str::SmolStr;
+use tracing::trace;
 
 use crate::{
     primitives::*,
     types::value::{Proc, Value},
     Ast, Type,
 };
-
 fn comp_opr_unit<'a>(h: &mut HashMap<&'a str, Value>, n: &'a str, res: bool) {
     binary(
         h,
         n,
         Arc::new(move |_| Some(res.into())),
-        Arc::clone(&UNIT_T),
-        Arc::clone(&UNIT_T),
-        Arc::clone(&BOOL_T),
+        &UNIT_T,
+        &UNIT_T,
+        &BOOL_T,
     );
 }
 
@@ -24,8 +24,9 @@ fn comp_opr_unit<'a>(h: &mut HashMap<&'a str, Value>, n: &'a str, res: bool) {
 #[allow(unused_variables)]
 fn unit_t() -> BuiltinType {
     let mut h = HashMap::new();
+    trace!("Initialising unit");
     h.insert("_default", Value::Unit);
-    concat(&mut h, Arc::clone(&UNIT_T));
+    concat(&mut h, &UNIT_T);
     comp_opr_unit(&mut h, "_eq", true);
     comp_opr_unit(&mut h, "_ne", false);
     comp_opr_unit(&mut h, "_gt", false);
@@ -40,12 +41,12 @@ fn unit_t() -> BuiltinType {
             _ => return None,
         })
     });
-    type_cast(&mut h, typecast, Arc::clone(&UNIT_T));
+    type_cast(&mut h, typecast, &UNIT_T);
 
     BuiltinType {
         name: Some(Ident::new("unit")),
         namespace: h.drain().map(|(k, v)| (k.into(), v)).collect(),
-        fields: Default::default(),
+        fields: HashMap::default(),
         type_args: vec![],
     }
 }

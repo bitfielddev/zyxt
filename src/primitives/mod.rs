@@ -35,7 +35,7 @@ pub use i64_t::{I64_T, I64_T_VAL};
 pub use i8_t::{I8_T, I8_T_VAL};
 pub use ibig_t::{IBIG_T, IBIG_T_VAL};
 pub use isize_t::{ISIZE_T, ISIZE_T_VAL};
-pub use proc_t::{generic_proc, PROC_T, PROC_T_VAL};
+pub use proc_t::{generic_proc, LazyGenericProc, PROC_T, PROC_T_VAL};
 pub use str_t::{STR_T, STR_T_VAL};
 pub use type_t::{TYPE_T, TYPE_T_VAL};
 pub use u128_t::{U128_T, U128_T_VAL};

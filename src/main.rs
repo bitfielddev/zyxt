@@ -7,11 +7,7 @@ use tracing_error::ErrorLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 use zyxt::{
     repl,
-    types::{
-        r#type::Type,
-        sym_table::{InterpretSymTable, TypecheckSymTable},
-        value::Value,
-    },
+    types::sym_table::{InterpretSymTable, TypecheckSymTable},
 };
 
 #[derive(Parser)]

@@ -2,18 +2,19 @@ use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
 use smol_str::SmolStr;
+use tracing::trace;
 
 use crate::{
     primitives::*,
     types::value::{Proc, Value},
     Ast, Type,
 };
-
 #[allow(clippy::cognitive_complexity, clippy::float_cmp)]
 fn type_t() -> BuiltinType {
     let mut h = HashMap::new();
+    trace!("Initialising type");
     h.insert("_default", Value::Type(Arc::clone(&ANY_T_VAL)));
-    concat(&mut h, Arc::clone(&TYPE_T));
+    concat(&mut h, &TYPE_T);
     binary(
         &mut h,
         "_eq",
@@ -22,9 +23,9 @@ fn type_t() -> BuiltinType {
                 get_param::<Arc<ValueType>>(x, 0)? == get_param::<Arc<ValueType>>(x, 1)?,
             ))
         }),
-        Arc::clone(&TYPE_T),
-        Arc::clone(&TYPE_T),
-        Arc::clone(&BOOL_T),
+        &TYPE_T,
+        &TYPE_T,
+        &BOOL_T,
     );
     binary(
         &mut h,
@@ -34,9 +35,9 @@ fn type_t() -> BuiltinType {
                 get_param::<Arc<ValueType>>(x, 0)? != get_param::<Arc<ValueType>>(x, 1)?,
             ))
         }),
-        Arc::clone(&TYPE_T),
-        Arc::clone(&TYPE_T),
-        Arc::clone(&BOOL_T),
+        &TYPE_T,
+        &TYPE_T,
+        &BOOL_T,
     );
 
     let typecast = Arc::new(|x: &Vec<Value>| {
@@ -46,12 +47,12 @@ fn type_t() -> BuiltinType {
             _ => return None,
         })
     });
-    type_cast(&mut h, typecast, Arc::clone(&TYPE_T));
+    type_cast(&mut h, typecast, &TYPE_T);
 
     BuiltinType {
         name: Some(Ident::new("type")),
         namespace: h.drain().map(|(k, v)| (k.into(), v)).collect(),
-        fields: Default::default(),
+        fields: HashMap::default(),
         type_args: vec![],
     }
 }
