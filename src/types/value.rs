@@ -1,6 +1,7 @@
 use std::{
-    collections::HashMap,
+    collections::{hash_map::DefaultHasher, HashMap},
     fmt::{Debug, Display, Formatter},
+    hash::Hash,
     sync::Arc,
 };
 
@@ -11,7 +12,10 @@ use num::{BigInt, BigUint};
 use crate::{
     ast::{Ast, Block, Literal},
     primitives::*,
-    types::r#type::{Type, ValueType},
+    types::{
+        position::GetSpan,
+        r#type::{Type, ValueType},
+    },
 };
 
 pub type BuiltinFunction = dyn Fn(&Vec<Value>) -> Option<Value> + Send + Sync;
@@ -183,7 +187,18 @@ impl Debug for Value {
 }
 impl Display for Proc {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", todo!())
+        match self {
+            Self::Builtin { id, ty, .. } => {
+                write!(f, "builtin@{id}@{ty}")
+            }
+            Self::Defined { is_fn, content } => {
+                write!(f, "{}", if *is_fn { "fn" } else { "proc" })?;
+                if let Some(span) = content.span() {
+                    write!(f, "@{}", span.start_pos)?;
+                }
+                Ok(())
+            }
+        }
     }
 }
 impl Display for Value {

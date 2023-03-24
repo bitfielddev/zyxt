@@ -1,17 +1,17 @@
 use std::{
     collections::HashMap,
     fmt::{Debug, Display, Formatter},
-    ops::Deref,
+    ops::{Deref, Not},
     sync::Arc,
 };
 
-use itertools::Either;
+use itertools::{Either, Itertools};
 use once_cell::sync::OnceCell;
 use smol_str::SmolStr;
 
 use crate::{ast::Ident, primitives::ANY_T_VAL, types::value::Value};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum Type {
     Any,
     Type {
@@ -40,6 +40,11 @@ impl<T: Clone + Debug> PartialEq for LazyType<T> {
 impl<T: Clone + Debug> Debug for LazyType<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(&**self, f)
+    }
+}
+impl<T: Clone + Debug> Display for LazyType<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&**self, f)
     }
 }
 impl<T: Clone + Debug> Deref for LazyType<T> {
@@ -85,9 +90,87 @@ impl From<ValueType> for Type {
     }
 }
 
+impl Debug for Type {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ty {{{self} ")?;
+        match self {
+            Self::Any => {}
+            Self::Type {
+                name,
+                namespace,
+                fields,
+                ..
+            } => {
+                if name.is_some() {
+                    write!(f, ": ")?;
+                };
+
+                write!(
+                    f,
+                    "namespace: {{{}}}",
+                    namespace
+                        .iter()
+                        .map(|(k, v)| format!("{k}: {v}"))
+                        .join(", ")
+                )?;
+                write!(
+                    f,
+                    "fields: {{{}}}",
+                    fields.iter().map(|(k, v)| format!("{k}: {v}")).join(", ")
+                )?;
+            }
+            Self::Generic { base, .. } => {
+                write!(f, "from {base:?}")?;
+            }
+        };
+        write!(f, "}}")
+    }
+}
+
 impl Display for Type {
-    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Any => write!(f, "_any"),
+            Self::Type {
+                name, type_args, ..
+            } => {
+                if let Some(name) = name {
+                    write!(f, "{}", name.name)
+                } else {
+                    write!(f, "(anonymous)")
+                }?;
+                if !type_args.is_empty() {
+                    write!(
+                        f,
+                        "[{}]",
+                        type_args
+                            .iter()
+                            .map(|(k, v)| format!("{k}: {v}"))
+                            .join(", ")
+                    )?;
+                }
+                Ok(())
+            }
+            Self::Generic { base, type_args } => {
+                let name = base
+                    .to_string()
+                    .split_terminator('[')
+                    .next()
+                    .map_or_else(String::new, ToOwned::to_owned);
+                write!(f, "{name}")?;
+                if !type_args.is_empty() {
+                    write!(
+                        f,
+                        "[{}]",
+                        type_args
+                            .iter()
+                            .map(|(k, v)| format!("{k} = {v}"))
+                            .join(", ")
+                    )?;
+                }
+                Ok(())
+            }
+        }
     }
 }
 

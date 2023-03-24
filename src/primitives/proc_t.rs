@@ -1,4 +1,8 @@
-use std::{collections::HashMap, ops::Deref};
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Display, Formatter},
+    ops::Deref,
+};
 
 use once_cell::sync::{Lazy, OnceCell};
 use tracing::trace;
@@ -54,6 +58,18 @@ pub struct LazyGenericProc {
     pub ret: &'static Lazy<Arc<Type>>,
     ty: OnceCell<Arc<Type>>,
 }
+
+impl Debug for LazyGenericProc {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&**self, f)
+    }
+}
+impl Display for LazyGenericProc {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&**self, f)
+    }
+}
+
 impl Deref for LazyGenericProc {
     type Target = Arc<Type>;
     fn deref(&self) -> &Self::Target {

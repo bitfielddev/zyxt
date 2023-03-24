@@ -42,7 +42,6 @@ impl Default for TypecheckSymTable {
             table
                 .declare_type(k, Arc::clone(v), Option::<Span>::None)
                 .unwrap();
-            table.declare_val(k, Arc::clone(&TYPE_T));
         }
         table.add_frame(TypecheckFrameType::Normal(Some(Arc::clone(&I32_T))));
         table
