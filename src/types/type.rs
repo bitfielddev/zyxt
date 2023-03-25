@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     collections::HashMap,
     fmt::{Debug, Display, Formatter},
     ops::{Deref, Not},
@@ -21,7 +22,7 @@ pub enum Type {
         type_args: Vec<(SmolStr, Arc<Type>)>,
     },
     Generic {
-        type_args: Vec<(SmolStr, Either<Value, Arc<Type>>)>,
+        type_args: Vec<(SmolStr, Either<Value, Either<Vec<Arc<Type>>, Arc<Type>>>)>,
         base: Arc<Type>,
     },
 }
@@ -84,9 +85,32 @@ pub enum ValueType {
     },
 }
 
-impl From<ValueType> for Type {
-    fn from(_value: ValueType) -> Self {
+impl Type {
+    pub fn namespace(&self) -> Cow<HashMap<SmolStr, LazyType<Value>>> {
+        match self {
+            Self::Any => Cow::Owned(HashMap::new()),
+            Self::Generic { base, .. } => base.namespace(), // TODO type arg substitutions
+            Self::Type { namespace, .. } => Cow::Borrowed(namespace),
+        }
+    }
+    pub fn fields(&self) -> Cow<HashMap<SmolStr, Arc<Type>>> {
+        match self {
+            Self::Any => Cow::Owned(HashMap::new()),
+            Self::Generic { base, .. } => base.fields(), // TODO type arg substitutions
+            Self::Type { fields, .. } => Cow::Borrowed(fields),
+        }
+    }
+}
+
+impl ValueType {
+    pub fn to_type(self: &Arc<Self>) -> Arc<Type> {
         todo!()
+    }
+    pub fn namespace(&self) -> Cow<HashMap<SmolStr, Value>> {
+        match self {
+            Self::Any => Cow::Owned(HashMap::new()),
+            Self::Type { namespace, .. } => Cow::Borrowed(namespace),
+        }
     }
 }
 
@@ -164,7 +188,17 @@ impl Display for Type {
                         "[{}]",
                         type_args
                             .iter()
-                            .map(|(k, v)| format!("{k} = {v}"))
+                            .map(|(k, v)| {
+                                let v = match v {
+                                    Either::Left(v) => v.to_string(),
+                                    Either::Right(Either::Left(v)) => {
+                                        let v = v.iter().map(|a| a.to_string()).join(", ");
+                                        format!("[{v}]")
+                                    }
+                                    Either::Right(Either::Right(v)) => v.to_string(),
+                                };
+                                format!("{k} = {v}")
+                            })
                             .join(", ")
                     )?;
                 }

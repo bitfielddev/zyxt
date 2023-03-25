@@ -4,6 +4,7 @@ use smol_str::SmolStr;
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
+    primitives::TYPE_T,
     types::{
         position::{GetSpan, Span},
         token::AccessType,
@@ -37,8 +38,27 @@ impl AstData for Member {
     }
 
     fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
-        let _parent_type = self.parent.typecheck(ty_symt)?;
-        todo!()
+        let parent_type = self.parent.typecheck(ty_symt)?;
+        let res = match self.ty {
+            AccessType::Method => unreachable!(),
+            AccessType::Namespace => {
+                if parent_type != *TYPE_T {
+                    todo!()
+                };
+
+                parent_type
+                    .namespace()
+                    .get(&self.name)
+                    .ok_or_else(|| todo!())
+                    .map(|a| Arc::clone(a))?
+            }
+            AccessType::Field => parent_type
+                .fields()
+                .get(&self.name)
+                .ok_or_else(|| todo!())
+                .map(Arc::clone)?,
+        };
+        Ok(res)
     }
 
     fn desugared(&self) -> ZResult<Ast> {

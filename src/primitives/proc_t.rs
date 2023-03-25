@@ -42,11 +42,11 @@ pub static PROC_T: Lazy<Arc<Type>> = Lazy::new(|| Arc::new(proc_t().into()));
 pub static PROC_T_VAL: Lazy<Arc<ValueType>> = Lazy::new(|| Arc::new(proc_t().into()));
 
 #[must_use]
-pub fn generic_proc(_args: &[Arc<Type>], ret: Arc<Type>) -> Arc<Type> {
+pub fn generic_proc(args: Vec<Arc<Type>>, ret: Arc<Type>) -> Arc<Type> {
     Arc::new(Type::Generic {
         type_args: vec![
-            ("A".into(), Either::Left(Value::Unit)),
-            ("R".into(), Either::Right(ret)),
+            ("A".into(), Either::Right(Either::Left(args))),
+            ("R".into(), Either::Right(Either::Right(ret))),
         ], // todo when vectors are out
         base: Arc::clone(&PROC_T),
     })
@@ -75,7 +75,7 @@ impl Deref for LazyGenericProc {
     fn deref(&self) -> &Self::Target {
         self.ty.get_or_init(|| {
             generic_proc(
-                &self.args.iter().map(|a| Arc::clone(a)).collect::<Vec<_>>(),
+                self.args.iter().map(|a| Arc::clone(a)).collect::<Vec<_>>(),
                 Arc::clone(self.ret),
             )
         })

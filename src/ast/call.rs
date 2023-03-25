@@ -1,12 +1,12 @@
 use std::{collections::HashMap, sync::Arc};
 
-use itertools::Itertools;
+use itertools::{Either, Itertools};
 use smol_str::SmolStr;
 use tracing::debug;
 
 use crate::{
-    ast::{Ast, AstData, BinaryOpr, Ident, Member, Reconstruct},
-    primitives::UNIT_T,
+    ast::{Ast, AstData, BinaryOpr, Ident, Literal, Member, Reconstruct},
+    primitives::{PROC_T, UNIT_T},
     types::{
         position::{GetSpan, Span},
         token::{AccessType, OprType},
@@ -51,78 +51,63 @@ impl AstData for Call {
                 }
             }
         }
-        /*let called_type = self.called.typecheck(ty_symt)?;
-        if let Ast::Procedure(procedure) = &mut *self.called {
-            for (i, arg) in self.args.iter_mut().enumerate() {
-                let expected = procedure.args[i].ty.typecheck(ty_symt)?;
-                let actual = arg.typecheck(ty_symt)?;
-                if expected != actual {
-                    return Err(ZError::t004(&expected, &actual).with_span(&*self));
-                }
-            }
-            if let Some(ty) = &mut procedure.return_type {
-                ty.typecheck(ty_symt)
-            } else {
-                Ok(UNIT_TArc::clone(&))
-            }
-        } else if let Ast::Literal(Literal {
-            content: Value::Proc(proc),
-            ..
-        }) = &mut *self.called
-        {
-            Ok(match proc {
-                Proc::Builtin { signature, .. } => {
-                    let (arg_objs, ret): (Vec<ValueType>, ValueType) = signature[0]();
-                    for (i, arg) in self.args.iter_mut().enumerate() {
-                        let actual = arg.typecheck(ty_symt)?;
-                        let expected = arg_objs[i];
-                        if actual != expected && actual != Type::Any && expected != Type::Any {
-                            return Err(ZError::t004(&expected, &actual).with_span(&*self));
-                        }
+        let called_type = self.called.typecheck(ty_symt)?;
+        let arg_tys = self
+            .args
+            .iter_mut()
+            .map(|a| a.typecheck(ty_symt))
+            .collect::<ZResult<Vec<_>>>()?;
+        let extract_proc = |ty: &Type| {
+            if let Type::Generic { type_args, base } = ty {
+                if *base != *PROC_T {
+                    None
+                } else if let Some((_, sig_arg_tys)) = type_args.iter().find(|(k, _)| *k == "A") {
+                    if let Some((_, ret_ty)) = type_args.iter().find(|(k, _)| *k == "R") {
+                        let Either::Right(Either::Left(sig_arg_tys)) = sig_arg_tys else {
+                        unreachable!()
+                    };
+                        let Either::Right(Either::Right(ret_ty)) = ret_ty else {
+                        unreachable!()
+                    };
+                        Some((sig_arg_tys.to_owned(), Arc::clone(ret_ty)))
+                    } else {
+                        None
                     }
-                    ret
-                }
-                Proc::Defined {
-                    args: arg_objs,
-                    return_type,
-                    ..
-                } => {
-                    for (i, arg) in self.args.iter_mut().enumerate() {
-                        let expected = arg_objs[i].ty.typecheck(ty_symt)?;
-                        let actual = arg.typecheck(ty_symt)?;
-                        if expected != actual {
-                            return Err(ZError::t004(&expected, &actual).with_span(&*self));
-                        }
-                    }
-                    return_type
-                }
-            })
-        } else {
-            if let Type::Instance(TypeInstance {
-                name, type_args, ..
-            }) = &called_type
-            {
-                if *name == Some(SmolStr::from("proc")) {
-                    if let Some(return_type) = type_args.get(1) {
-                        return Ok(return_type.to_owned());
-                    }
-                }
-            }
-            self.called = if let Type::Definition(TypeDefinition {
-                implementations, ..
-            }) = &called_type
-            {
-                if let Some(call) = implementations.get("_call") {
-                    call.to_owned()
                 } else {
-                    return Err(ZError::t005(&called_type, "_call").with_span(&self.called));
+                    None
                 }
             } else {
-                unreachable!()
+                None
             }
-            .into();
-            self.typecheck(ty_symt)*/
-        todo!()
+        };
+        let (sig_arg_tys, ret_ty) = if let Some(res) = extract_proc(&*called_type) {
+            res
+        } else {
+            let mut ty = called_type;
+            let mut out = None;
+
+            while let Some(f) = ty.namespace().get("_call").cloned() {
+                if let Some(res) = extract_proc(&f) {
+                    out = Some(res);
+                    break;
+                }
+                ty = Arc::clone(&f);
+            }
+            if let Some(res) = out {
+                res
+            } else {
+                todo!()
+            }
+        };
+        if arg_tys.len() != sig_arg_tys.len() {
+            todo!()
+        }
+        for (arg_ty, sig_arg_ty) in arg_tys.iter().zip(&sig_arg_tys) {
+            if arg_ty != sig_arg_ty {
+                todo!()
+            }
+        }
+        Ok(ret_ty)
     }
 
     fn desugared(&self) -> ZResult<Ast> {
@@ -171,12 +156,11 @@ impl AstData for Call {
         }))
     }
 
-    fn interpret_expr(&self, _val_symt: &mut InterpretSymTable) -> ZResult<Value> {
-        todo!()
-        /*if let Ast::Member(Member { name, parent, .. }) = &*self.called {
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+        if let Ast::Member(Member { name, parent, .. }) = &*self.called {
             if let Ast::Ident(Ident {
-                                  name: parent_name, ..
-                              }) = &**parent
+                name: parent_name, ..
+            }) = &**parent
             {
                 if &**name == "out" && &**parent_name == "ter" {
                     let s = self
@@ -193,6 +177,8 @@ impl AstData for Call {
                 }
             }
         }
+        todo!()
+        /*
         if let Value::Proc(proc) = self.called.interpret_expr(val_symt)? {
             match proc {
                 Proc::Builtin { f, .. } => {

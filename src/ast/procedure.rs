@@ -50,7 +50,7 @@ impl AstData for Procedure {
             TypecheckFrameType::Normal
         }(sig_ret_ty.map(|a| Arc::clone(&a))));
         for arg in &mut self.args {
-            let ty = ty_symt.get_type_from_ident(&arg.ty, arg.ty.span())?;
+            let ty = ty_symt.get_type_from_ident(&arg.ty)?;
             ty_symt.declare_val(&arg.name.name, ty);
         }
         let res = self.content.block_type(ty_symt, false)?;
@@ -66,7 +66,7 @@ impl AstData for Procedure {
             &res
         });
         ty_symt.pop_frame();
-        Ok(generic_proc(&[], ret_ty))
+        Ok(generic_proc(vec![], ret_ty))
     }
 
     fn desugared(&self) -> ZResult<Ast> {

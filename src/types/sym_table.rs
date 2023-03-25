@@ -157,12 +157,12 @@ impl TypecheckSymTable {
         Err(ZError::t002(name).with_span(span))
     }
     #[tracing::instrument(skip(self))]
-    pub fn get_type_from_ident(&mut self, ident: &Ast, span: impl GetSpan) -> ZResult<Arc<Type>> {
+    pub fn get_type_from_ident(&mut self, ident: &Ast) -> ZResult<Arc<Type>> {
         let Ast::Ident(Ident { name, .. }) = ident else {
             todo!()
         };
         let name = name.as_str();
-        self.get_type(name, span)
+        self.get_type(name, ident.span())
     }
 
     #[tracing::instrument(skip(self))]

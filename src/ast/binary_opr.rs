@@ -1,12 +1,14 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, ops::Deref, sync::Arc};
 
 use tracing::debug;
 
 use crate::{
-    ast::{Ast, AstData, Call, Member, Reconstruct},
-    primitives::BOOL_T_VAL,
+    ast::{Ast, AstData, Call, Literal, Member, Reconstruct},
+    primitives::{BOOL_T, BOOL_T_VAL},
     types::{
         position::{GetSpan, Span},
+        r#type::Type,
+        sym_table::TypecheckSymTable,
         token::{AccessType, OprType},
     },
     InterpretSymTable, Value, ZResult,
@@ -30,6 +32,28 @@ impl GetSpan for BinaryOpr {
 impl AstData for BinaryOpr {
     fn as_variant(&self) -> Ast {
         Ast::BinaryOpr(self.to_owned())
+    }
+
+    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        self.operand1.typecheck(ty_symt)?;
+        self.operand2.typecheck(ty_symt)?;
+        match self.ty {
+            OprType::And | OprType::Or => Ok(Arc::clone(&BOOL_T)),
+            OprType::TypeCast => {
+                if let Some(ty) = Some(ty_symt.get_type_from_ident(&self.operand2)?) {
+                    Ok(ty)
+                } else if let Ast::Literal(Literal {
+                    content: Value::Type(ty),
+                    ..
+                }) = &*self.operand2
+                {
+                    Ok(ty.to_type())
+                } else {
+                    todo!()
+                }
+            }
+            _ => unreachable!(),
+        }
     }
 
     fn desugared(&self) -> ZResult<Ast> {
@@ -93,11 +117,13 @@ impl AstData for BinaryOpr {
     }
 
     fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+        let operand1 = self.operand1.interpret_expr(val_symt)?;
+        let operand2 = self.operand2.interpret_expr(val_symt)?;
         match self.ty {
             OprType::And => {
-                if let Value::Bool(b) = self.operand1.interpret_expr(val_symt)? {
+                if let Value::Bool(b) = operand1 {
                     if b {
-                        if let Value::Bool(b) = self.operand2.interpret_expr(val_symt)? {
+                        if let Value::Bool(b) = operand2 {
                             Ok(Value::Bool(b))
                         } else {
                             panic!()
@@ -110,10 +136,10 @@ impl AstData for BinaryOpr {
                 }
             }
             OprType::Or => {
-                if let Value::Bool(b) = self.operand1.interpret_expr(val_symt)? {
+                if let Value::Bool(b) = operand1 {
                     if b {
                         Ok(Value::Bool(true))
-                    } else if let Value::Bool(b) = self.operand2.interpret_expr(val_symt)? {
+                    } else if let Value::Bool(b) = operand2 {
                         Ok(Value::Bool(b))
                     } else {
                         panic!()
@@ -121,6 +147,14 @@ impl AstData for BinaryOpr {
                 } else {
                     panic!()
                 }
+            }
+            OprType::TypeCast => {
+                operand1
+                    .value_ty()
+                    .namespace()
+                    .get("_typecast")
+                    .unwrap_or_else(|| unreachable!());
+                todo!()
             }
             _opr => panic!("{_opr:?}"),
         }
