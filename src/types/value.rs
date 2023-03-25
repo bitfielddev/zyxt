@@ -14,7 +14,7 @@ use crate::{
     primitives::*,
     types::{
         position::GetSpan,
-        r#type::{Type, ValueType},
+        r#type::{Type, TypeCheckType, ValueType},
     },
 };
 
@@ -286,6 +286,12 @@ impl Value {
             Self::ClassInstance { .. } => todo!(),
             Self::Unit => Arc::clone(&UNIT_T),
             Self::Return(v) => v.ty(),
+        }
+    }
+    pub fn type_check_ty(&self) -> TypeCheckType {
+        match self {
+            Self::Type(ty) => TypeCheckType::Const(ty.to_type()),
+            v => v.ty().into(),
         }
     }
     pub fn value_ty(&self) -> Arc<ValueType> {

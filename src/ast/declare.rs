@@ -6,9 +6,10 @@ use crate::{
     ast::{Ast, AstData, BinaryOpr, Reconstruct},
     types::{
         position::{GetSpan, Span},
+        r#type::TypeCheckType,
         token::{Flag, OprType},
     },
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZError, ZResult,
+    InterpretSymTable, Type, TypeCheckSymTable, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -34,7 +35,8 @@ impl AstData for Declare {
         Ast::Declare(self.to_owned())
     }
 
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        debug!(span = ?self.span(), "Type-checking declaration");
         if !self.variable.is_pattern() {
             return Err(ZError::t006().with_span(&self.variable));
         }
@@ -55,7 +57,7 @@ impl AstData for Declare {
             return Err(ZError::t008().with_span(&self.variable));
         };
         if let Some(ty) = ty {
-            if content_type != ty {
+            if *content_type != ty {
                 let mut new_content = BinaryOpr {
                     ty: OprType::TypeCast,
                     opr_span: None,
@@ -73,7 +75,7 @@ impl AstData for Declare {
                 };
             }
         }
-        ty_symt.declare_val(&name, Arc::clone(&content_type));
+        ty_symt.declare_val(&name, content_type.to_owned());
         Ok(content_type)
     }
 

@@ -1,15 +1,17 @@
 use std::sync::Arc;
 
 use smol_str::SmolStr;
+use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     primitives::TYPE_T,
     types::{
         position::{GetSpan, Span},
+        r#type::TypeCheckType,
         token::AccessType,
     },
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
+    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -37,31 +39,28 @@ impl AstData for Member {
         true
     }
 
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        debug!(span = ?self.span(), "Type-checking member access");
         let parent_type = self.parent.type_check(ty_symt)?;
         let res = match self.ty {
             AccessType::Method => unreachable!(),
-            AccessType::Namespace => {
-                if parent_type != *TYPE_T {
-                    todo!()
-                };
-
-                parent_type
-                    .namespace()
-                    .get(&self.name)
-                    .ok_or_else(|| todo!())
-                    .map(|a| Arc::clone(a))?
-            }
+            AccessType::Namespace => parent_type
+                .as_const()?
+                .namespace()
+                .get(&self.name)
+                .ok_or_else(|| todo!())
+                .map(|a| Arc::clone(a))?,
             AccessType::Field => parent_type
                 .fields()
                 .get(&self.name)
                 .ok_or_else(|| todo!())
                 .map(Arc::clone)?,
         };
-        Ok(res)
+        Ok(res.into())
     }
 
     fn desugared(&self) -> ZResult<Ast> {
+        debug!(span = ?self.span(), "Desugaring member access");
         let mut new_self = self.to_owned();
         new_self.parent.desugar()?;
         Ok(new_self.as_variant())

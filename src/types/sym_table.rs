@@ -11,73 +11,55 @@ use crate::{
     primitives::{I32_T, PRIMS, PRIMS_VAL, TYPE_T},
     types::{
         position::{GetSpan, Span},
-        r#type::Type,
+        r#type::{Type, TypeCheckType},
         value::Value,
     },
 };
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum TypecheckFrameType {
+pub enum TypeCheckFrameType {
     Normal(Option<Arc<Type>>),
     Constants,
     Function(Option<Arc<Type>>),
 }
 
 #[derive(Debug)]
-pub struct TypecheckSymTable(pub VecDeque<TypecheckFrame>);
+pub struct TypeCheckSymTable(pub VecDeque<TypeCheckFrame>);
 
 #[derive(Debug)]
-pub struct TypecheckFrame {
-    pub ty: TypecheckFrameType,
-    pub table: HashMap<SmolStr, Arc<Type>>,
+pub struct TypeCheckFrame {
+    pub ty: TypeCheckFrameType,
+    pub table: HashMap<SmolStr, TypeCheckType>,
     pub defer: Vec<Ast>,
-    pub types: HashMap<SmolStr, Arc<Type>>,
 }
 
-impl Default for TypecheckSymTable {
+impl Default for TypeCheckSymTable {
     fn default() -> Self {
         let mut table = Self(VecDeque::new());
-        table.add_frame(TypecheckFrameType::Constants);
+        table.add_frame(TypeCheckFrameType::Constants);
         for (k, v) in &*PRIMS {
-            table
-                .declare_type(k, Arc::clone(v), Option::<Span>::None)
-                .unwrap();
+            table.declare_val(k, TypeCheckType::Const(Arc::clone(&v)));
         }
-        table.add_frame(TypecheckFrameType::Normal(Some(Arc::clone(&I32_T))));
+        table.add_frame(TypeCheckFrameType::Normal(Some(Arc::clone(&I32_T))));
         table
     }
 }
 
-impl TypecheckSymTable {
+impl TypeCheckSymTable {
     #[tracing::instrument(skip(self))]
-    pub fn add_frame(&mut self, ty: TypecheckFrameType) -> &mut TypecheckFrame {
-        self.0.push_front(TypecheckFrame {
+    pub fn add_frame(&mut self, ty: TypeCheckFrameType) -> &mut TypeCheckFrame {
+        self.0.push_front(TypeCheckFrame {
             table: HashMap::new(),
             defer: vec![],
-            types: HashMap::new(),
             ty,
         });
         self.0.front_mut().unwrap()
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn declare_val(&mut self, name: &str, value: Arc<Type>) {
-        let frame = if let Some(frame) = self.0.front_mut() {
-            frame
-        } else {
-            self.add_frame(TypecheckFrameType::Normal(None))
-        };
-        frame.table.insert(name.into(), value);
-    }
-    pub fn pop_frame(&mut self) {
-        // TODO settle defers
-        self.0.pop_front();
-    }
-
-    #[tracing::instrument(skip(self))]
     pub fn set_block_return(&mut self, ty: Arc<Type>, span: impl GetSpan) -> ZResult<()> {
         for frame in &mut self.0 {
-            if let TypecheckFrameType::Function(ret_ty) | TypecheckFrameType::Normal(ret_ty) =
+            if let TypeCheckFrameType::Function(ret_ty) | TypeCheckFrameType::Normal(ret_ty) =
                 &mut frame.ty
             {
                 if let Some(ret_ty) = ret_ty {
@@ -96,7 +78,7 @@ impl TypecheckSymTable {
     #[tracing::instrument(skip(self))]
     pub fn get_block_return(&self) -> Arc<Type> {
         for frame in &self.0 {
-            if let TypecheckFrameType::Function(ret_ty) | TypecheckFrameType::Normal(ret_ty) =
+            if let TypeCheckFrameType::Function(ret_ty) | TypeCheckFrameType::Normal(ret_ty) =
                 &frame.ty
             {
                 if let Some(ret_ty) = ret_ty {
@@ -108,31 +90,30 @@ impl TypecheckSymTable {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn declare_type(
-        &mut self,
-        name: &str,
-        value: Arc<Type>,
-        _span: impl GetSpan,
-    ) -> ZResult<()> {
+    pub fn declare_val(&mut self, name: &str, value: TypeCheckType) {
         let frame = if let Some(frame) = self.0.front_mut() {
             frame
         } else {
-            self.add_frame(TypecheckFrameType::Normal(None))
+            self.add_frame(TypeCheckFrameType::Normal(None))
         };
-        // todo check overlap
-        frame.table.insert(name.into(), Arc::clone(&TYPE_T));
-        frame.types.insert(name.into(), value);
-        Ok(())
+        frame.table.insert(name.into(), value);
+    }
+    pub fn pop_frame(&mut self) {
+        // TODO settle defers
+        self.0.pop_front();
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn set_val(&mut self, name: &str, value: Arc<Type>, span: impl GetSpan) -> ZResult<()> {
+    pub fn set_val(&mut self, name: &str, value: TypeCheckType, span: impl GetSpan) -> ZResult<()> {
+        if *value == *TYPE_T {
+            todo!("Cannot reset type")
+        }
         let mut only_consts = false;
         for frame in &mut self.0 {
-            if (only_consts && frame.ty == TypecheckFrameType::Constants)
+            if (only_consts && frame.ty == TypeCheckFrameType::Constants)
                 || frame.table.contains_key(name)
             {
-                if frame.ty == TypecheckFrameType::Constants {
+                if frame.ty == TypeCheckFrameType::Constants {
                     return Err(ZError::t001().with_span(span));
                 }
                 // TODO sth abt all type definitions being constant
@@ -140,7 +121,7 @@ impl TypecheckSymTable {
                 frame.table.insert(name.into(), value);
                 return Ok(());
             }
-            if let TypecheckFrameType::Function(_) = frame.ty {
+            if let TypeCheckFrameType::Function(_) = frame.ty {
                 only_consts = true;
             }
         }
@@ -148,28 +129,10 @@ impl TypecheckSymTable {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn get_type(&mut self, name: &str, span: impl GetSpan) -> ZResult<Arc<Type>> {
-        for frame in &self.0 {
-            if let Some(value) = frame.types.get(name) {
-                return Ok(Arc::clone(value));
-            }
-        }
-        Err(ZError::t002(name).with_span(span))
-    }
-    #[tracing::instrument(skip(self))]
-    pub fn get_type_from_ident(&mut self, ident: &Ast) -> ZResult<Arc<Type>> {
-        let Ast::Ident(Ident { name, .. }) = ident else {
-            todo!()
-        };
-        let name = name.as_str();
-        self.get_type(name, ident.span())
-    }
-
-    #[tracing::instrument(skip(self))]
-    pub fn get_val(&mut self, name: &str, span: impl GetSpan) -> ZResult<Arc<Type>> {
+    pub fn get_val(&mut self, name: &str, span: impl GetSpan) -> ZResult<TypeCheckType> {
         let mut only_consts = false;
         for frame in &self.0 {
-            if (only_consts && frame.ty == TypecheckFrameType::Constants)
+            if (only_consts && frame.ty == TypeCheckFrameType::Constants)
                 || frame.table.contains_key(name)
             {
                 return Ok(frame
@@ -178,14 +141,19 @@ impl TypecheckSymTable {
                     .unwrap_or_else(|| unreachable!())
                     .to_owned());
             }
-            if let TypecheckFrameType::Function(_) = frame.ty {
+            if let TypeCheckFrameType::Function(_) = frame.ty {
                 only_consts = true;
             }
         }
         Err(ZError::t002(name).with_span(span))
     }
     #[tracing::instrument(skip(self))]
-    pub fn delete_val(&mut self, name: &str, span: impl GetSpan) -> ZResult<Arc<Type>> {
+    pub fn get_type(&mut self, name: &str, span: impl GetSpan) -> ZResult<Arc<Type>> {
+        Ok(Arc::clone(self.get_val(name, span)?.as_const()?))
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn delete_val(&mut self, name: &str, span: impl GetSpan) -> ZResult<TypeCheckType> {
         let Some(first_frame) = self.0.front_mut() else {
             return Err(ZError::t002(name).with_span(span))
         };

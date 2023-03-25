@@ -7,10 +7,11 @@ use crate::{
     primitives::generic_proc,
     types::{
         position::{GetSpan, Span},
-        sym_table::TypecheckFrameType,
+        r#type::TypeCheckType,
+        sym_table::TypeCheckFrameType,
         value::Proc,
     },
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
+    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -35,30 +36,28 @@ impl AstData for Procedure {
         Ast::Procedure(self.to_owned())
     }
 
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        debug!(span = ?self.span(), "Type-checking procedure statement");
         let sig_ret_ty = if let Some(ty) = &mut self.return_type {
-            let Ast::Ident(i) = &**ty else {
-                todo!()
-            };
-            Some(ty_symt.get_type(&i.name, ty.span())?)
+            Some(Arc::clone(ty.type_check(ty_symt)?.as_const()?))
         } else {
             None
         };
         ty_symt.add_frame(if self.is_fn {
-            TypecheckFrameType::Function
+            TypeCheckFrameType::Function
         } else {
-            TypecheckFrameType::Normal
+            TypeCheckFrameType::Normal
         }(sig_ret_ty.map(|a| Arc::clone(&a))));
         for arg in &mut self.args {
-            let ty = ty_symt.get_type_from_ident(&arg.ty)?;
-            ty_symt.declare_val(&arg.name.name, ty);
+            let ty = Arc::clone(arg.ty.type_check(ty_symt)?.as_const()?);
+            ty_symt.declare_val(&arg.name.name, Arc::clone(&ty).into());
         }
         let res = self.content.block_type(ty_symt, false)?;
-        let (TypecheckFrameType::Function(ret_ty) | TypecheckFrameType::Normal(ret_ty)) = &ty_symt.0.front().unwrap_or_else(|| unreachable!()).ty else {
+        let (TypeCheckFrameType::Function(ret_ty) | TypeCheckFrameType::Normal(ret_ty)) = &ty_symt.0.front().unwrap_or_else(|| unreachable!()).ty else {
             unreachable!()
         };
         let ret_ty = Arc::clone(if let Some(ret_ty) = ret_ty {
-            if *ret_ty != res {
+            if *ret_ty != *res {
                 todo!("error")
             }
             ret_ty
@@ -66,7 +65,7 @@ impl AstData for Procedure {
             &res
         });
         ty_symt.pop_frame();
-        Ok(generic_proc(vec![], ret_ty))
+        Ok(generic_proc(vec![], ret_ty).into())
     }
 
     fn desugared(&self) -> ZResult<Ast> {

@@ -11,14 +11,14 @@ use crate::{
     ast::AstData,
     compile,
     types::{
-        sym_table::{InterpretSymTable, TypecheckSymTable},
+        sym_table::{InterpretSymTable, TypeCheckSymTable},
         value::Value,
     },
 };
 
 pub fn repl(verbosity: u8) -> Result<()> {
     let filename = SmolStr::from("[stdin]");
-    let mut ty_symt = TypecheckSymTable::default();
+    let mut ty_symt = TypeCheckSymTable::default();
     let mut val_symt = InterpretSymTable::default();
     let mut rl = Editor::<(), FileHistory>::new()?; // TODO history
     let mut history_path = home_dir().ok_or_else(|| eyre!("No home dir"))?;

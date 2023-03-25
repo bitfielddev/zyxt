@@ -4,8 +4,11 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
-    types::position::{GetSpan, Span},
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZError, ZResult,
+    types::{
+        position::{GetSpan, Span},
+        r#type::TypeCheckType,
+    },
+    InterpretSymTable, Type, TypeCheckSymTable, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -27,7 +30,8 @@ impl AstData for Set {
         Ast::Set(self.to_owned())
     }
 
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        debug!(span = ?self.span(), "Type-checking set statement");
         if !self.variable.is_pattern() {
             return Err(ZError::t006().with_span(&*self.variable));
         }

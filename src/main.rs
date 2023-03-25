@@ -7,7 +7,7 @@ use tracing_error::ErrorLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 use zyxt::{
     repl,
-    types::sym_table::{InterpretSymTable, TypecheckSymTable},
+    types::sym_table::{InterpretSymTable, TypeCheckSymTable},
 };
 
 #[derive(Parser)]
@@ -45,7 +45,7 @@ fn main() -> Result<()> {
 
     match args.subcmd {
         Subcmd::Run(sargs) => {
-            let mut ty_symt = TypecheckSymTable::default();
+            let mut ty_symt = TypeCheckSymTable::default();
             let mut val_symt = InterpretSymTable::default();
             let exit_code = zyxt::interpret(
                 &zyxt::compile(&Either::Left(&sargs.filename), &mut ty_symt)

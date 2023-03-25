@@ -168,14 +168,14 @@ use crate::{
     parser::parse_token_list,
     types::{
         r#type::Type,
-        sym_table::{InterpretSymTable, TypecheckSymTable},
+        sym_table::{InterpretSymTable, TypeCheckSymTable},
         value::Value,
     },
 };
 
 pub fn compile(
     file: &Either<&Path, (SmolStr, String)>,
-    ty_symt: &mut TypecheckSymTable,
+    ty_symt: &mut TypeCheckSymTable,
 ) -> ZResult<Vec<Ast>> {
     /*if ty_symt.out.verbosity() == 0 {
         return gen_instructions(parse_token_list(lex(input, filename)?)?, ty_symt);

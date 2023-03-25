@@ -5,8 +5,11 @@ use tracing::debug;
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     primitives::UNIT_T,
-    types::position::{GetSpan, Span},
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
+    types::{
+        position::{GetSpan, Span},
+        r#type::TypeCheckType,
+    },
+    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -25,8 +28,8 @@ impl AstData for Return {
         Ast::Return(self.to_owned())
     }
 
-    fn type_check(&mut self, _ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
-        Ok(Arc::clone(&UNIT_T))
+    fn type_check(&mut self, _ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        Ok(Arc::clone(&UNIT_T).into())
     }
 
     fn desugared(&self) -> ZResult<Ast> {

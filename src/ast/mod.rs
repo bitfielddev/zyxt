@@ -47,8 +47,8 @@ use crate::{
     primitives::ANY_T,
     types::{
         position::{GetSpan, Span},
-        r#type::Type,
-        sym_table::{InterpretSymTable, TypecheckSymTable},
+        r#type::{Type, TypeCheckType},
+        sym_table::{InterpretSymTable, TypeCheckSymTable},
         value::Value,
     },
 };
@@ -58,8 +58,8 @@ pub trait AstData: Clone + PartialEq + Debug + GetSpan {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn type_check(&mut self, _ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
-        Ok(Arc::clone(&ANY_T))
+    fn type_check(&mut self, _ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        Ok(Arc::clone(&ANY_T).into())
     }
     fn desugared(&self) -> ZResult<Ast> {
         Ok(self.as_variant())
@@ -123,7 +123,7 @@ impl AstData for Ast {
     fn is_pattern(&self) -> bool {
         for_all_variants!(&self, is_pattern)
     }
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
         for_all_variants!(self, type_check, ty_symt)
     }
     fn desugared(&self) -> ZResult<Ast> {

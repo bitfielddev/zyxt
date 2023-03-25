@@ -7,9 +7,10 @@ use crate::{
     primitives::UNIT_T,
     types::{
         position::{GetSpan, Span},
-        sym_table::{InterpretFrameType, TypecheckFrameType},
+        r#type::TypeCheckType,
+        sym_table::{InterpretFrameType, TypeCheckFrameType},
     },
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
+    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -30,7 +31,8 @@ impl AstData for Block {
         Ast::Block(self.to_owned())
     }
 
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        debug!(span = ?self.span(), "Type-checking block");
         self.block_type(ty_symt, true)
     }
 
@@ -53,12 +55,12 @@ impl AstData for Block {
 impl Block {
     pub fn block_type(
         &mut self,
-        ty_symt: &mut TypecheckSymTable,
+        ty_symt: &mut TypeCheckSymTable,
         add_set: bool,
-    ) -> ZResult<Arc<Type>> {
-        let mut last = Arc::clone(&UNIT_T);
+    ) -> ZResult<TypeCheckType> {
+        let mut last = Arc::clone(&UNIT_T).into();
         if add_set {
-            ty_symt.add_frame(TypecheckFrameType::Normal(None));
+            ty_symt.add_frame(TypeCheckFrameType::Normal(None));
         }
         for ele in &mut self.content {
             last = ele.type_check(ty_symt)?;

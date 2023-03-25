@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::Deref, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use tracing::debug;
 
@@ -7,8 +7,8 @@ use crate::{
     primitives::{BOOL_T, BOOL_T_VAL},
     types::{
         position::{GetSpan, Span},
-        r#type::Type,
-        sym_table::TypecheckSymTable,
+        r#type::{Type, TypeCheckType},
+        sym_table::TypeCheckSymTable,
         token::{AccessType, OprType},
     },
     InterpretSymTable, Value, ZResult,
@@ -34,24 +34,13 @@ impl AstData for BinaryOpr {
         Ast::BinaryOpr(self.to_owned())
     }
 
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        debug!(span = ?self.span(), "Type-checking binary operator");
         self.operand1.type_check(ty_symt)?;
-        self.operand2.type_check(ty_symt)?;
+        let ty2 = self.operand2.type_check(ty_symt)?;
         match self.ty {
-            OprType::And | OprType::Or => Ok(Arc::clone(&BOOL_T)),
-            OprType::TypeCast => {
-                if let Some(ty) = Some(ty_symt.get_type_from_ident(&self.operand2)?) {
-                    Ok(ty)
-                } else if let Ast::Literal(Literal {
-                    content: Value::Type(ty),
-                    ..
-                }) = &*self.operand2
-                {
-                    Ok(ty.to_type())
-                } else {
-                    todo!()
-                }
-            }
+            OprType::And | OprType::Or => Ok(Arc::clone(&BOOL_T).into()),
+            OprType::TypeCast => Ok(Arc::clone(ty2.as_const()?).into()),
             _ => unreachable!(),
         }
     }

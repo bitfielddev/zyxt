@@ -1,11 +1,15 @@
 use std::sync::Arc;
 
 use smol_str::SmolStr;
+use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
-    types::position::{GetSpan, Span},
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
+    types::{
+        position::{GetSpan, Span},
+        r#type::TypeCheckType,
+    },
+    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -27,8 +31,9 @@ impl AstData for Ident {
     fn is_pattern(&self) -> bool {
         true
     }
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
-        ty_symt.get_val(&self.name, &self.name_span)
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        debug!(span = ?self.span(), "Type-checking ident");
+        Ok(ty_symt.get_val(&self.name, &self.name_span)?.into())
     }
 
     fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {

@@ -4,8 +4,11 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
-    types::position::{GetSpan, Span},
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
+    types::{
+        position::{GetSpan, Span},
+        r#type::TypeCheckType,
+    },
+    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -24,7 +27,8 @@ impl AstData for Defer {
         Ast::Defer(self.to_owned())
     }
 
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        debug!(span = ?self.span(), "Type-checking defer statement");
         self.content.type_check(ty_symt)
     }
 

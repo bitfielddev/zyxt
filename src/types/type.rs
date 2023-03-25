@@ -10,7 +10,12 @@ use itertools::{Either, Itertools};
 use once_cell::sync::OnceCell;
 use smol_str::SmolStr;
 
-use crate::{ast::Ident, primitives::ANY_T_VAL, types::value::Value};
+use crate::{
+    ast::Ident,
+    errors::ZResult,
+    primitives::{ANY_T_VAL, TYPE_T},
+    types::value::Value,
+};
 
 #[derive(Clone, PartialEq)]
 pub enum Type {
@@ -86,6 +91,7 @@ pub enum ValueType {
 }
 
 impl Type {
+    #[must_use]
     pub fn namespace(&self) -> Cow<HashMap<SmolStr, LazyType<Value>>> {
         match self {
             Self::Any => Cow::Owned(HashMap::new()),
@@ -93,7 +99,8 @@ impl Type {
             Self::Type { namespace, .. } => Cow::Borrowed(namespace),
         }
     }
-    pub fn fields(&self) -> Cow<HashMap<SmolStr, Arc<Type>>> {
+    #[must_use]
+    pub fn fields(&self) -> Cow<HashMap<SmolStr, Arc<Self>>> {
         match self {
             Self::Any => Cow::Owned(HashMap::new()),
             Self::Generic { base, .. } => base.fields(), // TODO type arg substitutions
@@ -103,9 +110,11 @@ impl Type {
 }
 
 impl ValueType {
+    #[must_use]
     pub fn to_type(self: &Arc<Self>) -> Arc<Type> {
         todo!()
     }
+    #[must_use]
     pub fn namespace(&self) -> Cow<HashMap<SmolStr, Value>> {
         match self {
             Self::Any => Cow::Owned(HashMap::new()),
@@ -192,7 +201,7 @@ impl Display for Type {
                                 let v = match v {
                                     Either::Left(v) => v.to_string(),
                                     Either::Right(Either::Left(v)) => {
-                                        let v = v.iter().map(|a| a.to_string()).join(", ");
+                                        let v = v.iter().map(ToString::to_string).join(", ");
                                         format!("[{v}]")
                                     }
                                     Either::Right(Either::Right(v)) => v.to_string(),
@@ -247,5 +256,38 @@ impl From<BuiltinType> for ValueType {
                 .map(|(k, _)| (k, Value::Type(Arc::clone(&ANY_T_VAL))))
                 .collect(),
         }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum TypeCheckType {
+    Const(Arc<Type>),
+    Type(Arc<Type>),
+}
+impl Deref for TypeCheckType {
+    type Target = Arc<Type>;
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Const(_) => &TYPE_T,
+            Self::Type(ty) => {
+                if *ty == *TYPE_T {
+                    unreachable!()
+                }
+                ty
+            }
+        }
+    }
+}
+impl TypeCheckType {
+    pub const fn as_const(&self) -> ZResult<&Arc<Type>> {
+        match self {
+            Self::Const(c) => Ok(c),
+            Self::Type(_) => Err(todo!()),
+        }
+    }
+}
+impl From<Arc<Type>> for TypeCheckType {
+    fn from(value: Arc<Type>) -> Self {
+        Self::Type(value)
     }
 }

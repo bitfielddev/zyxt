@@ -4,8 +4,11 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Condition, Reconstruct},
-    types::position::{GetSpan, Span},
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
+    types::{
+        position::{GetSpan, Span},
+        r#type::TypeCheckType,
+    },
+    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -26,7 +29,8 @@ impl AstData for If {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        debug!(span = ?self.span(), "Type-checking if expression");
         self.conditions[0].if_true.block_type(ty_symt, true)
         // TODO consider all returns
     }

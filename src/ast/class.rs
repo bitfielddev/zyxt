@@ -7,10 +7,11 @@ use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Declare, Ident, Reconstruct},
     types::{
         position::{GetSpan, Span},
-        sym_table::TypecheckFrameType,
+        r#type::TypeCheckType,
+        sym_table::TypeCheckFrameType,
         token::Flag,
     },
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
+    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -32,8 +33,9 @@ impl AstData for Class {
         Ast::Class(self.to_owned())
     }
 
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
-        ty_symt.add_frame(TypecheckFrameType::Normal(None));
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        debug!(span = ?self.span(), "Type-checking class declaration");
+        ty_symt.add_frame(TypeCheckFrameType::Normal(None));
         for expr in &mut self
             .content
             .as_mut()
@@ -99,7 +101,8 @@ impl AstData for Class {
             namespace: todo!(),
             fields: todo!(),
             type_args: vec![],
-        }))
+        })
+        .into())
     }
 
     fn desugared(&self) -> ZResult<Ast> {

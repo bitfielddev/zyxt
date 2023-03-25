@@ -9,9 +9,10 @@ use crate::{
     primitives::{PROC_T, UNIT_T},
     types::{
         position::{GetSpan, Span},
+        r#type::TypeCheckType,
         token::{AccessType, OprType},
     },
-    InterpretSymTable, Type, TypecheckSymTable, Value, ZResult,
+    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -36,7 +37,8 @@ impl AstData for Call {
     fn as_variant(&self) -> Ast {
         Ast::Call(self.to_owned())
     }
-    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        debug!(span = ?self.span(), "Type-checking function call");
         if let Ast::Member(Member { name, parent, .. }) = &*self.called {
             if let Ast::Ident(Ident {
                 name: parent_name, ..
@@ -47,7 +49,7 @@ impl AstData for Call {
                         .iter_mut()
                         .map(|a| a.type_check(ty_symt))
                         .collect::<ZResult<Vec<_>>>()?;
-                    return Ok(Arc::clone(&UNIT_T));
+                    return Ok(Arc::clone(&UNIT_T).into());
                 }
             }
         }
@@ -91,7 +93,7 @@ impl AstData for Call {
                     out = Some(res);
                     break;
                 }
-                ty = Arc::clone(&f);
+                ty = Arc::clone(&f).into();
             }
             if let Some(res) = out {
                 res
@@ -103,11 +105,11 @@ impl AstData for Call {
             todo!()
         }
         for (arg_ty, sig_arg_ty) in arg_tys.iter().zip(&sig_arg_tys) {
-            if arg_ty != sig_arg_ty {
+            if **arg_ty != *sig_arg_ty {
                 todo!()
             }
         }
-        Ok(ret_ty)
+        Ok(ret_ty.into())
     }
 
     fn desugared(&self) -> ZResult<Ast> {
