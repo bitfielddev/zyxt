@@ -69,7 +69,7 @@ impl TypeCheckSymTable {
                 &mut frame.ty
             {
                 if let Some(ret_ty) = ret_ty {
-                    if *ret_ty != ty {
+                    if !Arc::ptr_eq(ret_ty, &ty) {
                         return Err(ZError::t003(ret_ty, &ty).with_span(span));
                     }
                 } else {

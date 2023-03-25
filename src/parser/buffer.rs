@@ -161,7 +161,7 @@ impl Buffer {
         let mut buffer_windows = vec![];
         while let Some(ele) = self.next() {
             if let Either::Right(ele) = &ele {
-                if start_token == end_token {
+                if start_token == end_token && ele.ty == Some(end_token) {
                     nest_level = 0 /*usize::from(nest_level != 1)*/;
                 } else if ele.ty == Some(start_token) {
                     nest_level += 1;

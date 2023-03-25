@@ -58,7 +58,7 @@ impl AstData for Procedure {
             unreachable!()
         };
         let ret_ty = Arc::clone(if let Some(ret_ty) = ret_ty {
-            if *ret_ty != *res {
+            if !Arc::ptr_eq(&res, ret_ty) {
                 todo!("error")
             }
             ret_ty
