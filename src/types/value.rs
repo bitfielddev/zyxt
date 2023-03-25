@@ -1,7 +1,6 @@
 use std::{
-    collections::{hash_map::DefaultHasher, HashMap},
+    collections::HashMap,
     fmt::{Debug, Display, Formatter},
-    hash::Hash,
     sync::Arc,
 };
 

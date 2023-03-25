@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use smol_str::SmolStr;
 use tracing::debug;
 
@@ -9,7 +7,7 @@ use crate::{
         position::{GetSpan, Span},
         r#type::TypeCheckType,
     },
-    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
+    InterpretSymTable, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Eq, Debug)]

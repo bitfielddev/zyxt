@@ -6,11 +6,11 @@ use std::{
 use smol_str::SmolStr;
 
 use crate::{
-    ast::{Ast, Ident},
+    ast::Ast,
     errors::{ZError, ZResult},
     primitives::{I32_T, PRIMS, PRIMS_VAL, TYPE_T},
     types::{
-        position::{GetSpan, Span},
+        position::GetSpan,
         r#type::{Type, TypeCheckType},
         value::Value,
     },

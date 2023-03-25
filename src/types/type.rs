@@ -2,7 +2,7 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     fmt::{Debug, Display, Formatter},
-    ops::{Deref, Not},
+    ops::Deref,
     sync::Arc,
 };
 
@@ -117,7 +117,7 @@ impl ValueType {
             .zip(PRIMS.values())
             .find(|(k, _)| Arc::ptr_eq(*k, self))
         {
-            Arc::clone(&ty)
+            Arc::clone(ty)
         } else {
             Arc::new(match &**self {
                 Self::Any => Type::Any,
@@ -129,7 +129,7 @@ impl ValueType {
                 } => Type::Type {
                     name: name.to_owned(),
                     namespace: namespace
-                        .into_iter()
+                        .iter()
                         .map(|(k, v)| (k.to_owned(), LazyType::new_lazy(v.to_owned(), Value::ty)))
                         .collect(),
                     fields: fields.to_owned(),

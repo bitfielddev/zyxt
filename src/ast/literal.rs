@@ -1,12 +1,10 @@
-use std::sync::Arc;
-
 use crate::{
     ast::{Ast, AstData, Reconstruct},
     types::{
         position::{GetSpan, Span},
         r#type::TypeCheckType,
     },
-    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
+    InterpretSymTable, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]

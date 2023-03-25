@@ -3,14 +3,13 @@ use std::{collections::HashMap, sync::Arc};
 use tracing::debug;
 
 use crate::{
-    ast::{Ast, AstData, Call, Literal, Member, Reconstruct},
+    ast::{Ast, AstData, Call, Member, Reconstruct},
     primitives::{BOOL_T, BOOL_T_VAL, TYPE_T},
     types::{
         position::{GetSpan, Span},
-        r#type::{Type, TypeCheckType},
+        r#type::TypeCheckType,
         sym_table::TypeCheckSymTable,
         token::{AccessType, OprType},
-        value::Proc,
     },
     InterpretSymTable, Value, ZResult,
 };

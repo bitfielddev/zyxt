@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use tracing::debug;
 
 use crate::{
@@ -8,7 +6,7 @@ use crate::{
         position::{GetSpan, Span},
         r#type::TypeCheckType,
     },
-    InterpretSymTable, Type, TypeCheckSymTable, Value, ZError, ZResult,
+    InterpretSymTable, TypeCheckSymTable, Value, ZError, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]

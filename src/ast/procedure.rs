@@ -11,7 +11,7 @@ use crate::{
         sym_table::TypeCheckFrameType,
         value::Proc,
     },
-    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
+    InterpretSymTable, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]

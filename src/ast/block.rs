@@ -10,7 +10,7 @@ use crate::{
         r#type::TypeCheckType,
         sym_table::{InterpretFrameType, TypeCheckFrameType},
     },
-    InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
+    InterpretSymTable, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]

@@ -5,7 +5,7 @@ use smol_str::SmolStr;
 use tracing::debug;
 
 use crate::{
-    ast::{Ast, AstData, BinaryOpr, Ident, Literal, Member, Reconstruct},
+    ast::{Ast, AstData, BinaryOpr, Ident, Member, Reconstruct},
     primitives::{ANY_T, PROC_T, UNIT_T},
     types::{
         position::{GetSpan, Span},

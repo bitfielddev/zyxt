@@ -47,7 +47,7 @@ use crate::{
     primitives::ANY_T,
     types::{
         position::{GetSpan, Span},
-        r#type::{Type, TypeCheckType},
+        r#type::TypeCheckType,
         sym_table::{InterpretSymTable, TypeCheckSymTable},
         value::Value,
     },
