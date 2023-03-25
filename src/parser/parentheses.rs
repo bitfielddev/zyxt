@@ -2,7 +2,6 @@ use itertools::Either;
 use tracing::{debug, trace};
 
 use crate::{
-    ast::AstData,
     parser::buffer::Buffer,
     types::token::{TokenCategory, TokenType},
     ZResult,

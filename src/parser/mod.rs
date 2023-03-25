@@ -14,6 +14,7 @@ mod unparen_call;
 mod var_literal_call;
 
 use itertools::Either;
+use smol_str::SmolStr;
 use tracing::{debug, info};
 
 use crate::{
@@ -21,6 +22,7 @@ use crate::{
     errors::{ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
+        position::Span,
         token::{Token, TokenType},
         value::Value,
     },
@@ -99,17 +101,17 @@ pub fn parse_token_list(mut input: Vec<Token>) -> ZResult<Vec<Ast>> {
     input.retain(|token| token.ty != Some(TokenType::Comment));
     input.reverse();
     input.push(Token {
-        value: Default::default(),
+        value: SmolStr::default(),
         ty: Some(TokenType::OpenCurlyParen),
-        span: Default::default(),
-        whitespace: Default::default(),
+        span: Span::default(),
+        whitespace: SmolStr::default(),
     });
     input.reverse();
     input.push(Token {
-        value: Default::default(),
+        value: SmolStr::default(),
         ty: Some(TokenType::CloseCurlyParen),
-        span: Default::default(),
-        whitespace: Default::default(),
+        span: Span::default(),
+        whitespace: SmolStr::default(),
     });
 
     let mut buffer = Buffer::new(input);

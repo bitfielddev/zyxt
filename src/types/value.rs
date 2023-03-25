@@ -77,7 +77,7 @@ impl Proc {
                     InterpretFrameType::Normal
                 });
                 for (name, val) in args.iter().zip_eq(vals) {
-                    val_symt.declare_val(name, val)
+                    val_symt.declare_val(name, val);
                 }
                 let res = content.interpret_block(val_symt, true, false);
                 val_symt.pop_frame();
@@ -322,7 +322,7 @@ impl Value {
                 Proc::Builtin { ty, .. } => ty,
                 Proc::Defined { .. } => &PROC_T,
             }),
-            Self::ClassInstance { .. } => todo!(),
+            Self::ClassInstance { ty, .. } => ty.to_type(),
             Self::Unit => Arc::clone(&UNIT_T),
             Self::Return(v) => v.ty(),
         }
