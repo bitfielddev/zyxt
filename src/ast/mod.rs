@@ -58,7 +58,7 @@ pub trait AstData: Clone + PartialEq + Debug + GetSpan {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn typecheck(&mut self, _ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, _ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         Ok(Arc::clone(&ANY_T))
     }
     fn desugared(&self) -> ZResult<Ast> {
@@ -123,8 +123,8 @@ impl AstData for Ast {
     fn is_pattern(&self) -> bool {
         for_all_variants!(&self, is_pattern)
     }
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
-        for_all_variants!(self, typecheck, ty_symt)
+    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        for_all_variants!(self, type_check, ty_symt)
     }
     fn desugared(&self) -> ZResult<Ast> {
         for_all_variants!(&self, desugared)

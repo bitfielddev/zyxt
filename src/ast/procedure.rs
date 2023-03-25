@@ -35,7 +35,7 @@ impl AstData for Procedure {
         Ast::Procedure(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         let sig_ret_ty = if let Some(ty) = &mut self.return_type {
             let Ast::Ident(i) = &**ty else {
                 todo!()

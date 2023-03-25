@@ -30,7 +30,7 @@ impl AstData for Block {
         Ast::Block(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         self.block_type(ty_symt, true)
     }
 
@@ -61,7 +61,7 @@ impl Block {
             ty_symt.add_frame(TypecheckFrameType::Normal(None));
         }
         for ele in &mut self.content {
-            last = ele.typecheck(ty_symt)?;
+            last = ele.type_check(ty_symt)?;
         }
         ty_symt.set_block_return(
             Arc::clone(&last),

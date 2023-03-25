@@ -25,7 +25,7 @@ impl AstData for Literal {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn typecheck(&mut self, _ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, _ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         Ok(self.content.ty())
     }
 

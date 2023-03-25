@@ -32,7 +32,7 @@ impl AstData for Class {
         Ast::Class(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         ty_symt.add_frame(TypecheckFrameType::Normal(None));
         for expr in &mut self
             .content
@@ -41,7 +41,7 @@ impl AstData for Class {
             .content
         {
             // TODO deal w unwrap
-            expr.typecheck(ty_symt)?;
+            expr.type_check(ty_symt)?;
             if let Ast::Declare(Declare {
                 variable,
                 content,
@@ -78,15 +78,15 @@ impl AstData for Class {
             todo!("raise error here")
         }
         for item in self.implementations.values_mut() {
-            item.typecheck(ty_symt)?;
+            item.type_check(ty_symt)?;
         }
         let _new_inst_fields = self
             .inst_fields
             .iter_mut()
             .map(|(ident, (ty, default))| {
-                let ty = ty.typecheck(ty_symt)?;
+                let ty = ty.type_check(ty_symt)?;
                 if let Some(default) = default {
-                    if ty != default.typecheck(ty_symt)? {
+                    if ty != default.type_check(ty_symt)? {
                         todo!("raise error")
                     }
                 }

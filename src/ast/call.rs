@@ -36,7 +36,7 @@ impl AstData for Call {
     fn as_variant(&self) -> Ast {
         Ast::Call(self.to_owned())
     }
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         if let Ast::Member(Member { name, parent, .. }) = &*self.called {
             if let Ast::Ident(Ident {
                 name: parent_name, ..
@@ -45,17 +45,17 @@ impl AstData for Call {
                 if &**name == "out" && &**parent_name == "ter" {
                     self.args
                         .iter_mut()
-                        .map(|a| a.typecheck(ty_symt))
+                        .map(|a| a.type_check(ty_symt))
                         .collect::<ZResult<Vec<_>>>()?;
                     return Ok(Arc::clone(&UNIT_T));
                 }
             }
         }
-        let called_type = self.called.typecheck(ty_symt)?;
+        let called_type = self.called.type_check(ty_symt)?;
         let arg_tys = self
             .args
             .iter_mut()
-            .map(|a| a.typecheck(ty_symt))
+            .map(|a| a.type_check(ty_symt))
             .collect::<ZResult<Vec<_>>>()?;
         let extract_proc = |ty: &Type| {
             if let Type::Generic { type_args, base } = ty {

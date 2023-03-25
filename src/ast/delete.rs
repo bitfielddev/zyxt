@@ -25,7 +25,7 @@ impl AstData for Delete {
         Ast::Delete(self.to_owned())
     }
 
-    fn typecheck(&mut self, _ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, _ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         Ok(Arc::clone(&UNIT_T))
     }
 

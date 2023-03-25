@@ -34,9 +34,9 @@ impl AstData for BinaryOpr {
         Ast::BinaryOpr(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
-        self.operand1.typecheck(ty_symt)?;
-        self.operand2.typecheck(ty_symt)?;
+    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        self.operand1.type_check(ty_symt)?;
+        self.operand2.type_check(ty_symt)?;
         match self.ty {
             OprType::And | OprType::Or => Ok(Arc::clone(&BOOL_T)),
             OprType::TypeCast => {

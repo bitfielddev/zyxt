@@ -24,8 +24,8 @@ impl AstData for Defer {
         Ast::Defer(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
-        self.content.typecheck(ty_symt)
+    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        self.content.type_check(ty_symt)
     }
 
     fn desugared(&self) -> ZResult<Ast> {

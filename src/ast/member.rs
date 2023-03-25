@@ -37,8 +37,8 @@ impl AstData for Member {
         true
     }
 
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
-        let parent_type = self.parent.typecheck(ty_symt)?;
+    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+        let parent_type = self.parent.type_check(ty_symt)?;
         let res = match self.ty {
             AccessType::Method => unreachable!(),
             AccessType::Namespace => {

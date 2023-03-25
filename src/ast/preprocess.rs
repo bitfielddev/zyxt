@@ -26,7 +26,7 @@ impl AstData for Preprocess {
         debug!(span = ?self.span(), "Desugaring preprocess statement");
         let mut pre_instructions = self.content.desugared()?;
         let mut pre_ty_symt = TypecheckSymTable::default();
-        pre_instructions.typecheck(&mut pre_ty_symt)?;
+        pre_instructions.type_check(&mut pre_ty_symt)?;
         let mut val_symt = InterpretSymTable::default();
         let pre_value = pre_instructions.interpret_expr(&mut val_symt)?;
         Ok(pre_value.as_ast())

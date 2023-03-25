@@ -34,11 +34,11 @@ impl AstData for Declare {
         Ast::Declare(self.to_owned())
     }
 
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         if !self.variable.is_pattern() {
             return Err(ZError::t006().with_span(&self.variable));
         }
-        let content_type = self.content.typecheck(ty_symt)?;
+        let content_type = self.content.type_check(ty_symt)?;
         let ty = self
             .ty
             .as_ref()
@@ -63,7 +63,7 @@ impl AstData for Declare {
                     operand2: self.ty.to_owned().unwrap_or_else(|| unreachable!()),
                 }
                 .as_variant();
-                new_content.typecheck(ty_symt)?;
+                new_content.type_check(ty_symt)?;
                 *self = Self {
                     ty: self.ty.to_owned(),
                     content: new_content.into(),

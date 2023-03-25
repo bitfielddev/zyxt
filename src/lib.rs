@@ -212,7 +212,7 @@ pub fn compile(
     info!("Typechecking");
     let typecheck_start = Instant::now();
     for ele in &mut parsed {
-        ele.typecheck(ty_symt)?;
+        ele.type_check(ty_symt)?;
     }
     let typecheck_time = typecheck_start.elapsed().as_micros();
     trace!("{parsed:#?}");

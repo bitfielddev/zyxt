@@ -26,7 +26,7 @@ impl AstData for If {
     fn is_pattern(&self) -> bool {
         false
     }
-    fn typecheck(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
+    fn type_check(&mut self, ty_symt: &mut TypecheckSymTable) -> ZResult<Arc<Type>> {
         self.conditions[0].if_true.block_type(ty_symt, true)
         // TODO consider all returns
     }
