@@ -13,7 +13,7 @@ use smol_str::SmolStr;
 use crate::{
     ast::Ident,
     errors::ZResult,
-    primitives::{ANY_T_VAL, TYPE_T},
+    primitives::{ANY_T_VAL, PRIMS, PRIMS_VAL, TYPE_T},
     types::value::Value,
 };
 
@@ -24,7 +24,7 @@ pub enum Type {
         name: Option<Ident>,
         namespace: HashMap<SmolStr, LazyType<Value>>,
         fields: HashMap<SmolStr, Arc<Type>>,
-        type_args: Vec<(SmolStr, Arc<Type>)>,
+        type_args: Vec<(SmolStr, LazyType<Value>)>,
     },
     Generic {
         type_args: Vec<(SmolStr, Either<Value, Either<Vec<Arc<Type>>, Arc<Type>>>)>,
@@ -112,7 +112,34 @@ impl Type {
 impl ValueType {
     #[must_use]
     pub fn to_type(self: &Arc<Self>) -> Arc<Type> {
-        todo!()
+        if let Some((_, ty)) = PRIMS_VAL
+            .values()
+            .zip(PRIMS.values())
+            .find(|(k, _)| Arc::ptr_eq(*k, self))
+        {
+            Arc::clone(&ty)
+        } else {
+            Arc::new(match &**self {
+                Self::Any => Type::Any,
+                Self::Type {
+                    name,
+                    namespace,
+                    fields,
+                    type_args,
+                } => Type::Type {
+                    name: name.to_owned(),
+                    namespace: namespace
+                        .into_iter()
+                        .map(|(k, v)| (k.to_owned(), LazyType::new_lazy(v.to_owned(), Value::ty)))
+                        .collect(),
+                    fields: fields.to_owned(),
+                    type_args: type_args
+                        .iter()
+                        .map(|(k, v)| (k.to_owned(), LazyType::new_lazy(v.to_owned(), Value::ty)))
+                        .collect(),
+                },
+            })
+        }
     }
     #[must_use]
     pub fn namespace(&self) -> Cow<HashMap<SmolStr, Value>> {
@@ -218,8 +245,30 @@ impl Display for Type {
 }
 
 impl Display for ValueType {
-    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Any => write!(f, "_any"),
+            Self::Type {
+                name, type_args, ..
+            } => {
+                if let Some(name) = name {
+                    write!(f, "{}", name.name)
+                } else {
+                    write!(f, "(anonymous)")
+                }?;
+                if !type_args.is_empty() {
+                    write!(
+                        f,
+                        "[{}]",
+                        type_args
+                            .iter()
+                            .map(|(k, v)| format!("{k}: {v}"))
+                            .join(", ")
+                    )?;
+                }
+                Ok(())
+            }
+        }
     }
 }
 
@@ -240,7 +289,11 @@ impl From<BuiltinType> for Type {
                 .map(|(k, v)| (k, LazyType::new_lazy(v, Value::ty)))
                 .collect(),
             fields: value.fields,
-            type_args: value.type_args,
+            type_args: value
+                .type_args
+                .into_iter()
+                .map(|(k, v)| (k, v.into()))
+                .collect(),
         }
     }
 }

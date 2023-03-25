@@ -7,14 +7,18 @@ use std::{
 
 use enum_as_inner::EnumAsInner;
 use half::f16;
+use itertools::Itertools;
 use num::{BigInt, BigUint};
+use smol_str::SmolStr;
 
 use crate::{
     ast::{Ast, Block, Literal},
+    errors::ZResult,
     primitives::*,
     types::{
         position::GetSpan,
         r#type::{Type, TypeCheckType, ValueType},
+        sym_table::{InterpretFrameType, InterpretSymTable},
     },
 };
 
@@ -30,6 +34,7 @@ pub enum Proc {
     Defined {
         is_fn: bool,
         content: Block,
+        args: Vec<SmolStr>,
     },
 }
 impl PartialEq for Proc {
@@ -40,13 +45,45 @@ impl PartialEq for Proc {
                 Self::Defined {
                     is_fn: is_fn1,
                     content: content1,
+                    args: args1,
                 },
                 Self::Defined {
                     is_fn: is_fn2,
                     content: content2,
+                    args: args2,
                 },
-            ) => is_fn1 == is_fn2 && content1 == content2,
+            ) => is_fn1 == is_fn2 && content1 == content2 && args1 == args2,
             _ => false,
+        }
+    }
+}
+
+impl Proc {
+    pub fn call(&self, vals: Vec<Value>, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+        match self {
+            Self::Builtin { f, .. } => {
+                let Some(res) = (*f)(&vals) else {
+                    todo!()
+                };
+                Ok(res)
+            }
+            Self::Defined {
+                content,
+                is_fn,
+                args,
+            } => {
+                val_symt.add_frame(if *is_fn {
+                    InterpretFrameType::Function
+                } else {
+                    InterpretFrameType::Normal
+                });
+                for (name, val) in args.iter().zip_eq(vals) {
+                    val_symt.declare_val(name, val)
+                }
+                let res = content.interpret_block(val_symt, true, false);
+                val_symt.pop_frame();
+                res
+            }
         }
     }
 }
@@ -191,7 +228,7 @@ impl Display for Proc {
             Self::Builtin { id, ty, .. } => {
                 write!(f, "builtin@{id}@{ty}")
             }
-            Self::Defined { is_fn, content } => {
+            Self::Defined { is_fn, content, .. } => {
                 write!(f, "{}", if *is_fn { "fn" } else { "proc" })?;
                 if let Some(span) = content.span() {
                     write!(f, "@{}", span.start_pos)?;

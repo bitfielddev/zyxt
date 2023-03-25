@@ -41,15 +41,9 @@ impl AstData for Set {
         } else {
             unimplemented!() // TODO
         };
-        let var_type = ty_symt.get_val(
-            name,
-            &self.variable.span().unwrap_or_else(|| unreachable!()),
-        )?;
-        if content_type == var_type {
-            Ok(var_type)
-        } else {
-            Err(ZError::t010(&var_type, &content_type).with_span(&*self)) // TODO span
-        }
+        let var_type = ty_symt.get_val(name, self.variable.span())?;
+        ty_symt.set_val(name, content_type, self.variable.span())?;
+        Ok(var_type)
     }
 
     fn desugared(&self) -> ZResult<Ast> {

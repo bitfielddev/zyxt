@@ -6,7 +6,7 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, BinaryOpr, Ident, Literal, Member, Reconstruct},
-    primitives::{PROC_T, UNIT_T},
+    primitives::{ANY_T, PROC_T, UNIT_T},
     types::{
         position::{GetSpan, Span},
         r#type::TypeCheckType,
@@ -61,7 +61,7 @@ impl AstData for Call {
             .collect::<ZResult<Vec<_>>>()?;
         let extract_proc = |ty: &Type| {
             if let Type::Generic { type_args, base } = ty {
-                if *base != *PROC_T {
+                if !Arc::ptr_eq(base, &PROC_T) {
                     None
                 } else if let Some((_, sig_arg_tys)) = type_args.iter().find(|(k, _)| *k == "A") {
                     if let Some((_, ret_ty)) = type_args.iter().find(|(k, _)| *k == "R") {
@@ -105,8 +105,8 @@ impl AstData for Call {
             todo!()
         }
         for (arg_ty, sig_arg_ty) in arg_tys.iter().zip(&sig_arg_tys) {
-            if **arg_ty != *sig_arg_ty {
-                todo!()
+            if !Arc::ptr_eq(arg_ty, sig_arg_ty) && !Arc::ptr_eq(sig_arg_ty, &ANY_T) {
+                todo!("{arg_ty:?}, {sig_arg_ty:?}")
             }
         }
         Ok(ret_ty.into())
@@ -179,61 +179,16 @@ impl AstData for Call {
                 }
             }
         }
-        todo!()
-        /*
-        if let Value::Proc(proc) = self.called.interpret_expr(val_symt)? {
-            match proc {
-                Proc::Builtin { f, .. } => {
-                    let processed_args = self
-                        .args
-                        .iter()
-                        .map(|a| a.interpret_expr(val_symt))
-                        .collect::<Result<Vec<_>, _>>()?;
-                    if let Some(v) = f(&processed_args) {
-                        Ok(v)
-                    } else {
-                        Err(ZError::i001(&processed_args).with_span(self))
-                    }
-                }
-                Proc::Defined {
-                    is_fn,
-                    args,
-                    content,
-                    ..
-                } => {
-                    let mut processed_args = HashMap::new();
-                    for (cursor, Argument { name, default, .. }) in args.iter().enumerate() {
-                        let input_arg = if self.args.len() > cursor {
-                            &self.args[cursor]
-                        } else {
-                            default.as_ref().unwrap_or_else(|| unreachable!())
-                        };
-                        processed_args
-                            .insert(name.name.to_owned(), input_arg.interpret_expr(val_symt)?);
-                    }
-                    val_symt
-                        .add_frame(
-                            Some(FrameData {
-                                pos: Position::default(), // TODO
-                                raw_call: String::default(),
-                                args: processed_args.to_owned(),
-                            }),
-                            if is_fn {
-                                TypecheckFrameType::Function
-                            } else {
-                                TypecheckFrameType::Normal
-                            },
-                        )
-                        .heap
-                        .extend(processed_args);
-                    let res = content.interpret_block(val_symt, true, false);
-                    val_symt.pop_frame()?;
-                    res
-                }
-            }
-        } else {
-            panic!()
-        }*/
+        let Value::Proc(proc) = self.called.interpret_expr(val_symt)? else {
+            todo!()
+        };
+        proc.call(
+            self.args
+                .iter()
+                .map(|a| a.interpret_expr(val_symt))
+                .collect::<ZResult<Vec<_>>>()?,
+            val_symt,
+        )
     }
 }
 

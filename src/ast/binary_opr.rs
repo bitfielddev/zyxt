@@ -10,6 +10,7 @@ use crate::{
         r#type::{Type, TypeCheckType},
         sym_table::TypeCheckSymTable,
         token::{AccessType, OprType},
+        value::Proc,
     },
     InterpretSymTable, Value, ZResult,
 };
@@ -145,12 +146,13 @@ impl AstData for BinaryOpr {
                 }
             }
             OprType::TypeCast => {
-                operand1
-                    .value_ty()
-                    .namespace()
-                    .get("_typecast")
-                    .unwrap_or_else(|| unreachable!());
-                todo!()
+                let opr1_ty = Arc::clone(&operand1.value_ty());
+                let namespace = opr1_ty.namespace();
+                let Some(Value::Proc(proc)) = namespace
+                    .get("_typecast") else {
+                    todo!()
+                };
+                proc.call(vec![operand1, operand2], val_symt)
             }
             _opr => panic!("{_opr:?}"),
         }

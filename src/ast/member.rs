@@ -67,7 +67,18 @@ impl AstData for Member {
     }
 
     fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
-        val_symt.get_val(&self.name, &self.name_span)
+        let parent = self.parent.interpret_expr(val_symt)?;
+        match self.ty {
+            AccessType::Method => unreachable!(),
+            AccessType::Field => todo!(),
+            AccessType::Namespace => Ok(parent
+                .as_type()
+                .unwrap()
+                .namespace()
+                .get(&self.name)
+                .unwrap()
+                .to_owned()),
+        }
     }
 }
 

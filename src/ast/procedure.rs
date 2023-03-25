@@ -93,6 +93,7 @@ impl AstData for Procedure {
         Ok(Value::Proc(Proc::Defined {
             is_fn: self.is_fn,
             content: self.content.to_owned(),
+            args: self.args.iter().map(|a| a.name.name.to_owned()).collect(),
         }))
     }
 }
