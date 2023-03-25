@@ -282,7 +282,10 @@ impl Value {
             Self::Str(..) => Arc::clone(&STR_T),
             Self::Bool(..) => Arc::clone(&BOOL_T),
             Self::Type(..) => Arc::clone(&TYPE_T),
-            Self::Proc(_) => Arc::clone(&PROC_T),
+            Self::Proc(proc) => Arc::clone(match proc {
+                Proc::Builtin { ty, .. } => ty,
+                Proc::Defined { .. } => &PROC_T,
+            }),
             Self::ClassInstance { .. } => todo!(),
             Self::Unit => Arc::clone(&UNIT_T),
             Self::Return(v) => v.ty(),

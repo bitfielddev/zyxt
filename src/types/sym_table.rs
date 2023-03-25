@@ -38,7 +38,7 @@ impl Default for TypeCheckSymTable {
         let mut table = Self(VecDeque::new());
         table.add_frame(TypeCheckFrameType::Constants);
         for (k, v) in &*PRIMS {
-            table.declare_val(k, TypeCheckType::Const(Arc::clone(&v)));
+            table.declare_val(k, TypeCheckType::Const(Arc::clone(v)));
         }
         table.add_frame(TypeCheckFrameType::Normal(Some(Arc::clone(&I32_T))));
         table

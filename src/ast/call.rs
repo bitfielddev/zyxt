@@ -82,7 +82,7 @@ impl AstData for Call {
                 None
             }
         };
-        let (sig_arg_tys, ret_ty) = if let Some(res) = extract_proc(&*called_type) {
+        let (sig_arg_tys, ret_ty) = if let Some(res) = extract_proc(&called_type) {
             res
         } else {
             let mut ty = called_type;

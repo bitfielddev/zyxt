@@ -11,9 +11,9 @@ fn i32_t() -> BuiltinType {
     trace!("Initialising i32");
     h.insert("_default", Value::I32(0));
     concat(&mut h, &I32_T);
-    unary_signed_default::<i8>(&mut h, &I8_T);
-    arith_opr_default::<i8>(&mut h, &I8_T);
-    comp_opr_default::<i8>(&mut h, &I8_T);
+    unary_signed_default::<i32>(&mut h, &I32_T);
+    arith_opr_default::<i32>(&mut h, &I32_T);
+    comp_opr_default::<i32>(&mut h, &I32_T);
 
     let typecast = Arc::new(|x: &Vec<Value>| {
         Some(match get_param::<Arc<ValueType>>(x, 1)? {

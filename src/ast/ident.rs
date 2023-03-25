@@ -33,7 +33,7 @@ impl AstData for Ident {
     }
     fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
         debug!(span = ?self.span(), "Type-checking ident");
-        Ok(ty_symt.get_val(&self.name, &self.name_span)?.into())
+        ty_symt.get_val(&self.name, &self.name_span)
     }
 
     fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {

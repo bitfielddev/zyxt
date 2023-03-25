@@ -4,7 +4,7 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Call, Literal, Member, Reconstruct},
-    primitives::{BOOL_T, BOOL_T_VAL},
+    primitives::{BOOL_T, BOOL_T_VAL, TYPE_T},
     types::{
         position::{GetSpan, Span},
         r#type::{Type, TypeCheckType},
@@ -36,11 +36,18 @@ impl AstData for BinaryOpr {
 
     fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
         debug!(span = ?self.span(), "Type-checking binary operator");
-        self.operand1.type_check(ty_symt)?;
+        let ty1 = self.operand1.type_check(ty_symt)?;
         let ty2 = self.operand2.type_check(ty_symt)?;
         match self.ty {
             OprType::And | OprType::Or => Ok(Arc::clone(&BOOL_T).into()),
-            OprType::TypeCast => Ok(Arc::clone(ty2.as_const()?).into()),
+            OprType::TypeCast => Ok({
+                let ty2 = ty2.as_const()?;
+                if Arc::ptr_eq(ty2, &TYPE_T) {
+                    TypeCheckType::Const(Arc::clone(&ty1))
+                } else {
+                    Arc::clone(ty2).into()
+                }
+            }),
             _ => unreachable!(),
         }
     }
