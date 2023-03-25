@@ -17,8 +17,9 @@ path = "src/lib.rs"
 
 [dependencies]
 owo-colors = "^3.5.0"
-regex = "^1.7.2"
-clap = { version = "^4.1.11", features = ["derive"] }
+regex = "^1.7.3"
+lazy-regex = "^2.5.0"
+clap = { version = "^4.1.13", features = ["derive"] }
 rustyline = "^11.0.0"
 dirs = "^5.0.0"
 backtrace = "^0.3.67"

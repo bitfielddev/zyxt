@@ -1,6 +1,7 @@
 use tracing::trace;
 
 use crate::{
+    errors::ToZResult,
     lexer::buffer::Buffer,
     types::{
         position::Span,
@@ -11,7 +12,7 @@ use crate::{
 
 #[tracing::instrument(skip_all)]
 pub fn lex_text_literal(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
-    iter.next().unwrap();
+    iter.next().z()?;
     let mut raw = "\"".to_owned();
     let init_pos = iter.peek().ok_or_else(|| todo!())?.1;
     while let Some((char, pos)) = iter.next() {

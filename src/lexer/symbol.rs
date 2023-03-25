@@ -1,4 +1,5 @@
 use crate::{
+    errors::ToZResult,
     lexer::{
         buffer::Buffer,
         comments::{lex_block_comment, lex_line_comment},
@@ -12,19 +13,19 @@ use crate::{
 
 #[tracing::instrument(skip_all)]
 pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
-    let (char, pos) = iter.next().unwrap();
+    let (char, pos) = iter.next().z()?;
     let pos = pos.to_owned();
     let mut char = char.to_string();
     tokens.push(Token {
-        ty: Some(match char.chars().next().unwrap() {
+        ty: Some(match char.chars().next().z()? {
             '+' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('=');
                     TokenType::AssignmentOpr(Some(OprType::Add))
                 }
                 Some(('-', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('-');
                     TokenType::BinaryOpr(OprType::AddSub)
                 }
@@ -32,12 +33,12 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             },
             '-' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('=');
                     TokenType::AssignmentOpr(Some(OprType::Sub))
                 }
                 Some(('+', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('+');
                     TokenType::BinaryOpr(OprType::SubAdd)
                 }
@@ -45,7 +46,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             },
             '*' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('=');
                     TokenType::AssignmentOpr(Some(OprType::Mul))
                 }
@@ -54,12 +55,12 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             },
             '/' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('=');
                     TokenType::AssignmentOpr(Some(OprType::Div))
                 }
                 Some(('*', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     tokens.push(Token {
                         ty: Some(TokenType::Comment),
                         value: "/*".into(),
@@ -70,7 +71,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
                     return Ok(());
                 }
                 Some(('/', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     tokens.push(Token {
                         ty: Some(TokenType::Comment),
                         value: "//".into(),
@@ -84,7 +85,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             },
             '^' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('=');
                     TokenType::AssignmentOpr(Some(OprType::Pow))
                 }
@@ -92,7 +93,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             },
             '%' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('=');
                     TokenType::AssignmentOpr(Some(OprType::Mod))
                 }
@@ -100,7 +101,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             },
             '~' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     TokenType::AssignmentOpr(Some(OprType::Concat))
                 }
                 _ => TokenType::BinaryOpr(OprType::Concat),
@@ -108,7 +109,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             '@' => TokenType::BinaryOpr(OprType::TypeCast),
             '=' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('=');
                     TokenType::BinaryOpr(OprType::Eq)
                 }
@@ -116,7 +117,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             },
             '!' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('=');
                     TokenType::BinaryOpr(OprType::Ne)
                 }
@@ -124,7 +125,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             },
             '>' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('=');
                     TokenType::BinaryOpr(OprType::Ge)
                 } // TODO insertion
@@ -132,7 +133,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             },
             '<' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('=');
                     TokenType::BinaryOpr(OprType::Le)
                 }
@@ -140,7 +141,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             },
             '&' => match iter.peek() {
                 Some(('&', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('&');
                     TokenType::BinaryOpr(OprType::And)
                 } // TODO pointer
@@ -148,7 +149,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             },
             '|' => match iter.peek() {
                 Some(('|', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('|');
                     TokenType::BinaryOpr(OprType::Or)
                 } // TODO |>
@@ -157,17 +158,17 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
             '.' => TokenType::DotOpr(AccessType::Field),
             ':' => match iter.peek() {
                 Some(('=', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('=');
                     TokenType::DeclarationOpr
                 }
                 Some(('.', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push('.');
                     TokenType::DotOpr(AccessType::Method)
                 }
                 Some((':', _)) => {
-                    iter.next().unwrap();
+                    iter.next().z()?;
                     char.push(':');
                     TokenType::DotOpr(AccessType::Namespace)
                 }

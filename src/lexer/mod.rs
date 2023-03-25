@@ -8,6 +8,7 @@ mod word;
 
 use std::sync::Arc;
 
+use lazy_regex::{lazy_regex, regex};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use smol_str::SmolStr;
@@ -26,10 +27,10 @@ use crate::{
     types::{position::Position, token::Token},
 };
 
-static ALPHANUMERIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z0-9_]+$").unwrap());
-static NUMERIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[0-9]+$").unwrap());
-static WHITESPACE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\s+$").unwrap());
-static ALPHABETIC: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z_]+$").unwrap());
+static ALPHANUMERIC: Lazy<Regex> = lazy_regex!(r"^[a-zA-Z0-9_]+$");
+static NUMERIC: Lazy<Regex> = lazy_regex!(r"^[0-9]+$");
+static WHITESPACE: Lazy<Regex> = lazy_regex!(r"^\s+$");
+static ALPHABETIC: Lazy<Regex> = lazy_regex!(r"^[a-zA-Z_]+$");
 
 #[tracing::instrument(skip_all)]
 pub fn lex(mut input: String, filename: SmolStr) -> ZResult<Vec<Token>> {

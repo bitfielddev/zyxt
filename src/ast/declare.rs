@@ -73,7 +73,7 @@ impl AstData for Declare {
                 };
             }
         }
-        ty_symt.declare_val(&name, content_type.to_owned());
+        ty_symt.declare_val(&name, content_type.to_owned())?;
         Ok(content_type)
     }
 

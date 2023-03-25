@@ -7,7 +7,7 @@ use smol_str::SmolStr;
 
 use crate::{
     ast::Ast,
-    errors::{ZError, ZResult},
+    errors::{ToZResult, ZError, ZResult},
     primitives::{I32_T, PRIMS, PRIMS_VAL, TYPE_T},
     types::{
         position::GetSpan,
@@ -38,7 +38,9 @@ impl Default for TypeCheckSymTable {
         let mut table = Self(VecDeque::new());
         table.add_frame(TypeCheckFrameType::Constants);
         for (k, v) in &*PRIMS {
-            table.declare_val(k, TypeCheckType::Const(Arc::clone(v)));
+            table
+                .declare_val(k, TypeCheckType::Const(Arc::clone(v)))
+                .unwrap_or_else(|_| unreachable!());
         }
         table.add_frame(TypeCheckFrameType::Normal(Some(Arc::clone(&I32_T))));
         table
@@ -46,6 +48,10 @@ impl Default for TypeCheckSymTable {
 }
 
 impl TypeCheckSymTable {
+    pub fn front_mut(&mut self) -> ZResult<&mut TypeCheckFrame> {
+        self.0.front_mut().z()
+    }
+
     #[tracing::instrument(skip(self))]
     pub fn add_frame(&mut self, ty: TypeCheckFrameType) -> &mut TypeCheckFrame {
         self.0.push_front(TypeCheckFrame {
@@ -53,7 +59,7 @@ impl TypeCheckSymTable {
             defer: vec![],
             ty,
         });
-        self.0.front_mut().unwrap()
+        self.front_mut().unwrap_or_else(|_| unreachable!())
     }
 
     #[tracing::instrument(skip(self))]
@@ -90,13 +96,9 @@ impl TypeCheckSymTable {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn declare_val(&mut self, name: &str, value: TypeCheckType) {
-        let frame = if let Some(frame) = self.0.front_mut() {
-            frame
-        } else {
-            self.add_frame(TypeCheckFrameType::Normal(None))
-        };
-        frame.table.insert(name.into(), value);
+    pub fn declare_val(&mut self, name: &str, value: TypeCheckType) -> ZResult<()> {
+        self.front_mut()?.table.insert(name.into(), value);
+        Ok(())
     }
     pub fn pop_frame(&mut self) {
         // TODO settle defers
@@ -164,8 +166,9 @@ impl TypeCheckSymTable {
         }
     }
     #[tracing::instrument(skip(self))]
-    pub fn add_defer(&mut self, content: Ast) {
-        self.0.front_mut().unwrap().defer.push(content);
+    pub fn add_defer(&mut self, content: Ast) -> ZResult<()> {
+        self.front_mut()?.defer.push(content);
+        Ok(())
     }
 }
 
@@ -199,6 +202,10 @@ impl Default for InterpretSymTable {
 }
 
 impl InterpretSymTable {
+    pub fn front_mut(&mut self) -> ZResult<&mut InterpretFrame> {
+        self.0.front_mut().z()
+    }
+
     #[tracing::instrument(skip(self))]
     pub fn add_frame(&mut self, ty: InterpretFrameType) -> &mut InterpretFrame {
         self.0.push_front(InterpretFrame {
@@ -206,7 +213,7 @@ impl InterpretSymTable {
             defer: vec![],
             ty,
         });
-        self.0.front_mut().unwrap()
+        self.front_mut().unwrap_or_else(|_| unreachable!())
     }
 
     #[tracing::instrument(skip(self))]
@@ -276,7 +283,8 @@ impl InterpretSymTable {
         }
     }
     #[tracing::instrument(skip(self))]
-    pub fn add_defer(&mut self, content: Ast) {
-        self.0.front_mut().unwrap().defer.push(content);
+    pub fn add_defer(&mut self, content: Ast) -> ZResult<()> {
+        self.front_mut()?.defer.push(content);
+        Ok(())
     }
 }

@@ -64,7 +64,7 @@ pub fn repl(verbosity: u8) -> Result<()> {
                     match compile(&Either::Right((filename.to_owned(), input)), &mut ty_symt) {
                         Ok(v) => v,
                         Err(e) => {
-                            e.print();
+                            e.print()?;
                             continue;
                         }
                     };
@@ -91,7 +91,7 @@ pub fn repl(verbosity: u8) -> Result<()> {
                             }
                         }
                         Err(e) => {
-                            e.print();
+                            e.print()?;
                         }
                     }
                 }

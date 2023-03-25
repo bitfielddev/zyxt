@@ -1,11 +1,12 @@
 mod interpreter;
 mod lexer;
 mod parser;
-mod typecheck;
+mod type_check;
 
-use std::{fmt::Debug, process::exit};
+use std::{error::Error, fmt::Debug, process::exit};
 
 use backtrace::Backtrace;
+use color_eyre::{Report, Result};
 use itertools::Itertools;
 use owo_colors::OwoColorize;
 use tracing::{debug, warn};
@@ -40,8 +41,9 @@ impl ZError {
         }
     }
     #[tracing::instrument(skip_all)]
-    pub fn get_surrounding_text(&self) -> String {
-        self.pos
+    pub fn get_surrounding_text(&self) -> Result<String> {
+        Ok(self
+            .pos
             .iter()
             .map(|span| {
                 let pos = format!(" {} ", span.start_pos).bold().on_red().to_string();
@@ -49,16 +51,16 @@ impl ZError {
                     filename.as_ref()
                 } else {
                     warn!("Could not find filename");
-                    return pos;
+                    return Result::<_, Report>::Ok(pos);
                 };
-                let mut contents = if let Some(input) = get_input(filename) {
+                let mut contents = if let Some(input) = get_input(filename)? {
                     input
                         .split('\n')
                         .map(ToString::to_string)
                         .collect::<Vec<_>>()
                 } else {
                     warn!("Could not get file");
-                    return pos;
+                    return Ok(pos);
                 };
                 debug!(start = ?span.start_pos, end = ?span.end_pos, "Generating surrounding text");
                 let start_line = (span.start_pos.line - 1).saturating_sub(2);
@@ -84,16 +86,17 @@ impl ZError {
 
                 let surrounding = contents[start_line..=end_line].join("\n");
 
-                format!("{pos}\n{}", surrounding.white().dimmed())
+                Ok(format!("{pos}\n{}", surrounding.white().dimmed()))
             })
-            .join("\n")
+            .collect::<Result<Vec<_>, _>>()?
+            .join("\n"))
     }
     pub fn print_exit(self) -> ! {
-        self.print();
+        self.print().unwrap();
         exit(1)
     }
-    pub fn print(&self) {
-        println!("{}", self.get_surrounding_text());
+    pub fn print(&self) -> Result<()> {
+        println!("{}", self.get_surrounding_text()?);
         // TODO flag for showing span_trace
         println!("Span trace:\n{}", self.span_trace);
         println!("Back trace:\n{:#?}", self.back_trace);
@@ -102,6 +105,7 @@ impl ZError {
             self.code.black().on_yellow(),
             format!(" {}", self.message).bold().red(),
         );
+        Ok(())
     }
     #[must_use]
     pub fn with_span(mut self, span: impl GetSpan) -> Self {
@@ -111,5 +115,20 @@ impl ZError {
             vec![]
         };
         self
+    }
+}
+
+pub trait ToZResult<T> {
+    fn z(self) -> ZResult<T>;
+}
+
+impl<T, E: Debug> ToZResult<T> for Result<T, E> {
+    fn z(self) -> ZResult<T> {
+        self.map_err(|e| ZError::new("X001", format!("{e:?}")))
+    }
+}
+impl<T> ToZResult<T> for Option<T> {
+    fn z(self) -> ZResult<T> {
+        self.ok_or_else(|| ZError::new("X002", "Returned `None`".into()))
     }
 }

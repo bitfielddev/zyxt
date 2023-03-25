@@ -5,6 +5,7 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
+    errors::ToZResult,
     types::{
         position::{GetSpan, Span},
         r#type::TypeCheckType,
@@ -72,10 +73,10 @@ impl AstData for Member {
             AccessType::Field => todo!(),
             AccessType::Namespace => Ok(parent
                 .as_type()
-                .unwrap()
+                .z()?
                 .namespace()
                 .get(&self.name)
-                .unwrap()
+                .z()?
                 .to_owned()),
         }
     }

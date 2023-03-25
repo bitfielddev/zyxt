@@ -1,6 +1,7 @@
 use tracing::trace;
 
 use crate::{
+    errors::ToZResult,
     lexer::{buffer::Buffer, ALPHANUMERIC},
     types::{
         position::Span,
@@ -11,12 +12,12 @@ use crate::{
 
 pub fn lex_word(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
     let mut raw = String::new();
-    let init_pos = iter.peek().unwrap().1;
+    let init_pos = iter.peek().z()?.1;
     while let Some((char, pos)) = iter.peek() {
         trace!(?char, ?pos);
         if ALPHANUMERIC.is_match(&char.to_string()) {
             raw.push(char);
-            iter.next().unwrap();
+            iter.next().z()?;
         } else {
             tokens.push(Token {
                 ty: Some(match raw.as_str() {

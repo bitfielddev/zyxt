@@ -6,6 +6,7 @@ use tracing::debug;
 
 use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Declare, Ident, Reconstruct},
+    errors::ToZResult,
     primitives::{generic_proc, LazyGenericProc},
     types::{
         position::{GetSpan, Span},
@@ -151,7 +152,7 @@ impl AstData for Class {
         match &mut new_self {
             Self::Raw { content, args, .. } => {
                 if let Some(content) = content {
-                    *content = content.desugared()?.into_block().unwrap();
+                    *content = content.desugared()?.into_block().z()?;
                 }
                 if let Some(args) = args {
                     for arg in args {

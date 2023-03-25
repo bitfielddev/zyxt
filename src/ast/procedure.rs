@@ -4,6 +4,7 @@ use tracing::debug;
 
 use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Reconstruct},
+    errors::ToZResult,
     primitives::generic_proc,
     types::{
         position::{GetSpan, Span},
@@ -50,7 +51,7 @@ impl AstData for Procedure {
         }(sig_ret_ty.map(|a| Arc::clone(&a))));
         for arg in &mut self.args {
             let ty = arg.type_check(ty_symt)?;
-            ty_symt.declare_val(&arg.name.name, Arc::clone(&ty).into());
+            ty_symt.declare_val(&arg.name.name, Arc::clone(&ty).into())?;
         }
         let res = self.content.block_type(ty_symt, false)?;
         let (TypeCheckFrameType::Function(ret_ty) | TypeCheckFrameType::Normal(ret_ty)) = &ty_symt.0.front().unwrap_or_else(|| unreachable!()).ty else {
@@ -80,12 +81,7 @@ impl AstData for Procedure {
                 Ok(a)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        new_self.content = self
-            .content
-            .desugared()?
-            .as_block()
-            .unwrap_or_else(|| unreachable!())
-            .to_owned();
+        new_self.content = self.content.desugared()?.as_block().z()?.to_owned();
         Ok(new_self.as_variant())
     }
 

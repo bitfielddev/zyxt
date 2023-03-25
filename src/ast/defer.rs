@@ -40,7 +40,7 @@ impl AstData for Defer {
     }
 
     fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
-        val_symt.add_defer(*self.content.to_owned());
+        val_symt.add_defer(*self.content.to_owned())?;
         Ok(Value::Unit)
     }
 }

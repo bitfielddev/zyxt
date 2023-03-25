@@ -1,6 +1,7 @@
 use tracing::trace;
 
 use crate::{
+    errors::ToZResult,
     lexer::{buffer::Buffer, WHITESPACE},
     types::{
         position::Span,
@@ -19,7 +20,7 @@ pub fn lex_whitespace(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()>
         trace!(?char, ?pos);
         if WHITESPACE.is_match(&char.to_string()) {
             raw.push(char);
-            iter.next().unwrap();
+            iter.next().z()?;
         } else {
             tokens.push(Token {
                 ty: Some(TokenType::Whitespace),

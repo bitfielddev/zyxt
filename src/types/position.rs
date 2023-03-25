@@ -24,8 +24,8 @@ impl Default for Position {
     fn default() -> Self {
         Self {
             filename: None,
-            line: 1.try_into().unwrap(),
-            column: 1.try_into().unwrap(),
+            line: 1,
+            column: 1,
         }
     }
 }
@@ -55,7 +55,12 @@ impl Position {
             filename: self.filename.to_owned(),
             line: self.line + string.chars().filter(|c| *c == '\n').count(),
             column: if string.contains('\n') {
-                string.split('\n').last().unwrap().chars().count()
+                string
+                    .split('\n')
+                    .last()
+                    .unwrap_or_else(|| unreachable!())
+                    .chars()
+                    .count()
             } else {
                 self.column + string.chars().count() - 1
             },

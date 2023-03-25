@@ -162,6 +162,7 @@ use tracing::{debug, info, trace};
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
+    errors::ToZResult,
     file_importer::{import_file, register_input},
     interpreter::interpret_asts,
     lexer::lex,
@@ -183,8 +184,8 @@ pub fn compile(
     // TODO --stats flag
 
     let (input, filename) = match &file {
-        Either::Left(p) => (import_file(p), SmolStr::from(p.to_string_lossy())),
-        Either::Right((name, input)) => (register_input(name, input), name.to_owned()),
+        Either::Left(p) => (import_file(p).z()?, SmolStr::from(p.to_string_lossy())),
+        Either::Right((name, input)) => (register_input(name, input).z()?, name.to_owned()),
     };
 
     info!("Lexing");

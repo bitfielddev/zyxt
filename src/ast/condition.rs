@@ -2,7 +2,7 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Block},
-    errors::ZResult,
+    errors::{ToZResult, ZResult},
     types::position::{GetSpan, Span},
 };
 
@@ -31,12 +31,7 @@ impl Condition {
                 Ok(())
             })
             .transpose()?;
-        self.if_true = self
-            .if_true
-            .desugared()?
-            .as_block()
-            .unwrap_or_else(|| unreachable!())
-            .to_owned();
+        self.if_true = self.if_true.desugared()?.as_block().z()?.to_owned();
         Ok(())
     }
 }
