@@ -47,17 +47,7 @@ impl Buffer {
                 self.splice_buffer(paren_window);
             } else if selected.ty == Some(TokenType::OpenCurlyParen) {
                 debug!(pos = ?selected.span, "Parsing curly braces");
-                let paren_window =
-                    self.get_between(TokenType::OpenCurlyParen, TokenType::CloseCurlyParen)?;
-                let mut paren_window = self.window(paren_window.range); // TODO clean this up
-                paren_window.with_as_buffer(&move |f| {
-                    f.next_or_err()?;
-                    let ele = f.parse_as_block()?;
-                    trace!(?ele);
-                    f.content = vec![Either::Left(ele.as_variant())];
-                    Ok(())
-                })?;
-                self.splice_buffer(paren_window);
+                self.parse_as_block()?;
             }
         }
 

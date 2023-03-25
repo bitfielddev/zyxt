@@ -180,7 +180,7 @@ impl Buffer {
             }
         }
         if nest_level != 0 {
-            return Err(ZError::p009(end_token).with_span(&self.content[self.cursor]));
+            return Err(ZError::p009(end_token).with_span(&self.content.last().map(GetSpan::span)));
         }
         if start != self.cursor {
             buffer_windows.push(self.window(start..self.cursor));

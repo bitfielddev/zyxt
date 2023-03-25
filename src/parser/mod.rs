@@ -97,8 +97,22 @@ pub fn parse_token_list(mut input: Vec<Token>) -> ZResult<Vec<Ast>> {
         }
     }
     input.retain(|token| token.ty != Some(TokenType::Comment));
+    input.reverse();
+    input.push(Token {
+        value: Default::default(),
+        ty: Some(TokenType::OpenCurlyParen),
+        span: Default::default(),
+        whitespace: Default::default(),
+    });
+    input.reverse();
+    input.push(Token {
+        value: Default::default(),
+        ty: Some(TokenType::CloseCurlyParen),
+        span: Default::default(),
+        whitespace: Default::default(),
+    });
 
-    Buffer::new(input)
-        .get_split(TokenType::StatementEnd)?
-        .with_as_buffers(&Buffer::parse_as_expr) // TODO merge all errors into one here
+    let mut buffer = Buffer::new(input);
+    buffer.next_or_err()?;
+    Ok(buffer.parse_as_block()?.content)
 }
