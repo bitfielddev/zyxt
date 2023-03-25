@@ -1,19 +1,16 @@
 use std::{collections::HashMap, sync::Arc};
 
-use itertools::Itertools;
 use smol_str::SmolStr;
 use tracing::debug;
 
 use crate::{
-    ast::{argument::Argument, Ast, AstData, Block, Declare, Ident, Reconstruct},
+    ast::{argument::Argument, Ast, AstData, Block, Reconstruct},
     errors::ToZResult,
-    primitives::{generic_proc, LazyGenericProc},
     types::{
         position::{GetSpan, Span},
-        r#type::{LazyType, TypeCheckType},
+        r#type::TypeCheckType,
         sym_table::TypeCheckFrameType,
         token::Flag,
-        value::Proc,
     },
     InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
 };
@@ -95,7 +92,7 @@ impl AstData for Class {
                 }
                 new_found = true;
             }
-            if dec.flags.iter().find(|(k, _)| *k == Flag::Inst).is_some() {
+            if dec.flags.iter().any(|(k, _)| *k == Flag::Inst) {
                 fields.insert(ident.name, Arc::clone(&*ty));
             } else {
                 namespace_ty.insert(ident.name.to_owned(), Arc::clone(&*ty).into());
@@ -121,7 +118,7 @@ impl AstData for Class {
             })
             .collect::<ZResult<Vec<_>>>()?;
 
-        let mut ty = Arc::new(Type::Type {
+        let ty = Arc::new(Type::Type {
             name: None,
             namespace: namespace_ty,
             fields,

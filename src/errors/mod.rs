@@ -3,7 +3,7 @@ mod lexer;
 mod parser;
 mod type_check;
 
-use std::{error::Error, fmt::Debug, process::exit};
+use std::{fmt::Debug, process::exit};
 
 use backtrace::Backtrace;
 use color_eyre::{Report, Result};

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use once_cell::sync::Lazy;
 use pretty_assertions::assert_eq;
@@ -122,10 +122,8 @@ fn class() {
     let ast = parse!("class { }");
     assert_eq!(
         ast[0],
-        Ast::Class(Class {
+        Ast::Class(Class::Raw {
             is_struct: false,
-            implementations: Default::default(),
-            inst_fields: HashMap::default(),
             content: Some(Block {
                 brace_spans: None,
                 content: vec![]
@@ -141,10 +139,8 @@ fn struct_params() {
     let ast = parse!("struct |x: i32| { }");
     assert_eq!(
         ast[0],
-        Ast::Class(Class {
+        Ast::Class(Class::Raw {
             is_struct: true,
-            implementations: Default::default(),
-            inst_fields: HashMap::default(),
             content: Some(Block {
                 brace_spans: None,
                 content: vec![]
@@ -164,10 +160,8 @@ fn struct_no_content() {
     let ast = parse!("struct |x: i32|");
     assert_eq!(
         ast[0],
-        Ast::Class(Class {
+        Ast::Class(Class::Raw {
             is_struct: true,
-            implementations: Default::default(),
-            inst_fields: HashMap::default(),
             content: None,
             args: Some(vec![Argument {
                 name: ident!(notvar 1, 1, "x"),
@@ -184,10 +178,8 @@ fn struct_no_params() {
     let ast = parse!("struct { }");
     assert_eq!(
         ast[0],
-        Ast::Class(Class {
+        Ast::Class(Class::Raw {
             is_struct: true,
-            implementations: Default::default(),
-            inst_fields: HashMap::default(),
             content: Some(Block {
                 brace_spans: None,
                 content: vec![]
@@ -203,10 +195,8 @@ fn struct_no_content_no_params() {
     let ast = parse!("struct");
     assert_eq!(
         ast[0],
-        Ast::Class(Class {
+        Ast::Class(Class::Raw {
             is_struct: true,
-            implementations: Default::default(),
-            inst_fields: HashMap::default(),
             content: None,
             args: None
         })

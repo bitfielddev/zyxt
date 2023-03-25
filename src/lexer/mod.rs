@@ -8,7 +8,7 @@ mod word;
 
 use std::sync::Arc;
 
-use lazy_regex::{lazy_regex, regex};
+use lazy_regex::lazy_regex;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use smol_str::SmolStr;
