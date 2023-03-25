@@ -59,10 +59,8 @@ impl Buffer {
                 self.prev()?;
                 None
             };
-            let ele = Ast::Class(Class {
+            let ele = Ast::Class(Class::Raw {
                 is_struct: kwd == Keyword::Struct,
-                implementations: HashMap::default(),
-                inst_fields: HashMap::default(), // TODO
                 content,
                 args,
             });

@@ -1,27 +1,36 @@
 use std::{collections::HashMap, sync::Arc};
 
+use itertools::Itertools;
 use smol_str::SmolStr;
 use tracing::debug;
 
 use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Declare, Ident, Reconstruct},
+    primitives::{generic_proc, LazyGenericProc},
     types::{
         position::{GetSpan, Span},
-        r#type::TypeCheckType,
+        r#type::{LazyType, TypeCheckType},
         sym_table::TypeCheckFrameType,
         token::Flag,
+        value::Proc,
     },
     InterpretSymTable, Type, TypeCheckSymTable, Value, ZResult,
 };
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Class {
-    pub is_struct: bool,
-    pub implementations: HashMap<SmolStr, Ast>,
-    pub inst_fields: HashMap<SmolStr, (Ident, Option<Ast>)>,
-    pub content: Option<Block>,
-    pub args: Option<Vec<Argument>>,
+pub enum Class {
+    Raw {
+        is_struct: bool,
+        content: Option<Block>,
+        args: Option<Vec<Argument>>,
+    },
+    TypeChecked {
+        is_struct: bool,
+        namespace: HashMap<SmolStr, Ast>,
+        fields: HashMap<SmolStr, Arc<Type>>,
+    },
 }
+
 impl GetSpan for Class {
     fn span(&self) -> Option<Span> {
         todo!()
@@ -35,102 +44,127 @@ impl AstData for Class {
 
     fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
         debug!(span = ?self.span(), "Type-checking class declaration");
-        ty_symt.add_frame(TypeCheckFrameType::Normal(None));
-        for expr in &mut self
-            .content
-            .as_mut()
-            .unwrap_or_else(|| unreachable!())
-            .content
-        {
-            // TODO deal w unwrap
-            expr.type_check(ty_symt)?;
-            if let Ast::Declare(Declare {
-                variable,
+        let (is_struct, content, args) = match self {
+            Self::Raw {
+                is_struct,
                 content,
-                flags,
-                ty,
-                ..
-            }) = &*expr
-            {
-                let flags = flags.iter().map(|a| a.0).collect::<Vec<_>>();
-                if flags.contains(&Flag::Inst) && self.args.is_some() {
-                    todo!("raise error here")
+                args,
+            } => (is_struct, content, args),
+            Self::TypeChecked {
+                namespace, fields, ..
+            } => {
+                return Ok(Arc::new(Type::Type {
+                    name: None,
+                    namespace: namespace
+                        .iter_mut()
+                        .map(|(k, v)| {
+                            Ok((k.to_owned(), Arc::clone(&*v.type_check(ty_symt)?).into()))
+                        })
+                        .collect::<ZResult<HashMap<_, _>>>()?,
+                    fields: fields.to_owned(),
+                    type_args: vec![],
+                })
+                .into())
+            }
+        };
+        let mut namespace_ast = HashMap::new();
+        let mut namespace_ty = HashMap::new();
+        let mut fields = HashMap::new();
+        let mut new_found = false;
+
+        ty_symt.add_frame(TypeCheckFrameType::Function(None));
+
+        let mut empty = vec![];
+        let statements = if let Some(content) = content {
+            &mut content.content
+        } else {
+            &mut empty
+        };
+        for statement in statements {
+            let ty = statement.type_check(ty_symt)?;
+            let Ast::Declare(dec) = statement else {
+                todo!()
+            };
+            let Ast::Ident(ident) = *dec.variable.to_owned() else {
+                todo!()
+            };
+            if ident.name == "_new" {
+                if *is_struct {
+                    todo!()
                 }
-                let name = if let Ast::Ident(ident) = &**variable {
-                    &ident.name
-                } else {
-                    unimplemented!() // TODO
-                };
-                let ty = if let Some(ele) = ty {
-                    if let Ast::Ident(ident) = &**ele {
-                        ident.to_owned()
-                    } else {
-                        unimplemented!() // TODO
-                    }
-                } else {
-                    todo!("infer type")
-                };
-                if flags.contains(&Flag::Inst) {
-                    self.inst_fields
-                        .insert(name.to_owned(), (ty.to_owned(), Some(*content.to_owned())));
-                }
+                new_found = true;
+            }
+            if dec.flags.iter().find(|(k, _)| *k == Flag::Inst).is_some() {
+                fields.insert(ident.name, Arc::clone(&*ty));
+            } else {
+                namespace_ty.insert(ident.name.to_owned(), Arc::clone(&*ty).into());
+                namespace_ast.insert(ident.name, dec.content.to_owned());
             }
         }
-        if self.args.is_some() && self.implementations.contains_key("_init") {
-            todo!("raise error here")
-        }
-        for item in self.implementations.values_mut() {
-            item.type_check(ty_symt)?;
-        }
-        let _new_inst_fields = self
-            .inst_fields
+
+        let mut empty2 = vec![];
+        let args = if let Some(args) = args {
+            if new_found {
+                todo!()
+            }
+            args
+        } else {
+            &mut empty2
+        };
+        let _arg_tys = args
             .iter_mut()
-            .map(|(ident, (ty, default))| {
-                let ty = ty.type_check(ty_symt)?;
-                if let Some(default) = default {
-                    if ty != default.type_check(ty_symt)? {
-                        todo!("raise error")
-                    }
-                }
-                Ok((ident.to_owned(), (Box::new(ty), default.to_owned())))
+            .map(|arg| {
+                let arg_ty = arg.type_check(ty_symt)?;
+                fields.insert(arg.name.name.to_owned(), Arc::clone(&arg_ty));
+                Ok(arg_ty)
             })
-            .collect::<Result<HashMap<_, _>, _>>()?;
-        ty_symt.pop_frame();
-        Ok(Arc::new(Type::Type {
+            .collect::<ZResult<Vec<_>>>()?;
+
+        let mut ty = Arc::new(Type::Type {
             name: None,
-            namespace: todo!(),
-            fields: todo!(),
+            namespace: namespace_ty,
+            fields,
             type_args: vec![],
-        })
-        .into())
+        });
+
+        if !new_found { // todo when `$` is added
+             /*let Some(Type::Type { namespace, ..}) = Arc::get_mut(&mut ty) else {
+                 unreachable!()
+             };
+             namespace.insert("_new".into(), generic_proc(arg_tys, Arc::clone(&ty)).into());
+             namespace_ast.insert("_new".into(), Value::Proc(Proc::Defined {
+                 is_fn: false,
+                 content: Block { brace_spans: None, content: vec![
+
+                 ] },
+                 args: vec![],
+             }).as_ast().into());*/
+        }
+
+        ty_symt.pop_frame();
+        Ok(ty.into())
     }
 
     fn desugared(&self) -> ZResult<Ast> {
         debug!(span = ?self.span(), "Desugaring class");
         let mut new_self = self.to_owned();
-        new_self.content = if let Some(content) = new_self.content {
-            Some(
-                content
-                    .desugared()?
-                    .as_block()
-                    .unwrap_or_else(|| unreachable!())
-                    .to_owned(),
-            )
-        } else {
-            None
-        };
-        new_self
-            .args
-            .as_mut()
-            .map(|args| {
-                args.iter_mut()
-                    .map(|arg| {
+        match &mut new_self {
+            Self::Raw { content, args, .. } => {
+                if let Some(content) = content {
+                    *content = content.desugared()?.into_block().unwrap();
+                }
+                if let Some(args) = args {
+                    for arg in args {
                         arg.desugar()?;
-                        Ok(arg)
-                    })
-                    .collect::<Result<Vec<_>, _>>()
-            })
-            .transpose()?;
+                    }
+                }
+            }
+            Self::TypeChecked { namespace, .. } => {
+                for ast in namespace.values_mut() {
+                    ast.desugar()?;
+                }
+            }
+        }
         Ok(new_self.as_variant())
     }
 

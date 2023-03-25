@@ -81,6 +81,7 @@ pub static PRIMS: Lazy<HashMap<&'static str, Arc<Type>>> = Lazy::new(|| {
         "ubig" => Arc::clone(&UBIG_T),
         "unit" => Arc::clone(&UNIT_T),
         "usize" => Arc::clone(&USIZE_T),
+        "_any" => Arc::clone(&ANY_T)
     }
 });
 
@@ -108,5 +109,6 @@ pub static PRIMS_VAL: Lazy<HashMap<&'static str, Arc<ValueType>>> = Lazy::new(||
         "ubig" => Arc::clone(&UBIG_T_VAL),
         "unit" => Arc::clone(&UNIT_T_VAL),
         "usize" => Arc::clone(&USIZE_T_VAL),
+        "_any" => Arc::clone(&ANY_T_VAL)
     }
 });

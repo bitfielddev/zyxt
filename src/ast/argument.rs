@@ -1,9 +1,16 @@
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    sync::Arc,
+};
 
 use crate::{
     ast::{Ast, AstData, Ident, Reconstruct},
     errors::ZResult,
-    types::position::{GetSpan, Span},
+    types::{
+        position::{GetSpan, Span},
+        r#type::Type,
+        sym_table::TypeCheckSymTable,
+    },
 };
 
 #[derive(Clone, PartialEq, Debug)]
@@ -21,30 +28,37 @@ impl GetSpan for Argument {
 
 impl Display for Argument {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        /*write!(
+        write!(f, "{}", self.name.name)?;
+        write!(
             f,
-            "{}{}{}",
-            self.name.name,
-            if self.ty.span().raw != "_any" {
-                // TODO
-                format!(": {}", self.ty.span.raw)
+            ": {}",
+            if self.name.name == "_any" {
+                ""
             } else {
-                "".to_string()
-            },
-            if let Some(r) = &self.default {
-                format!(": {}", r.span.raw.trim())
-            } else {
-                "".to_string()
+                &self.name.name
             }
-        )*/
-        write!(f, "")
+        )?;
+        if let Some(r) = &self.default {
+            write!(f, ": {}", r.reconstruct())?;
+        }
+        Ok(())
     }
 }
 
 impl Argument {
-    pub fn desugar(&mut self) -> ZResult<()> {
+    pub fn desugar(&mut self) -> ZResult<&mut Self> {
         self.default = self.default.as_ref().map(AstData::desugared).transpose()?;
-        Ok(())
+        Ok(self)
+    }
+    pub fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<Arc<Type>> {
+        let ty1 = Arc::clone(self.ty.type_check(ty_symt)?.as_const()?);
+        if let Some(default) = &mut self.default {
+            let ty2 = default.type_check(ty_symt)?;
+            if Arc::ptr_eq(&ty1, &ty2) {
+                todo!()
+            }
+        }
+        Ok(ty1)
     }
 }
 

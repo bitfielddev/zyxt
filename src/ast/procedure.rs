@@ -49,7 +49,7 @@ impl AstData for Procedure {
             TypeCheckFrameType::Normal
         }(sig_ret_ty.map(|a| Arc::clone(&a))));
         for arg in &mut self.args {
-            let ty = Arc::clone(arg.ty.type_check(ty_symt)?.as_const()?);
+            let ty = arg.type_check(ty_symt)?;
             ty_symt.declare_val(&arg.name.name, Arc::clone(&ty).into());
         }
         let res = self.content.block_type(ty_symt, false)?;
