@@ -84,7 +84,8 @@ impl ZError {
                     .chain(end_vec[span.end_pos.column - 1..].iter().copied())
                     .join("");
 
-                let surrounding = contents[start_line..=end_line].join("\n");
+                let surrounding =
+                    contents[start_line..=end_line.min(contents.len() - 1)].join("\n");
 
                 Ok(format!("{pos}\n{}", surrounding.white().dimmed()))
             })

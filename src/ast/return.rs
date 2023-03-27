@@ -28,7 +28,9 @@ impl AstData for Return {
         Ast::Return(self.to_owned())
     }
 
-    fn type_check(&mut self, _ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+    fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
+        let value_ty = &self.value.type_check(ty_symt)?;
+        ty_symt.set_block_return(Arc::clone(&value_ty), self.value.span())?;
         Ok(Arc::clone(&UNIT_T).into())
     }
 
