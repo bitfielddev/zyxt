@@ -102,7 +102,7 @@ impl AstData for Call {
             }
         };
         if arg_tys.len() != sig_arg_tys.len() {
-            todo!()
+            todo!("{arg_tys:?} {sig_arg_tys:?}")
         }
         for (arg_ty, sig_arg_ty) in arg_tys.iter().zip(&sig_arg_tys) {
             if !Arc::ptr_eq(arg_ty, sig_arg_ty) && !Arc::ptr_eq(sig_arg_ty, &ANY_T) {

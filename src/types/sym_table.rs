@@ -6,7 +6,7 @@ use std::{
 use smol_str::SmolStr;
 
 use crate::{
-    ast::Ast,
+    ast::{Ast, AstData},
     errors::{ToZResult, ZError, ZResult},
     primitives::{I32_T, PRIMS, PRIMS_VAL, TYPE_T},
     types::{
@@ -23,10 +23,10 @@ pub enum TypeCheckFrameType {
     Function(Option<Arc<Type>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TypeCheckSymTable(pub VecDeque<TypeCheckFrame>);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TypeCheckFrame {
     pub ty: TypeCheckFrameType,
     pub table: HashMap<SmolStr, TypeCheckType>,
@@ -100,9 +100,14 @@ impl TypeCheckSymTable {
         self.front_mut()?.table.insert(name.into(), value);
         Ok(())
     }
-    pub fn pop_frame(&mut self) {
-        // TODO settle defers
+    pub fn pop_frame(&mut self) -> ZResult<()> {
+        let mut temp_self = self.to_owned();
+        for defer in &mut self.front_mut()?.defer {
+            defer.type_check(&mut temp_self)?;
+        }
+        *self = temp_self;
         self.0.pop_front();
+        Ok(())
     }
 
     #[tracing::instrument(skip(self))]
@@ -179,10 +184,10 @@ pub enum InterpretFrameType {
     Function,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InterpretSymTable(pub VecDeque<InterpretFrame>);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InterpretFrame {
     pub ty: InterpretFrameType,
     pub table: HashMap<SmolStr, Value>,
@@ -225,9 +230,14 @@ impl InterpretSymTable {
         };
         frame.table.insert(name.into(), value);
     }
-    pub fn pop_frame(&mut self) {
-        // TODO settle defers
+    pub fn pop_frame(&mut self) -> ZResult<()> {
+        let mut temp_self = self.to_owned();
+        for defer in &mut self.front_mut()?.defer {
+            defer.interpret_expr(&mut temp_self)?;
+        }
+        *self = temp_self;
         self.0.pop_front();
+        Ok(())
     }
 
     #[tracing::instrument(skip(self))]

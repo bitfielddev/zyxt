@@ -27,7 +27,9 @@ impl AstData for Defer {
 
     fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
         debug!(span = ?self.span(), "Type-checking defer statement");
-        self.content.type_check(ty_symt)
+        let ty = self.content.type_check(&mut ty_symt.to_owned())?;
+        ty_symt.add_defer(*self.content.to_owned())?;
+        Ok(ty)
     }
 
     fn desugared(&self) -> ZResult<Ast> {

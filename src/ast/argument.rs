@@ -54,7 +54,7 @@ impl Argument {
         let ty1 = Arc::clone(self.ty.type_check(ty_symt)?.as_const()?);
         if let Some(default) = &mut self.default {
             let ty2 = default.type_check(ty_symt)?;
-            if Arc::ptr_eq(&ty1, &ty2) {
+            if !Arc::ptr_eq(&ty1, &ty2) {
                 todo!()
             }
         }

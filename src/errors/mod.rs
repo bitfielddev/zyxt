@@ -17,7 +17,7 @@ use crate::{
     types::position::{GetSpan, Span},
 };
 
-pub type ZResult<T> = color_eyre::Result<T, ZError>;
+pub type ZResult<T> = Result<T, ZError>;
 
 #[derive(Clone, Debug)]
 pub struct ZError {

@@ -115,20 +115,24 @@ impl Buffer {
             } else {
                 None
             };
-            let block: Block = if let Either::Left(Ast::Block(block)) = &selected {
-                debug!(pos = ?block.span(), "Block detected");
-                block.to_owned()
-            } else {
-                debug!(pos = ?selected.span(), "Expression detected");
-                self.window(self.cursor..self.content.len())
-                    .with_as_buffer(&|buf| {
-                        let ele = buf.parse_as_expr()?;
-                        Ok(Block {
-                            brace_spans: None,
-                            content: vec![ele],
-                        })
-                    })?
-            };
+            let (block, next_cursor_pos): (Block, _) =
+                if let Either::Left(Ast::Block(block)) = &selected {
+                    debug!(pos = ?block.span(), "Block detected");
+                    (block.to_owned(), self.next_cursor_pos())
+                } else {
+                    debug!(pos = ?selected.span(), "Expression detected");
+                    (
+                        self.window(self.cursor..self.content.len())
+                            .with_as_buffer(&|buf| {
+                                let ele = buf.parse_as_expr()?;
+                                Ok(Block {
+                                    brace_spans: None,
+                                    content: vec![ele],
+                                })
+                            })?,
+                        self.content.len(),
+                    )
+                };
             let ele = Ast::Procedure(Procedure {
                 is_fn,
                 kwd_span,
@@ -139,7 +143,7 @@ impl Buffer {
             trace!(?ele);
             let buffer_window = BufferWindow {
                 slice: vec![Either::Left(ele)],
-                range: start..self.next_cursor_pos(),
+                range: start..next_cursor_pos,
             };
             self.splice_buffer(buffer_window);
         }

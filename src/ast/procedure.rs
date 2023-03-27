@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use itertools::Itertools;
 use tracing::debug;
 
 use crate::{
@@ -49,10 +50,12 @@ impl AstData for Procedure {
         } else {
             TypeCheckFrameType::Normal
         }(sig_ret_ty.map(|a| Arc::clone(&a))));
+        let mut arg_tys = vec![];
         for arg in &mut self.args {
             let ty = arg.type_check(ty_symt)?;
+            arg_tys.push(Arc::clone(&ty));
             ty_symt.declare_val(&arg.name.name, Arc::clone(&ty).into())?;
-        }
+        } // todo convert to map
         let res = self.content.block_type(ty_symt, false)?;
         let (TypeCheckFrameType::Function(ret_ty) | TypeCheckFrameType::Normal(ret_ty)) = &ty_symt.0.front().unwrap_or_else(|| unreachable!()).ty else {
             unreachable!()
@@ -65,8 +68,8 @@ impl AstData for Procedure {
         } else {
             &res
         });
-        ty_symt.pop_frame();
-        Ok(generic_proc(vec![], ret_ty).into())
+        ty_symt.pop_frame()?;
+        Ok(generic_proc(arg_tys, ret_ty).into())
     }
 
     fn desugared(&self) -> ZResult<Ast> {
@@ -95,6 +98,20 @@ impl AstData for Procedure {
 }
 impl Reconstruct for Procedure {
     fn reconstruct(&self) -> String {
-        "todo".to_owned()
+        let mut s = String::new();
+        s.push_str(if self.is_fn { "fn" } else { "proc" });
+        if !self.args.is_empty() {
+            s.push('|');
+            s.push_str(&self.args.iter().map(|a| a.reconstruct()).join(", "));
+            s.push('|');
+        }
+        if let Some(ret) = &self.return_type {
+            s.push_str(": ");
+            s.push_str(&ret.reconstruct());
+        }
+        s.push(' ');
+        s.push_str(&self.content.reconstruct());
+
+        s
     }
 }

@@ -70,7 +70,7 @@ impl Block {
             self.content.last().and_then(GetSpan::span),
         )?;
         if add_set {
-            ty_symt.pop_frame();
+            ty_symt.pop_frame()?;
         }
         Ok(last)
     }
@@ -85,7 +85,7 @@ impl Block {
         macro_rules! pop {
             () => {
                 if add_frame {
-                    let _res = val_symt.pop_frame();
+                    let _res = val_symt.pop_frame()?;
                 }
             };
         }

@@ -36,6 +36,6 @@ impl AstData for Literal {
 }
 impl Reconstruct for Literal {
     fn reconstruct(&self) -> String {
-        format!("{:?}", self.content)
+        format!("{}", self.content)
     }
 }

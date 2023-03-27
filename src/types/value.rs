@@ -80,7 +80,7 @@ impl Proc {
                     val_symt.declare_val(name, val);
                 }
                 let res = content.interpret_block(val_symt, true, false);
-                val_symt.pop_frame();
+                val_symt.pop_frame()?;
                 res
             }
         }

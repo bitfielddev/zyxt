@@ -12,7 +12,7 @@ pub fn interpret_asts(input: &Vec<Ast>, val_symt: &mut InterpretSymTable) -> ZRe
         brace_spans: None,
         content: input.to_owned(),
     };
-    let mut last = input.interpret_block(val_symt, true, false)?;
+    let mut last = input.interpret_block(val_symt, true, true)?;
     while let Value::Return(v) = last {
         last = *v;
     }

@@ -139,7 +139,7 @@ impl AstData for Class {
              }).as_ast().into());*/
         }
 
-        ty_symt.pop_frame();
+        ty_symt.pop_frame()?;
         Ok(ty.into())
     }
 

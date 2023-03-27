@@ -29,9 +29,9 @@ i := |x: i32| x + 1;
 ter.out i 3;
 
 // default arguments
-j := |j: str: "default"| ter.out j;
+/*j := |j: str: "default"| ter.out j;
 j();
-j("not default");
+j("not default");*/
 
 // preprocessing
 ter.out pre {
