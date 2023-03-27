@@ -2,8 +2,13 @@ use std::sync::Arc;
 
 use crate::{
     ast::{Ast, Block},
+    errors::ToZResult,
     primitives::I32_T,
-    types::{position::Span, sym_table::InterpretSymTable, value::Value},
+    types::{
+        position::Span,
+        sym_table::{InterpretFrameType, InterpretSymTable},
+        value::Value,
+    },
     ZError, ZResult,
 };
 
@@ -19,10 +24,5 @@ pub fn interpret_asts(input: &Vec<Ast>, val_symt: &mut InterpretSymTable) -> ZRe
     if last == Value::Unit {
         last = Value::I32(0);
     }
-    if let Value::I32(v) = last {
-        Ok(v)
-    } else {
-        Err(ZError::t009(&Arc::clone(&I32_T), &last.ty()).with_span(&Span::default()))
-        // TODO
-    }
+    last.as_i32().copied().z()
 }

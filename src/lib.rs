@@ -153,7 +153,7 @@ pub mod primitives;
 pub mod repl;
 pub mod types;
 
-use std::{path::Path, time::Instant};
+use std::{path::Path, sync::Arc, time::Instant};
 
 use errors::{ZError, ZResult};
 use itertools::Either;
@@ -167,9 +167,10 @@ use crate::{
     interpreter::interpret_asts,
     lexer::lex,
     parser::parse_token_list,
+    primitives::I32_T,
     types::{
         r#type::Type,
-        sym_table::{InterpretSymTable, TypeCheckSymTable},
+        sym_table::{InterpretSymTable, TypeCheckFrameType, TypeCheckSymTable},
         value::Value,
     },
 };
@@ -212,9 +213,11 @@ pub fn compile(
 
     info!("Typechecking");
     let typecheck_start = Instant::now();
+    ty_symt.add_frame(TypeCheckFrameType::Function(Some(Arc::clone(&I32_T))));
     for ele in &mut parsed {
         ele.type_check(ty_symt)?;
     }
+    ty_symt.pop_frame()?;
     let typecheck_time = typecheck_start.elapsed().as_micros();
     trace!("{parsed:#?}");
 
