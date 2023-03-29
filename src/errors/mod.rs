@@ -64,30 +64,47 @@ impl ZError {
                 };
                 debug!(start = ?span.start_pos, end = ?span.end_pos, "Generating surrounding text");
                 let start_line = (span.start_pos.line - 1).saturating_sub(2);
-                let end_line = (span.end_pos.line - 1 + 3).min(contents.len());
+                let end_line = (span.end_pos.line - 1 + 3).min(contents.len() - 1);
+                let mut first_highlighted_line = String::new();
+                let mut last_highlighted_line = String::new();
 
-                let start_vec = contents[span.start_pos.line - 1]
-                    .chars()
-                    .collect::<Vec<_>>();
-                contents[span.start_pos.line - 1] = start_vec[..span.start_pos.column - 1]
-                    .iter()
-                    .copied()
-                    .chain("\u{001b}[0;1;4;31m".chars())
-                    .chain(start_vec[span.start_pos.column - 1..].iter().copied())
-                    .join("");
+                let mut top_surroundings =
+                    contents[start_line..=(span.start_pos.line - 1)].to_owned();
+                if let Some(last) = top_surroundings.last_mut() {
+                    let new_last = last.chars().collect::<Vec<_>>();
+                    let split = new_last.split_at(span.start_pos.column - 1);
+                    *last = split.0.iter().join("");
+                    first_highlighted_line = split.1.iter().join("");
+                }
+                let top_surroundings = top_surroundings.join("\n");
 
-                let end_vec = contents[span.end_pos.line - 1].chars().collect::<Vec<_>>();
-                contents[span.end_pos.line - 1] = end_vec[..span.end_pos.column - 1]
-                    .iter()
-                    .copied()
-                    .chain("\u{001b}[0;37;2m".chars())
-                    .chain(end_vec[span.end_pos.column - 1..].iter().copied())
-                    .join("");
+                let mut bottom_surroundings =
+                    contents[(span.end_pos.line - 1)..=end_line].to_owned();
+                if let Some(first) = bottom_surroundings.first_mut() {
+                    let new_first = first.chars().collect::<Vec<_>>();
+                    let split = new_first.split_at(span.end_pos.column.min(new_first.len()));
+                    *first = split.1.iter().join("");
+                    last_highlighted_line = split.0.iter().join("");
+                }
+                let bottom_surroundings = bottom_surroundings.join("\n");
 
-                let surrounding =
-                    contents[start_line..=end_line.min(contents.len() - 1)].join("\n");
+                let highlighted = if span.start_pos.line == span.end_pos.line {
+                    last_highlighted_line
+                        .split_at(span.start_pos.column - 1)
+                        .1
+                        .to_owned()
+                } else {
+                    let highlighted =
+                        contents[(span.start_pos.line - 1)..=(span.end_pos.line - 1)].join("\n");
+                    format!("{first_highlighted_line}\n{highlighted}\n{last_highlighted_line}")
+                };
 
-                Ok(format!("{pos}\n{}", surrounding.white().dimmed()))
+                Ok(format!(
+                    "{pos}\n{}{}{}",
+                    top_surroundings.white().dimmed(),
+                    highlighted.bright_red().underline(),
+                    bottom_surroundings.white().dimmed()
+                ))
             })
             .collect::<Result<Vec<_>, _>>()?
             .join("\n"))

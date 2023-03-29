@@ -12,9 +12,8 @@ use crate::{
 
 #[tracing::instrument(skip_all)]
 pub fn lex_text_literal(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
-    iter.next().z()?;
+    let (_, init_pos) = iter.next().z()?.to_owned();
     let mut raw = "\"".to_owned();
-    let init_pos = iter.peek().ok_or_else(|| todo!())?.1;
     while let Some((char, pos)) = iter.next() {
         trace!(?char, ?pos);
         if *char == '"' {
