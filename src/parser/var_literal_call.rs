@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use itertools::Either;
-use lazy_regex::{regex_replace, regex_replace_all};
 use num::BigInt;
 use tracing::{debug, trace};
 

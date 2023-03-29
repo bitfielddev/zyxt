@@ -102,7 +102,7 @@ impl Reconstruct for Procedure {
         s.push_str(if self.is_fn { "fn" } else { "proc" });
         if !self.args.is_empty() {
             s.push('|');
-            s.push_str(&self.args.iter().map(|a| a.reconstruct()).join(", "));
+            s.push_str(&self.args.iter().map(Reconstruct::reconstruct).join(", "));
             s.push('|');
         }
         if let Some(ret) = &self.return_type {

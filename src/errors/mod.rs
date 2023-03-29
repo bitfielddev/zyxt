@@ -53,7 +53,7 @@ impl ZError {
                     warn!("Could not find filename");
                     return Result::<_, Report>::Ok(pos);
                 };
-                let mut contents = if let Some(input) = get_input(filename)? {
+                let contents = if let Some(input) = get_input(filename)? {
                     input
                         .split('\n')
                         .map(ToString::to_string)
@@ -68,8 +68,7 @@ impl ZError {
                 let mut first_highlighted_line = String::new();
                 let mut last_highlighted_line = String::new();
 
-                let mut top_surroundings =
-                    contents[start_line..=(span.start_pos.line - 1)].to_owned();
+                let mut top_surroundings = contents[start_line..span.start_pos.line].to_owned();
                 if let Some(last) = top_surroundings.last_mut() {
                     let new_last = last.chars().collect::<Vec<_>>();
                     let split = new_last.split_at(span.start_pos.column - 1);
@@ -95,7 +94,7 @@ impl ZError {
                         .to_owned()
                 } else {
                     let highlighted =
-                        contents[(span.start_pos.line - 1)..=(span.end_pos.line - 1)].join("\n");
+                        contents[(span.start_pos.line - 1)..span.end_pos.line].join("\n");
                     format!("{first_highlighted_line}\n{highlighted}\n{last_highlighted_line}")
                 };
 
