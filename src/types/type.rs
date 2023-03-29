@@ -175,7 +175,7 @@ impl Debug for Type {
                 )?;
                 write!(
                     f,
-                    "fields: {{{}}}",
+                    ", fields: {{{}}}",
                     fields.iter().map(|(k, v)| format!("{k}: {v}")).join(", ")
                 )?;
             }
