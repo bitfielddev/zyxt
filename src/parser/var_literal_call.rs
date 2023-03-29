@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 
 use itertools::Either;
+use lazy_regex::{regex_replace, regex_replace_all};
 use num::BigInt;
 use tracing::{debug, trace};
 
 use crate::{
     ast::{Ast, AstData, Call, Ident, Literal, Member},
-    errors::{ZError, ZResult},
+    errors::{ToZResult, ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
         position::GetSpan,
@@ -16,6 +17,24 @@ use crate::{
 };
 
 impl Buffer {
+    fn parse_str_literal(s: &str) -> ZResult<String> {
+        let mut out = String::new();
+        let mut chars = s.chars();
+        while let Some(c) = chars.next() {
+            if c != '\\' {
+                out.push(c);
+                continue;
+            }
+            out.push(match chars.next().z()? {
+                '\\' => '\\',
+                'n' => '\n',
+                't' => '\t',
+                'r' => '\r',
+                n => n,
+            });
+        }
+        Ok(out)
+    }
     fn parse_ident(token: &Token) -> Option<Ident> {
         if token.ty != Some(TokenType::Ident) {
             return None;
@@ -128,9 +147,10 @@ impl Buffer {
                                         unreachable!()
                                     }
                                 }
-                                Some(TokenType::LiteralString) => Value::Str(
-                                    selected.value[1..selected.value.len() - 1].to_string(),
-                                ),
+                                Some(TokenType::LiteralString) => Value::Str({
+                                    let str = &selected.value[1..selected.value.len() - 1];
+                                    Self::parse_str_literal(str)?
+                                }),
                                 _ty => unreachable!("{_ty:?}"),
                             },
                         }),
