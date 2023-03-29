@@ -6,6 +6,7 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, BinaryOpr, Ident, Member, Reconstruct},
+    errors::ZError,
     primitives::{ANY_T, PROC_T, UNIT_T},
     types::{
         position::{GetSpan, Span},
@@ -98,15 +99,15 @@ impl AstData for Call {
             if let Some(res) = out {
                 res
             } else {
-                todo!()
+                return Err(ZError::t005(&ty, "_call"));
             }
         };
         if arg_tys.len() != sig_arg_tys.len() {
-            todo!("{arg_tys:?} {sig_arg_tys:?}")
+            return Err(ZError::t015(sig_arg_tys.len(), arg_tys.len()).with_span(&*self));
         }
         for (arg_ty, sig_arg_ty) in arg_tys.iter().zip(&sig_arg_tys) {
             if !Arc::ptr_eq(arg_ty, sig_arg_ty) && !Arc::ptr_eq(sig_arg_ty, &ANY_T) {
-                todo!("{arg_ty:?}, {sig_arg_ty:?}")
+                return Err(ZError::t004(sig_arg_ty, arg_ty).with_span(&*self));
             }
         }
         Ok(ret_ty.into())
@@ -180,7 +181,7 @@ impl AstData for Call {
             }
         }
         let Value::Proc(proc) = self.called.interpret_expr(val_symt)? else {
-            todo!()
+            todo!("get under _call")
         };
         proc.call(
             self.args

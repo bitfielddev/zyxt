@@ -50,7 +50,7 @@ pub fn lex_symbol(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<()> {
                     char.push('=');
                     TokenType::AssignmentOpr(Some(OprType::Mul))
                 }
-                Some(('/', _)) => todo!(),
+                Some(('/', _)) => return Err(ZError::l002().with_span(Span::new(pos, "*/"))),
                 _ => TokenType::BinaryOpr(OprType::Mul),
             },
             '/' => match iter.peek() {

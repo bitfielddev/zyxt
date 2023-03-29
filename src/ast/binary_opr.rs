@@ -4,7 +4,8 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Call, Member, Reconstruct},
-    primitives::{BOOL_T, BOOL_T_VAL, TYPE_T},
+    errors::ZError,
+    primitives::{BOOL_T, BOOL_T_VAL, PROC_T, TYPE_T},
     types::{
         position::{GetSpan, Span},
         r#type::TypeCheckType,
@@ -147,9 +148,11 @@ impl AstData for BinaryOpr {
             OprType::TypeCast => {
                 let opr1_ty = Arc::clone(&operand1.value_ty());
                 let namespace = opr1_ty.namespace();
-                let Some(Value::Proc(proc)) = namespace
-                    .get("_typecast") else {
-                    todo!()
+                let Some(f) = namespace.get("_typecast") else {
+                    return Err(ZError::t005(&opr1_ty.to_type(), "_typecast"));
+                };
+                let Value::Proc(proc) = f else {
+                    return Err(ZError::t011(&PROC_T, &f.ty()))
                 };
                 proc.call(vec![operand1, operand2], val_symt)
             }

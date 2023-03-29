@@ -5,7 +5,7 @@ use tracing::debug;
 
 use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Reconstruct},
-    errors::ToZResult,
+    errors::{ToZResult, ZError},
     types::{
         position::{GetSpan, Span},
         r#type::TypeCheckType,
@@ -68,7 +68,7 @@ impl AstData for Class {
         let mut namespace_ast = HashMap::new();
         let mut namespace_ty = HashMap::new();
         let mut fields = HashMap::new();
-        let mut new_found = false;
+        let mut new_span = None;
 
         ty_symt.add_frame(TypeCheckFrameType::Function(None));
 
@@ -81,16 +81,16 @@ impl AstData for Class {
         for statement in statements {
             let ty = statement.type_check(ty_symt)?;
             let Ast::Declare(dec) = statement else {
-                todo!()
+                return Err(ZError::t013().with_span(&*statement))
             };
             let Ast::Ident(ident) = *dec.variable.to_owned() else {
-                todo!()
+                return Err(ZError::t008().with_span(&dec.variable))
             };
             if ident.name == "_new" {
                 if *is_struct {
-                    todo!()
+                    return Err(ZError::t014().with_span(ident));
                 }
-                new_found = true;
+                new_span = Some(ident.span());
             }
             if dec.flags.iter().any(|(k, _)| *k == Flag::Inst) {
                 fields.insert(ident.name, Arc::clone(&*ty));
@@ -102,8 +102,8 @@ impl AstData for Class {
 
         let mut empty2 = vec![];
         let args = if let Some(args) = args {
-            if new_found {
-                todo!()
+            if let Some(new_span) = new_span {
+                return Err(ZError::t012().with_span(new_span));
             }
             args
         } else {
@@ -125,7 +125,7 @@ impl AstData for Class {
             type_args: vec![],
         });
 
-        if !new_found { // todo when `$` is added
+        if new_span.is_none() { // todo when `$` is added
              /*let Some(Type::Type { namespace, ..}) = Arc::get_mut(&mut ty) else {
                  unreachable!()
              };

@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     ast::{Ast, AstData, Ident, Reconstruct},
-    errors::ZResult,
+    errors::{ZError, ZResult},
     types::{
         position::{GetSpan, Span},
         r#type::Type,
@@ -55,7 +55,7 @@ impl Argument {
         if let Some(default) = &mut self.default {
             let ty2 = default.type_check(ty_symt)?;
             if !Arc::ptr_eq(&ty1, &ty2) {
-                todo!()
+                return Err(ZError::t011(&ty1, &ty2).with_span(&*self));
             }
         }
         Ok(ty1)

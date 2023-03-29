@@ -51,10 +51,40 @@ impl ZError {
         )
     }
     #[must_use]
-    pub fn t010(expected: &Type, actual: &Type) -> Self {
+    pub fn t011(expected: &Type, actual: &Type) -> Self {
         Self::new(
-            "T010",
-            format!("Attempt to assign value of type `{actual}` to symbol of type `{expected}`"),
+            "T011",
+            format!("Expected type `{expected}`, got `{actual}`"),
+        )
+    }
+    #[must_use]
+    pub fn t012() -> Self {
+        Self::new(
+            "T012",
+            "Cannot have arguments and `_new` at the same time in a class or struct".to_owned(),
+        )
+    }
+    #[must_use]
+    pub fn t013() -> Self {
+        Self::new("T013", "Expected a declare statement".to_owned())
+    }
+    #[must_use]
+    pub fn t014() -> Self {
+        Self::new("T014", "Cannot have `_new` defined in a struct".to_owned())
+    }
+    #[must_use]
+    pub fn t015(expected: usize, actual: usize) -> Self {
+        Self::new(
+            "T015",
+            format!("Expected {expected} arguments, got {actual}"),
+        )
+    }
+    #[must_use]
+    pub fn t016() -> Self {
+        Self::new(
+            "T016",
+            "Unable to retrieve type information. Types are static and resolved at compile time"
+                .to_owned(),
         )
     }
 }

@@ -44,7 +44,7 @@ impl AstData for Declare {
             .as_ref()
             .map(|ty| {
                 let Ast::Ident(i) = &**ty else {
-                todo!()
+                return Err(ZError::t008().with_span(&self.ty))
             };
                 ty_symt.get_type(&i.name, ty.span())
             })

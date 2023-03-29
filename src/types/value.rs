@@ -12,7 +12,7 @@ use smol_str::SmolStr;
 
 use crate::{
     ast::{Ast, Block, Literal},
-    errors::ZResult,
+    errors::{ZError, ZResult},
     primitives::*,
     types::{
         position::GetSpan,
@@ -62,7 +62,7 @@ impl Proc {
         match self {
             Self::Builtin { f, .. } => {
                 let Some(res) = (*f)(&vals) else {
-                    todo!()
+                    return Err(ZError::i001(&vals))
                 };
                 Ok(res)
             }
@@ -121,20 +121,20 @@ pub enum Value {
 pub trait ValueInner: TryFrom<Value> + Into<Value> + 'static {}
 
 macro_rules! from_to {
-    ($variant:ident, $ty:ty) => {
+    ($variant:ident, $ty:ty, $ty_def:ident) => {
         impl From<$ty> for Value {
             fn from(value: $ty) -> Self {
                 Value::$variant(value)
             }
         }
         impl TryFrom<Value> for $ty {
-            type Error = ();
+            type Error = ZError;
 
             fn try_from(value: Value) -> Result<Self, Self::Error> {
                 if let Value::$variant(v) = value {
                     Ok(v)
                 } else {
-                    Err(()) // TODO
+                    Err(ZError::t011(&$ty_def, &value.ty()))
                 }
             }
         }
@@ -142,27 +142,27 @@ macro_rules! from_to {
     };
 }
 
-from_to!(I8, i8);
-from_to!(I16, i16);
-from_to!(I32, i32);
-from_to!(I64, i64);
-from_to!(I128, i128);
-from_to!(Isize, isize);
-from_to!(Ibig, BigInt);
-from_to!(U8, u8);
-from_to!(U16, u16);
-from_to!(U32, u32);
-from_to!(U64, u64);
-from_to!(U128, u128);
-from_to!(Usize, usize);
-from_to!(Ubig, BigUint);
-from_to!(F16, f16);
-from_to!(F32, f32);
-from_to!(F64, f64);
-from_to!(Str, String);
-from_to!(Bool, bool);
-from_to!(Type, Arc<ValueType>);
-from_to!(Proc, Proc);
+from_to!(I8, i8, I8_T);
+from_to!(I16, i16, I16_T);
+from_to!(I32, i32, I32_T);
+from_to!(I64, i64, I64_T);
+from_to!(I128, i128, I128_T);
+from_to!(Isize, isize, ISIZE_T);
+from_to!(Ibig, BigInt, IBIG_T);
+from_to!(U8, u8, U8_T);
+from_to!(U16, u16, U16_T);
+from_to!(U32, u32, U32_T);
+from_to!(U64, u64, U64_T);
+from_to!(U128, u128, U128_T);
+from_to!(Usize, usize, USIZE_T);
+from_to!(Ubig, BigUint, UBIG_T);
+from_to!(F16, f16, F16_T);
+from_to!(F32, f32, F32_T);
+from_to!(F64, f64, F64_T);
+from_to!(Str, String, STR_T);
+from_to!(Bool, bool, BOOL_T);
+from_to!(Type, Arc<ValueType>, TYPE_T);
+from_to!(Proc, Proc, PROC_T);
 
 impl From<()> for Value {
     fn from(_: ()) -> Self {
@@ -170,13 +170,13 @@ impl From<()> for Value {
     }
 }
 impl TryFrom<Value> for () {
-    type Error = ();
+    type Error = ZError;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         if value == Value::Unit {
             Ok(())
         } else {
-            Err(()) // TODO
+            Err(ZError::t011(&UNIT_T, &value.ty()))
         }
     }
 }

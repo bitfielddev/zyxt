@@ -27,26 +27,6 @@ pub fn lex_text_literal(iter: &mut Buffer, tokens: &mut Vec<Token>) -> ZResult<(
             return Ok(());
         }
         raw.push(*char);
-        /*if *char == '\\' { TODO move this to parsing
-            if let Some((char, pos)) = iter.next() {
-                trace!(?char, ?pos);
-                let new = match *char {
-                    '"' => '"',
-                    '\\' => '\\',
-                    'n' => '\n',
-                    'r' => '\r',
-                    't' => '\t', // TODO more escapes
-                    _ => {
-                        raw.push('\\');
-                        *char
-                    }
-                };
-                raw.push(new);
-            } else {
-                todo!()
-            }
-        }
-        else*/
     }
     Ok(())
 }

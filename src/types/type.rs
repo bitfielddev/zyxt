@@ -12,7 +12,7 @@ use smol_str::SmolStr;
 
 use crate::{
     ast::Ident,
-    errors::ZResult,
+    errors::{ZError, ZResult},
     primitives::{ANY_T_VAL, PRIMS, PRIMS_VAL, TYPE_T},
     types::value::Value,
 };
@@ -332,10 +332,10 @@ impl Deref for TypeCheckType {
     }
 }
 impl TypeCheckType {
-    pub const fn as_const(&self) -> ZResult<&Arc<Type>> {
+    pub fn as_const(&self) -> ZResult<&Arc<Type>> {
         match self {
             Self::Const(c) => Ok(c),
-            Self::Type(_) => Err(todo!()),
+            Self::Type(_) => Err(ZError::t016()),
         }
     }
 }

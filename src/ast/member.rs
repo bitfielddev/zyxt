@@ -5,7 +5,7 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Reconstruct},
-    errors::ToZResult,
+    errors::{ToZResult, ZError},
     types::{
         position::{GetSpan, Span},
         r#type::TypeCheckType,
@@ -48,12 +48,14 @@ impl AstData for Member {
                 .as_const()?
                 .namespace()
                 .get(&self.name)
-                .ok_or_else(|| todo!())
+                .ok_or_else(|| {
+                    ZError::t005(parent_type.as_const().unwrap(), &self.name).with_span(&*self)
+                })
                 .map(|a| Arc::clone(a))?,
             AccessType::Field => parent_type
                 .fields()
                 .get(&self.name)
-                .ok_or_else(|| todo!())
+                .ok_or_else(|| ZError::t005(&parent_type, &self.name).with_span(&*self))
                 .map(Arc::clone)?,
         };
         Ok(res.into())
@@ -70,7 +72,7 @@ impl AstData for Member {
         let parent = self.parent.interpret_expr(val_symt)?;
         match self.ty {
             AccessType::Method => unreachable!(),
-            AccessType::Field => todo!(),
+            AccessType::Field => Ok(todo!()),
             AccessType::Namespace => Ok(parent
                 .as_type()
                 .z()?

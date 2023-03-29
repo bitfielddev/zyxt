@@ -8,4 +8,8 @@ impl ZError {
             "Unexpected ident (Lexer didn't recognise)".to_owned(),
         )
     }
+    #[must_use]
+    pub fn l002() -> Self {
+        Self::new("L002", "Unexpected end of comment".to_owned())
+    }
 }
