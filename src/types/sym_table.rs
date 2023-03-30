@@ -18,7 +18,8 @@ use crate::{
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TypeCheckFrameType {
-    Normal(Option<Arc<Type>>),
+    NormalReturnable(Option<Arc<Type>>),
+    Normal,
     Constants,
     Function(Option<Arc<Type>>),
 }
@@ -42,7 +43,9 @@ impl Default for TypeCheckSymTable {
                 .declare_val(k, TypeCheckType::Const(Arc::clone(v)))
                 .unwrap_or_else(|_| unreachable!());
         }
-        table.add_frame(TypeCheckFrameType::Normal(Some(Arc::clone(&I32_T))));
+        table.add_frame(TypeCheckFrameType::NormalReturnable(Some(Arc::clone(
+            &I32_T,
+        ))));
         table
     }
 }
@@ -65,8 +68,8 @@ impl TypeCheckSymTable {
     #[tracing::instrument(skip(self))]
     pub fn set_block_return(&mut self, ty: Arc<Type>, span: impl GetSpan) -> ZResult<()> {
         for frame in &mut self.0 {
-            if let TypeCheckFrameType::Function(ret_ty) | TypeCheckFrameType::Normal(ret_ty) =
-                &mut frame.ty
+            if let TypeCheckFrameType::Function(ret_ty)
+            | TypeCheckFrameType::NormalReturnable(ret_ty) = &mut frame.ty
             {
                 if let Some(ret_ty) = ret_ty {
                     if !Arc::ptr_eq(ret_ty, &ty) {
@@ -78,21 +81,21 @@ impl TypeCheckSymTable {
                 return Ok(());
             }
         }
-        todo!("error")
+        Err(ZError::t017().with_span(span))
     }
 
     #[tracing::instrument(skip(self))]
     pub fn get_block_return(&self) -> Arc<Type> {
         for frame in &self.0 {
-            if let TypeCheckFrameType::Function(ret_ty) | TypeCheckFrameType::Normal(ret_ty) =
-                &frame.ty
+            if let TypeCheckFrameType::Function(ret_ty)
+            | TypeCheckFrameType::NormalReturnable(ret_ty) = &frame.ty
             {
                 if let Some(ret_ty) = ret_ty {
                     return Arc::clone(ret_ty);
                 }
             }
         }
-        todo!("error")
+        unreachable!()
     }
 
     #[tracing::instrument(skip(self))]
@@ -113,7 +116,7 @@ impl TypeCheckSymTable {
     #[tracing::instrument(skip(self))]
     pub fn set_val(&mut self, name: &str, value: TypeCheckType, span: impl GetSpan) -> ZResult<()> {
         if *value == *TYPE_T {
-            todo!("Cannot reset type")
+            return Err(ZError::t001().with_span(span));
         }
         let mut only_consts = false;
         for frame in &mut self.0 {
@@ -123,8 +126,9 @@ impl TypeCheckSymTable {
                 if frame.ty == TypeCheckFrameType::Constants {
                     return Err(ZError::t001().with_span(span));
                 }
-                // TODO sth abt all type definitions being constant
-                // TODO check types
+                if frame.table.get(name) == Some(&value) {
+                    return Err(ZError::t011(frame.table.get(name).unwrap(), &value));
+                }
                 frame.table.insert(name.into(), value);
                 return Ok(());
             }
@@ -242,6 +246,9 @@ impl InterpretSymTable {
 
     #[tracing::instrument(skip(self))]
     pub fn set_val(&mut self, name: &str, value: Value, span: impl GetSpan) -> ZResult<()> {
+        if value.ty() == *TYPE_T {
+            return Err(ZError::t001().with_span(span));
+        }
         let mut only_consts = false;
         for frame in &mut self.0 {
             if (only_consts && frame.ty == InterpretFrameType::Constants)
@@ -250,8 +257,6 @@ impl InterpretSymTable {
                 if frame.ty == InterpretFrameType::Constants {
                     return Err(ZError::t001().with_span(span));
                 }
-                // TODO sth abt all type definitions being constant
-                // TODO check types
                 frame.table.insert(name.into(), value);
                 return Ok(());
             }

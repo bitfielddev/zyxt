@@ -60,7 +60,7 @@ impl Block {
     ) -> ZResult<TypeCheckType> {
         let mut last = Arc::clone(&UNIT_T).into();
         if add_set {
-            ty_symt.add_frame(TypeCheckFrameType::Normal(None));
+            ty_symt.add_frame(TypeCheckFrameType::Normal);
         }
         for ele in &mut self.content {
             last = ele.type_check(ty_symt)?;

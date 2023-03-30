@@ -213,7 +213,6 @@ pub fn compile(
 
     info!("Typechecking");
     let typecheck_start = Instant::now();
-    ty_symt.add_frame(TypeCheckFrameType::Function(Some(Arc::clone(&I32_T))));
     for ele in &mut parsed {
         ele.type_check(ty_symt)?;
     }

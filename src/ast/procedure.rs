@@ -5,7 +5,7 @@ use tracing::debug;
 
 use crate::{
     ast::{argument::Argument, Ast, AstData, Block, Reconstruct},
-    errors::ToZResult,
+    errors::{ToZResult, ZError},
     primitives::generic_proc,
     types::{
         position::{GetSpan, Span},
@@ -48,7 +48,7 @@ impl AstData for Procedure {
         ty_symt.add_frame(if self.is_fn {
             TypeCheckFrameType::Function
         } else {
-            TypeCheckFrameType::Normal
+            TypeCheckFrameType::NormalReturnable
         }(sig_ret_ty.map(|a| Arc::clone(&a))));
         let mut arg_tys = vec![];
         for arg in &mut self.args {
@@ -57,12 +57,12 @@ impl AstData for Procedure {
             ty_symt.declare_val(&arg.name.name, Arc::clone(&ty).into())?;
         } // todo convert to map
         let res = self.content.block_type(ty_symt, false)?;
-        let (TypeCheckFrameType::Function(ret_ty) | TypeCheckFrameType::Normal(ret_ty)) = &ty_symt.0.front().unwrap_or_else(|| unreachable!()).ty else {
+        let (TypeCheckFrameType::Function(ret_ty) | TypeCheckFrameType::NormalReturnable(ret_ty)) = &ty_symt.0.front().unwrap_or_else(|| unreachable!()).ty else {
             unreachable!()
         };
         let ret_ty = Arc::clone(if let Some(ret_ty) = ret_ty {
             if !Arc::ptr_eq(&res, ret_ty) {
-                todo!("error")
+                return Err(ZError::t009(ret_ty, &res));
             }
             ret_ty
         } else {

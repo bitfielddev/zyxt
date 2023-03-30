@@ -5,7 +5,7 @@ use crate::{errors::ZError, types::r#type::Type};
 impl ZError {
     #[must_use]
     pub fn t001() -> Self {
-        Self::new("T001", "Constants are not mutable".to_owned())
+        Self::new("T001", "Constants and types are not mutable".to_owned())
     }
     #[must_use]
     pub fn t002(sym: &str) -> Self {
@@ -86,5 +86,9 @@ impl ZError {
             "Unable to retrieve type information. Types are static and resolved at compile time"
                 .to_owned(),
         )
+    }
+    #[must_use]
+    pub fn t017() -> Self {
+        Self::new("T017", "Unable to return anything here".to_owned())
     }
 }
