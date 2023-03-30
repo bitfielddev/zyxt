@@ -8,7 +8,7 @@ use crate::{
     errors::{ToZResult, ZError},
     types::{
         position::{GetSpan, Span},
-        r#type::TypeCheckType,
+        r#type::{TypeCheckType, ValueType},
         sym_table::TypeCheckFrameType,
         token::Flag,
     },
@@ -19,11 +19,13 @@ use crate::{
 pub enum Class {
     Raw {
         is_struct: bool,
+        kwd_span: Option<Span>,
         content: Option<Block>,
         args: Option<Vec<Argument>>,
     },
     TypeChecked {
         is_struct: bool,
+        span: Option<Span>,
         namespace: HashMap<SmolStr, Ast>,
         fields: HashMap<SmolStr, Arc<Type>>,
     },
@@ -31,7 +33,15 @@ pub enum Class {
 
 impl GetSpan for Class {
     fn span(&self) -> Option<Span> {
-        todo!()
+        match self {
+            Self::Raw {
+                kwd_span,
+                content,
+                args,
+                ..
+            } => kwd_span.merge_span(content).merge_span(args),
+            Self::TypeChecked { span, .. } => span.to_owned(),
+        }
     }
 }
 
@@ -47,22 +57,27 @@ impl AstData for Class {
                 is_struct,
                 content,
                 args,
+                ..
             } => (is_struct, content, args),
             Self::TypeChecked {
                 namespace, fields, ..
             } => {
+                let mut ty_symt = ty_symt.to_owned();
                 return Ok(Arc::new(Type::Type {
                     name: None,
                     namespace: namespace
                         .iter_mut()
                         .map(|(k, v)| {
-                            Ok((k.to_owned(), Arc::clone(&*v.type_check(ty_symt)?).into()))
+                            Ok((
+                                k.to_owned(),
+                                Arc::clone(&*v.type_check(&mut ty_symt)?).into(),
+                            ))
                         })
                         .collect::<ZResult<HashMap<_, _>>>()?,
                     fields: fields.to_owned(),
                     type_args: vec![],
                 })
-                .into())
+                .into());
             }
         };
         let mut namespace_ast = HashMap::new();
@@ -96,7 +111,7 @@ impl AstData for Class {
                 fields.insert(ident.name, Arc::clone(&*ty));
             } else {
                 namespace_ty.insert(ident.name.to_owned(), Arc::clone(&*ty).into());
-                namespace_ast.insert(ident.name, dec.content.to_owned());
+                namespace_ast.insert(ident.name, *dec.content.to_owned());
             }
         }
 
@@ -121,7 +136,7 @@ impl AstData for Class {
         let ty = Arc::new(Type::Type {
             name: None,
             namespace: namespace_ty,
-            fields,
+            fields: fields.to_owned(),
             type_args: vec![],
         });
 
@@ -138,6 +153,13 @@ impl AstData for Class {
                  args: vec![],
              }).as_ast().into());*/
         }
+
+        *self = Self::TypeChecked {
+            is_struct: *is_struct,
+            span: self.span(),
+            namespace: namespace_ast,
+            fields,
+        };
 
         ty_symt.pop_frame()?;
         Ok(ty.into())
@@ -166,8 +188,20 @@ impl AstData for Class {
         Ok(new_self.as_variant())
     }
 
-    fn interpret_expr(&self, _val_symt: &mut InterpretSymTable) -> ZResult<Value> {
-        todo!()
+    fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
+        let Class::TypeChecked { namespace, fields, .. } = self else {
+            unreachable!()
+        };
+        let namespace = namespace
+            .iter()
+            .map(|(k, v)| Ok((k.to_owned(), v.interpret_expr(val_symt)?)))
+            .collect::<ZResult<HashMap<_, _>>>()?;
+        Ok(Value::Type(Arc::new(ValueType::Type {
+            name: None,
+            namespace,
+            fields: fields.to_owned(),
+            type_args: vec![],
+        })))
     }
 }
 
