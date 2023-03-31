@@ -6,6 +6,7 @@ use itertools::Either;
 use owo_colors::OwoColorize;
 use rustyline::{error::ReadlineError, history::FileHistory, Editor};
 use smol_str::SmolStr;
+use tracing::info;
 
 use crate::{
     ast::AstData,
@@ -16,11 +17,11 @@ use crate::{
     },
 };
 
-pub fn repl(verbosity: u8) -> Result<()> {
+pub fn repl() -> Result<()> {
     let filename = SmolStr::from("[stdin]");
     let mut ty_symt = TypeCheckSymTable::default();
     let mut val_symt = InterpretSymTable::default();
-    let mut rl = Editor::<(), FileHistory>::new()?; // TODO history
+    let mut rl = Editor::<(), FileHistory>::new()?;
     let mut history_path = home_dir().ok_or_else(|| eyre!("No home dir"))?;
     history_path.push(".zyxt_history");
     let _ = rl.load_history(&*history_path.to_string_lossy());
@@ -48,42 +49,44 @@ pub fn repl(verbosity: u8) -> Result<()> {
                 rl.save_history(&*history_path.to_string_lossy())?;
                 if input.starts_with(';') {
                     match &*input {
-                        ";vars" => todo!(), //println!("{}", val_symt.heap_to_string()),
+                        ";vars" => println!("{val_symt}"),
+                        ";vars_det" => println!("{val_symt:#}"),
                         ";exit" => unreachable!(),
                         ";help" => {
                             println!("{}", "All commands start wih `;`".bold().yellow());
                             println!("{}", "help\tView this help page".cyan());
                             println!("{}", "exit\tExit the repl".cyan());
                             println!("{}", "vars\tView all variables".cyan());
+                            println!(
+                                "{}",
+                                "vars\tView all variables, but with more detail".cyan()
+                            );
                         }
                         _ => println!("{}", "Invalid command".red()),
                     };
                     continue;
                 }
-                let instructions =
-                    match compile(&Either::Right((filename.to_owned(), input)), &mut ty_symt) {
-                        Ok(v) => v,
-                        Err(e) => {
-                            e.print()?;
-                            continue;
-                        }
-                    };
+                let instructions = match compile(
+                    &Either::Right((filename.to_owned(), input)),
+                    &mut ty_symt,
+                    false,
+                ) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        e.print()?;
+                        continue;
+                    }
+                };
 
                 let instr_len = instructions.len();
-                if verbosity >= 2 {
-                    println!("{}", "\nInterpreting".bold().yellow());
-                }
+                info!("Interpreting");
                 for (i, instr) in instructions.into_iter().enumerate() {
                     match {
-                        if verbosity == 0 {
-                            instr.interpret_expr(&mut val_symt)
-                        } else {
-                            let interpret_start = Instant::now();
-                            let result = instr.interpret_expr(&mut val_symt);
-                            let interpret_time = interpret_start.elapsed().as_micros();
-                            println!("{}", format!("{interpret_time}\u{b5}s").dimmed().white());
-                            result
-                        }
+                        let interpret_start = Instant::now();
+                        let result = instr.interpret_expr(&mut val_symt);
+                        let interpret_time = interpret_start.elapsed().as_micros();
+                        info!("{interpret_time}\u{b5}s");
+                        result
                     } {
                         Ok(result) => {
                             if result != Value::Unit && i == instr_len - 1 {

@@ -1,8 +1,10 @@
 use std::{
     collections::{HashMap, VecDeque},
+    fmt::{Debug, Display, Formatter},
     sync::Arc,
 };
 
+use owo_colors::OwoColorize;
 use smol_str::SmolStr;
 
 use crate::{
@@ -292,6 +294,38 @@ impl InterpretSymTable {
     #[tracing::instrument(skip(self))]
     pub fn add_defer(&mut self, content: Ast) -> ZResult<()> {
         self.front_mut()?.defer.push(content);
+        Ok(())
+    }
+}
+
+impl Display for InterpretFrameType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Constants => "Constants",
+                Self::Function => "Function",
+                Self::Normal => "Normal",
+            }
+        )
+    }
+}
+
+impl Display for InterpretSymTable {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for frame in &self.0 {
+            writeln!(f, "{}", frame.ty.black().on_yellow())?;
+            for (k, v) in &frame.table {
+                write!(f, "{}", k.yellow().bold())?;
+                write!(f, "{}", " := ".bright_black())?;
+                if f.alternate() {
+                    writeln!(f, "{v:?}")?;
+                } else {
+                    writeln!(f, "{v}")?;
+                }
+            }
+        }
         Ok(())
     }
 }

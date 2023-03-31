@@ -178,6 +178,7 @@ use crate::{
 pub fn compile(
     file: &Either<&Path, (SmolStr, String)>,
     ty_symt: &mut TypeCheckSymTable,
+    pop_symt: bool,
 ) -> ZResult<Vec<Ast>> {
     /*if ty_symt.out.verbosity() == 0 {
         return gen_instructions(parse_token_list(lex(input, filename)?)?, ty_symt);
@@ -216,7 +217,9 @@ pub fn compile(
     for ele in &mut parsed {
         ele.type_check(ty_symt)?;
     }
-    ty_symt.pop_frame()?;
+    if pop_symt {
+        ty_symt.pop_frame()?;
+    }
     let typecheck_time = typecheck_start.elapsed().as_micros();
     trace!("{parsed:#?}");
 

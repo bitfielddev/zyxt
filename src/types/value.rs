@@ -225,7 +225,7 @@ impl Display for Proc {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Builtin { id, ty, .. } => {
-                write!(f, "builtin@{id}@{ty}")
+                write!(f, "builtin@{id:x}@{ty}")
             }
             Self::Defined { is_fn, content, .. } => {
                 write!(f, "{}", if *is_fn { "fn" } else { "proc" })?;

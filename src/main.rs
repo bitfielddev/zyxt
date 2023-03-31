@@ -15,9 +15,6 @@ use zyxt::{
 struct Args {
     #[clap(subcommand)]
     subcmd: Subcmd,
-    /// Enables debugging info
-    #[clap(short, long, action = clap::ArgAction::Count)]
-    verbose: u8,
 }
 #[derive(Parser)]
 enum Subcmd {
@@ -41,14 +38,13 @@ fn main() -> Result<()> {
         .with(ErrorLayer::default())
         .init();
     let args = Args::parse();
-    let verbose = args.verbose;
 
     match args.subcmd {
         Subcmd::Run(sargs) => {
             let mut ty_symt = TypeCheckSymTable::default();
             let mut val_symt = InterpretSymTable::default();
             let exit_code = zyxt::interpret(
-                &zyxt::compile(&Either::Left(&sargs.filename), &mut ty_symt)
+                &zyxt::compile(&Either::Left(&sargs.filename), &mut ty_symt, true)
                     .unwrap_or_else(|e| e.print_exit()),
                 &mut val_symt,
             )
@@ -56,7 +52,7 @@ fn main() -> Result<()> {
             exit(exit_code);
         }
         // TODO Compile, Interpret
-        Subcmd::Repl => repl::repl(verbose)?,
+        Subcmd::Repl => repl::repl()?,
     }
     Ok(())
 }
