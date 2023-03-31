@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
+use itertools::Itertools;
 use smol_str::SmolStr;
 use tracing::debug;
 
@@ -26,6 +27,7 @@ pub enum Class {
     TypeChecked {
         is_struct: bool,
         span: Option<Span>,
+        reconstruction: String,
         namespace: HashMap<SmolStr, Ast>,
         fields: HashMap<SmolStr, Arc<Type>>,
     },
@@ -156,6 +158,7 @@ impl AstData for Class {
 
         *self = Self::TypeChecked {
             is_struct: *is_struct,
+            reconstruction: self.reconstruct(),
             span: self.span(),
             namespace: namespace_ast,
             fields,
@@ -207,6 +210,26 @@ impl AstData for Class {
 
 impl Reconstruct for Class {
     fn reconstruct(&self) -> String {
-        "todo".to_owned()
+        let (is_struct, content, args) = match self {
+            Self::TypeChecked { reconstruction, .. } => return reconstruction.to_owned(),
+            Self::Raw {
+                is_struct,
+                content,
+                args,
+                ..
+            } => (is_struct, content, args),
+        };
+        let mut s = String::new();
+        s.push_str(if *is_struct { "struct" } else { "class" });
+        if let Some(args) = args {
+            s.push('|');
+            s.push_str(&args.iter().map(Reconstruct::reconstruct).join(", "));
+            s.push('|');
+        }
+        if let Some(content) = content {
+            s.push(' ');
+            s.push_str(&content.reconstruct());
+        }
+        s
     }
 }

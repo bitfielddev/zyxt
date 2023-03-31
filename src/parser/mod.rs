@@ -22,7 +22,7 @@ use crate::{
     errors::{ZError, ZResult},
     parser::buffer::{Buffer, BufferWindow},
     types::{
-        position::Span,
+        position::{GetSpan, Span},
         token::{Token, TokenType},
         value::Value,
     },
@@ -30,16 +30,18 @@ use crate::{
 
 impl Buffer {
     fn parse_as_block(&mut self) -> ZResult<Block> {
+        let start_span = self.this().span();
         let mut buffers = self.get_split_between(
             TokenType::OpenCurlyParen,
             TokenType::CloseCurlyParen,
             TokenType::StatementEnd,
         )?;
+        let end_span = self.this().span();
         let block = buffers.with_as_buffers(&Self::parse_as_expr)?;
         let ele = Block {
-            brace_spans: None,
+            brace_spans: start_span.and_then(|start_span| Some((start_span, end_span?))),
             content: block,
-        }; // TODO brace_spans
+        };
         let buffer_window = BufferWindow {
             slice: vec![Either::Left(ele.as_variant())],
             range: buffers.range,

@@ -16,10 +16,11 @@ impl Buffer {
     pub fn parse_class_struct(&mut self) -> ZResult<()> {
         self.reset_cursor();
         while let Some(selected) = self.next() {
-            let kwd = if let Either::Right(selected) = &selected {
+            let (kwd, span) = if let Either::Right(selected) = &selected {
+                let span = selected.span();
                 if let Some(TokenType::Keyword(kwd)) = &selected.ty {
                     if [Keyword::Class, Keyword::Struct].contains(kwd) {
-                        *kwd
+                        (*kwd, span)
                     } else {
                         continue;
                     }
@@ -58,6 +59,7 @@ impl Buffer {
                 None
             };
             let ele = Ast::Class(Class::Raw {
+                kwd_span: span,
                 is_struct: kwd == Keyword::Struct,
                 content,
                 args,

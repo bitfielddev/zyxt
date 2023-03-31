@@ -18,6 +18,7 @@ impl Buffer {
         while let Some(selected) = self.next() {
             let Either::Right(Token {
                 ty: Some(TokenType::Keyword(kwd)),
+                span: ref kwd_span,
                 ..
             }) = selected else {
                 continue;
@@ -90,7 +91,7 @@ impl Buffer {
                     return Err(ZError::p018().with_span(selected));
                 };
                 conditions.push(Condition {
-                    kwd_span: None, // TODO
+                    kwd_span: Some(kwd_span.to_owned()),
                     condition,
                     if_true: block.to_owned(),
                 });

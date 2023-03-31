@@ -213,7 +213,7 @@ impl TokenType {
                 TokenCategory::ValueEnd,
             ],
             Self::Comma => vec![],
-            _ => todo!("{:?}", self),
+            _ => vec![],
         }
     }
 }

@@ -1,7 +1,10 @@
+use std::sync::Arc;
+
 use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, Condition, Reconstruct},
+    errors::ZError,
     types::{
         position::{GetSpan, Span},
         r#type::TypeCheckType,
@@ -29,8 +32,18 @@ impl AstData for If {
     }
     fn type_check(&mut self, ty_symt: &mut TypeCheckSymTable) -> ZResult<TypeCheckType> {
         debug!(span = ?self.span(), "Type-checking if expression");
+        let mut first_ty: Option<TypeCheckType> = None;
+        for ty in &mut self.conditions {
+            let ty = ty.if_true.block_type(ty_symt, true)?;
+            if let Some(first_ty) = &first_ty {
+                if !Arc::ptr_eq(first_ty, &ty) {
+                    return Err(ZError::t011(first_ty, &ty));
+                }
+            } else {
+                first_ty = Some(ty)
+            }
+        }
         self.conditions[0].if_true.block_type(ty_symt, true)
-        // TODO consider all returns
     }
 
     fn desugared(&self) -> ZResult<Ast> {
@@ -68,6 +81,21 @@ impl AstData for If {
 
 impl Reconstruct for If {
     fn reconstruct(&self) -> String {
-        "todo".to_owned()
+        let mut s = String::new();
+        for (i, c) in self.conditions.iter().enumerate() {
+            s.push_str(if i == 0 {
+                "if "
+            } else if c.condition.is_none() {
+                "else "
+            } else {
+                "elif "
+            });
+            if let Some(condition) = &c.condition {
+                s.push_str(&condition.reconstruct());
+            }
+            s.push(' ');
+            s.push_str(&c.if_true.reconstruct())
+        }
+        s
     }
 }

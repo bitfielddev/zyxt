@@ -115,7 +115,7 @@ impl TypeCheckSymTable {
 
     #[tracing::instrument(skip(self))]
     pub fn set_val(&mut self, name: &str, value: TypeCheckType, span: impl GetSpan) -> ZResult<()> {
-        if *value == *TYPE_T {
+        if Arc::ptr_eq(&value, &TYPE_T) {
             return Err(ZError::t001().with_span(span));
         }
         let mut only_consts = false;
@@ -126,8 +126,8 @@ impl TypeCheckSymTable {
                 if frame.ty == TypeCheckFrameType::Constants {
                     return Err(ZError::t001().with_span(span));
                 }
-                if frame.table.get(name) == Some(&value) {
-                    return Err(ZError::t011(frame.table.get(name).unwrap(), &value));
+                if !Arc::ptr_eq(&frame.table[name], &value) {
+                    return Err(ZError::t011(&frame.table[name], &value).with_span(span));
                 }
                 frame.table.insert(name.into(), value);
                 return Ok(());
@@ -146,11 +146,7 @@ impl TypeCheckSymTable {
             if (only_consts && frame.ty == TypeCheckFrameType::Constants)
                 || frame.table.contains_key(name)
             {
-                return Ok(frame
-                    .table
-                    .get(name)
-                    .unwrap_or_else(|| unreachable!())
-                    .to_owned());
+                return Ok(frame.table[name].to_owned());
             }
             if let TypeCheckFrameType::Function(_) = frame.ty {
                 only_consts = true;
@@ -222,7 +218,7 @@ impl InterpretSymTable {
             defer: vec![],
             ty,
         });
-        self.front_mut().unwrap_or_else(|_| unreachable!())
+        &mut self.0[0]
     }
 
     #[tracing::instrument(skip(self))]
@@ -246,7 +242,7 @@ impl InterpretSymTable {
 
     #[tracing::instrument(skip(self))]
     pub fn set_val(&mut self, name: &str, value: Value, span: impl GetSpan) -> ZResult<()> {
-        if value.ty() == *TYPE_T {
+        if Arc::ptr_eq(&value.ty(), &TYPE_T) {
             return Err(ZError::t001().with_span(span));
         }
         let mut only_consts = false;
@@ -274,11 +270,7 @@ impl InterpretSymTable {
             if (only_consts && frame.ty == InterpretFrameType::Constants)
                 || frame.table.contains_key(name)
             {
-                return Ok(frame
-                    .table
-                    .get(name)
-                    .unwrap_or_else(|| unreachable!())
-                    .to_owned());
+                return Ok(frame.table[name].to_owned());
             }
             if frame.ty == InterpretFrameType::Function {
                 only_consts = true;

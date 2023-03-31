@@ -41,6 +41,7 @@ impl Buffer {
             }
 
             start.get_or_insert(self.cursor - 1);
+            let eq_span = selected.span();
 
             let declared_var = if let Some(Either::Left(d)) = self.peek_prev() {
                 d.to_owned()
@@ -78,7 +79,7 @@ impl Buffer {
                 content: content.into(),
                 flags,
                 ty: None,
-                eq_span: None, // TODO
+                eq_span,
             });
             trace!(?ele);
             let buffer_window = BufferWindow {

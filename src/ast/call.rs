@@ -6,7 +6,7 @@ use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, BinaryOpr, Ident, Member, Reconstruct},
-    errors::ZError,
+    errors::{ToZResult, ZError},
     primitives::{ANY_T, PROC_T, UNIT_T},
     types::{
         position::{GetSpan, Span},
@@ -90,6 +90,16 @@ impl AstData for Call {
             let mut out = None;
 
             while let Some(f) = ty.namespace().get("_call").cloned() {
+                self.called = Box::new(
+                    Ast::Member(Member {
+                        ty: AccessType::Method,
+                        name: "_call".into(),
+                        parent: Box::new(*self.called.to_owned()),
+                        name_span: None,
+                        dot_span: None,
+                    })
+                    .desugared()?,
+                );
                 if let Some(res) = extract_proc(&f) {
                     out = Some(res);
                     break;
@@ -180,9 +190,7 @@ impl AstData for Call {
                 }
             }
         }
-        let Value::Proc(proc) = self.called.interpret_expr(val_symt)? else {
-            todo!("get under _call")
-        };
+        let proc = self.called.interpret_expr(val_symt)?.into_proc().z()?;
         proc.call(
             self.args
                 .iter()

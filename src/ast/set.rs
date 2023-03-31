@@ -37,10 +37,11 @@ impl AstData for Set {
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
-            unimplemented!() // TODO
+            return Err(ZError::t008().with_span(&self.variable));
         };
         let var_type = ty_symt.get_val(name, self.variable.span())?;
         ty_symt.set_val(name, content_type, self.variable.span())?;
+
         Ok(var_type)
     }
 
@@ -57,7 +58,7 @@ impl AstData for Set {
         let name = if let Ast::Ident(ident) = &*self.variable {
             &ident.name
         } else {
-            unimplemented!() // TODO
+            return Err(ZError::t008().with_span(&self.variable));
         };
         val_symt.set_val(name, var.to_owned(), self)?;
         Ok(var)

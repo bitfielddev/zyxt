@@ -74,7 +74,7 @@ impl Proc {
                 val_symt.add_frame(if *is_fn {
                     InterpretFrameType::Function
                 } else {
-                    InterpretFrameType::NormalReturnable
+                    InterpretFrameType::Normal
                 });
                 for (name, val) in args.iter().zip_eq(vals) {
                     val_symt.declare_val(name, val);

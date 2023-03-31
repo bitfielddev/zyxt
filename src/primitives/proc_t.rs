@@ -47,7 +47,7 @@ pub fn generic_proc(args: Vec<Arc<Type>>, ret: Arc<Type>) -> Arc<Type> {
         type_args: vec![
             ("A".into(), Either::Right(Either::Left(args))),
             ("R".into(), Either::Right(Either::Right(ret))),
-        ], // todo when vectors are out
+        ],
         base: Arc::clone(&PROC_T),
     })
 }
