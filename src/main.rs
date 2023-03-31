@@ -30,7 +30,7 @@ struct Run {
 
 fn main() -> Result<()> {
     HookBuilder::new()
-        .panic_section("This shouldn't happen!\nOpen an issue on our GitHub: https://github.com/Segmential/zyxt/issues/new")
+        .panic_section("If it is `not yet implemented`, handling of this will be complete in future versions.\nOtherwise, this shouldn't happen, open an issue on our GitHub: https://github.com/Segmential/zyxt/issues/new")
         .install()?;
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer().compact())
