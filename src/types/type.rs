@@ -12,7 +12,7 @@ use smol_str::SmolStr;
 
 use crate::{
     ast::Ident,
-    errors::{ZError, ZResult},
+    errors::{ToZResult, ZError, ZResult},
     primitives::{ANY_T_VAL, PRIMS, PRIMS_VAL, TYPE_T},
     types::value::Value,
 };
@@ -106,6 +106,19 @@ impl Type {
             Self::Generic { base, .. } => base.fields(), // TODO type arg substitutions
             Self::Type { fields, .. } => Cow::Borrowed(fields),
         }
+    }
+
+    pub fn update_name(self: &mut Arc<Self>, new_name: Ident) -> ZResult<()> {
+        let Self::Type { name, .. } = &**self else {
+            return Ok(())
+        };
+        if name.is_none() {
+            let Self::Type { name, .. } = Arc::get_mut(self).z()? else {
+                unreachable!()
+            };
+            *name = Some(new_name);
+        }
+        Ok(())
     }
 }
 
@@ -333,6 +346,12 @@ impl Deref for TypeCheckType {
 }
 impl TypeCheckType {
     pub fn as_const(&self) -> ZResult<&Arc<Type>> {
+        match self {
+            Self::Const(c) => Ok(c),
+            Self::Type(_) => Err(ZError::t016()),
+        }
+    }
+    pub fn as_const_mut(&mut self) -> ZResult<&mut Arc<Type>> {
         match self {
             Self::Const(c) => Ok(c),
             Self::Type(_) => Err(ZError::t016()),

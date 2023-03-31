@@ -1,10 +1,13 @@
+use std::sync::Arc;
+
 use tracing::debug;
 
 use crate::{
     ast::{Ast, AstData, BinaryOpr, Reconstruct},
+    errors::ToZResult,
     types::{
         position::{GetSpan, Span},
-        r#type::TypeCheckType,
+        r#type::{Type, TypeCheckType},
         token::{Flag, OprType},
     },
     InterpretSymTable, TypeCheckSymTable, Value, ZError, ZResult,
@@ -38,7 +41,7 @@ impl AstData for Declare {
         if !self.variable.is_pattern() {
             return Err(ZError::t006().with_span(&self.variable));
         }
-        let content_type = self.content.type_check(ty_symt)?;
+        let mut content_type = self.content.type_check(ty_symt)?;
         let ty = self
             .ty
             .as_ref()
@@ -72,6 +75,9 @@ impl AstData for Declare {
                     eq_span: self.eq_span.to_owned(),
                 };
             }
+        }
+        if let Ok(ty) = content_type.as_const_mut() {
+            ty.update_name(self.variable.as_ident().z()?.to_owned())?;
         }
         ty_symt.declare_val(&name, content_type.to_owned())?;
         Ok(content_type)
