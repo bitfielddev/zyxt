@@ -3,10 +3,10 @@ mod lexer;
 mod parser;
 mod type_check;
 
-use std::{fmt::Debug, process::exit};
+use std::fmt::Debug;
 
 use backtrace::Backtrace;
-use color_eyre::{Report, Result};
+use color_eyre::{eyre::eyre, Report, Result};
 use itertools::Itertools;
 use owo_colors::OwoColorize;
 use tracing::{debug, warn};
@@ -108,10 +108,6 @@ impl ZError {
             .collect::<Result<Vec<_>, _>>()?
             .join("\n"))
     }
-    pub fn print_exit(self) -> ! {
-        self.print().unwrap();
-        exit(1)
-    }
     pub fn print(&self) -> Result<()> {
         debug!("Span trace:\n{}", self.span_trace);
         debug!("Back trace:\n{:#?}", self.back_trace);
@@ -121,6 +117,9 @@ impl ZError {
             self.code.black().on_yellow(),
             format!(" {}", self.message).bold().red(),
         );
+        if self.code.starts_with('X') {
+            return Err(eyre!("The above error is a compiler error"));
+        };
         Ok(())
     }
     #[must_use]

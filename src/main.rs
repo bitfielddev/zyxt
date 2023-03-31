@@ -43,12 +43,20 @@ fn main() -> Result<()> {
         Subcmd::Run(sargs) => {
             let mut ty_symt = TypeCheckSymTable::default();
             let mut val_symt = InterpretSymTable::default();
-            let exit_code = zyxt::interpret(
-                &zyxt::compile(&Either::Left(&sargs.filename), &mut ty_symt, true)
-                    .unwrap_or_else(|e| e.print_exit()),
-                &mut val_symt,
-            )
-            .unwrap_or_else(|e| e.print_exit());
+            let compiled = match zyxt::compile(&Either::Left(&sargs.filename), &mut ty_symt, true) {
+                Ok(v) => v,
+                Err(e) => {
+                    e.print()?;
+                    exit(1)
+                }
+            };
+            let exit_code = match zyxt::interpret(&compiled, &mut val_symt) {
+                Ok(v) => v,
+                Err(e) => {
+                    e.print()?;
+                    exit(1)
+                }
+            };
             exit(exit_code);
         }
         Subcmd::Repl => repl::repl()?,
