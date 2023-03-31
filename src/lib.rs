@@ -180,11 +180,6 @@ pub fn compile(
     ty_symt: &mut TypeCheckSymTable,
     pop_symt: bool,
 ) -> ZResult<Vec<Ast>> {
-    /*if ty_symt.out.verbosity() == 0 {
-        return gen_instructions(parse_token_list(lex(input, filename)?)?, ty_symt);
-    }*/
-    // TODO --stats flag
-
     let (input, filename) = match &file {
         Either::Left(p) => (import_file(p).z()?, SmolStr::from(p.to_string_lossy())),
         Either::Right((name, input)) => (register_input(name, input).z()?, name.to_owned()),
@@ -237,10 +232,6 @@ pub fn compile(
 }
 
 pub fn interpret(input: &Vec<Ast>, val_symt: &mut InterpretSymTable) -> ZResult<i32> {
-    /*if val_symt.out.verbosity() == 0 {
-        return interpret_asts(input, val_symt);
-    }*/
-    // TODO --stats flag
     info!("Interpreting");
     let interpret_start = Instant::now();
     let exit_code = interpret_asts(input, val_symt)?;

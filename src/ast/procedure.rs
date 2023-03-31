@@ -50,12 +50,15 @@ impl AstData for Procedure {
         } else {
             TypeCheckFrameType::NormalReturnable
         }(sig_ret_ty.map(|a| Arc::clone(&a))));
-        let mut arg_tys = vec![];
-        for arg in &mut self.args {
-            let ty = arg.type_check(ty_symt)?;
-            arg_tys.push(Arc::clone(&ty));
-            ty_symt.declare_val(&arg.name.name, Arc::clone(&ty).into())?;
-        } // todo convert to map
+        let arg_tys = self
+            .args
+            .iter_mut()
+            .map(|arg| {
+                let ty = arg.type_check(ty_symt)?;
+                ty_symt.declare_val(&arg.name.name, Arc::clone(&ty).into())?;
+                Ok(ty)
+            })
+            .collect::<ZResult<Vec<_>>>()?;
         let res = self.content.block_type(ty_symt, false)?;
         let (TypeCheckFrameType::Function(ret_ty) | TypeCheckFrameType::NormalReturnable(ret_ty)) = &ty_symt.0.front().unwrap_or_else(|| unreachable!()).ty else {
             unreachable!()

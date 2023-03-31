@@ -51,7 +51,6 @@ fn main() -> Result<()> {
             .unwrap_or_else(|e| e.print_exit());
             exit(exit_code);
         }
-        // TODO Compile, Interpret
         Subcmd::Repl => repl::repl()?,
     }
     Ok(())

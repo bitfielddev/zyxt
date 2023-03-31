@@ -113,10 +113,9 @@ impl ZError {
         exit(1)
     }
     pub fn print(&self) -> Result<()> {
+        debug!("Span trace:\n{}", self.span_trace);
+        debug!("Back trace:\n{:#?}", self.back_trace);
         println!("{}", self.get_surrounding_text()?);
-        // TODO flag for showing span_trace
-        println!("Span trace:\n{}", self.span_trace);
-        println!("Back trace:\n{:#?}", self.back_trace);
         println!(
             " Error {}{} ",
             self.code.black().on_yellow(),
