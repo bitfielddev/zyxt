@@ -153,7 +153,7 @@ pub mod primitives;
 pub mod repl;
 pub mod types;
 
-use std::{path::Path, sync::Arc, time::Instant};
+use std::{path::Path, time::Instant};
 
 use errors::{ZError, ZResult};
 use itertools::Either;
@@ -167,10 +167,9 @@ use crate::{
     interpreter::interpret_asts,
     lexer::lex,
     parser::parse_token_list,
-    primitives::I32_T,
     types::{
         r#type::Type,
-        sym_table::{InterpretSymTable, TypeCheckFrameType, TypeCheckSymTable},
+        sym_table::{InterpretSymTable, TypeCheckSymTable},
         value::Value,
     },
 };

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use tracing::debug;
 
 use crate::{
@@ -7,7 +5,7 @@ use crate::{
     errors::ToZResult,
     types::{
         position::{GetSpan, Span},
-        r#type::{Type, TypeCheckType},
+        r#type::TypeCheckType,
         token::{Flag, OprType},
     },
     InterpretSymTable, TypeCheckSymTable, Value, ZError, ZResult,

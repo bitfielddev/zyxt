@@ -192,7 +192,7 @@ impl AstData for Class {
     }
 
     fn interpret_expr(&self, val_symt: &mut InterpretSymTable) -> ZResult<Value> {
-        let Class::TypeChecked { namespace, fields, .. } = self else {
+        let Self::TypeChecked { namespace, fields, .. } = self else {
             unreachable!()
         };
         let namespace = namespace
