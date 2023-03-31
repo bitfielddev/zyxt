@@ -49,7 +49,7 @@ impl AstData for Member {
                 .namespace()
                 .get(&self.name)
                 .ok_or_else(|| {
-                    ZError::t005(parent_type.as_const().unwrap(), &self.name).with_span(&*self)
+                    ZError::t005(parent_type.as_const().z()?, &self.name).with_span(&*self)
                 })
                 .map(|a| Arc::clone(a))?,
             AccessType::Field => parent_type
