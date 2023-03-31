@@ -1,10 +1,13 @@
-use std::{fs::File, io::Read, panic, process::exit};
+use std::{path::PathBuf, process::exit};
 
-use backtrace::Backtrace;
 use clap::Parser;
+use color_eyre::{config::HookBuilder, eyre::Result};
+use itertools::Either;
+use tracing_error::ErrorLayer;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 use zyxt::{
     repl,
-    types::{errors::ZyxtError, interpreter_data::InterpreterData, printer::StdIoPrint},
+    types::sym_table::{InterpretSymTable, TypeCheckSymTable},
 };
 
 #[derive(Parser)]
@@ -12,9 +15,6 @@ use zyxt::{
 struct Args {
     #[clap(subcommand)]
     subcmd: Subcmd,
-    /// Enables debugging info
-    #[clap(short, long, parse(from_occurrences))]
-    verbose: u8,
 }
 #[derive(Parser)]
 enum Subcmd {
@@ -25,49 +25,41 @@ enum Subcmd {
 }
 #[derive(Parser)]
 struct Run {
-    filename: String,
+    filename: PathBuf,
 }
 
-fn main() {
+fn main() -> Result<()> {
+    HookBuilder::new()
+        .panic_section("If it is `not yet implemented`, handling of this will be complete in future versions.\nOtherwise, this shouldn't happen, open an issue on our GitHub: https://github.com/Segmential/zyxt/issues/new")
+        .install()?;
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer().compact())
+        .with(EnvFilter::from_env("RUST_LOG"))
+        .with(ErrorLayer::default())
+        .init();
     let args = Args::parse();
-    let verbose = args.verbose;
-
-    panic::set_hook(Box::new(|a| {
-        ZyxtError::error_0_0(a.to_string(), Backtrace::new()).print(&mut StdIoPrint(2));
-    }));
 
     match args.subcmd {
         Subcmd::Run(sargs) => {
-            let filename = &sargs.filename;
-            let mut content = String::new();
-            match File::open(filename) {
-                Ok(mut file) => {
-                    file.read_to_string(&mut content).unwrap_or_else(|e| {
-                        if e.to_string() == *"Is a directory (os error 21)" {
-                            ZyxtError::error_1_2(filename.to_owned())
-                                .print_exit(&mut StdIoPrint(verbose))
-                        } else {
-                            panic!("{}", e.to_string())
-                        }
-                    });
-                }
-                Err(_) => {
-                    ZyxtError::error_1_1(filename.to_owned()).print_exit(&mut StdIoPrint(verbose))
+            let mut ty_symt = TypeCheckSymTable::default();
+            let mut val_symt = InterpretSymTable::default();
+            let compiled = match zyxt::compile(&Either::Left(&sargs.filename), &mut ty_symt, true) {
+                Ok(v) => v,
+                Err(e) => {
+                    e.print()?;
+                    exit(1)
                 }
             };
-            let mut sip1 = StdIoPrint(verbose);
-            let mut sip2 = StdIoPrint(verbose);
-            let mut typelist = InterpreterData::default_type(&mut sip1);
-            let mut i_data = InterpreterData::default_variable(&mut sip2);
-            let exit_code = zyxt::interpret(
-                &zyxt::compile(content, filename, &mut typelist)
-                    .unwrap_or_else(|e| e.print_exit(&mut StdIoPrint(verbose))),
-                &mut i_data,
-            )
-            .unwrap_or_else(|e| e.print_exit(&mut StdIoPrint(verbose)));
+            let exit_code = match zyxt::interpret(&compiled, &mut val_symt) {
+                Ok(v) => v,
+                Err(e) => {
+                    e.print()?;
+                    exit(1)
+                }
+            };
             exit(exit_code);
         }
-        // TODO Compile, Interpret
-        Subcmd::Repl => repl::repl(verbose),
+        Subcmd::Repl => repl::repl()?,
     }
+    Ok(())
 }

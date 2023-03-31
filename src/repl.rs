@@ -1,106 +1,110 @@
 use std::{io, io::Write, time::Instant};
 
-use ansi_term::Color::{Cyan, Green, Red, White, Yellow};
-use backtrace::Backtrace;
+use color_eyre::eyre::{eyre, Result};
 use dirs::home_dir;
-use rustyline::{error::ReadlineError, Editor};
+use itertools::Either;
+use owo_colors::OwoColorize;
+use rustyline::{error::ReadlineError, history::FileHistory, Editor};
+use smol_str::SmolStr;
+use tracing::info;
 
 use crate::{
+    ast::AstData,
     compile,
-    interpreter::interpret_expr,
-    types::{interpreter_data::InterpreterData, printer::StdIoPrint, value::Value},
-    ZyxtError,
+    types::{
+        sym_table::{InterpretSymTable, TypeCheckSymTable},
+        value::Value,
+    },
 };
 
-pub fn repl(verbosity: u8) {
-    let filename = "[stdin]".to_string();
-    let mut sip1 = StdIoPrint(verbosity);
-    let mut sip2 = StdIoPrint(verbosity);
-    let mut typelist = InterpreterData::default_type(&mut sip1);
-    let mut varlist = InterpreterData::default_variable(&mut sip2);
-    let mut rl = Editor::<()>::new().unwrap();
-    let mut history_path = home_dir().unwrap();
+pub fn repl() -> Result<()> {
+    let filename = SmolStr::from("[stdin]");
+    let mut ty_symt = TypeCheckSymTable::default();
+    let mut val_symt = InterpretSymTable::default();
+    let mut rl = Editor::<(), FileHistory>::new()?;
+    let mut history_path = home_dir().ok_or_else(|| eyre!("No home dir"))?;
     history_path.push(".zyxt_history");
-    rl.load_history(history_path.to_str().unwrap())
-        .unwrap_or(());
+    let _ = rl.load_history(&*history_path.to_string_lossy());
 
-    let in_symbol = Cyan.bold().paint(">>] ");
-    let out_symbol = Green.bold().paint("[>> ");
+    let in_symbol = ">>] ".bold().cyan().to_string();
+    let out_symbol = "[>> ".bold().green().to_string();
     println!(
         "{}",
-        Yellow
+        format!("Zyxt Repl (v{})", env!("CARGO_PKG_VERSION"))
             .bold()
-            .paint(format!("Zyxt Repl (v{})", env!("CARGO_PKG_VERSION")))
+            .yellow()
     );
-    println!("{}", Cyan.paint("`;exit` to exit"));
-    println!("{}", Cyan.paint("`;help` for more commands"));
+    println!("{}", "`;exit` to exit".cyan());
+    println!("{}", "`;help` for more commands".cyan());
     loop {
-        print!("{} ", in_symbol);
-        io::stdout().flush().unwrap();
-        let input = rl.readline(&*in_symbol.to_string());
+        print!("{in_symbol} ");
+        io::stdout().flush()?;
+        let input = rl.readline(&in_symbol);
         match input {
             Ok(input) => {
                 if input == *";exit" {
                     break;
                 }
-                rl.add_history_entry(&input);
-                rl.save_history(history_path.to_str().unwrap()).unwrap();
+                rl.add_history_entry(&input)?;
+                rl.save_history(&*history_path.to_string_lossy())?;
                 if input.starts_with(';') {
                     match &*input {
-                        ";vars" => println!("{}", varlist.heap_to_string()),
+                        ";vars" => println!("{val_symt}"),
+                        ";vars_det" => println!("{val_symt:#}"),
                         ";exit" => unreachable!(),
                         ";help" => {
-                            println!("{}", Yellow.bold().paint("All commands start wih `;`"));
-                            println!("{}", Cyan.paint("help\tView this help page"));
-                            println!("{}", Cyan.paint("exit\tExit the repl"));
-                            println!("{}", Cyan.paint("vars\tView all variables"))
+                            println!("{}", "All commands start wih `;`".bold().yellow());
+                            println!("{}", "help\tView this help page".cyan());
+                            println!("{}", "exit\tExit the repl".cyan());
+                            println!("{}", "vars\tView all variables".cyan());
+                            println!(
+                                "{}",
+                                "vars\tView all variables, but with more detail".cyan()
+                            );
                         }
-                        _ => println!("{}", Red.bold().paint("Invalid command")),
+                        _ => println!("{}", "Invalid command".red()),
                     };
                     continue;
                 }
-                let instructions = match compile(input, &filename, &mut typelist) {
+                let instructions = match compile(
+                    &Either::Right((filename.to_owned(), input)),
+                    &mut ty_symt,
+                    false,
+                ) {
                     Ok(v) => v,
                     Err(e) => {
-                        e.print(&mut StdIoPrint(verbosity));
+                        e.print()?;
                         continue;
                     }
                 };
 
                 let instr_len = instructions.len();
-                if verbosity >= 2 {
-                    println!("{}", Yellow.bold().paint("\nInterpreting"));
-                }
+                info!("Interpreting");
                 for (i, instr) in instructions.into_iter().enumerate() {
                     match {
-                        if verbosity == 0 {
-                            interpret_expr(&instr, &mut varlist)
-                        } else {
-                            let interpret_start = Instant::now();
-                            let result = interpret_expr(&instr, &mut varlist);
-                            let interpret_time = interpret_start.elapsed().as_micros();
-                            println!("{}", White.dimmed().paint(format!("{}µs", interpret_time)));
-                            result
-                        }
+                        let interpret_start = Instant::now();
+                        let result = instr.interpret_expr(&mut val_symt);
+                        let interpret_time = interpret_start.elapsed().as_micros();
+                        info!("{interpret_time}\u{b5}s");
+                        result
                     } {
                         Ok(result) => {
-                            if result != Value::Null && i == instr_len - 1 {
-                                println!("{}{}", out_symbol, Yellow.paint(format!("{:?}", result)))
+                            if result != Value::Unit && i == instr_len - 1 {
+                                println!("{out_symbol}{}", format!("{result:?}").yellow());
                             }
                         }
                         Err(e) => {
-                            e.print(&mut StdIoPrint(verbosity));
+                            e.print()?;
                         }
                     }
                 }
             }
-            Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
-                println!("{}", Cyan.paint("`;exit` to exit"));
+            Err(ReadlineError::Interrupted | ReadlineError::Eof) => {
+                println!("{}", "`;exit` to exit".cyan());
             }
-            Err(err) => {
-                ZyxtError::error_0_0(err.to_string(), Backtrace::new());
-            }
+            Err(err) => return Err(err.into()),
         }
     }
-    rl.save_history(history_path.to_str().unwrap()).unwrap();
+    rl.save_history(&*history_path.to_string_lossy())?;
+    Ok(())
 }

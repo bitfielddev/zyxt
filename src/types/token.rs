@@ -2,112 +2,58 @@ use std::fmt::{Display, Formatter, Result};
 
 use smol_str::SmolStr;
 
-use crate::types::position::Position;
+use crate::types::position::{GetSpan, Span};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Token {
     pub value: SmolStr,
-    pub type_: TokenType,
-    pub position: Position,
+    pub ty: Option<TokenType>,
+    pub span: Span,
     pub whitespace: SmolStr,
+}
+impl GetSpan for Token {
+    fn span(&self) -> Option<Span> {
+        Some(self.span.to_owned())
+    }
 }
 impl Default for Token {
     fn default() -> Self {
-        Token {
+        Self {
             value: "".into(),
-            type_: TokenType::Null,
-            position: Position {
-                ..Default::default()
-            },
+            ty: None,
+            span: Span::default(),
             whitespace: "".into(),
         }
     }
 }
 impl Token {
+    #[must_use]
     pub fn get_raw(&self) -> String {
         format!("{}{}", &self.whitespace, &self.value)
-    }
-}
-pub fn get_order(opr: &OprType) -> u8 {
-    match *opr {
-        OprType::Null => 0,
-        OprType::Increment
-        | OprType::Decrement
-        | OprType::PlusSign
-        | OprType::MinusSign
-        | OprType::Not
-        | OprType::Ref
-        | OprType::Deref => 1,
-        OprType::TypeCast => 2,
-        OprType::Power => 3,
-        //OprType::Root |
-        //OprType::Logarithm => 4,
-        OprType::DotMult => 5,
-        OprType::AstMult
-        | OprType::FractDiv
-        | OprType::FloorfractDiv
-        | OprType::CeilfractDiv
-        | OprType::RoundfractDiv
-        | OprType::Modulo => 6,
-        OprType::CrossMult
-        | OprType::Div
-        | OprType::FloorDiv
-        | OprType::CeilDiv
-        | OprType::RoundDiv => 7,
-        OprType::Plus | OprType::Minus | OprType::PlusMinus | OprType::MinusPlus => 8,
-        OprType::Gt
-        | OprType::Lt
-        | OprType::Gteq
-        | OprType::Lteq
-        | OprType::Eq
-        | OprType::Noteq
-        | OprType::Istype
-        | OprType::Isnttype
-        | OprType::Is
-        | OprType::Isnt
-        | OprType::Iseq
-        | OprType::Isnteq => 10,
-        OprType::And => 14,
-        OprType::Xor => 15,
-        OprType::Or => 16,
-        OprType::Concat => 18,
-        OprType::Swap => 19,
     }
 }
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[allow(dead_code)]
 pub enum OprType {
-    Increment,
-    Decrement,
-    PlusSign,
-    MinusSign,
+    UnPlus,
+    UnMinus,
     Not,
-    Power,
-    DotMult,
-    AstMult,
-    CrossMult,
+    Pow,
+    Mul,
     Div,
-    FloorDiv,
-    CeilDiv,
-    RoundDiv,
-    FractDiv,
-    FloorfractDiv,
-    CeilfractDiv,
-    RoundfractDiv,
-    Modulo,
-    Plus,
-    Minus,
-    PlusMinus,
-    MinusPlus,
+    Mod,
+    Add,
+    Sub,
+    AddSub,
+    SubAdd,
     And,
     Or,
-    Xor,
     Gt,
     Lt,
-    Gteq,
-    Lteq,
+    Ge,
+    Le,
     Eq,
-    Noteq,
+    Ne,
     Istype,
     Isnttype,
     Is,
@@ -115,27 +61,39 @@ pub enum OprType {
     Iseq,
     Isnteq,
     Concat,
-    Swap,
     Ref,
     Deref,
     TypeCast,
-    Null,
 }
 impl Display for OprType {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 impl OprType {
-    pub fn side(&self) -> Side {
+    #[must_use]
+    pub const fn order(&self) -> usize {
         match self {
-            OprType::Not
-            | OprType::Ref
-            | OprType::Deref
-            | OprType::PlusSign
-            | OprType::MinusSign => Side::Left,
-            OprType::Increment | OprType::Decrement => Side::Right,
-            _ => unreachable!(),
+            Self::UnPlus | Self::UnMinus | Self::Not | Self::Ref | Self::Deref => 1,
+            Self::TypeCast => 2,
+            Self::Pow => 3,
+            Self::Mul | Self::Div | Self::Mod => 6,
+            Self::Add | Self::Sub | Self::AddSub | Self::SubAdd => 8,
+            Self::Gt
+            | Self::Lt
+            | Self::Ge
+            | Self::Le
+            | Self::Eq
+            | Self::Ne
+            | Self::Istype
+            | Self::Isnttype
+            | Self::Is
+            | Self::Isnt
+            | Self::Iseq
+            | Self::Isnteq => 10,
+            Self::And => 14,
+            Self::Or => 16,
+            Self::Concat => 18,
         }
     }
 }
@@ -168,99 +126,94 @@ pub enum Keyword {
     Struct,
 }
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Side {
-    Left,
-    Right,
+pub enum AccessType {
+    Field,
+    Method,
+    Namespace,
 }
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[allow(dead_code)]
 pub enum TokenType {
-    CommentStart,           // //
-    CommentEnd,             // \n
-    MultilineCommentStart,  // /*
-    MultilineCommentEnd,    // */
-    Flag(Flag),             // hoi, pub, priv, prot, const
-    UnaryOpr(OprType),      // \~, ++, ! etc
-    AssignmentOpr(OprType), // =, += etc
-    NormalOpr(OprType),     // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
-    DotOpr,                 // .
-    DeclarationOpr,         // :=
-    LiteralMisc,            // true, null, etc
-    LiteralNumber,          // 3, 24, -34.5 etc
-    LiteralString,          // "abc" etc
-    StatementEnd,           // ;
-    OpenParen,              // (
-    CloseParen,             // )
-    OpenSquareParen,        // [
-    CloseSquareParen,       // ]
-    OpenCurlyParen,         // {
-    CloseCurlyParen,        // }
-    OpenAngleBracket,       // <
-    CloseAngleBracket,      // >
-    Comma,                  // ,
-    Colon,                  // :
-    Apostrophe,             // '
-    Quote,                  // "
-    Bar,                    // |
-    Keyword(Keyword),       // if, while etc
+    CommentStart,                   // //
+    CommentEnd,                     // \n
+    MultilineCommentStart,          // /*
+    MultilineCommentEnd,            // */
+    Flag(Flag),                     // hoi, pub, priv, prot, const
+    UnaryOpr(OprType),              // \~, ++, ! etc
+    AssignmentOpr(Option<OprType>), // =, += etc
+    BinaryOpr(OprType), // +, -, /f, rt, \&, ==, >, is, &&, ||, ^^, .., ><, istype, isnttype etc
+    DotOpr(AccessType), // .
+    DeclarationOpr,     // :=
+    LiteralMisc,        // true, null, etc
+    LiteralNumber,      // 3, 24, -34.5 etc
+    LiteralString,      // "abc" etc
+    StatementEnd,       // ;
+    OpenParen,          // (
+    CloseParen,         // )
+    OpenSquareParen,    // [
+    CloseSquareParen,   // ]
+    OpenCurlyParen,     // {
+    CloseCurlyParen,    // }
+    OpenAngleBracket,   // <
+    CloseAngleBracket,  // >
+    Comma,              // ,
+    Colon,              // :
+    Apostrophe,         // '
+    Quote,              // "
+    Bar,                // |
+    Keyword(Keyword),   // if, while etc
     Comment,
     Ident,
     Whitespace,
-    Null,
 }
 impl TokenType {
+    #[must_use]
     pub fn categories(&self) -> Vec<TokenCategory> {
         match self {
-            TokenType::Ident => vec![TokenCategory::ValueStart, TokenCategory::ValueEnd],
-            TokenType::LiteralNumber => vec![
+            Self::Ident => vec![TokenCategory::ValueStart, TokenCategory::ValueEnd],
+            Self::LiteralNumber => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,
                 TokenCategory::ValueEnd,
             ],
-            TokenType::OpenSquareParen
-            | TokenType::OpenCurlyParen
-            | TokenType::OpenParen
-            | TokenType::CloseSquareParen
-            | TokenType::CloseCurlyParen
-            | TokenType::CloseParen => vec![
+            Self::OpenSquareParen
+            | Self::OpenCurlyParen
+            | Self::OpenParen
+            | Self::CloseSquareParen
+            | Self::CloseCurlyParen
+            | Self::CloseParen => vec![
                 TokenCategory::Parenthesis,
                 TokenCategory::OpenParen,
                 TokenCategory::ValueStart,
             ],
-            TokenType::DotOpr => vec![TokenCategory::Operator],
-            TokenType::StatementEnd => vec![
+            Self::DotOpr(..) => vec![TokenCategory::Operator],
+            Self::StatementEnd => vec![
                 TokenCategory::LiteralStringStart,
                 TokenCategory::LiteralStringEnd,
             ],
-            TokenType::AssignmentOpr(..) => vec![TokenCategory::Operator],
-            TokenType::UnaryOpr(OprType::Not, ..)
-            | TokenType::UnaryOpr(OprType::Ref, ..)
-            | TokenType::UnaryOpr(OprType::Deref, ..) => {
+            Self::AssignmentOpr(..) => vec![TokenCategory::Operator],
+            Self::UnaryOpr(OprType::Not | OprType::Ref | OprType::Deref, ..) => {
                 vec![TokenCategory::Operator, TokenCategory::ValueStart]
             }
-            TokenType::UnaryOpr(OprType::Increment, ..)
-            | TokenType::UnaryOpr(OprType::Decrement, ..) => {
-                vec![TokenCategory::Operator, TokenCategory::ValueEnd]
-            }
-            TokenType::NormalOpr(..) | TokenType::DeclarationOpr => vec![TokenCategory::Operator],
-            TokenType::Bar => vec![
+            Self::BinaryOpr(..) | Self::DeclarationOpr => vec![TokenCategory::Operator],
+            Self::Bar => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,
                 TokenCategory::ValueEnd,
             ],
-            TokenType::Comment => vec![
+            Self::Comment => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,
                 TokenCategory::ValueEnd,
             ],
-            TokenType::Keyword(..) | TokenType::Flag(..) => vec![TokenCategory::ValueStart],
-            TokenType::LiteralMisc => vec![
+            Self::Keyword(..) | Self::Flag(..) => vec![TokenCategory::ValueStart],
+            Self::LiteralMisc => vec![
                 TokenCategory::Literal,
                 TokenCategory::ValueStart,
                 TokenCategory::ValueEnd,
             ],
-            TokenType::Null | TokenType::Comma => vec![],
-            _ => todo!("{:?}", self),
+            Self::Comma => vec![],
+            _ => vec![],
         }
     }
 }

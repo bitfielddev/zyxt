@@ -1,8 +1,5 @@
-pub mod element;
-pub mod errors;
-pub mod interpreter_data;
 pub mod position;
-pub mod printer;
+pub mod sym_table;
 pub mod token;
-pub mod typeobj;
+pub mod r#type;
 pub mod value;
