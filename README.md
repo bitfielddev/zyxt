@@ -1,5 +1,10 @@
 # zyxtlang
 
+![GitHub](https://img.shields.io/github/license/segmential/zyxt)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/segmential/zyxt)
+![GitHub last commit](https://img.shields.io/github/last-commit/segmential/zyxt)
+![GitHub Release Date](https://img.shields.io/github/release-date/segmential/zyxt)
+
 A language aimed for versatility, portability and backwards-compatibility.
 
 Still WIP though. Stay tuned :)
