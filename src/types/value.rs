@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     collections::HashMap,
     fmt::{Debug, Display, Formatter},
     sync::Arc,
@@ -239,33 +240,35 @@ impl Display for Proc {
 }
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut ib = itoa::Buffer::new();
+        let mut rb = ryu::Buffer::new();
         write!(
             f,
             "{}",
             match self {
-                Self::I8(v) => v.to_string(),
-                Self::I16(v) => v.to_string(),
-                Self::I32(v) => v.to_string(),
-                Self::I64(v) => v.to_string(),
-                Self::I128(v) => v.to_string(),
-                Self::Isize(v) => v.to_string(),
-                Self::Ibig(v) => v.to_string(),
-                Self::U8(v) => v.to_string(),
-                Self::U16(v) => v.to_string(),
-                Self::U32(v) => v.to_string(),
-                Self::U64(v) => v.to_string(),
-                Self::U128(v) => v.to_string(),
-                Self::Usize(v) => v.to_string(),
-                Self::Ubig(v) => v.to_string(),
-                Self::F16(v) => v.to_string(),
-                Self::F32(v) => v.to_string(),
-                Self::F64(v) => v.to_string(),
-                Self::Str(v) => v.to_owned(),
-                Self::Bool(v) => v.to_string(),
-                Self::Type(v) | Self::ClassInstance { ty: v, .. } => format!("<{v}>"),
-                Self::Unit => "()".to_owned(),
-                Self::Return(v) => v.to_string(),
-                Self::Proc(v) => v.to_string(),
+                Self::I8(v) => Cow::Borrowed(ib.format(*v)),
+                Self::I16(v) => Cow::Borrowed(ib.format(*v)),
+                Self::I32(v) => Cow::Borrowed(ib.format(*v)),
+                Self::I64(v) => Cow::Borrowed(ib.format(*v)),
+                Self::I128(v) => Cow::Borrowed(ib.format(*v)),
+                Self::Isize(v) => Cow::Borrowed(ib.format(*v)),
+                Self::Ibig(v) => Cow::Owned(v.to_string()),
+                Self::U8(v) => Cow::Borrowed(ib.format(*v)),
+                Self::U16(v) => Cow::Borrowed(ib.format(*v)),
+                Self::U32(v) => Cow::Borrowed(ib.format(*v)),
+                Self::U64(v) => Cow::Borrowed(ib.format(*v)),
+                Self::U128(v) => Cow::Borrowed(ib.format(*v)),
+                Self::Usize(v) => Cow::Borrowed(ib.format(*v)),
+                Self::Ubig(v) => Cow::Owned(v.to_string()),
+                Self::F16(v) => Cow::Owned(v.to_string()),
+                Self::F32(v) => Cow::Borrowed(rb.format(*v)),
+                Self::F64(v) => Cow::Borrowed(rb.format(*v)),
+                Self::Str(v) => Cow::Borrowed(&**v),
+                Self::Bool(v) => Cow::Owned(v.to_string()),
+                Self::Type(v) | Self::ClassInstance { ty: v, .. } => Cow::Owned(format!("<{v}>")),
+                Self::Unit => Cow::Borrowed("()"),
+                Self::Return(v) => Cow::Owned(v.to_string()),
+                Self::Proc(v) => Cow::Owned(v.to_string()),
             }
         )
     }
