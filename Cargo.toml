@@ -20,7 +20,7 @@ ansi_term = "^0.12.1"
 regex = "^1.7.0"
 clap = { version = "^3.2.23", features = ["derive"] }
 rustyline = "^10.0.0"
-dirs = "^4.0.0"
+dirs = "^5.0.1"
 backtrace = "^0.3.66"
 num = "^0.4.0"
 half = "^2.1.0"
