@@ -17,18 +17,18 @@ path = "src/lib.rs"
 
 [dependencies]
 owo-colors = "^3.5.0"
-regex = "^1.8.3"
+regex = "^1.8.4"
 lazy-regex = "^2.5.0"
-clap = { version = "^4.3.1", features = ["derive"] }
-rustyline = "^11.0.0"
+clap = { version = "^4.3.8", features = ["derive"] }
+rustyline = "^12.0.0"
 dirs = "^5.0.1"
 backtrace = "^0.3.67"
 num = "^0.4.0"
 num-traits = "^0.2.15"
-half = { version = "^2.2.1", features = ["num-traits"] }
+half = { version = "^2.3.0", features = ["num-traits"] }
 enum-as-inner = "^0.6.0"
-itertools = "^0.10.5"
-once_cell = "^1.17.2"
+itertools = "^0.11.0"
+once_cell = "^1.18.0"
 smol_str = "^0.2.0"
 maplit = "^1.0.2"
 color-eyre = "^0.6.2"
