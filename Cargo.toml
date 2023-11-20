@@ -27,7 +27,7 @@ num = "^0.4.0"
 num-traits = "^0.2.15"
 half = { version = "^2.3.0", features = ["num-traits"] }
 enum-as-inner = "^0.6.0"
-itertools = "^0.11.0"
+itertools = "^0.12.0"
 once_cell = "^1.18.0"
 smol_str = "^0.2.0"
 maplit = "^1.0.2"
