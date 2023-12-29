@@ -16,7 +16,7 @@ path = "src/lib.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-owo-colors = "^3.5.0"
+owo-colors = "^4.0.0"
 regex = "^1.8.4"
 lazy-regex = "^3.0.0"
 clap = { version = "^4.3.8", features = ["derive"] }
