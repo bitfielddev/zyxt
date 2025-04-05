@@ -9,4 +9,6 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+      time: "00:00"
+    versioning-strategy: "increase"
     target-branch: "dev"
