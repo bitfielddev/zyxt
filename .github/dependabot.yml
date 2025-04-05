@@ -10,5 +10,4 @@ updates:
     schedule:
       interval: "weekly"
       time: "00:00"
-    versioning-strategy: "increase"
     target-branch: "dev"
