@@ -23,8 +23,8 @@ jobs:
         with:
           crate: cargo-edit
       - run: cargo upgrade -i --recursive true
-        continue-on-error: true
       - run: cargo update
+        continue-on-error: true
       - run: echo "message=upgrade rust dependencies @ $(date +%Y%m%dT%H:%M:%S%Z)" >> "$GITHUB_ENV"
       - uses: peter-evans/create-pull-request@v7
         with:
