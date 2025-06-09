@@ -39,7 +39,7 @@ itoa = "^1.0.15"
 ryu = "^1.0.20"
 
 [dev-dependencies]
-proptest = "^1.6.0"
+proptest = "^1.7.0"
 pretty_assertions = "^1.4.1"
 
 [profile.dev]
