@@ -3,36 +3,8 @@ on:
   schedule:
     - cron: "0 0 * * 1"
 
-
 jobs:
   cargo-upgrade:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: dev
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo
-      - uses: baptiste0928/cargo-install@v3
-        with:
-          crate: cargo-edit
-      - run: cargo upgrade -i --recursive true
-        continue-on-error: true
-      - run: cargo update
-        continue-on-error: true
-      - run: echo "message=upgrade rust dependencies @ $(date +%Y%m%dT%H:%M:%S%Z)" >> "$GITHUB_ENV"
-      - uses: peter-evans/create-pull-request@v7
-        with:
-          commit-message: ${{ env.message }}
-          title: upgrade rust dependencies
-          branch: cargo-upgrade
-
-
+    uses: iiiii7d/cargo-msrv-upgrade-workflow/.github/workflows/workflow.yml@main
+    with:
+      checkout-ref: dev
